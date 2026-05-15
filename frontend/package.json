@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 34115 --strictPort",
+    "build": "tsc && vite build --emptyOutDir"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+  "@types/react": "latest",
+  "@types/react-dom": "latest"
+  }
+}
