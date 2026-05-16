@@ -1,4 +1,4 @@
-**This project was built through vibe coding with help from Claude, then reviewed and documented so the important safety boundaries are clear**.
+**This project was built through vibe coding with help from Claude**.
 
 # Promptful Custom FFmpeg Builder
 
