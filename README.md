@@ -51,7 +51,8 @@ Download the latest release from the GitHub Releases page:
 
 <img width="1186" height="1107" alt="Screenshot-01" src="https://github.com/user-attachments/assets/508ae8f6-4509-4962-894b-56a93a786029" />
 <img width="1186" height="1107" alt="Screenshot-02" src="https://github.com/user-attachments/assets/e1cbcd80-4290-41b6-8976-9bf0f54085a9" />
-<img width="1186" height="1107" alt="Screenshot-03" src="https://github.com/user-attachments/assets/716e5952-2218-4bfc-bf81-09a3aa842334" />
+<img width="1186" height="907" alt="Screenshot-03" src="https://github.com/user-attachments/assets/30b7a10b-9d53-4448-805a-4c9d8a020a34" />
+
 
 ## Security model
 
