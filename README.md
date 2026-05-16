@@ -109,7 +109,7 @@ In this offline environment, `go test ./...` could not complete because Go depen
 
 Download the latest release from the GitHub Releases page:
 
-[Latest release](https://github.com/magnomer/Prompful-Custom-FFmpeg-builde/releases/latest)
+[Latest release](https://github.com/magnomer/Prompful-Custom-FFmpeg-builde/releases)
 
 ## Screenshots
 
