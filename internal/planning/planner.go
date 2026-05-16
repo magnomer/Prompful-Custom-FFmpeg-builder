@@ -59,7 +59,7 @@ func LibraryCatalogForShellProfile(windowsShellProfileName string) []LibraryChoi
 		libraryChoice("svt-av1", "SVT-AV1", "Video encoders", []string{"--enable-libsvtav1"}, []string{packagePrefix + "-svt-av1"}, "lgpl", "Adds a fast AV1 encoder."),
 		libraryChoice("rav1e", "rav1e", "Video encoders", []string{"--enable-librav1e"}, []string{packagePrefix + "-rav1e"}, "lgpl", "Adds the rav1e AV1 encoder."),
 		libraryChoice("openh264", "OpenH264", "Video encoders", []string{"--enable-libopenh264"}, []string{packagePrefix + "-openh264"}, "lgpl", "Adds Cisco OpenH264 support."),
-		libraryChoice("xavs2", "xavs2", "Video encoders", []string{"--enable-libxavs2"}, []string{packagePrefix + "-xavs2"}, "gpl", "Adds AVS2 video encoding. GPL effect."),
+		libraryChoice("xavs2", "xavs2", "Video encoders", []string{"--enable-libxavs2"}, []string{"mingw-w64-x86_64-xavs2"}, "gpl", "Adds AVS2 video encoding. GPL effect. Requires the mingw64 environment; not available in ucrt64 or clang64."),
 		libraryChoice("dav1d", "dav1d", "Video decoders", []string{"--enable-libdav1d"}, []string{packagePrefix + "-dav1d"}, "lgpl", "Adds a fast AV1 decoder."),
 		libraryChoice("libjxl", "JPEG XL", "Image codecs", []string{"--enable-libjxl"}, []string{packagePrefix + "-libjxl"}, "lgpl", "Adds JPEG XL image support."),
 		libraryChoice("openjpeg", "OpenJPEG", "Image codecs", []string{"--enable-libopenjpeg"}, []string{packagePrefix + "-openjpeg2"}, "lgpl", "Adds JPEG 2000 support."),
@@ -87,7 +87,7 @@ func LibraryCatalogForShellProfile(windowsShellProfileName string) []LibraryChoi
 		libraryChoice("harfbuzz", "HarfBuzz", "Subtitles and text", []string{"--enable-libharfbuzz"}, []string{packagePrefix + "-harfbuzz"}, "lgpl", "Adds advanced text shaping support."),
 		libraryChoice("ass", "libass", "Subtitles and text", []string{"--enable-libass"}, []string{packagePrefix + "-libass"}, "lgpl", "Adds advanced subtitle rendering."),
 		libraryChoice("bluray", "libbluray", "Disc and device input", []string{"--enable-libbluray"}, []string{packagePrefix + "-libbluray"}, "lgpl", "Adds Blu-ray reading support."),
-		libraryChoice("cdio", "libcdio", "Disc and device input", []string{"--enable-libcdio"}, []string{packagePrefix + "-libcdio"}, "gpl", "Adds CD input support. GPL effect."),
+		libraryChoice("cdio", "libcdio", "Disc and device input", []string{"--enable-libcdio"}, []string{packagePrefix + "-libcdio", packagePrefix + "-libcdio-paranoia"}, "gpl", "Adds CD input support. GPL effect."),
 		libraryChoice("modplug", "libmodplug", "Disc and device input", []string{"--enable-libmodplug"}, []string{packagePrefix + "-libmodplug"}, "lgpl", "Adds tracker/module audio file support."),
 		libraryChoice("openal", "OpenAL", "Disc and device input", []string{"--enable-openal"}, []string{packagePrefix + "-openal"}, "lgpl", "Adds OpenAL audio input support."),
 		libraryChoice("sdl2", "SDL2", "Disc and device input", []string{"--enable-sdl2"}, []string{packagePrefix + "-SDL2"}, "lgpl", "Adds SDL2 support, mainly useful for ffplay."),
@@ -280,6 +280,11 @@ func PlanFfmpegBuild(ffmpegBuildSettings FfmpegBuildSettings) (FfmpegBuildPlan, 
 		warnings = append(warnings, PlanWarning{RiskLevel: RiskLevelBlocked, Message: "Windows shell profile must be ucrt64, mingw64, or clang64."})
 		isExecutable = false
 	}
+	for _, lib := range selectedLibraries {
+		if lib.LibraryId == "xavs2" && ffmpegBuildSettings.WindowsShellProfileName != "mingw64" {
+			warnings = append(warnings, PlanWarning{RiskLevel: RiskLevelWarning, Message: "xavs2 is only available as a mingw64 package in MSYS2 (mingw-w64-x86_64-xavs2) and is not packaged for ucrt64 or clang64. The build may fail at the package installation step. Switch the Windows shell profile to mingw64 to avoid this."})
+		}
+	}
 	if ffmpegBuildSettings.ParallelJobCount > 256 {
 		warnings = append(warnings, PlanWarning{RiskLevel: RiskLevelBlocked, Message: "Parallel job count must not exceed 256."})
 		isExecutable = false
@@ -463,7 +468,7 @@ func libraryDefaultReason(libraryId string, licenseEffectName string) string {
 		"svt-av1":      "Check this when you need faster AV1 encoding than libaom on modern CPUs. It is not default because it adds a large external encoder and is unnecessary unless you are creating AV1 video.",
 		"rav1e":        "Check this when you specifically want the rav1e AV1 encoder. It is not default because it is a specialized AV1 encoder and most users do not need multiple AV1 encoders.",
 		"openh264":     "Check this when you specifically need Cisco OpenH264 behavior or compatibility. It is not default because x264 is usually the preferred H.264 encoder when GPL is acceptable, and native FFmpeg already covers many H.264 tasks.",
-		"xavs2":        "Check this when you need AVS2 video encoding. It is not default because AVS2 is uncommon outside specific regional or archival workflows and it changes the resulting build to GPL.",
+		"xavs2":        "Check this when you need AVS2 video encoding. It is not default because AVS2 is uncommon outside specific regional or archival workflows, it changes the resulting build to GPL, and it requires the mingw64 environment — xavs2 is not packaged for ucrt64 or clang64 in MSYS2.",
 		"dav1d":        "Check this when you need fast AV1 playback/decoding. It is not default because native FFmpeg can still be built without it, and users who do not decode AV1 do not need the extra package.",
 		"libjxl":       "Check this when you need JPEG XL image support. It is not default because JPEG XL is not needed for common video workflows and requires an external image codec package.",
 		"openjpeg":     "Check this when you need JPEG 2000 files, often used in cinema, archive, or medical/media workflows. It is not default because JPEG 2000 is not common for ordinary video conversion.",

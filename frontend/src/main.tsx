@@ -14,7 +14,7 @@ import {
 import { BrowserOpenURL, EventsOn, WindowGetPosition, WindowGetSize, WindowSetPosition, WindowSetSize } from "../wailsjs/runtime/runtime";
 import "./style.css";
 
-type TabId = "source" | "buildTools" | "prep" | "library" | "options" | "buildFfmpeg" | "result" | "logs";
+type TabId = "source" | "buildTools" | "prep" | "library" | "options" | "buildFfmpeg" | "result" | "logs" | "about";
 
 type LibraryPresetId = "default" | "efficiency" | "compatibility" | "editor" | "full" | "custom";
 
@@ -39,6 +39,18 @@ type SecurityLogPayload = {
 
 type ApprovedActionStatusPayload = {
   status: string;
+};
+
+type LiveProgress = {
+  currentPhaseLabel: string | null;
+  currentPhaseId: LogPhaseId | null;
+  compileCount: number;
+  assembleCount: number;
+  copiedDllCount: number;
+  lastMessage: string | null;
+  isComplete: boolean;
+  hasFailed: boolean;
+  phaseGroups?: LogPhaseGroup[];
 };
 
 type SavedUiState = {
@@ -102,6 +114,374 @@ const officialLinks = {
   ffmpegSigningKey: "https://ffmpeg.org/ffmpeg-devel.asc",
 };
 
+// ─── Log Phase types and pure helpers (used by both BuilderApp and SmartLogViewer) ──
+
+// Toolchain (Prep) phases
+type ToolchainPhaseId =
+  | "tc-download"   // MSYS2 archive + sig + SHA-256 download
+  | "tc-extract"    // Extract archive, normalize layout
+  | "tc-keyring"    // Initialize pacman keyring, import/sign/trust keys
+  | "tc-syncdb"     // Synchronize package databases
+  | "tc-install"    // Download and install packages
+  | "tc-verify";    // Compiler check, environment ready
+
+// FFmpeg (Build FFmpeg) phases
+type FfmpegPhaseId =
+  | "ff-download"   // FFmpeg source + sig + SHA-256 download
+  | "ff-pkgconfig"  // Library install + pkg-config detection
+  | "ff-configure"  // ./configure
+  | "ff-compile"    // CC / X86ASM compilation
+  | "ff-shaders"    // GLSLC / BIN2C / GZIP
+  | "ff-link"       // AR / LDXX linking
+  | "ff-strip"      // STRIP
+  | "ff-docs"       // HTML / POD docs
+  | "ff-dlldeps";   // DLL dependency bundling
+
+type LogPhaseId = ToolchainPhaseId | FfmpegPhaseId | "other";
+
+type ParsedLogEntry = SecurityLogEntry & {
+  phase: LogPhaseId;
+  compileOp?: string;
+  compileTarget?: string;
+  dllName?: string;
+  dllAction?: "copied" | "skipped" | "system" | "found";
+  dllDep?: string;
+  isSystemDll?: boolean;
+  isFinalStatus?: boolean;
+};
+
+type LogPhaseGroup = {
+  phase: LogPhaseId;
+  label: string;
+  entries: ParsedLogEntry[];
+  compileCount: number;
+  assembleCount: number;
+  copiedDlls: string[];
+  systemDllCount: number;
+  skippedDllCount: number;
+  startTime?: string;
+  endTime?: string;
+};
+
+const COMPILE_OPS = new Set(["CC", "CXX", "HOSTCC", "X86ASM", "WINDRES"]);
+const DOCS_OPS    = new Set(["HTML", "POD", "TXT", "TEXI", "GENTEXI"]);
+const BUILD_OPS   = new Set(["AR", "LDXX", "LD", "HOSTLD"]);
+const STRIP_OPS   = new Set(["STRIP"]);
+const SHADER_OPS  = new Set(["GLSLC", "BIN2C", "GZIP", "MINIFY"]);
+
+// ── Toolchain phase detector (used for toolchainLogEntries) ─────────────────
+function detectToolchainPhase(msg: string): LogPhaseId {
+  // Download: MSYS2 archive, sig, signing key, SHA-256
+  if (
+    msg.startsWith("Approved private MSYS2 preparation started") ||
+    msg.startsWith("Downloading approved file from MSYS2") ||
+    msg.startsWith("Calculated SHA-256 for MSYS2") ||
+    msg.startsWith("MSYS2 .sig verification")
+  ) return "tc-download";
+  // Extract: remove old folder, extract archive, normalize layout
+  if (
+    msg.startsWith("A previous private MSYS2 folder") ||
+    msg.startsWith("Stopped private MSYS2") ||
+    msg.startsWith("Previous private MSYS2 folder removed") ||
+    msg.startsWith("Extracting approved archive") ||
+    msg.startsWith("MSYS2 archive") ||
+    msg.startsWith("Running approved command")
+  ) return "tc-extract";
+  // Keyring: gpg init, import, sign, trust
+  if (
+    msg.startsWith("Initializing the private MSYS2 package keyring") ||
+    msg.startsWith("Using the official MSYS2 package server") ||
+    msg.startsWith("Preparing pacman database") ||
+    msg.startsWith("gpg:") ||
+    msg.startsWith("==>") ||
+    msg.startsWith("->")
+  ) return "tc-keyring";
+  // Sync DB: pacman database download
+  if (
+    msg.startsWith("Clearing stale") ||
+    msg.startsWith("Refreshing the private") ||
+    msg.startsWith(":: Synchronizing") ||
+    msg.includes(" downloading...") ||
+    msg.startsWith("clangarm64") || msg.startsWith("clang64") ||
+    msg.startsWith("ucrt64") || msg.startsWith("mingw64") ||
+    msg.startsWith("mingw32") || msg.startsWith("msys ")
+  ) return "tc-syncdb";
+  // Verify: compiler check
+  if (
+    msg.startsWith("Checking that the selected") ||
+    msg.startsWith("The compiler check") ||
+    msg.startsWith("Approved private MSYS2 environment is ready")
+  ) return "tc-verify";
+  // Install: everything else pacman does
+  if (
+    msg.startsWith("Installing the approved") ||
+    msg.startsWith("there is nothing to do") ||
+    msg.startsWith(":: Proceed") ||
+    msg.startsWith(":: There are") ||
+    msg.startsWith(":: Repository") ||
+    msg.startsWith("Enter a selection") ||
+    msg.startsWith("Packages (") ||
+    msg.startsWith("Total Download") ||
+    msg.startsWith("Total Installed") ||
+    msg.startsWith("Net Upgrade") ||
+    msg.startsWith("resolving dependencies") ||
+    msg.startsWith("looking for conflicting") ||
+    msg.startsWith("checking keyring") ||
+    msg.startsWith("checking package integrity") ||
+    msg.startsWith("loading package") ||
+    msg.startsWith("checking for file conflicts") ||
+    msg.startsWith("checking available disk space") ||
+    msg.startsWith(":: Processing package changes") ||
+    msg.startsWith(":: Running post-transaction") ||
+    msg.startsWith("installing ") ||
+    msg.startsWith("reinstalling ") ||
+    msg.startsWith("upgrading ") ||
+    msg.startsWith("downgrading ") ||
+    msg.startsWith("removing ") ||
+    msg.startsWith("Optional dependencies for") ||
+    msg.startsWith("updating font cache") ||
+    msg.match(/^\(\d+\/\d+\)/) !== null ||
+    msg.startsWith("warning: ")
+  ) return "tc-install";
+  return "other";
+}
+
+// ── FFmpeg phase detector (used for ffmpegLogEntries) ───────────────────────
+function detectFfmpegPhase(msg: string): LogPhaseId {
+  const first = msg.split(" ")[0];
+  if (COMPILE_OPS.has(first)) return "ff-compile";
+  if (SHADER_OPS.has(first)) return "ff-shaders";
+  if (STRIP_OPS.has(first)) return "ff-strip";
+  if (BUILD_OPS.has(first)) return "ff-link";
+  if (DOCS_OPS.has(first)) return "ff-docs";
+  if (first === "GEN") return "ff-configure";
+  // pkg-config and library install before configure
+  if (msg.startsWith("pkg-config check") || msg.startsWith("Using pkg-config")) return "ff-pkgconfig";
+  // FFmpeg-build package re-installs (codec libs)
+  if (
+    msg.startsWith("reinstalling ") || msg.startsWith("downgrading ") ||
+    msg.startsWith("upgrading ") || msg.startsWith("installing ") ||
+    msg.startsWith("Refreshing package databases") ||
+    msg.startsWith("Clearing half-downloaded") ||
+    msg.startsWith(":: Synchronizing") || msg.startsWith(":: Processing") ||
+    msg.startsWith(":: Running post-transaction") ||
+    msg.startsWith("checking") || msg.startsWith("loading package") ||
+    msg.startsWith("looking for conflicting") || msg.startsWith("resolving dependencies") ||
+    msg.startsWith("Packages (") || msg.startsWith("Net Upgrade") ||
+    msg.startsWith("Total Installed") || msg.startsWith("updating font cache") ||
+    msg.includes(" downloading...") || msg.startsWith("warning: ")
+  ) return "ff-pkgconfig";
+  // Download / verify
+  if (
+    msg.startsWith("Approved FFmpeg build started") ||
+    msg.startsWith("Downloading approved file from FFmpeg") ||
+    msg.startsWith("Calculated SHA-256 for FFmpeg") ||
+    msg.startsWith("FFmpeg .asc verification") ||
+    msg.startsWith("Extracting approved archive") ||
+    msg.startsWith("Running approved command") ||
+    msg.startsWith("Approved FFmpeg build completed") ||
+    msg.startsWith("Artifact report")
+  ) return "ff-download";
+  // Configure
+  if (
+    msg.startsWith("FFmpeg configure") || msg.startsWith("Starting FFmpeg configure") ||
+    msg.startsWith("License:") || msg.startsWith("Enabled ") || msg.startsWith("External ") ||
+    msg.startsWith("Programs:") || msg.startsWith("Libraries:") || msg.startsWith("ARCH ") ||
+    msg.startsWith("C compiler") || msg.startsWith("C library") ||
+    msg.startsWith("install prefix") || msg.startsWith("source path") ||
+    msg.startsWith("static ") || msg.startsWith("shared ") || msg.startsWith("optimizations") ||
+    msg.startsWith("debug ") || msg.startsWith("network") || msg.startsWith("threading") ||
+    msg.startsWith("safe bitstream") || msg.startsWith("x86 assembler") ||
+    msg.startsWith("standalone") || msg.startsWith("runtime cpu") ||
+    msg.startsWith("big-endian") || msg.startsWith("MMXEXT") || msg.startsWith("MMX ") ||
+    msg.startsWith("SSE") || msg.startsWith("AESNI") || msg.startsWith("CLMUL") ||
+    msg.startsWith("AVX") || msg.startsWith("XOP") || msg.startsWith("FMA") ||
+    msg.startsWith("i686") || msg.startsWith("CMOV") || msg.startsWith("EBX") ||
+    msg.startsWith("EBP") || msg.startsWith("optimize") || msg.startsWith("experimental") ||
+    msg.startsWith("makeinfo") || msg.startsWith("perl ") || msg.startsWith("texi2html") ||
+    msg.startsWith("xmllint") || msg.startsWith("pod2man") || msg.startsWith("GEN lib")
+  ) return "ff-configure";
+  // DLL bundling
+  if (msg.startsWith("PE DLL dependencies") || msg.startsWith("DLL lookup index") || msg.startsWith("dependency ")) return "ff-dlldeps";
+  return "other";
+}
+
+const PHASE_LABELS: Record<LogPhaseId, string> = {
+  "tc-download": "Download MSYS2",
+  "tc-extract":  "Extract & Setup",
+  "tc-keyring":  "Initialize Keyring",
+  "tc-syncdb":   "Sync Package DBs",
+  "tc-install":  "Install Packages",
+  "tc-verify":   "Verify Compiler",
+  "ff-download":  "Download FFmpeg",
+  "ff-pkgconfig": "Install Libraries",
+  "ff-configure": "Configure",
+  "ff-compile":   "Compile",
+  "ff-shaders":   "Shaders & Resources",
+  "ff-link":      "Link & Archive",
+  "ff-strip":     "Strip Symbols",
+  "ff-docs":      "Documentation",
+  "ff-dlldeps":   "Bundle DLLs",
+  "other":        "Other",
+};
+
+const TOOLCHAIN_PHASE_ORDER: LogPhaseId[] = [
+  "tc-download", "tc-extract", "tc-keyring", "tc-syncdb", "tc-install", "tc-verify",
+];
+const FFMPEG_PHASE_ORDER: LogPhaseId[] = [
+  "ff-download", "ff-pkgconfig", "ff-configure", "ff-compile",
+  "ff-shaders", "ff-link", "ff-strip", "ff-docs", "ff-dlldeps",
+];
+
+const TOOLCHAIN_PIPELINE: { id: LogPhaseId; label: string; short: string }[] = [
+  { id: "tc-download", label: "Download MSYS2",      short: "Download" },
+  { id: "tc-extract",  label: "Extract & Setup",      short: "Extract"  },
+  { id: "tc-keyring",  label: "Initialize Keyring",   short: "Keyring"  },
+  { id: "tc-syncdb",   label: "Sync Package DBs",     short: "Sync DBs" },
+  { id: "tc-install",  label: "Install Packages",     short: "Install"  },
+  { id: "tc-verify",   label: "Verify Compiler",      short: "Verify"   },
+];
+const FFMPEG_PIPELINE: { id: LogPhaseId; label: string; short: string }[] = [
+  { id: "ff-download",  label: "Download FFmpeg",     short: "Download"  },
+  { id: "ff-pkgconfig", label: "Install Libraries",   short: "Libraries" },
+  { id: "ff-configure", label: "Configure",           short: "Configure" },
+  { id: "ff-compile",   label: "Compile",             short: "Compile"   },
+  { id: "ff-shaders",   label: "Shaders & Resources", short: "Shaders"   },
+  { id: "ff-link",      label: "Link & Archive",      short: "Link"      },
+  { id: "ff-strip",     label: "Strip Symbols",       short: "Strip"     },
+  { id: "ff-docs",      label: "Documentation",       short: "Docs"      },
+  { id: "ff-dlldeps",   label: "Bundle DLLs",         short: "DLLs"      },
+];
+
+
+// parseLogEntry: context tells us which detector to use
+function parseLogEntry(entry: SecurityLogEntry, context: "toolchain" | "ffmpeg"): ParsedLogEntry {
+  const msg = entry.message;
+  const phase = context === "toolchain" ? detectToolchainPhase(msg) : detectFfmpegPhase(msg);
+  const parsed: ParsedLogEntry = { ...entry, phase };
+  const compileMatch = msg.match(/^(CC|CXX|HOSTCC|X86ASM|WINDRES|STRIP|AR|LDXX|LD|HOSTLD|GEN|BIN2C|GZIP|MINIFY|GLSLC|POD|HTML|TXT|TEXI|GENTEXI)\s+(.+)$/);
+  if (compileMatch) { parsed.compileOp = compileMatch[1]; parsed.compileTarget = compileMatch[2]; }
+  if (msg.startsWith("dependency ")) {
+    const copiedMatch = msg.match(/^dependency (.+?): copied OK/);
+    const skippedMatch = msg.match(/^dependency (.+?): already copied/);
+    const foundMatch = msg.match(/^dependency (.+?): found at/);
+    const systemMatch = msg.match(/^dependency (.+?): not in MSYS2 bin/);
+    if (copiedMatch) { parsed.dllDep = copiedMatch[1]; parsed.dllAction = "copied"; }
+    else if (skippedMatch) { parsed.dllDep = skippedMatch[1]; parsed.dllAction = "skipped"; }
+    else if (foundMatch) { parsed.dllDep = foundMatch[1]; parsed.dllAction = "found"; }
+    else if (systemMatch) { parsed.dllDep = systemMatch[1]; parsed.dllAction = "system"; parsed.isSystemDll = true; }
+  }
+  if (msg.startsWith("PE DLL dependencies for ")) {
+    const m = msg.match(/^PE DLL dependencies for (.+?):/);
+    if (m) parsed.dllName = m[1];
+  }
+  if (msg.startsWith("Approved FFmpeg build completed") || msg.startsWith("Approved FFmpeg build started") ||
+      msg.startsWith("Approved private MSYS2 environment is ready") || msg.startsWith("Approved private MSYS2 preparation started")) {
+    parsed.isFinalStatus = true;
+  }
+  return parsed;
+}
+
+function buildPhaseGroups(entries: ParsedLogEntry[], phaseOrder: LogPhaseId[]): LogPhaseGroup[] {
+  const phaseMap = new Map<LogPhaseId, LogPhaseGroup>();
+  for (const entry of entries) {
+    if (!phaseMap.has(entry.phase)) {
+      phaseMap.set(entry.phase, {
+        phase: entry.phase, label: PHASE_LABELS[entry.phase] ?? entry.phase, entries: [],
+        compileCount: 0, assembleCount: 0, copiedDlls: [],
+        systemDllCount: 0, skippedDllCount: 0,
+        startTime: entry.timestamp, endTime: entry.timestamp,
+      });
+    }
+    const group = phaseMap.get(entry.phase)!;
+    group.entries.push(entry);
+    group.endTime = entry.timestamp;
+    if (entry.compileOp === "CC" || entry.compileOp === "CXX" || entry.compileOp === "HOSTCC") group.compileCount++;
+    if (entry.compileOp === "X86ASM") group.assembleCount++;
+    if (entry.dllAction === "copied" && entry.dllDep) group.copiedDlls.push(entry.dllDep);
+    if (entry.dllAction === "system") group.systemDllCount++;
+    if (entry.dllAction === "skipped") group.skippedDllCount++;
+  }
+  return phaseOrder.filter((phase) => phaseMap.has(phase)).map((phase) => phaseMap.get(phase)!);
+}
+
+function computeProgress(entries: SecurityLogEntry[], approvedActionStatus: string, context: "toolchain" | "ffmpeg"): LiveProgress {
+  const phaseOrder = context === "toolchain" ? TOOLCHAIN_PHASE_ORDER : FFMPEG_PHASE_ORDER;
+  const phaseSet = new Set<LogPhaseId>(phaseOrder);
+
+  if (entries.length === 0) {
+    return { currentPhaseLabel: null, currentPhaseId: null, compileCount: 0, assembleCount: 0, copiedDllCount: 0, lastMessage: null, isComplete: false, hasFailed: false };
+  }
+
+  const parsed = entries.map((e) => parseLogEntry(e, context));
+  const groups = buildPhaseGroups(parsed, phaseOrder);
+
+  // isComplete: prefer the backend status signal; fall back to sentinel log messages.
+  // Using approvedActionStatus === "completed" is the most reliable signal because it
+  // does not depend on any particular log message string.
+  const isComplete =
+    approvedActionStatus === "completed" ||
+    (context === "ffmpeg"
+      ? parsed.some((e) => e.message.startsWith("Approved FFmpeg build completed"))
+      : parsed.some((e) => e.message.startsWith("Approved private MSYS2 environment is ready")));
+
+  // hasFailed: only true when NOT complete. An error-level log emitted before the
+  // final success banner (e.g. a recoverable warning escalated to error level) must
+  // not override a confirmed completion.
+  const hasFailed = !isComplete && (parsed.some((e) => e.level === "error") || approvedActionStatus === "failed");
+
+  // currentPhaseId: scan backward for the last entry whose phase is a known pipeline
+  // phase. Skip "other" and skip completion-sentinel messages so the indicator does
+  // not snap back to "Download" when the final banner arrives at the end of a build.
+  const COMPLETION_PREFIXES = context === "ffmpeg"
+    ? ["Approved FFmpeg build completed", "Artifact report"]
+    : ["Approved private MSYS2 environment is ready", "Approved private MSYS2 preparation started"];
+
+  let currentPhaseId: LogPhaseId | null = null;
+  for (let i = parsed.length - 1; i >= 0; i--) {
+    const e = parsed[i];
+    if (!phaseSet.has(e.phase)) continue;
+    if (COMPLETION_PREFIXES.some((p) => e.message.startsWith(p))) continue;
+    currentPhaseId = e.phase;
+    break;
+  }
+  // Fallback: last group whose phase is in the pipeline
+  if (currentPhaseId === null && groups.length > 0) {
+    for (let i = groups.length - 1; i >= 0; i--) {
+      if (phaseSet.has(groups[i].phase)) { currentPhaseId = groups[i].phase; break; }
+    }
+  }
+
+  const currentPhaseLabel = currentPhaseId ? (PHASE_LABELS[currentPhaseId] ?? null) : null;
+
+  // lastMessage: walk back to find a non-noisy message so DLL-bundling chatter
+  // does not drown out the real last meaningful progress line.
+  const NOISY_PREFIXES = ["dependency ", "PE DLL dependencies for ", "DLL lookup index"];
+  let lastMessage: string | null = null;
+  for (let i = parsed.length - 1; i >= 0; i--) {
+    const msg = parsed[i].message;
+    if (!NOISY_PREFIXES.some((p) => msg.startsWith(p))) { lastMessage = msg; break; }
+  }
+
+  const totalCompile = groups.reduce((s, g) => s + g.compileCount, 0);
+  const totalAssemble = groups.reduce((s, g) => s + g.assembleCount, 0);
+  const totalCopied = groups.reduce((s, g) => s + g.copiedDlls.length, 0);
+
+  return {
+    currentPhaseLabel,
+    currentPhaseId,
+    compileCount: totalCompile,
+    assembleCount: totalAssemble,
+    copiedDllCount: totalCopied,
+    lastMessage,
+    isComplete,
+    hasFailed,
+    phaseGroups: groups,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function BuilderApp() {
   const [activeTabId, setActiveTabId] = useState<TabId>("source");
   const hasLoadedSavedState = useRef(false);
@@ -116,13 +496,24 @@ function BuilderApp() {
   const [ffmpegBuildPlanReview, setFfmpegBuildPlanReview] = useState<FfmpegBuildPlanReview | null>(null);
   const [approvedActionStatus, setApprovedActionStatus] = useState("idle");
   const [approvedActionPhase, setApprovedActionPhase] = useState<"toolchain" | "ffmpeg" | null>(null);
-  const [securityLogEntries, setSecurityLogEntries] = useState<SecurityLogEntry[]>([]);
+  const [toolchainLogEntries, setToolchainLogEntries] = useState<SecurityLogEntry[]>([]);
+  const [ffmpegLogEntries, setFfmpegLogEntries] = useState<SecurityLogEntry[]>([]);
   const [buildResult, setBuildResult] = useState<BuildResult | null>(null);
   const [buildResultError, setBuildResultError] = useState("");
+
+  // Keep a ref to the current phase so the EventsOn callback (closed over once) can route correctly
+  const approvedActionPhaseRef = useRef<"toolchain" | "ffmpeg" | null>(null);
+  approvedActionPhaseRef.current = approvedActionPhase;
 
   const canCancelApprovedAction = useMemo(() => approvedActionStatus !== "idle" && approvedActionStatus !== "completed" && approvedActionStatus !== "failed", [approvedActionStatus]);
   const canCancelToolchain = canCancelApprovedAction && approvedActionPhase === "toolchain";
   const canCancelFfmpeg = canCancelApprovedAction && approvedActionPhase === "ffmpeg";
+
+  const toolchainProgress = useMemo<LiveProgress>(() => computeProgress(toolchainLogEntries, approvedActionStatus, "toolchain"), [toolchainLogEntries, approvedActionStatus]);
+  const ffmpegProgress = useMemo<LiveProgress>(() => computeProgress(ffmpegLogEntries, approvedActionStatus, "ffmpeg"), [ffmpegLogEntries, approvedActionStatus]);
+
+  // Combined log for the Logs tab — label each section
+  const securityLogEntries = useMemo(() => [...toolchainLogEntries, ...ffmpegLogEntries], [toolchainLogEntries, ffmpegLogEntries]);
 
   useEffect(() => {
     GetInitialApplicationState().then((nextInitialApplicationState: InitialApplicationState) => {
@@ -142,8 +533,19 @@ function BuilderApp() {
       restoreWindowState();
     });
 
+    const makeEntry = (payload: SecurityLogPayload): SecurityLogEntry => ({
+      level: normalizeLogLevel(payload.level),
+      message: payload.message,
+      timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
+    });
+
     const removeSecurityLogListener = EventsOn("security-log", (payload: SecurityLogPayload) => {
-      setSecurityLogEntries((currentEntries) => [...currentEntries, { level: normalizeLogLevel(payload.level), message: payload.message, timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
+      const entry = makeEntry(payload);
+      if (approvedActionPhaseRef.current === "ffmpeg") {
+        setFfmpegLogEntries((prev) => [...prev, entry]);
+      } else {
+        setToolchainLogEntries((prev) => [...prev, entry]);
+      }
     });
     const removeStatusListener = EventsOn("approved-action-status", (payload: ApprovedActionStatusPayload) => {
       setApprovedActionStatus(payload.status);
@@ -286,7 +688,7 @@ function BuilderApp() {
       return;
     }
     const reviewToRun = toolchainPreparationPlanReview;
-    setSecurityLogEntries([]);
+    setToolchainLogEntries([]);
     setApprovedActionPhase("toolchain");
     setApprovedActionStatus("starting");
     try {
@@ -295,7 +697,7 @@ function BuilderApp() {
       setActiveTabId("prep");
     } catch (error) {
       setApprovedActionStatus("failed");
-      setSecurityLogEntries((currentEntries) => [...currentEntries, { level: "error", message: error instanceof Error ? error.message : String(error), timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
+      setToolchainLogEntries((prev) => [...prev, { level: "error", message: error instanceof Error ? error.message : String(error), timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
     }
   }
 
@@ -304,7 +706,7 @@ function BuilderApp() {
       return;
     }
     const reviewToRun = ffmpegBuildPlanReview;
-    setSecurityLogEntries([]);
+    setFfmpegLogEntries([]);
     setApprovedActionPhase("ffmpeg");
     setApprovedActionStatus("starting");
     try {
@@ -313,7 +715,7 @@ function BuilderApp() {
       setActiveTabId("buildFfmpeg");
     } catch (error) {
       setApprovedActionStatus("failed");
-      setSecurityLogEntries((currentEntries) => [...currentEntries, { level: "error", message: error instanceof Error ? error.message : String(error), timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
+      setFfmpegLogEntries((prev) => [...prev, { level: "error", message: error instanceof Error ? error.message : String(error), timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
     }
   }
 
@@ -388,8 +790,7 @@ function BuilderApp() {
   return (
     <main className="app-shell">
       <aside className="left-nav" aria-label="Build stages">
-        <div className="left-nav__brand">CustomFFmpeg</div>
-        <p className="left-nav__rule">Frontend reviews. Backend confirms.</p>
+        <div className="left-nav__brand">Promptful Custom FFmpeg Builder</div>
         <nav className="left-nav__items">
           {tabItems.map((tabItem) => (
             <button className={`left-nav__item ${activeTabId === tabItem.id ? "left-nav__item--active" : ""}`} key={tabItem.id} type="button" onClick={() => setActiveTabId(tabItem.id)}>
@@ -398,6 +799,12 @@ function BuilderApp() {
             </button>
           ))}
         </nav>
+        <div className="left-nav__bottom">
+          <button className={`left-nav__item left-nav__item--about ${activeTabId === "about" ? "left-nav__item--active" : ""}`} type="button" onClick={() => setActiveTabId("about")}>
+            <span className="left-nav__label">About</span>
+            <span className="left-nav__description">What this app is</span>
+          </button>
+        </div>
       </aside>
 
       <div className="tab-right-column">
@@ -406,13 +813,9 @@ function BuilderApp() {
           <section className="tab-page">
             <PageHeader title="Source" text="Choose the two files the app will download. Nothing installs or builds from this tab." />
 
-            <InfoBox title="Plain explanation">
+            <InfoBox>
               <p>You need one MSYS2 archive and one FFmpeg source archive. MSYS2 is the private build toolbox. FFmpeg source is the code that will be compiled.</p>
               <p>For MSYS2, use the official .sig signature file instead of hunting for a hash. The app verifies the signature internally and still calculates SHA-256 for the log.</p>
-            </InfoBox>
-
-            <InfoBox title="Important file rule">
-              <p>Use the MSYS2 archive URL in the archive field and the matching .sig URL in the signature field. A .sig file is not readable text; do not paste its contents into any field.</p>
             </InfoBox>
 
             <label className="field">
@@ -439,7 +842,7 @@ function BuilderApp() {
 
               <label className="field">
                 <span className="field__label">MSYS2 signature URL</span>
-                <span className="field__hint">Use the matching <code>.sig</code> file. The app downloads the MSYS2 public signing key, checks its fingerprint, and verifies the archive internally. You do not need to install GPG manually.</span>
+                <span className="field__hint">Use the matching <code>.sig</code> file. The app downloads the MSYS2 public signing key, checks its fingerprint, and verifies the archive internally. You do not need to install GPG manually. A <code>.sig</code> file is not readable text — do not paste its file contents into this field; paste the URL to the <code>.sig</code> file.</span>
                 <input className="field__input" value={buildToolSettings.msys2ArchiveSignatureUrl} onChange={(event) => updateBuildToolSettings({ msys2ArchiveSignatureUrl: event.target.value })} placeholder="https://repo.msys2.org/distrib/msys2-x86_64-latest.tar.zst.sig" />
               </label>
               <label className="field">
@@ -481,7 +884,7 @@ function BuilderApp() {
           <section className="tab-page">
             <PageHeader title="Build Tools" text="Choose the private Windows build tools installed inside the selected workspace." />
 
-            <InfoBox title="Plain explanation">
+            <InfoBox>
               <p>This page chooses the tools used to compile FFmpeg. They are installed only into the workspace copy of MSYS2.</p>
               <p>In detail: these are MSYS2 pacman packages such as compilers, make, pkg-config, CMake, Ninja, NASM, and YASM. Codec libraries are selected in the Library tab, not here.</p>
             </InfoBox>
@@ -506,7 +909,7 @@ function BuilderApp() {
         {activeTabId === "library" && (
           <section className="tab-page">
             <PageHeader title="FFmpeg Libraries" text="Show what FFmpeg already includes, then choose extra external libraries." />
-            <InfoBox title="Plain explanation">
+            <InfoBox>
               <p>The checked items at the top are FFmpeg's own built-in parts. They are shown because an empty-looking Library page can feel suspicious.</p>
               <p>External libraries are different: FFmpeg does not use them by default. Selecting one adds packages, configure flags, and sometimes license obligations.</p>
             </InfoBox>
@@ -522,15 +925,19 @@ function BuilderApp() {
         {activeTabId === "options" && (
           <section className="tab-page">
             <PageHeader title="FFmpeg Options" text="Choose the general build settings that will be combined with the selected libraries." />
-            <InfoBox title="Plain explanation">
+            <InfoBox>
               <p>This page controls how FFmpeg is built after the source and libraries are chosen.</p>
               <p>Use the defaults for a first build. Change license boundary only when the selected libraries require it, and leave advanced flags empty unless a needed option is missing from the checkboxes.</p>
             </InfoBox>
             <div className="field field--readonly">
               <span className="field__label">License boundary</span>
-              <span className="field__hint">This is now automatic. It follows the selected libraries, so the user cannot accidentally choose LGPL while a GPL or nonfree library is selected.</span>
-              <div className="readonly-value">{licenseBoundaryLabel(ffmpegBuildSettings.licenseProfileName)}</div>
-              <span className="field__hint">No GPL/nonfree libraries selected → LGPL local. GPL libraries selected → GPL local. Nonfree libraries or <code>--enable-nonfree</code> → nonfree local.</span>
+              <span className="field__hint">License is determined automatically by the libraries you select. It cannot be set manually, so an LGPL-only build cannot accidentally include a GPL or nonfree library.</span>
+              <div className="readonly-value"><strong>{licenseBoundaryLabel(ffmpegBuildSettings.licenseProfileName)}</strong></div>
+              <span className="field__hint">
+                No GPL/nonfree libraries selected → <strong>LGPL local</strong>.<br />
+                GPL libraries selected → <strong>GPL local</strong>.<br />
+                Nonfree libraries or <code>--enable-nonfree</code> → <strong>Nonfree local</strong>.
+              </span>
             </div>
             <label className="field">
               <span className="field__label">Build jobs</span>
@@ -549,10 +956,7 @@ function BuilderApp() {
         {activeTabId === "prep" && (
           <section className="tab-page">
             <PageHeader title="Prep" text="Review and run the private build tools plan before choosing FFmpeg libraries." />
-            <InfoBox title="Why this step exists">
-              <p>Installing or reinstalling build tools can reset FFmpeg plans. This page keeps the build-tools plan separate, so the FFmpeg library and option choices come after the toolchain is ready.</p>
-            </InfoBox>
-            {toolchainPreparationPlanReview ? (
+            {toolchainPreparationPlanReview && (
               <ApprovalPanel
                 title="Build tools plan"
                 actionName={toolchainPreparationPlanReview.plan.actionName}
@@ -563,23 +967,20 @@ function BuilderApp() {
                 isExecutable={toolchainPreparationPlanReview.plan.isExecutable}
                 onRequestBackendConfirmation={approveToolchainPreparationPlan}
               />
-            ) : <EmptyReview text="No build tools plan has been added yet. Go to Build Tools and press Add Build Plan and Continue to Prep." />}
-            {!toolchainPreparationPlanReview && (
-              <>
-                <div className="status-box">
-                  <span className="status-box__label">Current build tools status</span>
-                  <strong className="status-box__value">{approvedActionPhase === "toolchain" ? approvedActionStatus : "idle"}</strong>
-                </div>
-                <button className="button button--danger" type="button" disabled={!canCancelToolchain} onClick={cancelApprovedAction}>Cancel Running Actions</button>
-                {canCancelToolchain && securityLogEntries.length > 0 && (
-                  <div className="recent-log">
-                    <span className="recent-log__label">Recent activity</span>
-                    {securityLogEntries.slice(-3).map((entry, index) => (
-                      <p className={`log-list__entry log-list__entry--${entry.level}`} key={`prep-recent-${index}`}><strong>{entry.level}</strong><time className="log-list__time">{entry.timestamp}</time><span>{entry.message}</span></p>
-                    ))}
-                  </div>
-                )}
-              </>
+            )}
+            {!toolchainPreparationPlanReview && toolchainLogEntries.length === 0 && (
+              <EmptyReview text="No build tools plan has been added yet. Go to Build Tools and press Add Build Plan and Continue to Prep." />
+            )}
+            {!toolchainPreparationPlanReview && toolchainLogEntries.length > 0 && (
+              <LiveBuildProgress
+                isActive={approvedActionPhase === "toolchain"}
+                approvedActionStatus={approvedActionStatus}
+                progress={toolchainProgress}
+                pipeline={TOOLCHAIN_PIPELINE}
+                completionLabel="Toolchain"
+                onCancel={cancelApprovedAction}
+                canCancel={canCancelToolchain}
+              />
             )}
           </section>
         )}
@@ -587,7 +988,7 @@ function BuilderApp() {
         {activeTabId === "buildFfmpeg" && (
           <section className="tab-page">
             <PageHeader title="Build FFmpeg" text="Review the FFmpeg plan, request backend confirmation, and watch the build status." />
-            {ffmpegBuildPlanReview ? (
+            {ffmpegBuildPlanReview && (
               <ApprovalPanel
                 title="FFmpeg build plan"
                 actionName={ffmpegBuildPlanReview.plan.actionName}
@@ -605,23 +1006,20 @@ function BuilderApp() {
                 finalConfigureFlags={ffmpegBuildPlanReview.plan.configureFlags}
                 onRequestBackendConfirmation={approveFfmpegBuildPlan}
               />
-            ) : <EmptyReview text="No FFmpeg plan has been reviewed yet. Go to FFmpeg Options and press Review the Plan." />}
-            {!ffmpegBuildPlanReview && (
-              <>
-                <div className="status-box">
-                  <span className="status-box__label">Current FFmpeg build status</span>
-                  <strong className="status-box__value">{approvedActionPhase === "ffmpeg" ? approvedActionStatus : "idle"}</strong>
-                </div>
-                <button className="button button--danger" type="button" disabled={!canCancelFfmpeg} onClick={cancelApprovedAction}>Cancel Running Actions</button>
-                {canCancelFfmpeg && securityLogEntries.length > 0 && (
-                  <div className="recent-log">
-                    <span className="recent-log__label">Recent activity</span>
-                    {securityLogEntries.slice(-3).map((entry, index) => (
-                      <p className={`log-list__entry log-list__entry--${entry.level}`} key={`ffmpeg-recent-${index}`}><strong>{entry.level}</strong><time className="log-list__time">{entry.timestamp}</time><span>{entry.message}</span></p>
-                    ))}
-                  </div>
-                )}
-              </>
+            )}
+            {!ffmpegBuildPlanReview && ffmpegLogEntries.length === 0 && (
+              <EmptyReview text="No FFmpeg plan has been reviewed yet. Go to FFmpeg Options and press Review the Plan." />
+            )}
+            {!ffmpegBuildPlanReview && ffmpegLogEntries.length > 0 && (
+              <LiveBuildProgress
+                isActive={approvedActionPhase === "ffmpeg"}
+                approvedActionStatus={approvedActionStatus}
+                progress={ffmpegProgress}
+                pipeline={FFMPEG_PIPELINE}
+                completionLabel="FFmpeg build"
+                onCancel={cancelApprovedAction}
+                canCancel={canCancelFfmpeg}
+              />
             )}
           </section>
         )}
@@ -636,10 +1034,66 @@ function BuilderApp() {
         {activeTabId === "logs" && (
           <section className="tab-page">
             <PageHeader title="Logs" text="Security and progress messages from backend actions." />
-            <div className="log-list" aria-live="polite">
-              {securityLogEntries.length === 0 ? <p className="empty-text">No approved action has run yet.</p> : [...securityLogEntries].reverse().map((entry, index) => (
-                <p className={`log-list__entry log-list__entry--${entry.level}`} key={`${entry.level}-${index}-${entry.message}`}><strong>{entry.level}</strong><time className="log-list__time">{entry.timestamp}</time><span>{entry.message}</span></p>
-              ))}
+            {toolchainLogEntries.length > 0 && (
+              <section className="smart-log__section">
+                <h2 className="smart-log__section-title">Toolchain / Prep</h2>
+                <SmartLogViewer entries={toolchainLogEntries} context="toolchain" />
+              </section>
+            )}
+            {ffmpegLogEntries.length > 0 && (
+              <section className="smart-log__section">
+                <h2 className="smart-log__section-title">FFmpeg Build</h2>
+                <SmartLogViewer entries={ffmpegLogEntries} context="ffmpeg" />
+              </section>
+            )}
+            {toolchainLogEntries.length === 0 && ffmpegLogEntries.length === 0 && (
+              <p className="empty-text">No approved action has run yet.</p>
+            )}
+          </section>
+        )}
+
+        {activeTabId === "about" && (
+          <section className="tab-page">
+            <PageHeader title="About" text="A simple summary of what this app does and how it keeps the build under your control." />
+
+            <section className="about-version-card" aria-label="Application version">
+              <span className="about-version-card__label">Current version</span>
+              <strong className="about-version-card__value">Version {__APP_VERSION__}</strong>
+            </section>
+
+            <InfoBox title="What this app does">
+              <p>Promptful Custom FFmpeg Builder helps you build FFmpeg on your own Windows computer.</p>
+              <p>You choose a workspace folder. The app downloads the MSYS2 build tools and the FFmpeg source code, checks the downloaded files, unpacks them in that folder, and runs the build there.</p>
+              <p>When the build finishes, the app puts the finished FFmpeg files in the result folder and writes a report with the selected libraries, options, file sizes, and SHA-256 hashes.</p>
+            </InfoBox>
+
+            <InfoBox title="What this app does not include">
+              <p>The app does not come with FFmpeg already built.</p>
+              <p>It does not include FFmpeg source code, codec libraries, MSYS2 packages, or hidden build output. Those files are downloaded only after you review and approve the plan.</p>
+            </InfoBox>
+
+            <InfoBox title="How approval works">
+              <p>Before a download, extraction, install, build command, or workspace deletion runs, the app shows you what it plans to do.</p>
+              <p>The backend checks that the approved plan is still the same plan. Then it opens a normal system confirmation dialog. The action runs only if you approve that dialog.</p>
+              <p>The app keeps security events in the Logs tab and in the workspace <code>logs/</code> folder.</p>
+            </InfoBox>
+
+            <InfoBox title="How downloads are checked">
+              <p>The app uses HTTPS downloads from the allowed official hosts.</p>
+              <p>MSYS2 archives are checked with their matching <code>.sig</code> signature. FFmpeg source archives are checked with their matching <code>.asc</code> signature. SHA-256 hashes are also recorded in the logs and build report.</p>
+              <p>Archives are unpacked only inside the workspace. Unsafe archive entries, such as paths that try to escape the workspace or links from downloaded archives, are blocked.</p>
+            </InfoBox>
+
+            <InfoBox title="FFmpeg license">
+              <p>The license for your build depends on the libraries you choose.</p>
+              <p>Built-in FFmpeg parts usually keep the build in the LGPL boundary. GPL libraries make the build GPL. Nonfree libraries make the build nonfree. The FFmpeg Options page shows the current license boundary before you build.</p>
+              <p>This app does not give legal advice. Check the FFmpeg license information and the licenses for the libraries you select before sharing a build.</p>
+            </InfoBox>
+
+            <div className="about-links">
+              <ExternalLinkButton label="FFmpeg official website" url="https://ffmpeg.org" onOpen={openInUserBrowser} />
+              <ExternalLinkButton label="FFmpeg license documentation" url="https://ffmpeg.org/legal.html" onOpen={openInUserBrowser} />
+              <ExternalLinkButton label="MSYS2 official website" url="https://www.msys2.org" onOpen={openInUserBrowser} />
             </div>
           </section>
         )}
@@ -654,8 +1108,11 @@ function BuilderApp() {
             <button className="button" type="button" onClick={restoreRecommendedToolchainPackages}>Restore Recommended List</button>
           </>
         )}
+        {activeTabId === "prep" && toolchainPreparationPlanReview && (
+          <button className="button button--primary" type="button" disabled={!toolchainPreparationPlanReview.plan.isExecutable} onClick={approveToolchainPreparationPlan}>Request Backend Confirmation</button>
+        )}
         {activeTabId === "prep" && (
-          <button className="button button--primary" type="button" onClick={() => setActiveTabId("library")}>Choose FFmpeg Libraries</button>
+          <button className="button" type="button" onClick={() => setActiveTabId("library")}>Choose FFmpeg Libraries</button>
         )}
         {activeTabId === "library" && (
           <button className="button button--primary" type="button" onClick={() => setActiveTabId("options")}>Continue to FFmpeg Options</button>
@@ -666,9 +1123,6 @@ function BuilderApp() {
             <button className="button" type="button" onClick={restoreRecommendedExtraFlags}>Restore Recommended Options</button>
           </>
         )}
-        {activeTabId === "prep" && toolchainPreparationPlanReview && (
-          <button className="button button--primary" type="button" disabled={!toolchainPreparationPlanReview.plan.isExecutable} onClick={approveToolchainPreparationPlan}>Request Backend Confirmation</button>
-        )}
         {activeTabId === "buildFfmpeg" && ffmpegBuildPlanReview && (
           <button className="button button--primary" type="button" disabled={!ffmpegBuildPlanReview.plan.isExecutable} onClick={approveFfmpegBuildPlan}>Request Backend Confirmation</button>
         )}
@@ -677,6 +1131,411 @@ function BuilderApp() {
     </main>
   );
 }
+
+// ─── Live Build Progress (shown on Build FFmpeg and Prep tabs while running) ──
+
+function LiveBuildProgress(props: {
+  isActive: boolean;
+  approvedActionStatus: string;
+  progress: LiveProgress;
+  pipeline: { id: LogPhaseId; label: string; short: string }[];
+  completionLabel: string;
+  onCancel: () => void;
+  canCancel: boolean;
+}) {
+  const { isActive, approvedActionStatus, progress, pipeline, completionLabel, onCancel, canCancel } = props;
+
+  const currentPhaseId = progress.currentPhaseId;
+  const pipelineIds = pipeline.map((s) => s.id);
+  const currentPipelineIndex = currentPhaseId ? pipelineIds.indexOf(currentPhaseId) : -1;
+
+  // When complete: every step is done.
+  // When running: a step is done if it appears before the current phase in the
+  // pipeline AND we have seen at least one log entry for it.  Using pipeline
+  // position (not just "was seen") prevents a stale phase that appears late in
+  // the log from being marked done out of order.
+  const seenPhaseIds = new Set(
+    (progress.phaseGroups ?? []).map((g) => g.phase).filter((p) => pipelineIds.includes(p))
+  );
+  const completedPhaseIds = new Set<LogPhaseId>(
+    progress.isComplete
+      ? pipelineIds
+      : pipelineIds.filter((id, idx) => seenPhaseIds.has(id) && idx < currentPipelineIndex)
+  );
+
+  const currentGroup = progress.phaseGroups?.find((g) => g.phase === currentPhaseId);
+
+  // Overall state
+  const isIdle = !isActive && approvedActionStatus === "idle";
+  const isComplete = progress.isComplete;
+  const hasFailed = progress.hasFailed && !isComplete;
+
+  // lastMessage is already filtered by computeProgress (noisy DLL lines removed)
+  const lastMeaningful = progress.lastMessage ?? null;
+
+  return (
+    <div className={`live-progress ${isComplete ? "live-progress--done" : ""} ${hasFailed ? "live-progress--failed" : ""} ${isActive && !isComplete && !hasFailed ? "live-progress--running" : ""}`}>
+      {/* Header row */}
+      <div className="live-progress__header">
+        <span className="live-progress__title">
+          {isIdle && "Waiting to start"}
+          {isActive && !isComplete && !hasFailed && (
+            <><span className="live-progress__spinner" aria-hidden="true" /> {progress.currentPhaseLabel ?? approvedActionStatus}</>
+          )}
+          {isComplete && <><span className="live-progress__check">✔</span> {completionLabel} complete</>}
+          {hasFailed && <><span className="live-progress__x">✖</span> {completionLabel} failed</>}
+        </span>
+        {isActive && !isComplete && !isIdle && (
+          <button className="button button--danger live-progress__cancel" type="button" disabled={!canCancel} onClick={onCancel}>Cancel</button>
+        )}
+      </div>
+
+      {/* Phase pipeline strip */}
+      {!isIdle && (
+        <div className="live-progress__pipeline" aria-label="Build phases">
+          {pipeline.map((step) => {
+            const isDone = completedPhaseIds.has(step.id);
+            const isCurrent = step.id === currentPhaseId && !isComplete;
+            const isPending = !isDone && !isCurrent;
+            return (
+              <div
+                key={step.id}
+                className={`live-progress__step ${isDone ? "live-progress__step--done" : ""} ${isCurrent ? "live-progress__step--current" : ""} ${isPending ? "live-progress__step--pending" : ""}`}
+                title={step.label}
+              >
+                <span className="live-progress__step-dot">{isDone ? "✓" : isCurrent ? "…" : ""}</span>
+                <span className="live-progress__step-label">{step.short}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Live counters — only while active */}
+      {isActive && !isComplete && !hasFailed && (
+        <div className="live-progress__counters">
+          {progress.compileCount > 0 && (
+            <div className="live-progress__counter">
+              <span className="live-progress__counter-value">{progress.compileCount}</span>
+              <span className="live-progress__counter-label">C files compiled</span>
+            </div>
+          )}
+          {progress.assembleCount > 0 && (
+            <div className="live-progress__counter">
+              <span className="live-progress__counter-value">{progress.assembleCount}</span>
+              <span className="live-progress__counter-label">ASM files</span>
+            </div>
+          )}
+          {progress.copiedDllCount > 0 && (
+            <div className="live-progress__counter">
+              <span className="live-progress__counter-value">{progress.copiedDllCount}</span>
+              <span className="live-progress__counter-label">DLLs bundled</span>
+            </div>
+          )}
+          {/* Show compile detail for compile phase */}
+          {currentGroup && currentGroup.phase === "ff-compile" && currentGroup.entries.length > 0 && (
+            <div className="live-progress__counter live-progress__counter--wide">
+              <span className="live-progress__counter-label">Last compiled:</span>
+              <code className="live-progress__counter-file">{currentGroup.entries[currentGroup.entries.length - 1].compileTarget?.split("/").pop()}</code>
+            </div>
+          )}
+          {/* Show package count for packages phase */}
+          {currentGroup && currentGroup.phase === "tc-install" && (
+            <div className="live-progress__counter live-progress__counter--wide">
+              <span className="live-progress__counter-label">Packages installed:</span>
+              <code className="live-progress__counter-file">{currentGroup.entries.filter((e) => e.message.startsWith("installing ") || e.message.startsWith("reinstalling ")).length}</code>
+            </div>
+          )}
+          {currentGroup && currentGroup.phase === "ff-pkgconfig" && currentGroup.entries.filter((e) => e.message.startsWith("reinstalling ") || e.message.startsWith("downgrading ")).length > 0 && (
+            <div className="live-progress__counter live-progress__counter--wide">
+              <span className="live-progress__counter-label">Packages refreshed:</span>
+              <code className="live-progress__counter-file">{currentGroup.entries.filter((e) => e.message.startsWith("reinstalling ") || e.message.startsWith("downgrading ")).length}</code>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Last meaningful log line */}
+      {isActive && !isComplete && lastMeaningful && (
+        <div className="live-progress__last-line">
+          <span className="live-progress__last-label">Last message</span>
+          <span className="live-progress__last-msg">{lastMeaningful}</span>
+        </div>
+      )}
+
+      {/* Completion summary */}
+      {isComplete && (
+        <div className="live-progress__counters">
+          {progress.compileCount > 0 && <div className="live-progress__counter"><span className="live-progress__counter-value">{progress.compileCount}</span><span className="live-progress__counter-label">C files</span></div>}
+          {progress.assembleCount > 0 && <div className="live-progress__counter"><span className="live-progress__counter-value">{progress.assembleCount}</span><span className="live-progress__counter-label">ASM files</span></div>}
+          {progress.copiedDllCount > 0 && <div className="live-progress__counter"><span className="live-progress__counter-value">{progress.copiedDllCount}</span><span className="live-progress__counter-label">DLLs bundled</span></div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Smart Log Viewer ────────────────────────────────────────────────────────
+
+function SmartLogViewer(props: { entries: SecurityLogEntry[]; context?: "toolchain" | "ffmpeg" }) {
+  const [expandedPhases, setExpandedPhases] = useState<Set<LogPhaseId>>(new Set());
+  const [showSystemDlls, setShowSystemDlls] = useState(false);
+  const [viewMode, setViewMode] = useState<"smart" | "raw">("smart");
+
+  const parsed = useMemo(() => props.entries.map((e) => parseLogEntry(e, props.context ?? "ffmpeg")), [props.entries, props.context]);
+  const phaseOrder = props.context === "toolchain" ? TOOLCHAIN_PHASE_ORDER : (props.context === "ffmpeg" ? FFMPEG_PHASE_ORDER : [...TOOLCHAIN_PHASE_ORDER, ...FFMPEG_PHASE_ORDER]);
+  const phaseGroups = useMemo(() => buildPhaseGroups(parsed, phaseOrder), [parsed]);
+
+  const finalEntry = useMemo(() => [...parsed].reverse().find((e) => e.isFinalStatus), [parsed]);
+  const errorEntries = useMemo(() => parsed.filter((e) => e.level === "error"), [parsed]);
+  const warnEntries = useMemo(() => parsed.filter((e) => e.level === "warn"), [parsed]);
+
+  const totalCompile = phaseGroups.reduce((sum, g) => sum + g.compileCount, 0);
+  const totalAssemble = phaseGroups.reduce((sum, g) => sum + g.assembleCount, 0);
+  const totalCopied = phaseGroups.reduce((sum, g) => sum + g.copiedDlls.length, 0);
+
+  function togglePhase(phase: LogPhaseId) {
+    setExpandedPhases((prev) => {
+      const next = new Set(prev);
+      if (next.has(phase)) next.delete(phase); else next.add(phase);
+      return next;
+    });
+  }
+
+  if (props.entries.length === 0) {
+    return <p className="empty-text">No approved action has run yet.</p>;
+  }
+
+  return (
+    <div className="smart-log">
+      {/* Mode switcher */}
+      <div className="smart-log__toolbar">
+        <button className={`smart-log__mode-btn ${viewMode === "smart" ? "smart-log__mode-btn--active" : ""}`} type="button" onClick={() => setViewMode("smart")}>Summary view</button>
+        <button className={`smart-log__mode-btn ${viewMode === "raw" ? "smart-log__mode-btn--active" : ""}`} type="button" onClick={() => setViewMode("raw")}>Raw log ({props.entries.length} entries)</button>
+      </div>
+
+      {viewMode === "raw" && (
+        <div className="log-list" aria-live="polite">
+          {[...props.entries].reverse().map((entry, index) => (
+            <p className={`log-list__entry log-list__entry--${entry.level}`} key={`${entry.level}-${index}-${entry.message}`}>
+              <strong>{entry.level}</strong>
+              <time className="log-list__time">{entry.timestamp}</time>
+              <span>{entry.message}</span>
+            </p>
+          ))}
+        </div>
+      )}
+
+      {viewMode === "smart" && (
+        <>
+          {/* Final status banner */}
+          {finalEntry && (
+            <div className={`smart-log__banner smart-log__banner--${finalEntry.level}`}>
+              <span className="smart-log__banner-icon">{finalEntry.level === "error" ? "✖" : "✔"}</span>
+              <span className="smart-log__banner-text">{finalEntry.message}</span>
+              <time className="smart-log__banner-time">{finalEntry.timestamp}</time>
+            </div>
+          )}
+
+          {/* Quick stats row */}
+          <div className="smart-log__stats">
+            {totalCompile > 0 && <div className="smart-log__stat"><span className="smart-log__stat-value">{totalCompile}</span><span className="smart-log__stat-label">C files compiled</span></div>}
+            {totalAssemble > 0 && <div className="smart-log__stat"><span className="smart-log__stat-value">{totalAssemble}</span><span className="smart-log__stat-label">ASM files assembled</span></div>}
+            {totalCopied > 0 && <div className="smart-log__stat"><span className="smart-log__stat-value">{totalCopied}</span><span className="smart-log__stat-label">DLLs copied</span></div>}
+            {errorEntries.length > 0 && <div className="smart-log__stat smart-log__stat--error"><span className="smart-log__stat-value">{errorEntries.length}</span><span className="smart-log__stat-label">errors</span></div>}
+            {warnEntries.length > 0 && <div className="smart-log__stat smart-log__stat--warn"><span className="smart-log__stat-value">{warnEntries.length}</span><span className="smart-log__stat-label">warnings</span></div>}
+          </div>
+
+          {/* Errors and warnings surfaced at top */}
+          {errorEntries.length > 0 && (
+            <section className="smart-log__surface smart-log__surface--error">
+              <h3 className="smart-log__surface-title">⚠ Errors</h3>
+              {errorEntries.map((e, i) => (
+                <p className="smart-log__surface-entry" key={`err-${i}`}>
+                  <time className="log-list__time">{e.timestamp}</time>
+                  <span>{e.message}</span>
+                </p>
+              ))}
+            </section>
+          )}
+          {warnEntries.length > 0 && (
+            <section className="smart-log__surface smart-log__surface--warn">
+              <h3 className="smart-log__surface-title">Compiler Warnings ({warnEntries.length})</h3>
+              <details className="smart-log__details">
+                <summary className="smart-log__details-summary">Show {warnEntries.length} warning lines</summary>
+                {warnEntries.map((e, i) => (
+                  <p className="smart-log__surface-entry" key={`warn-${i}`}>
+                    <time className="log-list__time">{e.timestamp}</time>
+                    <span>{e.message}</span>
+                  </p>
+                ))}
+              </details>
+            </section>
+          )}
+
+          {/* Phase groups */}
+          {phaseGroups.map((group) => (
+            <section className="smart-log__phase" key={group.phase}>
+              <button className="smart-log__phase-header" type="button" onClick={() => togglePhase(group.phase)}>
+                <span className="smart-log__phase-label">{group.label}</span>
+                <span className="smart-log__phase-meta">
+                  {group.phase === "ff-compile" && group.compileCount > 0 && <span className="smart-log__badge">{group.compileCount} C files</span>}
+                  {group.phase === "ff-compile" && group.assembleCount > 0 && <span className="smart-log__badge">{group.assembleCount} ASM files</span>}
+                  {group.phase === "ff-shaders" && <span className="smart-log__badge">{group.entries.length} steps</span>}
+                  {group.phase === "ff-link" && <span className="smart-log__badge">{group.entries.filter((e) => e.compileOp === "AR").length} archives + {group.entries.filter((e) => e.compileOp === "LDXX" || e.compileOp === "LD").length} linked</span>}
+                  {group.phase === "ff-strip" && <span className="smart-log__badge">{group.entries.length} stripped</span>}
+                  {group.phase === "ff-docs" && <span className="smart-log__badge">{group.entries.length} docs</span>}
+                  {(group.phase === "tc-install" || group.phase === "ff-pkgconfig") && <span className="smart-log__badge">{group.entries.filter((e) => e.message.startsWith("installing ") || e.message.startsWith("reinstalling ")).length} packages</span>}
+                  {group.phase === "ff-dlldeps" && (
+                    <>
+                      {group.copiedDlls.length > 0 && <span className="smart-log__badge smart-log__badge--ok">{group.copiedDlls.length} copied</span>}
+                      {group.skippedDllCount > 0 && <span className="smart-log__badge">{group.skippedDllCount} already present</span>}
+                      {group.systemDllCount > 0 && <span className="smart-log__badge smart-log__badge--dim">{group.systemDllCount} system DLLs (expected)</span>}
+                    </>
+                  )}
+                  {group.startTime && group.endTime && group.startTime !== group.endTime && (
+                    <span className="smart-log__time-range">{group.startTime} → {group.endTime}</span>
+                  )}
+                  {group.startTime && group.startTime === group.endTime && (
+                    <span className="smart-log__time-range">{group.startTime}</span>
+                  )}
+                </span>
+                <span className="smart-log__phase-chevron">{expandedPhases.has(group.phase) ? "▲" : "▼"}</span>
+              </button>
+
+              {expandedPhases.has(group.phase) && (
+                <div className="smart-log__phase-body">
+                  {/* Special rendering for compile phase */}
+                  {group.phase === "ff-compile" && (
+                    <>
+                      {group.compileCount + group.assembleCount > 0 && (
+                        <div className="smart-log__compile-summary">
+                          Compiled {group.compileCount} C/C++ file{group.compileCount !== 1 ? "s" : ""}{group.assembleCount > 0 ? ` and assembled ${group.assembleCount} x86 ASM file${group.assembleCount !== 1 ? "s" : ""}` : ""}.
+                        </div>
+                      )}
+                      <div className="smart-log__compile-list">
+                        {group.entries.filter((e) => e.compileOp && (e.compileOp === "CC" || e.compileOp === "CXX" || e.compileOp === "HOSTCC")).map((e, i) => (
+                          <span className="smart-log__compile-file" key={`cc-${i}`} title={e.message}>{e.compileTarget?.split("/").pop()}</span>
+                        ))}
+                      </div>
+                      {group.assembleCount > 0 && (
+                        <div className="smart-log__compile-list">
+                          {group.entries.filter((e) => e.compileOp === "X86ASM").map((e, i) => (
+                            <span className="smart-log__compile-file smart-log__compile-file--asm" key={`asm-${i}`} title={e.message}>{e.compileTarget?.split("/").pop()}</span>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* DLL deps: split into copied and system/skipped */}
+                  {group.phase === "ff-dlldeps" && (
+                    <>
+                      {group.copiedDlls.length > 0 && (
+                        <div className="smart-log__dll-section">
+                          <strong className="smart-log__dll-heading">Copied to output folder</strong>
+                          <div className="smart-log__dll-list">
+                            {group.copiedDlls.map((dll, i) => (
+                              <span className="smart-log__dll-tag smart-log__dll-tag--copied" key={`dll-${i}`}>{dll}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {group.skippedDllCount > 0 && (
+                        <p className="smart-log__dll-note">
+                          {group.skippedDllCount} DLL{group.skippedDllCount !== 1 ? "s were" : " was"} already present in the output folder and skipped.
+                        </p>
+                      )}
+                      {group.systemDllCount > 0 && (
+                        <div className="smart-log__dll-section">
+                          <button className="smart-log__toggle-btn" type="button" onClick={() => setShowSystemDlls((v) => !v)}>
+                            {showSystemDlls ? "Hide" : "Show"} {group.systemDllCount} system/static DLLs (not copied — this is expected)
+                          </button>
+                          {showSystemDlls && (
+                            <div className="smart-log__dll-list">
+                              {group.entries.filter((e) => e.dllAction === "system").map((e, i) => (
+                                <span className="smart-log__dll-tag smart-log__dll-tag--system" key={`sys-${i}`}>{e.dllDep}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Packages: show only reinstalled package names */}
+                  {group.phase === "tc-install" && (
+                    <>
+                      <div className="smart-log__pkg-list">
+                        {group.entries
+                          .filter((e) => e.message.startsWith("reinstalling "))
+                          .map((e, i) => (
+                            <span className="smart-log__pkg-tag" key={`pkg-${i}`}>{e.message.replace("reinstalling ", "").trim()}</span>
+                          ))}
+                      </div>
+                      <details className="smart-log__details">
+                        <summary className="smart-log__details-summary">Show all {group.entries.length} package log lines</summary>
+                        {group.entries.map((e, i) => (
+                          <p className={`log-list__entry log-list__entry--${e.level}`} key={`pkg-raw-${i}`}>
+                            <strong>{e.level}</strong><time className="log-list__time">{e.timestamp}</time><span>{e.message}</span>
+                          </p>
+                        ))}
+                      </details>
+                    </>
+                  )}
+
+                  {/* Configure: show notable lines (skip verbose option dump) */}
+                  {group.phase === "ff-configure" && (
+                    <>
+                      {group.entries
+                        .filter((e) =>
+                          e.message.startsWith("FFmpeg configure") ||
+                          e.message.startsWith("Starting FFmpeg configure") ||
+                          e.message.startsWith("License:") ||
+                          e.message.startsWith("C compiler") ||
+                          e.message.startsWith("C library") ||
+                          e.message.startsWith("ARCH ") ||
+                          e.message.startsWith("threading") ||
+                          e.message.startsWith("static ") ||
+                          e.message.startsWith("shared ") ||
+                          e.message.startsWith("x86 assembler") ||
+                          e.message.startsWith("Running approved")
+                        )
+                        .map((e, i) => (
+                          <p className={`log-list__entry log-list__entry--${e.level}`} key={`cfg-key-${i}`}>
+                            <strong>{e.level}</strong><time className="log-list__time">{e.timestamp}</time><span>{e.message}</span>
+                          </p>
+                        ))}
+                      <details className="smart-log__details">
+                        <summary className="smart-log__details-summary">Show all {group.entries.length} configure lines (enabled codecs, protocols, etc.)</summary>
+                        {group.entries.map((e, i) => (
+                          <p className={`log-list__entry log-list__entry--${e.level}`} key={`cfg-raw-${i}`}>
+                            <strong>{e.level}</strong><time className="log-list__time">{e.timestamp}</time><span>{e.message}</span>
+                          </p>
+                        ))}
+                      </details>
+                    </>
+                  )}
+
+                  {/* All other phases: show full raw entries */}
+                  {group.phase !== "ff-compile" && group.phase !== "ff-dlldeps" && group.phase !== "tc-install" && group.phase !== "ff-configure" && (
+                    group.entries.map((e, i) => (
+                      <p className={`log-list__entry log-list__entry--${e.level}`} key={`${group.phase}-${i}`}>
+                        <strong>{e.level}</strong><time className="log-list__time">{e.timestamp}</time><span>{e.message}</span>
+                      </p>
+                    ))
+                  )}
+                </div>
+              )}
+            </section>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── End Smart Log Viewer ────────────────────────────────────────────────────
 
 function ResultPanel(props: { result: BuildResult | null; errorText: string; onRefresh: () => Promise<void>; onOpenFolder: () => Promise<void> }) {
   const result = props.result;
@@ -745,10 +1604,10 @@ function PageHeader(props: { title: string; text: string }) {
   );
 }
 
-function InfoBox(props: { title: string; children: React.ReactNode }) {
+function InfoBox(props: { title?: string; children: React.ReactNode }) {
   return (
     <section className="info-box">
-      <h2 className="info-box__title">{props.title}</h2>
+      {props.title && <h2 className="info-box__title">{props.title}</h2>}
       <div className="info-box__body">{props.children}</div>
     </section>
   );
@@ -977,7 +1836,7 @@ const libraryPresets: LibraryPreset[] = [
     displayName: "Full",
     plainExplanation: "Selects the broadest set this app can plan without selecting mutually exclusive alternatives together.",
     technicalExplanation: "Includes editor features plus disc/device input, streaming/network protocols, OCR, OpenSSL TLS, and FDK AAC. GnuTLS is left unchecked only because FFmpeg cannot enable GnuTLS and OpenSSL at the same time.",
-    libraryIds: [...baseIncludedLibraryIds, "x264", "x265", "libvpx", "aom", "svt-av1", "rav1e", "dav1d", "openh264", "xavs2", "libjxl", "openjpeg", "webp", "png", "zimg", "libplacebo", "vmaf", "frei0r", "rubberband", "opus", "vorbis", "mp3lame", "twolame", "soxr", "speex", "gsm", "ilbc", "opencore-amr", "vo-amrwbenc", "fdk-aac", "freetype", "fontconfig", "fribidi", "harfbuzz", "ass", "bluray", "cdio", "modplug", "openal", "sdl2", "openssl", "srt", "ssh", "zmq", "rist", "xml2", "tesseract"],
+    libraryIds: [...baseIncludedLibraryIds, "x264", "x265", "libvpx", "aom", "svt-av1", "rav1e", "dav1d", "openh264", "libjxl", "openjpeg", "webp", "png", "zimg", "libplacebo", "vmaf", "frei0r", "rubberband", "opus", "vorbis", "mp3lame", "twolame", "soxr", "speex", "gsm", "ilbc", "opencore-amr", "vo-amrwbenc", "fdk-aac", "freetype", "fontconfig", "fribidi", "harfbuzz", "ass", "bluray", "cdio", "modplug", "openal", "sdl2", "openssl", "srt", "ssh", "zmq", "rist", "xml2", "tesseract"],
   },
 ];
 
@@ -1056,7 +1915,7 @@ function normalizeLogLevel(value: string): "info" | "warn" | "error" {
 
 
 function isValidTabId(value: unknown): value is TabId {
-  return value === "source" || value === "buildTools" || value === "prep" || value === "library" || value === "options" || value === "buildFfmpeg" || value === "result" || value === "logs";
+  return value === "source" || value === "buildTools" || value === "prep" || value === "library" || value === "options" || value === "buildFfmpeg" || value === "result" || value === "logs" || value === "about";
 }
 
 function readSavedUiState(): SavedUiState {

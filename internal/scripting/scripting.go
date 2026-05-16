@@ -226,12 +226,21 @@ func ConfigureScriptLines(configureFlags []string) ([]string, error) {
 	}
 
 	pkgConfigModules := pkgConfigModulesForConfigureFlags(configureFlags)
-	pkgConfigChecks := []string{}
+	// Only generate pre-checks for libraries with a minimum version requirement.
+	// Existence-only checks are redundant — FFmpeg configure already checks presence
+	// and emits clear errors. Version checks are kept because configure emits only
+	// a generic "not found" when the version constraint fails, which is misleading.
+	type pkgConfigCheck struct {
+		mod  pkgConfigModule
+		line string
+	}
+	pkgConfigChecks := []pkgConfigCheck{}
 	for _, mod := range pkgConfigModules {
 		if mod.MinVersion != "" {
-			pkgConfigChecks = append(pkgConfigChecks, "${PKG_CONFIG} --print-errors --atleast-version="+shellQuote(mod.MinVersion)+" "+shellQuote(mod.Name)+" >/dev/null 2>&1")
-		} else {
-			pkgConfigChecks = append(pkgConfigChecks, "${PKG_CONFIG} --print-errors --modversion "+shellQuote(mod.Name)+" >/dev/null 2>&1")
+			pkgConfigChecks = append(pkgConfigChecks, pkgConfigCheck{
+				mod:  mod,
+				line: "${PKG_CONFIG} --print-errors --atleast-version="+shellQuote(mod.MinVersion)+" "+shellQuote(mod.Name)+" >/dev/null 2>&1",
+			})
 		}
 	}
 
@@ -249,9 +258,17 @@ func ConfigureScriptLines(configureFlags []string) ([]string, error) {
 	}
 	if len(pkgConfigChecks) > 0 {
 		scriptLines = append(scriptLines, "echo 'Checking selected external libraries with pkg-config before FFmpeg configure.'")
-		scriptLines = append(scriptLines, pkgConfigChecks...)
+		for _, check := range pkgConfigChecks {
+			scriptLines = append(scriptLines,
+				fmt.Sprintf(`echo "pkg-config check starting: %s (requires >= %s) at $(date +%%T)"`, check.mod.Name, check.mod.MinVersion),
+				check.line,
+				fmt.Sprintf(`echo "pkg-config check completed: %s at $(date +%%T)"`, check.mod.Name),
+			)
+		}
 	}
+	scriptLines = append(scriptLines, `echo "Starting FFmpeg configure at $(date +%T)"`)
 	scriptLines = append(scriptLines, "./configure "+strings.Join(quotedConfigureFlags, " "))
+	scriptLines = append(scriptLines, `echo "FFmpeg configure completed at $(date +%T)"`)
 	return scriptLines, nil
 }
 
@@ -343,6 +360,8 @@ func MakeScriptLines(parallelJobCount int) ([]string, error) {
 		fmt.Sprintf("make -j%d", parallelJobCount),
 	}, nil
 }
+
+
 
 func shellQuote(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"

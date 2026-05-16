@@ -28,7 +28,7 @@ func WorkspaceLayoutFor(workspaceDirectory string) WorkspaceLayout {
 		SourcesDirectory:    filepath.Join(workspaceDirectory, "sources"),
 		BuildDirectory:      filepath.Join(workspaceDirectory, "build"),
 		PrefixDirectory:     filepath.Join(workspaceDirectory, "prefix"),
-		ArtifactsDirectory:  filepath.Join(workspaceDirectory, "artifacts"),
+		ArtifactsDirectory:  filepath.Join(workspaceDirectory, "FFmpeg"),
 		LogsDirectory:       filepath.Join(workspaceDirectory, "logs"),
 		ToolchainsDirectory: filepath.Join(workspaceDirectory, "toolchains"),
 	}

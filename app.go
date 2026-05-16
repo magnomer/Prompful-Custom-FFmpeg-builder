@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"debug/pe"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -128,20 +130,32 @@ func (app *App) GetBuildResult(workspaceDirectory string) (BuildResult, error) {
 		return BuildResult{}, err
 	}
 	result := BuildResult{ArtifactsDirectory: workspaceLayout.ArtifactsDirectory, Files: []BuildResultFile{}, SelectedLibraries: []string{}, SelectedConfigureOptions: []string{}, RequiredMsys2PackageNames: []string{}, ConfigureFlags: []string{}}
-	for _, artifactName := range []string{"ffmpeg.exe", "ffprobe.exe"} {
+	artifactEntries, err := os.ReadDir(workspaceLayout.ArtifactsDirectory)
+	if err != nil {
+		return BuildResult{}, err
+	}
+	for _, artifactEntry := range artifactEntries {
+		if artifactEntry.IsDir() {
+			continue
+		}
+		artifactName := artifactEntry.Name()
+		artifactNameLower := strings.ToLower(artifactName)
+		if artifactNameLower != "ffmpeg.exe" && artifactNameLower != "ffprobe.exe" && !strings.HasSuffix(artifactNameLower, ".dll") {
+			continue
+		}
 		artifactPath := filepath.Join(workspaceLayout.ArtifactsDirectory, artifactName)
 		if err := workspace.CheckRealPathInsideWorkspace(workspaceLayout.WorkspaceDirectory, artifactPath); err != nil {
 			return BuildResult{}, err
 		}
 		fileInfo, err := os.Stat(artifactPath)
-		if errors.Is(err, os.ErrNotExist) {
-			continue
-		}
 		if err != nil {
 			return BuildResult{}, err
 		}
 		result.Files = append(result.Files, BuildResultFile{Name: artifactName, Path: artifactPath, SizeBytes: fileInfo.Size(), Sha256Hash: createFileHashOrEmpty(artifactPath)})
 	}
+	sort.Slice(result.Files, func(leftIndex, rightIndex int) bool {
+		return strings.ToLower(result.Files[leftIndex].Name) < strings.ToLower(result.Files[rightIndex].Name)
+	})
 	reportPath, report, err := readLatestArtifactReport(workspaceLayout)
 	if err != nil {
 		return result, nil
@@ -565,12 +579,19 @@ func moveDirectoryContents(sourceDirectory string, destinationDirectory string) 
 
 func (app *App) buildFfmpeg(ctx context.Context, runId string, plan planning.FfmpegBuildPlan, userFfmpegSourceDownloadConsent consent.FfmpegSourceDownloadConsent, userArchiveExtractionConsent consent.ArchiveExtractionConsent, userLibraryPackageInstallConsent consent.PacmanInstallConsent, userExternalCommandExecutionConsent consent.CommandExecutionConsent) {
 	actionSucceeded := false
+	copyFailed := false
 	workspaceLayout := workspace.WorkspaceLayoutFor(plan.WorkspaceDirectory)
 	sourceRootDirectory := filepath.Join(workspaceLayout.SourcesDirectory, "ffmpeg-"+runId)
 	ffmpegSourceDirectory := ""
 	defer func() {
 		if actionSucceeded {
 			app.finishApprovedAction("completed")
+			return
+		}
+		if copyFailed && ffmpegSourceDirectory != "" {
+			app.emitLog("warn", "The final copy step failed, but the built FFmpeg files were not removed.")
+			app.emitLog("warn", "You can find ffmpeg.exe and its required DLLs at: "+ffmpegSourceDirectory)
+			app.finishApprovedAction("failed")
 			return
 		}
 		app.saveConfigLog(ffmpegSourceDirectory, workspaceLayout.WorkspaceDirectory)
@@ -644,8 +665,9 @@ func (app *App) buildFfmpeg(ctx context.Context, runId string, plan planning.Ffm
 		app.emitFailure("FFmpeg build failed", err)
 		return
 	}
-	if err := copyFfmpegArtifacts(ffmpegSourceDirectory, workspaceLayout); err != nil {
+	if err := copyFfmpegBuildOutputs(ffmpegSourceDirectory, workspaceLayout, plan, emitProgress); err != nil {
 		_ = auditWriter.WriteEvent("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		copyFailed = true
 		app.emitFailure("Could not copy FFmpeg artifacts", err)
 		return
 	}
@@ -893,24 +915,194 @@ func findSingleChildDirectory(parentDirectory string) (string, error) {
 	return childDirectories[0], nil
 }
 
-func copyFfmpegArtifacts(ffmpegSourceDirectory string, workspaceLayout workspace.WorkspaceLayout) error {
-	artifactNames := []string{"ffmpeg.exe", "ffprobe.exe"}
-	for _, artifactName := range artifactNames {
-		sourcePath := filepath.Join(ffmpegSourceDirectory, artifactName)
+func copyFfmpegBuildOutputs(ffmpegSourceDirectory string, workspaceLayout workspace.WorkspaceLayout, plan planning.FfmpegBuildPlan, emitProgress func(string, string)) error {
+	// Step 1: copy the built executables from the FFmpeg source directory.
+	exeEntries, err := os.ReadDir(ffmpegSourceDirectory)
+	if err != nil {
+		return fmt.Errorf("could not read FFmpeg build directory: %w", err)
+	}
+	var copiedExePaths []string
+	for _, entry := range exeEntries {
+		if entry.IsDir() {
+			continue
+		}
+		if !strings.HasSuffix(strings.ToLower(entry.Name()), ".exe") {
+			continue
+		}
+		sourcePath := filepath.Join(ffmpegSourceDirectory, entry.Name())
 		if err := workspace.CheckRealPathInsideWorkspace(workspaceLayout.WorkspaceDirectory, sourcePath); err != nil {
 			return err
 		}
-		if _, err := os.Stat(sourcePath); errors.Is(err, os.ErrNotExist) {
-			continue
-		} else if err != nil {
-			return err
-		}
-		destinationPath := filepath.Join(workspaceLayout.ArtifactsDirectory, artifactName)
+		destinationPath := filepath.Join(workspaceLayout.ArtifactsDirectory, entry.Name())
 		if err := copyFile(workspaceLayout.WorkspaceDirectory, sourcePath, destinationPath); err != nil {
 			return err
 		}
+		copiedExePaths = append(copiedExePaths, destinationPath)
+	}
+	if len(copiedExePaths) == 0 {
+		return fmt.Errorf("no .exe files found in FFmpeg build directory: %s", ffmpegSourceDirectory)
+	}
+
+	// Step 2: build a lookup index for MSYS2 DLLs. This does not copy them. Only DLLs reached from the PE dependency traversal below are copied.
+	profileDirectoryName := strings.ToLower(plan.WindowsShellProfileName)
+	if profileDirectoryName == "" {
+		profileDirectoryName = "ucrt64"
+	}
+	msys2BinDirectory := filepath.Join(plan.Msys2RootDirectory, profileDirectoryName, "bin")
+	// String-only workspace check — CheckRealPathInsideWorkspace uses
+	// filepath.EvalSymlinks which fails on MSYS2's internal reparse points.
+	// The path is trusted by construction: Msys2RootDirectory is always
+	// filepath.Join(workspaceDirectory, "toolchains", "msys2").
+	if err := workspace.CheckPathInsideWorkspace(workspaceLayout.WorkspaceDirectory, msys2BinDirectory); err != nil {
+		return fmt.Errorf("MSYS2 bin directory is outside workspace: %w", err)
+	}
+	dllIndex, err := buildDllIndex(msys2BinDirectory)
+	if err != nil {
+		return err
+	}
+	emitProgress("info", fmt.Sprintf("DLL lookup index built: %d DLLs indexed in %s", len(dllIndex), msys2BinDirectory))
+
+	// Step 3: BFS from the copied exes through their PE import tables,
+	// resolving only DLLs present in the MSYS2 bin index.
+	return resolveAndCopyDlls(copiedExePaths, dllIndex, workspaceLayout, emitProgress)
+}
+
+func buildDllIndex(msys2BinDirectory string) (map[string]string, error) {
+	entries, err := os.ReadDir(msys2BinDirectory)
+	if err != nil {
+		return nil, fmt.Errorf("could not read MSYS2 bin directory: %w", err)
+	}
+	index := make(map[string]string, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		if !strings.HasSuffix(strings.ToLower(entry.Name()), ".dll") {
+			continue
+		}
+		index[strings.ToLower(entry.Name())] = filepath.Join(msys2BinDirectory, entry.Name())
+	}
+	return index, nil
+}
+
+func resolveAndCopyDlls(rootPePaths []string, dllIndex map[string]string, workspaceLayout workspace.WorkspaceLayout, emitProgress func(string, string)) error {
+	resolved := map[string]bool{}
+	queue := append([]string{}, rootPePaths...)
+	visited := map[string]bool{}
+
+	for len(queue) > 0 {
+		currentPath := queue[0]
+		queue = queue[1:]
+		currentKey := strings.ToLower(filepath.Base(currentPath))
+		if visited[currentKey] {
+			continue
+		}
+		visited[currentKey] = true
+
+		peFile, err := pe.Open(currentPath)
+		if err != nil {
+			// Log and skip files that cannot be parsed as PE.
+			emitProgress("warn", fmt.Sprintf("Skipping PE inspection for %s: %s", filepath.Base(currentPath), err.Error()))
+			continue
+		}
+		// ImportedLibraries is unimplemented in Go's debug/pe.
+		// ImportedSymbols returns strings in the form "FunctionName:DLLNAME.dll".
+		// Extract the library side and use it only as a dependency name.
+		symbols, err := peFile.ImportedSymbols()
+		peFile.Close()
+		if err != nil {
+			emitProgress("warn", fmt.Sprintf("Could not read PE symbols for %s: %s", filepath.Base(currentPath), err.Error()))
+			continue
+		}
+		imports := importedDllNamesFromSymbols(symbols)
+		emitProgress("info", fmt.Sprintf("PE DLL dependencies for %s: %d DLLs found", filepath.Base(currentPath), len(imports)))
+
+		for _, importedName := range imports {
+			nameLower := strings.ToLower(importedName)
+			if resolved[nameLower] {
+				emitProgress("info", fmt.Sprintf("  dependency %s: already copied, skipping", importedName))
+				continue
+			}
+			sourcePath, found := dllIndex[nameLower]
+			if !found {
+				emitProgress("info", fmt.Sprintf("  dependency %s: not in MSYS2 bin (system DLL or statically linked)", importedName))
+				continue
+			}
+			emitProgress("info", fmt.Sprintf("  dependency %s: found at %s", importedName, sourcePath))
+			destinationPath := filepath.Join(workspaceLayout.ArtifactsDirectory, importedName)
+			if err := copyMsys2Dll(workspaceLayout.WorkspaceDirectory, sourcePath, destinationPath); err != nil {
+				emitProgress("warn", fmt.Sprintf("  dependency %s: copy FAILED: %s", importedName, err.Error()))
+				return err
+			}
+			emitProgress("info", fmt.Sprintf("  dependency %s: copied OK -> %s", importedName, destinationPath))
+			resolved[nameLower] = true
+			// A copied DLL can itself import other MSYS2 DLLs. Queue it so the
+			// artifact directory receives the complete required dependency closure,
+			// not every DLL from MSYS2.
+			queue = append(queue, destinationPath)
+		}
 	}
 	return nil
+}
+
+func importedDllNamesFromSymbols(symbols []string) []string {
+	seenDlls := map[string]bool{}
+	dllNames := []string{}
+	for _, symbol := range symbols {
+		parts := strings.SplitN(symbol, ":", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		dllName := strings.TrimSpace(parts[1])
+		if dllName == "" || !strings.HasSuffix(strings.ToLower(dllName), ".dll") {
+			continue
+		}
+		dllNameLower := strings.ToLower(dllName)
+		if seenDlls[dllNameLower] {
+			continue
+		}
+		seenDlls[dllNameLower] = true
+		dllNames = append(dllNames, dllName)
+	}
+	sort.Slice(dllNames, func(leftIndex, rightIndex int) bool {
+		return strings.ToLower(dllNames[leftIndex]) < strings.ToLower(dllNames[rightIndex])
+	})
+	return dllNames
+}
+
+// copyMsys2Dll copies a DLL from the MSYS2 bin directory to the destination.
+// It uses CheckPathInsideWorkspace (string-only) for the source instead of
+// CheckRealPathInsideWorkspace because filepath.EvalSymlinks fails on MSYS2's
+// internal reparse points on Windows (see golang/go#63703).
+// The destination still uses the full real-path check.
+func copyMsys2Dll(workspaceDirectory string, sourcePath string, destinationPath string) error {
+	if err := workspace.CheckPathInsideWorkspace(workspaceDirectory, sourcePath); err != nil {
+		return err
+	}
+	if err := workspace.CheckRealPathInsideWorkspace(workspaceDirectory, filepath.Dir(destinationPath)); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(destinationPath), 0o755); err != nil {
+		return err
+	}
+	if err := workspace.CheckRealPathInsideWorkspace(workspaceDirectory, destinationPath); err != nil {
+		return err
+	}
+	sourceFile, err := os.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+	destinationFile, err := os.OpenFile(destinationPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
+	}
+	_, copyErr := io.Copy(destinationFile, sourceFile)
+	closeErr := destinationFile.Close()
+	if copyErr != nil {
+		return copyErr
+	}
+	return closeErr
 }
 
 func copyFile(workspaceDirectory string, sourcePath string, destinationPath string) error {
@@ -947,7 +1139,7 @@ func writeArtifactReport(workspaceLayout workspace.WorkspaceLayout, runId string
 	reportPath := filepath.Join(workspaceLayout.ArtifactsDirectory, "build-report-"+runId+".json")
 	ffmpegExecutablePath := filepath.Join(workspaceLayout.ArtifactsDirectory, "ffmpeg.exe")
 	ffprobeExecutablePath := filepath.Join(workspaceLayout.ArtifactsDirectory, "ffprobe.exe")
-	report := map[string]interface{}{"runId": runId, "createdAt": time.Now().UTC().Format(time.RFC3339), "approvedPlanHash": plan.PlanHash, "ffmpegSourceArchiveUrl": plan.FfmpegSourceArchiveUrl, "ffmpegSourceSignatureUrl": plan.FfmpegSourceSignatureUrl, "ffmpegSourceSha256Hash": plan.FfmpegSourceSha256Hash, "selectedLibraries": plan.SelectedLibraries, "selectedConfigureOptions": plan.SelectedConfigureOptions, "requiredMsys2PackageNames": plan.RequiredMsys2PackageNames, "generatedConfigureFlags": plan.GeneratedConfigureFlags, "generatedOptionFlags": plan.GeneratedOptionFlags, "extraConfigureFlags": plan.ExtraConfigureFlags, "configureFlags": plan.ConfigureFlags, "licenseProfileName": plan.LicenseProfileName, "ffmpegExecutablePath": ffmpegExecutablePath, "ffmpegExecutableSha256Hash": createFileHashOrEmpty(ffmpegExecutablePath), "ffmpegExecutableSizeBytes": fileSizeOrZero(ffmpegExecutablePath), "ffprobeExecutablePath": ffprobeExecutablePath, "ffprobeExecutableSha256Hash": createFileHashOrEmpty(ffprobeExecutablePath), "ffprobeExecutableSizeBytes": fileSizeOrZero(ffprobeExecutablePath)}
+	report := map[string]interface{}{"runId": runId, "createdAt": time.Now().UTC().Format(time.RFC3339), "approvedPlanHash": plan.PlanHash, "ffmpegSourceArchiveUrl": plan.FfmpegSourceArchiveUrl, "ffmpegSourceSignatureUrl": plan.FfmpegSourceSignatureUrl, "ffmpegSourceSha256Hash": plan.FfmpegSourceSha256Hash, "selectedLibraries": plan.SelectedLibraries, "selectedConfigureOptions": plan.SelectedConfigureOptions, "requiredMsys2PackageNames": plan.RequiredMsys2PackageNames, "generatedConfigureFlags": plan.GeneratedConfigureFlags, "generatedOptionFlags": plan.GeneratedOptionFlags, "extraConfigureFlags": plan.ExtraConfigureFlags, "configureFlags": plan.ConfigureFlags, "licenseProfileName": plan.LicenseProfileName, "ffmpegExecutablePath": ffmpegExecutablePath, "ffmpegExecutableSha256Hash": createFileHashOrEmpty(ffmpegExecutablePath), "ffmpegExecutableSizeBytes": fileSizeOrZero(ffmpegExecutablePath), "ffprobeExecutablePath": ffprobeExecutablePath, "ffprobeExecutableSha256Hash": createFileHashOrEmpty(ffprobeExecutablePath), "ffprobeExecutableSizeBytes": fileSizeOrZero(ffprobeExecutablePath), "artifactFiles": artifactFilesForReport(workspaceLayout)}
 	reportBytes, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
 		return err
@@ -1008,6 +1200,37 @@ func fileSizeOrZero(filePath string) int64 {
 		return 0
 	}
 	return fileInfo.Size()
+}
+
+func artifactFilesForReport(workspaceLayout workspace.WorkspaceLayout) []BuildResultFile {
+	artifactFiles := []BuildResultFile{}
+	entries, err := os.ReadDir(workspaceLayout.ArtifactsDirectory)
+	if err != nil {
+		return artifactFiles
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		artifactName := entry.Name()
+		artifactNameLower := strings.ToLower(artifactName)
+		if artifactNameLower != "ffmpeg.exe" && artifactNameLower != "ffprobe.exe" && !strings.HasSuffix(artifactNameLower, ".dll") {
+			continue
+		}
+		artifactPath := filepath.Join(workspaceLayout.ArtifactsDirectory, artifactName)
+		if err := workspace.CheckRealPathInsideWorkspace(workspaceLayout.WorkspaceDirectory, artifactPath); err != nil {
+			continue
+		}
+		fileInfo, err := os.Stat(artifactPath)
+		if err != nil {
+			continue
+		}
+		artifactFiles = append(artifactFiles, BuildResultFile{Name: artifactName, Path: artifactPath, SizeBytes: fileInfo.Size(), Sha256Hash: createFileHashOrEmpty(artifactPath)})
+	}
+	sort.Slice(artifactFiles, func(leftIndex, rightIndex int) bool {
+		return strings.ToLower(artifactFiles[leftIndex].Name) < strings.ToLower(artifactFiles[rightIndex].Name)
+	})
+	return artifactFiles
 }
 
 func createFileHashOrEmpty(filePath string) string {
