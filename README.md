@@ -218,3 +218,10 @@ In this offline environment, `go test ./...` could not complete because Go depen
 - raw network dialing, `os.StartProcess`, `syscall.Exec`, `unsafe`, and `bash -lc` shell-string execution forbidden.
 
 Before release, keep the scanner and code aligned. If an app-level helper needs a narrowly reviewed exception, the scanner must document that exception explicitly instead of relying on an accidental bypass.
+
+## Screenshots
+
+<img width="1186" height="1107" alt="Screenshot-01" src="https://github.com/user-attachments/assets/508ae8f6-4509-4962-894b-56a93a786029" />
+<img width="1186" height="1107" alt="Screenshot-02" src="https://github.com/user-attachments/assets/e1cbcd80-4290-41b6-8976-9bf0f54085a9" />
+<img width="1186" height="1107" alt="Screenshot-03" src="https://github.com/user-attachments/assets/716e5952-2218-4bfc-bf81-09a3aa842334" />
+
