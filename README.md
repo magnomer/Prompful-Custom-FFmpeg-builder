@@ -98,4 +98,4 @@ Included rows are checked and locked because they are built as part of a normal 
 
 The Options page exposes common FFmpeg configure choices as named rows. Manual advanced flags remain an escape hatch and appear in Review before backend confirmation.
 
-See `LIBRARY_MODEL.md` for the full model.
+See [LIBRARY_MODEL.md](https://github.com/magnomer/Prompful-Custom-FFmpeg-builder/blob/main/LIBRARY_MODEL.md) for the full model.
