@@ -153,34 +153,6 @@ The Options page exposes common FFmpeg configure choices as named rows. Manual a
 
 See `LIBRARY_MODEL.md` for the full model.
 
-## Naming rule
-
-Every name must expose its domain, type, and purpose without abbreviation.
-
-### Go
-
-- Packages: lowercase single concept, for example `consent`, `planning`, `execution`.
-- Exported types: `PascalCase` nouns, for example `FfmpegBuildPlan`.
-- Functions: verb-led names, for example `PlanFfmpegBuild`.
-- Variables: lowerCamel with full domain wording, for example `userArchiveExtractionConsent`.
-- Boolean fields: `Is...`, `Has...`, `Can...`, `Will...`, `Should...`.
-
-### TypeScript
-
-- Types and React components: `PascalCase`.
-- Variables and functions: `lowerCamel`.
-- Boolean variables: `is...`, `has...`, `can...`, `should...`, `will...`.
-
-### CSS
-
-Strict BEM only:
-
-```css
-.approval-panel {}
-.approval-panel__title {}
-.approval-panel__item--blocked {}
-```
-
 ## Build
 
 ```bash
@@ -206,18 +178,6 @@ go run scripts/security-scan.go
 ```
 
 In this offline environment, `go test ./...` could not complete because Go dependencies were not available locally and network access to `proxy.golang.org` was blocked.
-
-## Static security scan note
-
-`scripts/security-scan.go` currently declares these strict boundaries:
-
-- `exec.Command` only inside `internal/execution`;
-- HTTP request creation and execution only inside `internal/download`;
-- recursive deletion only inside `internal/workspace`;
-- direct file writes only in scripting, audit, and app-level reporting code;
-- raw network dialing, `os.StartProcess`, `syscall.Exec`, `unsafe`, and `bash -lc` shell-string execution forbidden.
-
-Before release, keep the scanner and code aligned. If an app-level helper needs a narrowly reviewed exception, the scanner must document that exception explicitly instead of relying on an accidental bypass.
 
 ## Screenshots
 
