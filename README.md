@@ -31,6 +31,27 @@ The default toolchain profile uses a private MSYS2 archive inside the selected w
 
 The app accepts MSYS2 `.tar.zst` archives and `.tar.xz` archives. It intentionally does not run the MSYS2 `.exe` installer or self-extracting installer.
 
+## Build
+
+```bash
+go install github.com/wailsapp/wails/v2/cmd/wails@latest
+cd frontend
+npm install
+cd ..
+wails dev
+```
+## Download
+
+Download the latest release from the GitHub Releases page:
+
+[Latest release](https://github.com/magnomer/Prompful-Custom-FFmpeg-builder/releases/latest)
+
+## Screenshots
+
+<img width="1186" height="1107" alt="Screenshot-01" src="https://github.com/user-attachments/assets/508ae8f6-4509-4962-894b-56a93a786029" />
+<img width="1186" height="1107" alt="Screenshot-02" src="https://github.com/user-attachments/assets/e1cbcd80-4290-41b6-8976-9bf0f54085a9" />
+<img width="1186" height="1107" alt="Screenshot-03" src="https://github.com/user-attachments/assets/716e5952-2218-4bfc-bf81-09a3aa842334" />
+
 ## Security model
 
 The central rule is:
@@ -69,49 +90,10 @@ The FFmpeg build action currently performs these planned operations:
 
 ## Library and options model
 
-The Library page distinguishes included FFmpeg components from external libraries.
+The Library page distinguishes FFmpeg components included in the official release from external libraries.
 
 Included rows are checked and locked because they are built as part of a normal FFmpeg source build. External libraries are unchecked until selected and may add packages, configure flags, license effects, and warnings.
 
 The Options page exposes common FFmpeg configure choices as named rows. Manual advanced flags remain an escape hatch and appear in Review before backend confirmation.
 
 See `LIBRARY_MODEL.md` for the full model.
-
-## Build
-
-```bash
-go install github.com/wailsapp/wails/v2/cmd/wails@latest
-cd frontend
-npm install
-cd ..
-wails dev
-```
-
-## Verification
-
-Run Go tests with:
-
-```bash
-go test ./...
-```
-
-Run the static security scan with:
-
-```bash
-go run scripts/security-scan.go
-```
-
-In this offline environment, `go test ./...` could not complete because Go dependencies were not available locally and network access to `proxy.golang.org` was blocked.
-
-## Download
-
-Download the latest release from the GitHub Releases page:
-
-[Latest release](https://github.com/magnomer/Prompful-Custom-FFmpeg-builder/releases/latest)
-
-## Screenshots
-
-<img width="1186" height="1107" alt="Screenshot-01" src="https://github.com/user-attachments/assets/508ae8f6-4509-4962-894b-56a93a786029" />
-<img width="1186" height="1107" alt="Screenshot-02" src="https://github.com/user-attachments/assets/e1cbcd80-4290-41b6-8976-9bf0f54085a9" />
-<img width="1186" height="1107" alt="Screenshot-03" src="https://github.com/user-attachments/assets/716e5952-2218-4bfc-bf81-09a3aa842334" />
-
