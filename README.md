@@ -39,17 +39,15 @@ The central rule is:
 
 The app uses this flow:
 
-```text
-Request plan
-  -> backend stores immutable plan in a review session
-  -> frontend displays dry-run operations, warnings, packages, flags, license effects, and consent text
-  -> user requests approval for exact action name and plan hash
-  -> backend validates review session, consent text hash, expiry, and plan hash
-  -> backend shows native OS confirmation dialog
-  -> backend creates action-specific consent values
-  -> mutating functions verify consent and plan hash
-  -> execution begins
-```
+1. Request plan
+2. backend stores immutable plan in a review session
+3. frontend displays dry-run operations, warnings, packages, flags, license effects, and consent text
+4. user requests approval for exact action name and plan hash
+4. backend validates review session, consent text hash, expiry, and plan hash
+5. backend shows native OS confirmation dialog
+6. backend creates action-specific consent values
+7. mutating functions verify consent and plan hash
+8. execution begins
 
 ## FFmpeg build flow
 
@@ -66,7 +64,7 @@ The FFmpeg build action currently performs these planned operations:
 9. run configure through the private MSYS2 Bash executable;
 10. write and hash the approved make script;
 11. run make with the approved parallel job count;
-12. copy `ffmpeg.exe`, `ffprobe.exe`, and required MSYS2 DLL dependencies into `workspace/FFmpeg`;
+12. copy `ffmpeg.exe`, `ffprobe.exe`, and required DLL dependencies into `workspace/FFmpeg`;
 13. write `build-report-<runId>.json`.
 
 ## Library and options model
