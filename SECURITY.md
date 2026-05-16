@@ -1,92 +1,76 @@
-# Security policy for CustomFFmpeg Builder
+# Security model
 
-## Transparency as a security control
+This document describes how Custom FFmpeg Builder separates planning, approval, download, extraction, command execution, workspace access, logging, and result reporting.
 
-Security-sensitive code must use plain names that reveal the action being performed. This is not only style: unclear names make consent bypasses, unsafe path handling, hidden downloads, and command execution harder to notice during review. See `TRANSPARENCY.md` for the naming rules and review map.
+The app is a local FFmpeg build tool. It prepares a private MSYS2-based build environment, downloads reviewed source/tool archives, extracts them into a workspace, installs selected packages, runs generated build scripts, and copies the resulting FFmpeg files into a result folder.
 
-## Mandatory backend rules
+## App trust boundary
 
-1. No function may download a file unless it requires a dedicated download consent type.
-2. No function may extract an archive unless it requires `ArchiveExtractionConsent`.
-3. No function may install packages unless it requires `PacmanInstallConsent` or another action-specific install consent type.
-4. No managed build function may execute an external command unless it requires a dedicated execution consent type or a narrower install/build consent type.
-5. No function may delete workspace content unless it requires `WorkspaceDeletionConsent` or is part of a reviewed failure-cleanup path that stays inside the workspace.
-6. No public Wails method may directly start toolchain preparation or FFmpeg build work. Public mutation methods must be plan-first and approval-first.
-7. No arbitrary shell command text may be accepted from the frontend.
-8. FFmpeg source downloads must be verified with the matching `.asc` PGP signature before extraction.
-9. MSYS2 archive downloads should be verified with the matching `.sig` detached signature when a signature URL is supplied.
-10. No download may use non-HTTPS URLs in normal mode.
-11. No extraction may write outside the selected workspace.
-12. No symlink or hardlink from third-party archives may be restored.
-13. Managed build command execution must go through `internal/execution`.
-14. HTTP download code must go through `internal/download`.
-15. No managed build step may modify the system PATH.
-16. No managed build step may require administrator rights by default.
-17. Generated shell scripts must be written, hashed, and rechecked before execution.
-18. Build outputs copied to the result folder must stay inside the selected workspace.
+The frontend displays choices and review data. The backend owns executable plans, review sessions, native confirmation, typed consent values, mutating filesystem operations, downloads, extraction, package installation, command execution, and result reporting.
 
-## Current backend-owned review sessions
+The frontend may request approval, but the backend decides whether the request matches a stored review session and whether native confirmation was accepted.
 
-The backend stores every executable plan it creates during review. Approval calls pass only the review session id and approval request; they do not pass the executable plan back from the frontend.
+## Plan-first backend flow
 
-The backend retrieves the stored immutable plan, verifies:
+The backend plans work before it performs work.
 
-- approved action name,
-- approved plan hash,
-- expected consent text hash,
+A reviewed plan contains the action name, selected shell profile, workspace layout, package names, generated scripts, selected libraries, configure options, manual flags, final configure flags, warning list, license profile, and plan hash.
+
+The frontend receives review data derived from that plan. Approval calls send a review session id and approval request, not a replacement executable plan.
+
+## Backend review sessions
+
+The backend stores every executable plan it creates during review.
+
+Approval checks compare the incoming approval request with the stored session:
+
+- review session id,
+- action name,
+- plan hash,
+- consent text hash,
 - expiry,
-- one-time use,
-- recomputed stored plan hash,
-- executable status.
+- consumed state.
 
-Only after those checks does the backend open the native confirmation dialog.
+The backend also recomputes the stored plan hash from stored content before it creates consent values or starts the action.
 
-## Backend-owned final approval
+## Native confirmation
 
-The frontend is not a trusted security boundary. JavaScript state, button handlers, saved local storage, and RPC calls can be altered or invoked directly by a hostile local process or a compromised WebView.
+The backend opens a native OS confirmation dialog after the review session check passes.
 
-For that reason, approval RPC calls are not enough to start a download, extraction, package install, or command execution. After the backend receives an approval-shaped request and validates the review session and plan hash, it opens a backend-owned native confirmation dialog showing the action name and plan hash.
+The app treats the native dialog as the final approval step. Any result other than `Yes` cancels the action.
 
-Security rule:
+## Typed consent values
 
-- A frontend message may request approval.
-- Only the backend-owned native confirmation may finalize approval.
-- `No`, window close, escape, dialog error, or any non-`Yes` response must stop execution.
-- The native dialog defaults to `No`.
+Mutating backend operations receive narrow consent values rather than plain booleans.
 
-This protects the case where a forged frontend/backend message claims consent while the user actually rejects the operation.
+Current consent types cover:
 
-## Downloads and authenticity checks
+- MSYS2 download,
+- FFmpeg source download,
+- archive extraction,
+- pacman package installation,
+- build command execution,
+- workspace deletion.
 
-All normal downloads must use HTTPS and an allowed host list.
+Each consent value carries the action kind, action name, and plan hash it applies to. The receiving function checks that the consent value matches its operation.
 
-Current download scopes:
+## Downloads
 
-- MSYS2 archive and `.sig`: `github.com`, `repo.msys2.org`, `mirror.msys2.org`
-- MSYS2 installer signing key: `keyserver.ubuntu.com`
-- FFmpeg source archive, `.asc`, and release signing key: `ffmpeg.org`
+Normal HTTP download code lives in `internal/download`.
 
-Current download hardening includes:
+Download plans include the source URL, expected destination path, expected hash when available, size limits, conflict behavior, allowed hosts, and action-specific consent.
 
-- destination path must remain inside the selected workspace;
-- partial `.part` downloads are removed after failed downloads;
-- existing files are reused only when the expected SHA-256 hash matches;
-- file-size minimum and maximum bounds are checked;
-- SHA-256 is calculated and logged.
+Normal-mode downloads use HTTPS. FFmpeg source downloads are verified with the matching `.asc` PGP signature before extraction. MSYS2 archive downloads use detached signature verification when a signature URL is supplied.
 
-MSYS2 signatures are verified internally with the ProtonMail Go OpenPGP implementation because the older `golang.org/x/crypto/openpgp` package cannot read modern OpenPGP public keys such as algorithm 22. The user should not need to install system GPG for the normal `.sig` verification path.
+## Archive extraction
 
-FFmpeg release archives are verified with their matching `.asc` PGP signature and the downloaded FFmpeg release signing key.
+Archive extraction code lives in `internal/extraction`.
 
-## Extraction limits
+Extraction plans describe the source archive, target directory, allowed formats, byte limits, entry-count limits, and archive-extraction consent.
 
-Archive extraction enforces workspace boundaries, blocks links, normalizes archive paths with POSIX archive semantics, and caps:
+The extractor checks workspace containment, rejects absolute paths, rejects parent-directory traversal, rejects symlink and hardlink restoration, and rejects extraction targets outside the selected workspace.
 
-- file count,
-- total extracted bytes,
-- single-file size.
-
-Current format support includes:
+Currently accepted source archive formats include:
 
 - `.tar.zst`
 - `.tar.xz`
@@ -95,18 +79,18 @@ Current format support includes:
 - `.tar.bz2`
 - `.tar`
 
-MSYS2 `.tar.zst` is the recommended default. `.tar.xz` is accepted as a fallback. MSYS2 installer formats such as `.exe` and `.sfx.exe` are rejected by planning because this app does not run installers.
+MSYS2 `.tar.zst` is the preferred archive format. `.tar.xz` is accepted as a fallback. MSYS2 installer formats such as `.exe` and `.sfx.exe` are not part of the planned extraction path.
 
 ## Command execution
 
 Managed build commands run through `internal/execution`.
 
-The command plan must include:
+A command plan contains:
 
 - action name,
 - plan hash,
 - executable path,
-- argument values,
+- arguments,
 - working directory,
 - workspace directory,
 - private MSYS2 root,
@@ -120,9 +104,29 @@ The command plan must include:
 
 Before execution, the backend checks workspace containment, resolved real paths, executable basename allowlist, script kind, and script hash.
 
-The runtime environment builds an explicit MSYS2 PATH from the private MSYS2 root and selected shell profile instead of modifying the system PATH.
+The runtime environment builds an explicit MSYS2 PATH from the private MSYS2 root and selected shell profile. Managed build steps do not modify the system PATH and do not require administrator rights by default.
 
-## Durable audit logs
+## Generated scripts
+
+Generated shell scripts are written by the scripting layer, hashed, and checked again before execution.
+
+The plan records the approved script path and SHA-256 hash. The execution layer verifies that the script on disk still matches the approved hash before running it.
+
+## Workspace model
+
+Workspace-sensitive filesystem behavior is centralized around workspace-aware helpers.
+
+The workspace layer models selected workspace paths, private MSYS2 paths, source directories, artifact directories, run logs, and result folders. Path checks are based on containment and resolved filesystem paths where needed.
+
+Build outputs are copied into:
+
+```text
+workspace/FFmpeg/
+```
+
+The app keeps generated tools and build outputs inside the selected workspace rather than installing FFmpeg globally.
+
+## Audit logs
 
 Approved actions create a run directory under:
 
@@ -136,15 +140,11 @@ The directory contains local evidence such as:
 - `stdout.log`
 - `stderr.log`
 
-These files are local-only and are intended to make approved activity inspectable after the fact.
+These logs are local files intended to make approved activity inspectable after the fact.
 
 ## Artifacts and result reporting
 
-Successful FFmpeg builds copy output files into:
-
-```text
-workspace/FFmpeg/
-```
+Successful FFmpeg builds copy output files into the workspace result folder.
 
 The result folder may include:
 
@@ -155,34 +155,30 @@ The result folder may include:
 
 The build report records selected libraries, selected configure options, required MSYS2 package names, generated flags, final configure flags, license profile, artifact paths, sizes, and SHA-256 hashes.
 
-If the final artifact copy fails, the backend does not remove the built FFmpeg files from the source build directory; it logs their location so the user can inspect or recover them.
+If the final artifact copy fails, the backend leaves the built FFmpeg files in the source build directory and logs their location for inspection or recovery.
 
-## Library transparency
+## Library and license visibility
 
-Third-party FFmpeg libraries are security- and license-relevant. They must not be hidden inside a generic configure flag field.
+Third-party FFmpeg libraries are security- and license-relevant, so the backend models them as first-class plan objects.
 
-The backend models libraries as first-class plan objects. A reviewed FFmpeg build plan exposes selected libraries, generated MSYS2 packages, generated configure flags, final configure flags, selected configure options, and license effects before backend confirmation.
+A reviewed FFmpeg build plan exposes selected libraries, generated MSYS2 packages, generated configure flags, final configure flags, selected configure options, warnings, and license effects before backend confirmation.
 
-FFmpeg's own built-in components are shown as checked, locked rows. External libraries remain unchecked unless the user selects them, because external libraries change packages, configure flags, and license status. Manual configure flags are kept as an escape hatch only and must appear in Review before backend confirmation.
+FFmpeg's own built-in components are shown as checked and locked rows. External libraries remain unchecked until selected because they change packages, configure flags, and license status.
 
-## Suggested CI static checks
+Manual configure flags remain available as an escape hatch. They are included in the reviewed final configure flag list before backend confirmation.
 
-Search failures should block pull requests unless a reviewed exception is explicitly documented:
+## Static scanner
 
-```text
-exec.Command outside internal/execution
-http.NewRequest, http.Client, or request.Do outside internal/download
-os.RemoveAll outside controlled workspace cleanup code
-Approve* methods that do not verify review session and plan hash
-Download* functions without an action-specific consent parameter
-Extract* functions without ArchiveExtractionConsent
-Install* functions without an action-specific install consent parameter
-Generated scripts that are executed without SHA-256 verification
-bash -lc shell-string execution
-```
+`scripts/security-scan.go` is a source-tree boundary scanner. It searches for sensitive API usage and compares each hit against the intended package boundary.
 
-## Static scanner alignment note
+The scanner currently tracks patterns such as:
 
-`scripts/security-scan.go` is intentionally strict. Keep it aligned with the source tree before release.
+- command execution,
+- HTTP download primitives,
+- recursive deletion,
+- direct file deletion,
+- file renaming,
+- direct file writes,
+- shell-string execution.
 
-The current scanner declares `exec.Command` outside `internal/execution` and `bash -lc` shell-string execution as violations. If app-level helpers such as result-folder opening or cleanup agent shutdown remain in `app.go`, they must either be moved behind reviewed internal boundaries or represented as explicit scanner exceptions with narrow justification.
+The scanner describes the intended architecture of the current source tree. A scanner failure means the implementation and the documented package boundary no longer match.

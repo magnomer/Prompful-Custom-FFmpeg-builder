@@ -1,9 +1,11 @@
 # Library and options model
 
-The Library and Options pages expose two different kinds of FFmpeg build choices:
+This document describes how the app represents FFmpeg build choices in the Library and Options pages.
+
+The app separates two kinds of choices:
 
 1. included FFmpeg components that are already part of a normal FFmpeg source build;
-2. external libraries and optional configure flags that change packages, flags, output type, or license profile.
+2. external libraries and optional configure flags that change MSYS2 packages, generated flags, output type, or license profile.
 
 ## Included FFmpeg components
 
@@ -22,7 +24,7 @@ Included rows currently cover:
 - native FFmpeg codecs
 - native formats and muxers
 
-Included rows do not add MSYS2 packages and do not add `--enable-lib...` flags. They exist so the Library page does not look empty by default and so users can distinguish built-in FFmpeg behavior from external-library choices.
+Included rows do not add MSYS2 packages and do not add `--enable-lib...` flags. They exist so the Library page shows what FFmpeg already provides before external libraries are selected.
 
 ## External libraries
 
@@ -33,7 +35,7 @@ Unchecked rows are external libraries. Selecting one can add:
 - license effects,
 - review notes and warnings.
 
-External libraries are first-class plan objects. They must not be hidden inside a generic configure flag field when they are known to the catalog.
+External libraries are represented as first-class plan objects instead of being hidden inside a generic configure flag field.
 
 Each external library exposes:
 
@@ -45,7 +47,7 @@ Each external library exposes:
 - license effect
 - plain-language explanation
 - technical explanation
-- default/locked state
+- default and locked state
 
 ## Shell-profile-specific packages
 
@@ -59,10 +61,10 @@ The `xavs2` entry is special in the current code: it uses `mingw-w64-x86_64-xavs
 
 ## Library presets
 
-The UI offers library presets as starting points:
+The Library page includes presets as starting points:
 
 - `default` — included FFmpeg components only;
-- `efficiency` — common efficient encoders/decoders and audio helpers;
+- `efficiency` — common efficient encoders, decoders, and audio helpers;
 - `compatibility` — broader codec compatibility, including speech and legacy audio libraries;
 - `editor` — subtitle, text, image, filtering, scaling, and quality-analysis helpers;
 - `full` — broad catalog selection except mutually exclusive choices omitted by preset logic;
@@ -77,19 +79,19 @@ The UI prevents known mutually exclusive selections. The current mutually exclus
 - `openssl`
 - `gnutls`
 
-Only one of these TLS library choices should remain selected at a time.
+Only one of these TLS library choices remains selected at a time.
 
 ## Advanced flags
 
 The manual flags text area is an escape hatch for flags that are not yet represented by a named checkbox.
 
-Manual flags are still reviewed. They are merged into the final configure flag list, validated, and shown again before backend confirmation.
+Manual flags are still part of the reviewed plan. They are merged into the final configure flag list, validated, and shown again before backend confirmation.
 
 ## Manual `--enable-lib...` recovery
 
 If a manual advanced flag matches a cataloged external library, the backend resolves that flag back to the library catalog and adds the missing MSYS2 package names before configure runs.
 
-This prevents a user from adding a known `--enable-lib...` flag manually while accidentally skipping the package installation that the named checkbox would have provided.
+This keeps a known `--enable-lib...` flag from enabling a library while accidentally skipping the package installation that the named checkbox would have provided.
 
 ## Configure option catalog
 

@@ -1,21 +1,23 @@
 # Consent boundary
 
-The frontend is untrusted.
+This app treats the frontend as a presentation layer, not as the final authority for approving work.
 
-A malicious frontend, injected JavaScript, WebView devtool access, replayed local state, or direct RPC caller may send an approval-shaped message. Backend code must never treat that incoming approval request as final proof of user intent.
+The backend creates executable plans, stores review sessions, validates approval requests, opens the native confirmation dialog, and only then creates the action-specific consent values used by download, extraction, installation, command execution, and cleanup code.
 
-## Current approval path
+## Where consent fits in the app
 
-1. The backend creates an immutable executable plan.
-2. The backend creates a review session for that plan.
-3. The frontend displays the plan, warnings, final flags, packages, license effects, and the exact consent text.
-4. The frontend may send an approval request containing:
+The app's build flow is plan-first:
+
+1. The backend creates an executable plan.
+2. The backend stores that plan in a review session.
+3. The frontend displays the plan, warnings, final configure flags, package list, license effects, and consent text.
+4. The frontend sends an approval request containing:
    - review session id,
    - approved action name,
    - approved plan hash,
    - exact consent text.
-5. The backend retrieves the stored plan by review session id.
-6. The backend checks that the review session is still valid:
+5. The backend retrieves the stored plan from the review session.
+6. The backend checks that the approval request still matches the stored review session:
    - session exists,
    - action name matches,
    - plan hash matches,
@@ -24,46 +26,32 @@ A malicious frontend, injected JavaScript, WebView devtool access, replayed loca
    - session has not already been consumed.
 7. The backend recomputes the stored plan hash from the stored plan content.
 8. The backend opens a native OS confirmation dialog.
-9. The backend creates action-specific consent values only after the native dialog returns `Yes`.
-10. The backend starts the approved action with the stored plan and matching consent values.
+9. The backend creates action-specific consent values after the native dialog returns `Yes`.
+10. The backend starts the approved action using the stored plan and matching consent values.
 
-## Required native confirmation rule
+## Backend-owned native confirmation
 
-Approval RPC calls are only requests to approve. They are not final approval.
+Approval RPC calls are treated as requests to approve, not as final approval.
 
-The backend must start a download, extraction, package installation, command execution, or cleanup only when all of these are true:
+The backend starts mutating work only after the stored review session is valid, the stored plan is executable, the recomputed plan hash still matches, the native confirmation dialog returns `Yes`, and the target function receives its matching action-specific consent type.
 
-- the review session check passes;
-- the stored plan is executable;
-- the stored plan hash still matches the stored plan content;
-- the backend-owned native dialog returns exactly `Yes`;
-- the mutating function receives its matching action-specific consent type.
+This applies to downloads, archive extraction, package installation, command execution, and workspace cleanup.
 
-## Rejection rule
+## Rejected confirmation results
 
-The backend must abort when the native dialog returns anything except `Yes`.
+The native dialog is configured so the safe result is `No`.
 
-This includes:
-
-- `No`
-- `Cancel`
-- Escape
-- window close
-- dialog error
-- empty result
-- any unexpected button string
-
-The native dialog must default to `No`.
+The backend treats every result other than `Yes` as rejection, including `No`, `Cancel`, Escape, window close, dialog errors, empty results, and unexpected button strings.
 
 ## One-time review sessions
 
-A review session is consumed before the action starts. Reusing the same review session id must fail.
+Review sessions are consumed before the approved action starts. Reusing the same review session id fails.
 
-Current review sessions are created with a 30-minute lifetime. Expired sessions must be rejected even when the action name, plan hash, and consent text are otherwise correct.
+Current review sessions have a 30-minute lifetime. Expired sessions are rejected even when the action name, plan hash, and consent text still match.
 
 ## Action-specific consent values
 
-The approval request is converted into narrower consent values only inside backend approval methods.
+The approval request is converted into narrow consent values inside backend approval methods.
 
 Current consent types are:
 
@@ -74,10 +62,10 @@ Current consent types are:
 - `CommandExecutionConsent`
 - `WorkspaceDeletionConsent`
 
-Boolean consent values are forbidden.
+The code uses these typed values instead of plain booleans so each mutating operation can check the exact action kind, action name, and plan hash it was approved for.
 
-## Why this exists
+## Reason for this design
 
-This blocks the attack where a forged frontend or direct RPC message says approval was granted even though the user did not approve the backend-owned confirmation dialog.
+This design keeps a forged frontend message, injected JavaScript call, replayed local state value, WebView devtool call, or direct RPC call from becoming final proof of user intent.
 
-It also blocks approval replay: a caller cannot reuse an old review session because the backend stores sessions, checks expiry, and removes a session when it is accepted.
+It also blocks approval replay: the backend stores review sessions, checks expiry, and removes a session when it is accepted.

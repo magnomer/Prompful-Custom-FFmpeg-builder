@@ -1,59 +1,61 @@
-# Transparency rules for security-critical code
+# Code structure and naming
 
-This project intentionally keeps security-critical names plain. A reviewer should be able to scan the code and tell what each operation can do without decoding abstract labels.
+This document describes the naming and source-layout style used by Custom FFmpeg Builder.
 
-## Naming rule
+Security-sensitive code uses direct names so ordinary source browsing reveals what each operation can do. The code avoids hiding downloads, extraction, command execution, path checks, consent checks, and artifact writes behind vague labels.
 
-Use direct names for dangerous actions:
+## Naming model
 
-| Area | Preferred words | Avoid hiding behind |
+The code uses operation-oriented names for security-sensitive behavior:
+
+| Area | Names used in the code | What the names expose |
 |---|---|---|
-| Downloads | `DownloadPlan`, `DownloadMsys2WithConsent`, `DownloadFfmpegSourceWithConsent`, `AllowedHosts` | vague `Spec`, generic `process`, `transfer` |
-| Signatures and hashes | `verifyMsys2DetachedSignature`, `verifyFfmpegDetachedSignature`, `ExpectedSha256Hash`, `ApprovedScriptSha256Hash` | vague `check`, `auth`, `validate` without saying what is checked |
-| Extraction | `ExtractPlan`, `ExtractArchiveWithConsent`, `checkExtractTarget`, `MaximumExtractedByteCount` | vague `operation`, `materialize` |
-| Command execution | `CommandPlan`, `RunCommandWithConsent`, `RunPacmanWithConsent`, `ExecutablePath` | vague `external activity`, `task`, `handler` |
-| Generated scripts | `WriteScriptFile`, `ConfigureScriptLines`, `MakeScriptLines`, `PacmanInstallScriptLines` | hidden command strings or anonymous script blobs |
-| Path safety | `CheckRealPathInsideWorkspace`, `CheckPathInsideWorkspace`, `RejectSymlinkComponents` | vague `validate`, `sanitize` without saying what is checked |
-| Consent | `Consent`, `CheckConsent`, `ApprovalRequest`, `PlanReviewSession`, `CheckReviewApproval` | legalistic names that obscure the approval boundary |
-| Libraries | `LibraryChoice`, `SelectedLibraries`, `RequiredMsys2PackageNames`, `GeneratedConfigureFlags`, `LicenseEffectName` | hidden library flags in raw manual text |
-| Results and audit | `BuildResult`, `BuildResultFile`, `artifactFilesForReport`, `NewWriter`, `WriteEvent` | vague `output`, `data`, `record` |
+| Downloads | `DownloadPlan`, `DownloadMsys2WithConsent`, `DownloadFfmpegSourceWithConsent`, `AllowedHosts` | what is downloaded, where it may come from, and which consent is required |
+| Signatures and hashes | `verifyMsys2DetachedSignature`, `verifyFfmpegDetachedSignature`, `ExpectedSha256Hash`, `ApprovedScriptSha256Hash` | which signature or hash is being checked |
+| Extraction | `ExtractPlan`, `ExtractArchiveWithConsent`, `checkExtractTarget`, `MaximumExtractedByteCount` | which archive is extracted and what limits apply |
+| Command execution | `CommandPlan`, `RunCommandWithConsent`, `RunPacmanWithConsent`, `ExecutablePath` | which executable path and command plan are used |
+| Generated scripts | `WriteScriptFile`, `ConfigureScriptLines`, `MakeScriptLines`, `PacmanInstallScriptLines` | which script text is generated and later verified |
+| Path safety | `CheckRealPathInsideWorkspace`, `CheckPathInsideWorkspace`, `RejectSymlinkComponents` | which workspace-containment check is being applied |
+| Consent | `Consent`, `CheckConsent`, `ApprovalRequest`, `PlanReviewSession`, `CheckReviewApproval` | where approval data becomes typed backend consent |
+| Libraries | `LibraryChoice`, `SelectedLibraries`, `RequiredMsys2PackageNames`, `GeneratedConfigureFlags`, `LicenseEffectName` | which selected libraries affect packages, flags, and license profile |
+| Results and audit | `BuildResult`, `BuildResultFile`, `artifactFilesForReport`, `NewWriter`, `WriteEvent` | which files are produced and which events are recorded |
 
-## Security review map
+## Main code paths
 
-A reviewer should start with these files:
+The main app code paths are:
 
 1. `app.go` — public backend methods called by the UI, native confirmation, action startup, artifact copying, and result helpers.
 2. `internal/reviewsession/reviewsession.go` — backend-owned review session creation, consent text hash, expiry, and approval checks.
 3. `internal/consent/consent.go` — consent kinds, approval conversion, and `CheckConsent`.
-4. `internal/planning/planner.go` — what actions, packages, flags, warnings, license effects, and hashes the backend plans before approval.
-5. `internal/planning/types.go` — public plan/review shapes returned to the frontend.
-6. `internal/download/download.go` — all normal network file downloads, host allowlists, file-size checks, conflict policies, and SHA-256 checks.
+4. `internal/planning/planner.go` — action planning, packages, flags, warnings, license effects, and hashes.
+5. `internal/planning/types.go` — public plan and review shapes returned to the frontend.
+6. `internal/download/download.go` — normal network file downloads, host allowlists, file-size checks, conflict policies, and SHA-256 checks.
 7. `internal/extraction/extraction.go` — archive format handling and archive unpacking restrictions.
 8. `internal/execution/execution.go` — managed command execution, explicit MSYS2 environment construction, script verification, and stdout/stderr logs.
 9. `internal/scripting/scripting.go` — generated shell scripts and their hashes.
 10. `internal/workspace/workspace.go` — path containment, symlink rejection, and workspace directory layout.
 11. `internal/audit/audit.go` — local JSONL evidence of approved actions.
-12. `frontend/src/main.tsx` — UI flow, review display, library presets, saved state, logs, and result display. This file is not a security boundary.
-13. `scripts/security-scan.go` and `scripts/security-scan.ps1` — static boundary checks.
+12. `frontend/src/main.tsx` — UI flow, review display, library presets, saved state, logs, and result display. This file is a display/request layer rather than a security boundary.
+13. `scripts/security-scan.go` and `scripts/security-scan.ps1` — static boundary checks for sensitive source patterns.
 
-## Code rule
+## Function-name shape
 
-Security-sensitive functions should answer one visible question in their name:
+Security-sensitive functions are named around the operation they perform:
 
-- `CheckReviewApproval`: did this request match the backend-owned review session?
-- `CheckConsent`: did the user approve this exact consent kind, action name, and plan hash?
-- `CheckRealPathInsideWorkspace`: after filesystem resolution, is this path still inside the workspace?
-- `DownloadMsys2WithConsent`: download an MSYS2 file only after matching MSYS2 download consent.
-- `DownloadFfmpegSourceWithConsent`: download an FFmpeg source/signature/key file only after matching FFmpeg source download consent.
-- `ExtractArchiveWithConsent`: extract an archive only after matching archive extraction consent.
-- `RunPacmanWithConsent`: run pacman installation only after matching package-install consent.
-- `RunCommandWithConsent`: run configure/make only after matching command-execution consent.
-- `WriteScriptFile`: write a generated script and record its SHA-256 hash.
-- `copyFfmpegBuildOutputs`: copy only discovered build outputs and required DLL dependencies into the result folder.
+- `CheckReviewApproval` checks whether an approval request matches the backend-owned review session.
+- `CheckConsent` checks whether the user approved the exact consent kind, action name, and plan hash.
+- `CheckRealPathInsideWorkspace` checks whether a resolved filesystem path is still inside the workspace.
+- `DownloadMsys2WithConsent` downloads an MSYS2 file after matching MSYS2 download consent.
+- `DownloadFfmpegSourceWithConsent` downloads an FFmpeg source, signature, or key file after matching FFmpeg source download consent.
+- `ExtractArchiveWithConsent` extracts an archive after matching archive extraction consent.
+- `RunPacmanWithConsent` runs pacman installation after matching package-install consent.
+- `RunCommandWithConsent` runs configure or make after matching command-execution consent.
+- `WriteScriptFile` writes a generated script and records its SHA-256 hash.
+- `copyFfmpegBuildOutputs` copies discovered build outputs and required DLL dependencies into the result folder.
 
-## User-facing transparency
+## User-facing review data
 
-The UI must keep security-relevant information visible before approval:
+The UI keeps security-relevant information visible before backend approval:
 
 - action name;
 - plan hash;
@@ -69,39 +71,12 @@ The UI must keep security-relevant information visible before approval:
 - derived license profile;
 - whether the plan modifies PATH, requires admin rights, uses existing MSYS2, or deletes files.
 
-The approval panel may request backend approval, but it must not present itself as the final security boundary. The backend-owned native dialog is the final approval step.
+The approval panel sends approval requests to the backend. The backend-owned native dialog is the final approval step.
 
-## Review checklist
+## Static boundary scanner
 
-Before release, search for these strings:
+The static scanners are part of the code-structure model. They search the source tree for sensitive primitives and compare each hit with the package boundary used by the app.
 
-```text
-exec.Command
-http.NewRequest
-http.Client
-.Do(request)
-os.RemoveAll
-os.WriteFile
-os.OpenFile
-archive/tar
-filepath.EvalSymlinks
-CheckReviewApproval
-CheckConsent
-RunCommandWithConsent
-RunPacmanWithConsent
-WriteScriptFile
-ApprovedScriptSha256Hash
-```
+The scanned patterns include command execution, HTTP download primitives, direct deletion, recursive deletion, direct file writes, file renaming, archive handling, path resolution, review approval, consent checks, generated script writes, and script hash verification.
 
-Every hit should be explainable from the function name and nearby comments. If not, rename the function, split it into smaller pieces, or move it behind the correct reviewed boundary.
-
-## Static scanner alignment
-
-The static scanners are part of the transparency model. When source code legitimately needs a narrow exception, the exception should be visible in scanner configuration and explained in `SECURITY.md`.
-
-Do not leave scanner failures ambiguous. A reviewer should be able to tell whether a hit is:
-
-- a real boundary violation;
-- a narrow, documented exception;
-- dead code that should be removed;
-- code that should be moved into a more specific internal package.
+When the scanner reports a hit, it means the source tree contains a sensitive primitive outside the currently described boundary, or that the scanner boundary needs to be updated to match an intentional source layout change.
