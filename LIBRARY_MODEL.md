@@ -4,12 +4,12 @@ This document describes how the app represents FFmpeg build choices in the Libra
 
 The app separates two kinds of choices:
 
-1. included FFmpeg components that are already part of a normal FFmpeg source build;
+1. FFmpeg components that are already part of a normal FFmpeg source build;
 2. external libraries and optional configure flags that change MSYS2 packages, generated flags, output type, or license profile.
 
-## Included FFmpeg components
+## Components included in the official FFmpeg release
 
-Rows marked `included` are built-in FFmpeg components. They are checked and locked because they are part of a normal FFmpeg source build.
+Rows marked `included` are usually built-in FFmpeg components. They are checked and locked because they are part of a normal FFmpeg source build.
 
 Included rows currently cover:
 
