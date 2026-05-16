@@ -127,15 +127,11 @@ type ToolchainPhaseId =
 
 // FFmpeg (Build FFmpeg) phases
 type FfmpegPhaseId =
-  | "ff-download"   // FFmpeg source + sig + SHA-256 download
+  | "ff-download"   // FFmpeg source + signature/hash download and source unpack
   | "ff-pkgconfig"  // Library install + pkg-config detection
-  | "ff-configure"  // ./configure
-  | "ff-compile"    // CC / X86ASM compilation
-  | "ff-shaders"    // GLSLC / BIN2C / GZIP
-  | "ff-link"       // AR / LDXX linking
-  | "ff-strip"      // STRIP
-  | "ff-docs"       // HTML / POD docs
-  | "ff-dlldeps";   // DLL dependency bundling
+  | "ff-configure"  // FFmpeg configure script and capability summary
+  | "ff-compile"    // FFmpeg make/build output: CC / ASM / GEN / link / strip / docs
+  | "ff-extraction"; // Artifact and DLL dependency extraction/bundling
 
 type LogPhaseId = ToolchainPhaseId | FfmpegPhaseId | "other";
 
@@ -248,61 +244,73 @@ function detectToolchainPhase(msg: string): LogPhaseId {
 
 // ── FFmpeg phase detector (used for ffmpegLogEntries) ───────────────────────
 function detectFfmpegPhase(msg: string): LogPhaseId {
-  const first = msg.split(" ")[0];
+  const normalizedMsg = msg.trimStart();
+  const first = normalizedMsg.split(/\s+/)[0] ?? "";
+  // Backend phase sentinels. These are deliberately independent of selected
+  // libraries, configure options, and make verbosity, so live progress remains
+  // correct even when a build phase emits little or no native FFmpeg output.
+  if (normalizedMsg.startsWith("Starting FFmpeg configure")) return "ff-configure";
+  if (normalizedMsg.startsWith("Starting FFmpeg make")) return "ff-compile";
+  if (normalizedMsg.startsWith("Starting FFmpeg artifact collection")) return "ff-extraction";
   if (COMPILE_OPS.has(first)) return "ff-compile";
-  if (SHADER_OPS.has(first)) return "ff-shaders";
-  if (STRIP_OPS.has(first)) return "ff-strip";
-  if (BUILD_OPS.has(first)) return "ff-link";
-  if (DOCS_OPS.has(first)) return "ff-docs";
-  if (first === "GEN") return "ff-configure";
+  if (SHADER_OPS.has(first)) return "ff-compile";
+  if (STRIP_OPS.has(first)) return "ff-compile";
+  if (BUILD_OPS.has(first)) return "ff-compile";
+  if (DOCS_OPS.has(first)) return "ff-compile";
+  if (first === "GEN") return "ff-compile";
   // pkg-config and library install before configure
-  if (msg.startsWith("pkg-config check") || msg.startsWith("Using pkg-config")) return "ff-pkgconfig";
+  if (normalizedMsg.startsWith("pkg-config check") || normalizedMsg.startsWith("Using pkg-config")) return "ff-pkgconfig";
   // FFmpeg-build package re-installs (codec libs)
   if (
-    msg.startsWith("reinstalling ") || msg.startsWith("downgrading ") ||
-    msg.startsWith("upgrading ") || msg.startsWith("installing ") ||
-    msg.startsWith("Refreshing package databases") ||
-    msg.startsWith("Clearing half-downloaded") ||
-    msg.startsWith(":: Synchronizing") || msg.startsWith(":: Processing") ||
-    msg.startsWith(":: Running post-transaction") ||
-    msg.startsWith("checking") || msg.startsWith("loading package") ||
-    msg.startsWith("looking for conflicting") || msg.startsWith("resolving dependencies") ||
-    msg.startsWith("Packages (") || msg.startsWith("Net Upgrade") ||
-    msg.startsWith("Total Installed") || msg.startsWith("updating font cache") ||
-    msg.includes(" downloading...") || msg.startsWith("warning: ")
+    normalizedMsg.startsWith("reinstalling ") || normalizedMsg.startsWith("downgrading ") ||
+    normalizedMsg.startsWith("upgrading ") || normalizedMsg.startsWith("installing ") ||
+    normalizedMsg.startsWith("Refreshing package databases") ||
+    normalizedMsg.startsWith("Clearing half-downloaded") ||
+    normalizedMsg.startsWith(":: Synchronizing") || normalizedMsg.startsWith(":: Processing") ||
+    normalizedMsg.startsWith(":: Running post-transaction") ||
+    normalizedMsg.startsWith("checking") || normalizedMsg.startsWith("loading package") ||
+    normalizedMsg.startsWith("looking for conflicting") || normalizedMsg.startsWith("resolving dependencies") ||
+    normalizedMsg.startsWith("Packages (") || normalizedMsg.startsWith("Net Upgrade") ||
+    normalizedMsg.startsWith("Total Installed") || normalizedMsg.startsWith("updating font cache") ||
+    normalizedMsg.includes(" downloading...") || normalizedMsg.startsWith("warning: ")
   ) return "ff-pkgconfig";
   // Download / verify
   if (
-    msg.startsWith("Approved FFmpeg build started") ||
-    msg.startsWith("Downloading approved file from FFmpeg") ||
-    msg.startsWith("Calculated SHA-256 for FFmpeg") ||
-    msg.startsWith("FFmpeg .asc verification") ||
-    msg.startsWith("Extracting approved archive") ||
-    msg.startsWith("Running approved command") ||
-    msg.startsWith("Approved FFmpeg build completed") ||
-    msg.startsWith("Artifact report")
+    normalizedMsg.startsWith("Approved FFmpeg build started") ||
+    normalizedMsg.startsWith("Downloading approved file from FFmpeg") ||
+    normalizedMsg.startsWith("Calculated SHA-256 for FFmpeg") ||
+    normalizedMsg.startsWith("FFmpeg .asc verification") ||
+    normalizedMsg.startsWith("Extracting approved archive")
   ) return "ff-download";
+  if (
+    normalizedMsg.startsWith("Approved FFmpeg build completed") ||
+    normalizedMsg.startsWith("Artifact report")
+  ) return "ff-extraction";
   // Configure
   if (
-    msg.startsWith("FFmpeg configure") || msg.startsWith("Starting FFmpeg configure") ||
-    msg.startsWith("License:") || msg.startsWith("Enabled ") || msg.startsWith("External ") ||
-    msg.startsWith("Programs:") || msg.startsWith("Libraries:") || msg.startsWith("ARCH ") ||
-    msg.startsWith("C compiler") || msg.startsWith("C library") ||
-    msg.startsWith("install prefix") || msg.startsWith("source path") ||
-    msg.startsWith("static ") || msg.startsWith("shared ") || msg.startsWith("optimizations") ||
-    msg.startsWith("debug ") || msg.startsWith("network") || msg.startsWith("threading") ||
-    msg.startsWith("safe bitstream") || msg.startsWith("x86 assembler") ||
-    msg.startsWith("standalone") || msg.startsWith("runtime cpu") ||
-    msg.startsWith("big-endian") || msg.startsWith("MMXEXT") || msg.startsWith("MMX ") ||
-    msg.startsWith("SSE") || msg.startsWith("AESNI") || msg.startsWith("CLMUL") ||
-    msg.startsWith("AVX") || msg.startsWith("XOP") || msg.startsWith("FMA") ||
-    msg.startsWith("i686") || msg.startsWith("CMOV") || msg.startsWith("EBX") ||
-    msg.startsWith("EBP") || msg.startsWith("optimize") || msg.startsWith("experimental") ||
-    msg.startsWith("makeinfo") || msg.startsWith("perl ") || msg.startsWith("texi2html") ||
-    msg.startsWith("xmllint") || msg.startsWith("pod2man") || msg.startsWith("GEN lib")
+    normalizedMsg.startsWith("FFmpeg configure") || normalizedMsg.startsWith("Starting FFmpeg configure") ||
+    normalizedMsg.startsWith("License:") || normalizedMsg.startsWith("Enabled ") || normalizedMsg.startsWith("External ") ||
+    normalizedMsg.startsWith("Programs:") || normalizedMsg.startsWith("Libraries:") || normalizedMsg.startsWith("ARCH ") ||
+    normalizedMsg.startsWith("C compiler") || normalizedMsg.startsWith("C library") ||
+    normalizedMsg.startsWith("install prefix") || normalizedMsg.startsWith("source path") ||
+    normalizedMsg.startsWith("static ") || normalizedMsg.startsWith("shared ") || normalizedMsg.startsWith("optimizations") ||
+    normalizedMsg.startsWith("debug ") || normalizedMsg.startsWith("network") || normalizedMsg.startsWith("threading") ||
+    normalizedMsg.startsWith("safe bitstream") || normalizedMsg.startsWith("x86 assembler") ||
+    normalizedMsg.startsWith("standalone") || normalizedMsg.startsWith("runtime cpu") ||
+    normalizedMsg.startsWith("big-endian") || normalizedMsg.startsWith("MMXEXT") || normalizedMsg.startsWith("MMX ") ||
+    normalizedMsg.startsWith("SSE") || normalizedMsg.startsWith("AESNI") || normalizedMsg.startsWith("CLMUL") ||
+    normalizedMsg.startsWith("AVX") || normalizedMsg.startsWith("XOP") || normalizedMsg.startsWith("FMA") ||
+    normalizedMsg.startsWith("i686") || normalizedMsg.startsWith("CMOV") || normalizedMsg.startsWith("EBX") ||
+    normalizedMsg.startsWith("EBP") || normalizedMsg.startsWith("optimize") || normalizedMsg.startsWith("experimental") ||
+    normalizedMsg.startsWith("makeinfo") || normalizedMsg.startsWith("perl ") || normalizedMsg.startsWith("texi2html") ||
+    normalizedMsg.startsWith("xmllint") || normalizedMsg.startsWith("pod2man")
   ) return "ff-configure";
-  // DLL bundling
-  if (msg.startsWith("PE DLL dependencies") || msg.startsWith("DLL lookup index") || msg.startsWith("dependency ")) return "ff-dlldeps";
+  // Artifact / DLL extraction
+  if (normalizedMsg.startsWith("PE DLL dependencies") || normalizedMsg.startsWith("DLL lookup index") || normalizedMsg.startsWith("dependency ")) return "ff-extraction";
+  // Generic command wrapper output is intentionally classified after the
+  // specific script sentinels above. It should never move the pipeline backward
+  // to Download once configure/make has begun.
+  if (normalizedMsg.startsWith("Running approved command")) return "other";
   return "other";
 }
 
@@ -313,15 +321,11 @@ const PHASE_LABELS: Record<LogPhaseId, string> = {
   "tc-syncdb":   "Sync Package DBs",
   "tc-install":  "Install Packages",
   "tc-verify":   "Verify Compiler",
-  "ff-download":  "Download FFmpeg",
-  "ff-pkgconfig": "Install Libraries",
-  "ff-configure": "Configure",
-  "ff-compile":   "Compile",
-  "ff-shaders":   "Shaders & Resources",
-  "ff-link":      "Link & Archive",
-  "ff-strip":     "Strip Symbols",
-  "ff-docs":      "Documentation",
-  "ff-dlldeps":   "Bundle DLLs",
+  "ff-download":   "Download",
+  "ff-pkgconfig":  "Library",
+  "ff-configure":  "Configure",
+  "ff-compile":    "Compile",
+  "ff-extraction": "Extraction",
   "other":        "Other",
 };
 
@@ -329,8 +333,7 @@ const TOOLCHAIN_PHASE_ORDER: LogPhaseId[] = [
   "tc-download", "tc-extract", "tc-keyring", "tc-syncdb", "tc-install", "tc-verify",
 ];
 const FFMPEG_PHASE_ORDER: LogPhaseId[] = [
-  "ff-download", "ff-pkgconfig", "ff-configure", "ff-compile",
-  "ff-shaders", "ff-link", "ff-strip", "ff-docs", "ff-dlldeps",
+  "ff-download", "ff-pkgconfig", "ff-configure", "ff-compile", "ff-extraction",
 ];
 
 const TOOLCHAIN_PIPELINE: { id: LogPhaseId; label: string; short: string }[] = [
@@ -342,24 +345,21 @@ const TOOLCHAIN_PIPELINE: { id: LogPhaseId; label: string; short: string }[] = [
   { id: "tc-verify",   label: "Verify Compiler",      short: "Verify"   },
 ];
 const FFMPEG_PIPELINE: { id: LogPhaseId; label: string; short: string }[] = [
-  { id: "ff-download",  label: "Download FFmpeg",     short: "Download"  },
-  { id: "ff-pkgconfig", label: "Install Libraries",   short: "Libraries" },
-  { id: "ff-configure", label: "Configure",           short: "Configure" },
-  { id: "ff-compile",   label: "Compile",             short: "Compile"   },
-  { id: "ff-shaders",   label: "Shaders & Resources", short: "Shaders"   },
-  { id: "ff-link",      label: "Link & Archive",      short: "Link"      },
-  { id: "ff-strip",     label: "Strip Symbols",       short: "Strip"     },
-  { id: "ff-docs",      label: "Documentation",       short: "Docs"      },
-  { id: "ff-dlldeps",   label: "Bundle DLLs",         short: "DLLs"      },
+  { id: "ff-download",   label: "Download",   short: "Download"   },
+  { id: "ff-pkgconfig",  label: "Library",    short: "Library"    },
+  { id: "ff-configure",  label: "Configure",  short: "Configure"  },
+  { id: "ff-compile",    label: "Compile",    short: "Compile"    },
+  { id: "ff-extraction", label: "Extraction", short: "Extraction" },
 ];
 
 
 // parseLogEntry: context tells us which detector to use
 function parseLogEntry(entry: SecurityLogEntry, context: "toolchain" | "ffmpeg"): ParsedLogEntry {
   const msg = entry.message;
+  const normalizedMsg = msg.trimStart();
   const phase = context === "toolchain" ? detectToolchainPhase(msg) : detectFfmpegPhase(msg);
   const parsed: ParsedLogEntry = { ...entry, phase };
-  const compileMatch = msg.match(/^(CC|CXX|HOSTCC|X86ASM|WINDRES|STRIP|AR|LDXX|LD|HOSTLD|GEN|BIN2C|GZIP|MINIFY|GLSLC|POD|HTML|TXT|TEXI|GENTEXI)\s+(.+)$/);
+  const compileMatch = normalizedMsg.match(/^(CC|CXX|HOSTCC|X86ASM|WINDRES|STRIP|AR|LDXX|LD|HOSTLD|GEN|BIN2C|GZIP|MINIFY|GLSLC|POD|HTML|TXT|TEXI|GENTEXI)\s+(.+)$/);
   if (compileMatch) { parsed.compileOp = compileMatch[1]; parsed.compileTarget = compileMatch[2]; }
   if (msg.startsWith("dependency ")) {
     const copiedMatch = msg.match(/^dependency (.+?): copied OK/);
@@ -430,25 +430,24 @@ function computeProgress(entries: SecurityLogEntry[], approvedActionStatus: stri
   // not override a confirmed completion.
   const hasFailed = !isComplete && (parsed.some((e) => e.level === "error") || approvedActionStatus === "failed");
 
-  // currentPhaseId: scan backward for the last entry whose phase is a known pipeline
-  // phase. Skip "other" and skip completion-sentinel messages so the indicator does
-  // not snap back to "Download" when the final banner arrives at the end of a build.
-  const COMPLETION_PREFIXES = context === "ffmpeg"
+  // currentPhaseId is signal-based and monotonic. Any recognized pipeline phase
+  // can advance the live status, but later messages from earlier phases cannot
+  // move it backward. This keeps progress stable when command wrappers, cached
+  // downloads, configure summaries, or quiet make output arrive out of order or
+  // lack useful native build output.
+  const IGNORED_PROGRESS_PREFIXES = context === "ffmpeg"
     ? ["Approved FFmpeg build completed", "Artifact report"]
-    : ["Approved private MSYS2 environment is ready", "Approved private MSYS2 preparation started"];
+    : ["Approved private MSYS2 environment is ready"];
 
   let currentPhaseId: LogPhaseId | null = null;
-  for (let i = parsed.length - 1; i >= 0; i--) {
-    const e = parsed[i];
+  let currentPhaseIndex = -1;
+  for (const e of parsed) {
     if (!phaseSet.has(e.phase)) continue;
-    if (COMPLETION_PREFIXES.some((p) => e.message.startsWith(p))) continue;
-    currentPhaseId = e.phase;
-    break;
-  }
-  // Fallback: last group whose phase is in the pipeline
-  if (currentPhaseId === null && groups.length > 0) {
-    for (let i = groups.length - 1; i >= 0; i--) {
-      if (phaseSet.has(groups[i].phase)) { currentPhaseId = groups[i].phase; break; }
+    if (IGNORED_PROGRESS_PREFIXES.some((p) => e.message.startsWith(p))) continue;
+    const nextPhaseIndex = phaseOrder.indexOf(e.phase);
+    if (nextPhaseIndex > currentPhaseIndex) {
+      currentPhaseId = e.phase;
+      currentPhaseIndex = nextPhaseIndex;
     }
   }
 
@@ -1150,17 +1149,13 @@ function LiveBuildProgress(props: {
   const currentPipelineIndex = currentPhaseId ? pipelineIds.indexOf(currentPhaseId) : -1;
 
   // When complete: every step is done.
-  // When running: a step is done if it appears before the current phase in the
-  // pipeline AND we have seen at least one log entry for it.  Using pipeline
-  // position (not just "was seen") prevents a stale phase that appears late in
-  // the log from being marked done out of order.
-  const seenPhaseIds = new Set(
-    (progress.phaseGroups ?? []).map((g) => g.phase).filter((p) => pipelineIds.includes(p))
-  );
+  // When running: reaching a later signal means every prior pipeline step is
+  // complete, even when that prior step had no library-specific or option-specific
+  // output. This keeps the progress strip monotonic and independent of selected libraries.
   const completedPhaseIds = new Set<LogPhaseId>(
     progress.isComplete
       ? pipelineIds
-      : pipelineIds.filter((id, idx) => seenPhaseIds.has(id) && idx < currentPipelineIndex)
+      : pipelineIds.filter((_, idx) => idx < currentPipelineIndex)
   );
 
   const currentGroup = progress.phaseGroups?.find((g) => g.phase === currentPhaseId);
@@ -1381,12 +1376,8 @@ function SmartLogViewer(props: { entries: SecurityLogEntry[]; context?: "toolcha
                 <span className="smart-log__phase-meta">
                   {group.phase === "ff-compile" && group.compileCount > 0 && <span className="smart-log__badge">{group.compileCount} C files</span>}
                   {group.phase === "ff-compile" && group.assembleCount > 0 && <span className="smart-log__badge">{group.assembleCount} ASM files</span>}
-                  {group.phase === "ff-shaders" && <span className="smart-log__badge">{group.entries.length} steps</span>}
-                  {group.phase === "ff-link" && <span className="smart-log__badge">{group.entries.filter((e) => e.compileOp === "AR").length} archives + {group.entries.filter((e) => e.compileOp === "LDXX" || e.compileOp === "LD").length} linked</span>}
-                  {group.phase === "ff-strip" && <span className="smart-log__badge">{group.entries.length} stripped</span>}
-                  {group.phase === "ff-docs" && <span className="smart-log__badge">{group.entries.length} docs</span>}
                   {(group.phase === "tc-install" || group.phase === "ff-pkgconfig") && <span className="smart-log__badge">{group.entries.filter((e) => e.message.startsWith("installing ") || e.message.startsWith("reinstalling ")).length} packages</span>}
-                  {group.phase === "ff-dlldeps" && (
+                  {group.phase === "ff-extraction" && (
                     <>
                       {group.copiedDlls.length > 0 && <span className="smart-log__badge smart-log__badge--ok">{group.copiedDlls.length} copied</span>}
                       {group.skippedDllCount > 0 && <span className="smart-log__badge">{group.skippedDllCount} already present</span>}
@@ -1428,8 +1419,8 @@ function SmartLogViewer(props: { entries: SecurityLogEntry[]; context?: "toolcha
                     </>
                   )}
 
-                  {/* DLL deps: split into copied and system/skipped */}
-                  {group.phase === "ff-dlldeps" && (
+                  {/* Extraction: split copied dependencies and system/skipped dependencies */}
+                  {group.phase === "ff-extraction" && (
                     <>
                       {group.copiedDlls.length > 0 && (
                         <div className="smart-log__dll-section">
@@ -1518,7 +1509,7 @@ function SmartLogViewer(props: { entries: SecurityLogEntry[]; context?: "toolcha
                   )}
 
                   {/* All other phases: show full raw entries */}
-                  {group.phase !== "ff-compile" && group.phase !== "ff-dlldeps" && group.phase !== "tc-install" && group.phase !== "ff-configure" && (
+                  {group.phase !== "ff-compile" && group.phase !== "ff-extraction" && group.phase !== "tc-install" && group.phase !== "ff-configure" && (
                     group.entries.map((e, i) => (
                       <p className={`log-list__entry log-list__entry--${e.level}`} key={`${group.phase}-${i}`}>
                         <strong>{e.level}</strong><time className="log-list__time">{e.timestamp}</time><span>{e.message}</span>

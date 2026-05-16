@@ -239,7 +239,7 @@ func ConfigureScriptLines(configureFlags []string) ([]string, error) {
 		if mod.MinVersion != "" {
 			pkgConfigChecks = append(pkgConfigChecks, pkgConfigCheck{
 				mod:  mod,
-				line: "${PKG_CONFIG} --print-errors --atleast-version="+shellQuote(mod.MinVersion)+" "+shellQuote(mod.Name)+" >/dev/null 2>&1",
+				line: "${PKG_CONFIG} --print-errors --atleast-version=" + shellQuote(mod.MinVersion) + " " + shellQuote(mod.Name) + " >/dev/null 2>&1",
 			})
 		}
 	}
@@ -357,11 +357,11 @@ func MakeScriptLines(parallelJobCount int) ([]string, error) {
 	return []string{
 		"#!/usr/bin/env bash",
 		"set -euo pipefail",
+		`echo "Starting FFmpeg make at $(date +%T)"`,
 		fmt.Sprintf("make -j%d", parallelJobCount),
+		`echo "FFmpeg make completed at $(date +%T)"`,
 	}, nil
 }
-
-
 
 func shellQuote(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
