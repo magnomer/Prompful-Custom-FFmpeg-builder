@@ -99,3 +99,11 @@ Included rows are checked and locked because they are built as part of a normal 
 The Options page exposes common FFmpeg configure choices as named rows. Manual advanced flags remain an escape hatch and appear in Review before backend confirmation.
 
 See [LIBRARY_MODEL.md](https://github.com/magnomer/Prompful-Custom-FFmpeg-builder/blob/main/LIBRARY_MODEL.md) for the full model.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](./LICENSE).
+
+This license applies only to this build orchestrator application and its own source code.
+
+It does not license FFmpeg, MSYS2, compiler toolchains, external codec libraries, downloaded source archives, generated binaries, or other third-party components. Build outputs may be subject to separate license terms depending on the selected configuration, enabled libraries, build flags, and distribution behavior.
