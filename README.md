@@ -37,8 +37,6 @@ The central rule is:
 
 > Every function that downloads, extracts, installs, deletes, updates, or executes external tooling must require a dedicated user consent type in its signature.
 
-Boolean consent values are forbidden.
-
 The app uses this flow:
 
 ```text
@@ -52,82 +50,6 @@ Request plan
   -> mutating functions verify consent and plan hash
   -> execution begins
 ```
-
-The frontend is not a trusted security boundary. Final approval is the backend-owned native dialog.
-
-## Implemented safeguards
-
-- Plan-first public API; no direct `StartBuild(settings)` method.
-- Backend-owned review sessions with action name, plan hash, consent text hash, expiry, and one-time use.
-- Backend-owned native confirmation dialog after frontend approval request.
-- Action-specific consent structs:
-  - `Msys2DownloadConsent`
-  - `FfmpegSourceDownloadConsent`
-  - `ArchiveExtractionConsent`
-  - `PacmanInstallConsent`
-  - `CommandExecutionConsent`
-  - `WorkspaceDeletionConsent`
-- Stable plan hashes and backend recomputation before execution.
-- HTTPS-only downloads in normal mode.
-- Download host allowlists.
-- Optional SHA-256 reuse policy: existing downloads are reused only when the expected hash matches.
-- MSYS2 `.sig` detached signature verification with a built-in OpenPGP verifier.
-- FFmpeg `.asc` detached signature verification with the FFmpeg release signing key.
-- Safe archive extraction with path traversal checks.
-- `.tar.zst`, `.tar.xz`, `.tar.gz`, `.tgz`, `.tar.bz2`, and `.tar` archive-format handling.
-- Symlink and hardlink extraction blocked.
-- Archive file-count, total-byte, and single-file-size limits.
-- Controlled workspace layout.
-- No system PATH modification by managed build steps.
-- No admin-right requirement by default.
-- No existing `C:\msys64` modification by default.
-- External command execution isolated in `internal/execution` for managed build commands.
-- HTTP download code isolated in `internal/download`.
-- Generated Bash scripts are written to workspace files and verified by SHA-256 before execution.
-- MSYS2 execution builds an explicit PATH from the private MSYS2 root and selected shell profile.
-- Security log events are emitted to the UI.
-- Approved action logs are written under `workspace/logs/<runId>/`.
-- FFmpeg artifacts are copied into `workspace/FFmpeg` and hashed in the build report.
-- The Result tab can show output files, hashes, final configure flags, selected libraries, selected configure options, and installed library packages.
-
-## Workspace layout
-
-For a selected workspace directory, the backend creates and checks these directories:
-
-```text
-workspace/
-  cache/
-    downloads/
-  sources/
-  build/
-    scripts/
-  prefix/
-  FFmpeg/
-  logs/
-  toolchains/
-    msys2/
-```
-
-Build outputs are copied to `workspace/FFmpeg`. Approved action logs are written to `workspace/logs/<runId>/`.
-
-## Wails public backend API
-
-Public backend methods are plan-first or read/open helpers:
-
-```go
-GetInitialApplicationState()
-SelectWorkspace()
-RequestToolchainPreparationPlan(...)
-ApproveToolchainPreparationPlan(...)
-RequestFfmpegBuildPlan(...)
-ApproveFfmpegBuildPlan(...)
-CancelApprovedAction()
-GetBuildResult(...)
-OpenResultFolder(...)
-OpenExternalUrl(...)
-```
-
-Approval methods receive a review session id plus an approval request. They do not receive an executable plan back from the frontend.
 
 ## FFmpeg build flow
 
@@ -182,6 +104,12 @@ go run scripts/security-scan.go
 ```
 
 In this offline environment, `go test ./...` could not complete because Go dependencies were not available locally and network access to `proxy.golang.org` was blocked.
+
+## Download
+
+Download the latest release from the GitHub Releases page:
+
+[Latest release](https://github.com/magnomer/Prompful-Custom-FFmpeg-builde/releases/latest)
 
 ## Screenshots
 
