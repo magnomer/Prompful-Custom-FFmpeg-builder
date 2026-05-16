@@ -1,5 +1,5 @@
 **THIS PROJECT WAS BUILT THROUGH VIBE CODING WITH HELP FROM CLAUDE AND CHATGPT**.
-
+This is a personal project, so some bugs may still exist.
 
 
 
