@@ -15,7 +15,7 @@ func main() {
 	application := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:  "CustomFFmpeg Builder",
+		Title:  "Promptful Custom FFmpeg Builder",
 		Width:  1200,
 		Height: 820,
 		AssetServer: &assetserver.Options{
