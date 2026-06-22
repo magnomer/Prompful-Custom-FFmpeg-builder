@@ -22,7 +22,7 @@ The code uses operation-oriented names for security-sensitive behavior:
 
 ## Main code paths
 
-The main app code paths are:
+The main program code paths are:
 
 1. `app.go` — public backend methods called by the UI, native confirmation, action startup, artifact copying, and result helpers.
 2. `internal/reviewsession/reviewsession.go` — backend-owned review session creation, consent text hash, expiry, and approval checks.
@@ -75,7 +75,7 @@ The approval panel sends approval requests to the backend. The backend-owned nat
 
 ## Static boundary scanner
 
-The static scanners are part of the code-structure model. They search the source tree for sensitive primitives and compare each hit with the package boundary used by the app.
+The static scanners are part of the code-structure model. They search the source tree for sensitive primitives and compare each hit with the package boundary used by the program.
 
 The scanned patterns include command execution, HTTP download primitives, direct deletion, recursive deletion, direct file writes, file renaming, archive handling, path resolution, review approval, consent checks, generated script writes, and script hash verification.
 

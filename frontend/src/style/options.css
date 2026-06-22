@@ -1,0 +1,290 @@
+.options-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+.options-page .page-header {
+  margin-bottom: 0;
+}
+
+/* Briefing card (accent bar) — matches .libraries-briefing */
+.options-briefing {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding: 18px 18px 18px 30px;
+  border: 1px solid #e4ebf5;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.options-briefing::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 0;
+  width: 8px;
+  background: #9bb7e8;
+}
+
+.options-briefing p {
+  margin: 0;
+  color: #5f6b7c;
+  line-height: 1.55;
+}
+
+/* Summary cards — matches .library-summary */
+.option-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.option-summary__item {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #dce3ef;
+  border-radius: 8px;
+  background: #fbfdff;
+}
+
+.option-summary__label {
+  color: #68758c;
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.option-summary__value {
+  color: #172033;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.option-summary__license {
+  justify-self: start;
+  min-width: max-content;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.option-summary__license--lgpl-local {
+  background: #e6f7ec;
+  color: #166534;
+}
+
+.option-summary__license--gpl-local {
+  background: #fff3cc;
+  color: #6a4b00;
+}
+
+.option-summary__license--nonfree-local {
+  background: #ffe0e0;
+  color: #8a1d1d;
+}
+
+/* Toolbar + technical toggle — matches .libraries-toolbar */
+.options-toolbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.options-technical-toggle {
+  min-width: 150px;
+  height: 42px;
+  padding: 0 14px;
+  font-size: 0.88rem;
+  line-height: 1;
+}
+
+.options-technical-toggle[aria-expanded="true"] {
+  background: #eef5ff;
+  border-color: #8fb3ff;
+  color: #2456d6;
+}
+
+/* Technical panel — matches .libraries-technical-panel */
+.option-technical-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid #d7e2f0;
+  border-radius: 10px;
+  background: #fbfdff;
+}
+
+.option-technical-panel__title {
+  margin: 0;
+  color: #172033;
+  font-size: 1rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.option-technical-details {
+  display: grid;
+  gap: 14px;
+}
+
+.option-technical-detail {
+  display: grid;
+  gap: 6px;
+  padding-top: 14px;
+  border-top: 1px solid #edf2f8;
+}
+
+.option-technical-detail:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.option-technical-detail__title {
+  margin: 0;
+  color: #68758c;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.option-technical-detail__text {
+  margin: 0;
+  color: #5f6b7c;
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.option-technical-detail__text code {
+  font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-size: 0.88em;
+}
+
+/* Stand-alone input cards (build jobs, advanced flags) — matches .build-tools-section */
+.options-section {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 18px 18px 18px 30px;
+  border: 1px solid #e4ebf5;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.options-section::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 0;
+  width: 8px;
+  background: #9bb7e8;
+}
+
+.options-field {
+  margin-bottom: 0;
+}
+
+/* Option list/groups/rows — matches .library-list/.library-group/.library-row */
+.option-list {
+  display: grid;
+  gap: 18px;
+}
+
+.option-group {
+  border: 1px solid #dce3ef;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.option-group__title {
+  margin: 0;
+  padding: 13px 16px;
+  background: #f3f6fb;
+  color: #172033;
+  font-size: 1rem;
+}
+
+.option-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 14px 16px;
+  border-top: 1px solid #e6ebf3;
+  cursor: pointer;
+}
+
+.option-row:hover {
+  background: #fbfdff;
+}
+
+.option-row__main {
+  display: grid;
+  gap: 5px;
+}
+
+.option-row__name {
+  font-weight: 850;
+}
+
+.option-row__plain {
+  color: #5d6980;
+  line-height: 1.45;
+}
+
+.option-row__risk-word {
+  color: #c0271e;
+  font-weight: 850;
+}
+
+.option-row__detail {
+  color: #6c7890;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.option-row__detail--flags {
+  font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+/* Risk pill — mirrors .library-row__license. low=green, medium=amber, high=red. */
+.option-row__risk {
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #eef2f7;
+  color: #33415c;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.option-row__risk--low {
+  background: #e6f7ec;
+  color: #166534;
+}
+
+.option-row__risk--medium {
+  background: #fff3cc;
+  color: #6a4b00;
+}
+
+.option-row__risk--high {
+  background: #ffe0e0;
+  color: #8a1d1d;
+}

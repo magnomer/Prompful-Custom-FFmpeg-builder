@@ -1,0 +1,17 @@
+.prep-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+.prep-page .page-header {
+  margin-bottom: 0;
+}
+
+.prep-page .approval-panel,
+.prep-page .live-progress,
+.prep-page .empty-text {
+  margin-bottom: 0;
+}

@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"customffmpegbuilder/internal/consent"
@@ -347,7 +348,58 @@ func copyCommandOutput(pipeReader interface{ Read([]byte) (int, error) }, logFil
 			_, _ = logFile.WriteString(line + "\n")
 		}
 		if emitProgress != nil {
-			emitProgress(level, line)
+			emitProgress(classifyLogLine(level, line), line)
 		}
 	}
+}
+
+// compilerSourceEchoRegex matches the source-echo and caret lines GCC prints
+// beneath a diagnostic, such as "297 |     memmove(...)" and "    | ^~~~". These
+// arrive on stderr but are continuation context, not warnings of their own.
+var compilerSourceEchoRegex = regexp.MustCompile(`^\s*(?:\d+\s*)?\|`)
+
+// classifyLogLine refines the severity of a streamed build-output line from its
+// content. The raw pipe gives only a coarse default: every stderr line would
+// otherwise be a "warn", burying genuine warnings under compiler notes,
+// source-echo lines, "#pragma message" output, and pacman reinstall notices.
+// This promotes real errors and demotes known-benign noise so the UI's warning
+// level reflects lines that actually warrant attention. The full raw line is
+// still written verbatim to the on-disk log regardless of level.
+func classifyLogLine(defaultLevel string, line string) string {
+	trimmed := strings.TrimSpace(line)
+	if trimmed == "" {
+		return defaultLevel
+	}
+	lower := strings.ToLower(trimmed)
+
+	// Genuine failures: compiler/linker/configure/pacman errors and aborted make.
+	if strings.Contains(lower, "error:") ||
+		strings.Contains(lower, "undefined reference") ||
+		strings.HasPrefix(lower, "collect2:") ||
+		strings.Contains(line, "] Error ") {
+		return "error"
+	}
+
+	// Benign noise that is not a real warning. Demote to info so it does not
+	// drown out actual warnings.
+	if strings.Contains(line, "is up to date -- reinstalling") ||
+		strings.Contains(line, "dependency cycle detected") ||
+		strings.Contains(line, "will be installed before its") ||
+		strings.Contains(lower, "note:") ||
+		strings.Contains(line, "#pragma message") ||
+		strings.HasPrefix(trimmed, "In file included from") ||
+		strings.HasPrefix(trimmed, "In function") ||
+		strings.HasPrefix(trimmed, "inlined from") ||
+		strings.Contains(line, ": In function") ||
+		compilerSourceEchoRegex.MatchString(line) {
+		return "info"
+	}
+
+	// Genuine compiler/tool warnings stay (or are raised to) warn so they remain
+	// visible even when they arrive on stdout.
+	if strings.Contains(lower, "warning:") {
+		return "warn"
+	}
+
+	return defaultLevel
 }

@@ -1,0 +1,239 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #172033;
+  background: #eef2f7;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; height: 100vh; overflow: hidden; background: #eef2f7; }
+button, input, select, textarea { font: inherit; }
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  gap: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.left-nav {
+  height: 100vh;
+  overflow-y: auto;
+  padding: 22px 16px;
+  background: #121826;
+  color: #f7faff;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+.left-nav__bottom {
+  padding-top: 12px;
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.left-nav__brand {
+  font-size: 1.25rem;
+  font-weight: 850;
+  margin-bottom: 8px;
+}
+
+.left-nav__rule {
+  margin: 0 0 18px;
+  color: #aeb9ce;
+  line-height: 1.45;
+  font-size: 0.9rem;
+}
+
+.left-nav__items { display: grid; gap: 8px; }
+.left-nav__item {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 12px;
+  text-align: left;
+}
+.left-nav__item--active {
+  background: #24324a;
+  border-color: #4c638d;
+}
+.left-nav__label { display: block; font-weight: 800; }
+.left-nav__description { display: block; margin-top: 4px; color: #aeb9ce; font-size: 0.82rem; }
+
+.left-nav__locale-menu {
+  position: relative;
+  margin-top: 10px;
+}
+.left-nav__locale-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #4c638d;
+  border-radius: 10px;
+  background: #1a2437;
+  color: #f7f9fd;
+  cursor: pointer;
+  padding: 10px 12px;
+  text-align: left;
+  outline: none;
+}
+.left-nav__locale-button:hover,
+.left-nav__locale-button--open {
+  border-color: #8fb3ff;
+  background: #22304a;
+}
+.left-nav__locale-button:focus-visible {
+  border-color: #8fb3ff;
+  box-shadow: 0 0 0 3px rgba(143, 179, 255, 0.18);
+}
+.left-nav__locale-chevron {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #aeb9ce;
+  border-bottom: 2px solid #aeb9ce;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 140ms ease;
+}
+.left-nav__locale-button--open .left-nav__locale-chevron {
+  transform: translateY(2px) rotate(225deg);
+}
+.left-nav__locale-popover {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px);
+  padding: 6px;
+  border: 1px solid #4c638d;
+  border-radius: 12px;
+  background: #0f1726;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
+}
+.left-nav__locale-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #f7f9fd;
+  cursor: pointer;
+  padding: 9px 10px;
+  text-align: left;
+}
+.left-nav__locale-option:hover,
+.left-nav__locale-option:focus-visible,
+.left-nav__locale-option--selected {
+  background: #24324a;
+}
+.left-nav__locale-check {
+  color: #8fb3ff;
+  font-weight: 900;
+}
+
+.tab-right-column {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.tab-panel {
+  flex: 1;
+  padding: 32px 38px;
+  overflow: auto;
+  background: #ffffff;
+  scrollbar-width: thin;
+  scrollbar-color: #c2cdde transparent;
+}
+.tab-panel::-webkit-scrollbar { width: 14px; height: 14px; }
+.tab-panel::-webkit-scrollbar-track { background: transparent; }
+.tab-panel::-webkit-scrollbar-thumb {
+  background: #c2cdde;
+  border-radius: 999px;
+  border: 4px solid #ffffff;
+  background-clip: padding-box;
+}
+.tab-panel::-webkit-scrollbar-thumb:hover {
+  background: #9fb0cc;
+  border: 4px solid #ffffff;
+  background-clip: padding-box;
+}
+.tab-panel::-webkit-scrollbar-thumb:active { background: #8497b8; border: 4px solid #ffffff; background-clip: padding-box; }
+.tab-panel::-webkit-scrollbar-corner { background: transparent; }
+
+.tab-page {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  min-height: calc(100vh - 120px);
+  padding: 0;
+}
+
+.page-header { margin-bottom: 22px; }
+.page-header__title { margin: 0 0 7px; color: #1e3a8a; font-size: 2rem; line-height: 1.1; }
+.page-header__text { margin: 0; color: #5d6980; line-height: 1.55; }
+
+.field { display: grid; gap: 7px; margin-bottom: 16px; }
+.field__label { font-weight: 800; color: #26324a; }
+.field__hint { color: #68758c; font-size: 0.9rem; }
+.field__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+.field__input, .field__textarea {
+  width: 100%;
+  border: 1px solid #cbd4e3;
+  border-radius: 12px;
+  background: #fbfcff;
+  color: #172033;
+  padding: 11px 12px;
+  outline: none;
+}
+.field__textarea {
+  resize: vertical;
+  font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.actions { display: flex; gap: 10px; margin-top: 18px; }
+.tab-bottom-bar {
+  flex-shrink: 0;
+  display: flex;
+  gap: 10px;
+  padding: 14px 30px;
+  background: #e8edf5;
+  border-top: 2px solid #c8d2e4;
+}
+.recent-log { margin-top: 16px; }
+.recent-log__label { display: block; font-weight: 700; font-size: 0.85rem; color: #68758c; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+.button {
+  border: 1px solid #b0bdd4;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #172033;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 11px 15px;
+}
+.button--primary { background: #2456d6; color: white; }
+.button--link { color: #2456d6; border-color: #c8d8fb; background: #f8fbff; }
+.button--link:hover { border-color: #8fb3ff; background: #eef5ff; }
+.button--danger { background: #c83737; color: white; }
+.button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+@media (max-width: 840px) {
+  .app-shell { grid-template-columns: 1fr; height: auto; overflow: visible; }
+  .left-nav { height: auto; overflow-y: visible; }
+ .tab-panel { padding: 16px; }
+  .tab-page { min-height: auto; }
+  .tab-right-column { height: auto; overflow: visible; }
+  .tab-bottom-bar { padding: 12px 16px; }
+  .metadata { grid-template-columns: 1fr; }
+  .left-nav__locale-popover { top: calc(100% + 8px); bottom: auto; }
+}

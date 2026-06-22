@@ -2,11 +2,15 @@ type PlanWarning = {
   // Wails-generated Go models expose this as string, so keep the frontend type compatible.
   riskLevelName: string;
   message: string;
+  messageKey?: string;
+  messageValues?: Record<string, string | number>;
 };
 
 type PlanOperation = {
   operationName: string;
   summary: string;
+  summaryKey?: string;
+  summaryValues?: Record<string, string | number>;
 };
 
 type LibraryChoice = {
@@ -32,6 +36,7 @@ type ConfigureOptionChoice = {
   technicalNote: string;
   defaultEnabled: boolean;
   locked: boolean;
+  riskLevelName: string;
 };
 
 type BuildToolSettings = {

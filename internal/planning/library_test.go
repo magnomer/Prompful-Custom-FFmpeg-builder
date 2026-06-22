@@ -24,7 +24,7 @@ func TestPlanFfmpegBuildShowsLibrariesSeparately(t *testing.T) {
 	if !stringSliceContains(plan.GeneratedConfigureFlags, "--enable-libx264") {
 		t.Fatalf("expected generated x264 flag in plan: %#v", plan.GeneratedConfigureFlags)
 	}
-	if !stringSliceContains(plan.RequiredMsys2PackageNames, "mingw-w64-ucrt-x86_64-x264") {
+	if !stringSliceContains(plan.RequiredMsys2PackageNames, "mingw-w64-ucrt-x86_64-libx264") {
 		t.Fatalf("expected generated x264 package in plan: %#v", plan.RequiredMsys2PackageNames)
 	}
 	if !stringSliceContains(plan.ConfigureFlags, "--enable-gpl") {
@@ -103,6 +103,26 @@ func TestOpenSSLAndGnuTLSCannotBothBeEnabled(t *testing.T) {
 	}
 	if !stringSliceContains(plan.ConfigureFlags, "--enable-openssl") || !stringSliceContains(plan.ConfigureFlags, "--enable-gnutls") {
 		t.Fatalf("expected both TLS flags in the blocked review plan: %#v", plan.ConfigureFlags)
+	}
+}
+
+func TestShadercAndGlslangCannotBothBeEnabled(t *testing.T) {
+	settings := DefaultFfmpegBuildSettings()
+	settings.WorkspaceDirectory = `C:\CustomFFmpegBuilder\workspace`
+	settings.FfmpegSourceArchiveUrl = "https://ffmpeg.org/releases/ffmpeg-test.tar.xz"
+	settings.FfmpegSourceSignatureUrl = "https://ffmpeg.org/releases/ffmpeg-test.tar.xz.asc"
+	settings.FfmpegSourceSha256Hash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	settings.SelectedLibraryIds = []string{"shaderc", "glslang"}
+
+	plan, err := PlanFfmpegBuild(settings)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.IsExecutable {
+		t.Fatalf("expected shaderc and glslang together to be blocked")
+	}
+	if !stringSliceContains(plan.ConfigureFlags, "--enable-libshaderc") || !stringSliceContains(plan.ConfigureFlags, "--enable-libglslang") {
+		t.Fatalf("expected both shader compiler flags in the blocked review plan: %#v", plan.ConfigureFlags)
 	}
 }
 

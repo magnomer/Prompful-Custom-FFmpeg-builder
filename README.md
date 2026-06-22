@@ -1,38 +1,78 @@
-**THIS PROJECT WAS BUILT THROUGH VIBE CODING WITH HELP FROM CLAUDE AND CHATGPT**.
-
-This is a personal project, so some bugs may still exist.
-
-
-
+<div align="center">
 
 # Promptful Custom FFmpeg Builder
 
-A Windows-focused Go + Wails GUI for building FFmpeg locally from user-approved source archives.
+**EN** · A Windows desktop program (Go + Wails) that builds FFmpeg from source for you, using a private MSYS2 toolchain — after you review and approve each step.
+**KO** · 비공개 MSYS2 툴체인으로 FFmpeg를 소스에서 직접 빌드해 주는 Windows 데스크톱 프로그램(Go + Wails)입니다. 모든 단계는 검토·승인 후 실행됩니다.
 
-The application itself intentionally contains:
+<br>
 
-- no FFmpeg binary,
-- no FFmpeg source archive,
-- no codec library,
-- no multimedia library,
-- no generated FFmpeg build.
+<a href="#english"><img alt="English" src="https://img.shields.io/badge/English-Read-555555?style=for-the-badge"></a>
+&nbsp;·&nbsp;
+<a href="#korean"><img alt="한국어" src="https://img.shields.io/badge/한국어-읽기-555555?style=for-the-badge"></a>
 
-It is a consent-first build orchestrator. It downloads approved source/tool archives, verifies them, extracts them into a private workspace, runs approved build scripts, and copies build outputs into a local result folder.
+</div>
 
-## Current scope
+> Built with the help of Claude and ChatGPT. This is a personal project, so bugs may still exist.
 
-This project profile is Windows-only. Planning is blocked on non-Windows hosts.
+---
 
-The default toolchain profile uses a private MSYS2 archive inside the selected workspace:
+<a id="english"></a>
 
-- default shell profile: `ucrt64`
-- supported shell profiles: `ucrt64`, `mingw64`, `clang64`
-- default MSYS2 archive URL: `https://repo.msys2.org/distrib/msys2-x86_64-latest.tar.zst`
-- default MSYS2 signature URL: `https://repo.msys2.org/distrib/msys2-x86_64-latest.tar.zst.sig`
+## English
 
-The app accepts MSYS2 `.tar.zst` archives and `.tar.xz` archives. It intentionally does not run the MSYS2 `.exe` installer or self-extracting installer.
+### What it is
 
-## Build
+Promptful Custom FFmpeg Builder is a Windows GUI that automates a local FFmpeg build. You pick the libraries and options you want, review the exact plan it generates, and approve it. The program then downloads the sources, sets up a private MSYS2 build environment inside your chosen workspace, runs `configure` and `make`, and copies the finished binaries into a result folder.
+
+The program ships with **no FFmpeg binary, no source archive, and no bundled codec libraries**. Everything is downloaded fresh from official sources during a build you approve.
+
+### How it works
+
+Every build runs through a review-then-approve flow:
+
+1. You select libraries and configure options in the UI.
+2. The program generates a plan: the exact packages, configure flags, scripts, license effects, and warnings.
+3. You review that plan, then approve it.
+4. A native Windows confirmation dialog asks one more time before anything runs.
+5. The build runs and streams its log live. You can cancel at any point.
+
+Downloads are verified before use — FFmpeg sources against their PGP signature, the MSYS2 archive against its detached signature. All work stays inside the workspace folder you pick; nothing is installed system-wide and admin rights are not required.
+
+### FFmpeg build steps
+
+1. Download the FFmpeg source archive, its `.asc` signature, and the release signing key.
+2. Verify the signature, then extract the source.
+3. Install the MSYS2 packages required by your selected libraries.
+4. Generate, hash, and run the `configure` script through the private MSYS2 Bash.
+5. Generate, hash, and run `make` with the chosen parallel job count.
+6. Copy `ffmpeg.exe`, `ffprobe.exe`, and the required DLLs into `workspace/FFmpeg/`.
+7. Write `build-report-<runId>.json` with the selected libraries, flags, license profile, file sizes, and SHA-256 hashes.
+
+### Libraries and options
+
+The **Library** page splits FFmpeg's built-in components from external libraries. Built-in rows are checked and locked. External libraries are off by default and, when enabled, add packages, configure flags, license effects, and any relevant warnings.
+
+The **Options** page exposes common `configure` choices as named rows. Manual advanced flags are available as an escape hatch and appear in the review before you confirm.
+
+See [LIBRARY_MODEL.md](LIBRARY_MODEL.md) for the full model.
+
+### Requirements
+
+- Windows 10 or later (Windows-only; planning is blocked on other hosts)
+- An internet connection for downloading sources and packages
+- ~Several GB of free disk space in the workspace for the toolchain and build
+
+The toolchain uses a private MSYS2 archive inside your workspace:
+
+- Default shell profile: `ucrt64` (also supports `mingw64`, `clang64`)
+- Accepts MSYS2 `.tar.zst` (preferred) and `.tar.xz` archives — never the `.exe` installer
+
+### Download
+
+Grab the latest build from the [Releases page](https://github.com/magnomer/Prompful-Custom-FFmpeg-builder/releases/latest).
+
+### Build from source
 
 ```bash
 go install github.com/wailsapp/wails/v2/cmd/wails@latest
@@ -41,69 +81,78 @@ npm install
 cd ..
 wails dev
 ```
-## Download
 
-Download the latest release from the GitHub Releases page:
+### License
 
-[Latest release](https://github.com/magnomer/Prompful-Custom-FFmpeg-builder/releases/latest)
+The program builds FFmpeg from official sources; the resulting binary's license depends on the libraries and options you select. The Library page shows the derived license profile (e.g. GPL effects) before you build.
 
-## Screenshots
+---
 
-<img width="1186" height="1107" alt="Screenshot-01" src="https://github.com/user-attachments/assets/508ae8f6-4509-4962-894b-56a93a786029" />
-<img width="1186" height="1107" alt="Screenshot-02" src="https://github.com/user-attachments/assets/e1cbcd80-4290-41b6-8976-9bf0f54085a9" />
-<img width="1186" height="907" alt="Screenshot-03" src="https://github.com/user-attachments/assets/30b7a10b-9d53-4448-805a-4c9d8a020a34" />
+<a id="korean"></a>
 
+## 한국어
 
-## Security model
+### 소개
 
-The central rule is:
+Promptful Custom FFmpeg Builder는 FFmpeg 로컬 빌드를 자동화하는 Windows GUI입니다. 라이브러리와 옵션을 고르고, 빌드 계획을 검토하여 커스텀 빌드를 작성할 수 있도록 도와줍니다. 빌드 계획이 문제 없을 경우 소스를 다운로드하여 작업 공간 내에 비공개 MSYS2 빌드 환경을 구성한 다음 `configure`와 `make`를 실행하고, 완성된 바이너리는 결과 폴더로 복사합니다.
 
-> Every function that downloads, extracts, installs, deletes, updates, or executes external tooling must require a dedicated user consent type in its signature.
+프로그램에는 **FFmpeg 바이너리, 소스 아카이브, 번들된 코덱 라이브러리가 전혀 없습니다.** 모든 것은 사용자가 승인한 빌드 중 공식 출처에서 새로 다운로드됩니다.
 
-The app uses this flow:
+### 작동 방식
 
-1. Request plan
-2. backend stores immutable plan in a review session
-3. frontend displays dry-run operations, warnings, packages, flags, license effects, and consent text
-4. user requests approval for exact action name and plan hash
-4. backend validates review session, consent text hash, expiry, and plan hash
-5. backend shows native OS confirmation dialog
-6. backend creates action-specific consent values
-7. mutating functions verify consent and plan hash
-8. execution begins
+모든 빌드는 검토 후 승인 흐름을 거칩니다:
 
-## FFmpeg build flow
+1. UI에서 라이브러리와 configure 옵션을 선택합니다.
+2. 프로그램이 계획을 생성합니다: 정확한 패키지, configure 플래그, 스크립트, 라이선스 영향, 경고.
+3. 계획을 검토한 뒤 승인합니다.
+4. 실행 직전, Windows 기본 확인 대화상자가 한 번 더 묻습니다.
+5. 빌드가 실행되고 로그가 실시간으로 표시됩니다. 언제든 취소할 수 있습니다.
 
-The FFmpeg build action currently performs these planned operations:
+다운로드는 사용 전에 검증됩니다 — FFmpeg 소스는 PGP 서명으로, MSYS2 아카이브는 분리된(detached) 서명으로 확인합니다. 모든 작업은 선택한 작업 공간 폴더 안에서만 이루어지며, 시스템 전역 설치나 관리자 권한이 필요하지 않습니다.
 
-1. download the approved FFmpeg source archive;
-2. download the matching `.asc` signature;
-3. download the FFmpeg release signing key;
-4. verify the detached signature;
-5. extract the source archive into a private source directory;
-6. require exactly one extracted source child directory;
-7. install MSYS2 packages required by selected external libraries;
-8. write and hash the approved configure script;
-9. run configure through the private MSYS2 Bash executable;
-10. write and hash the approved make script;
-11. run make with the approved parallel job count;
-12. copy `ffmpeg.exe`, `ffprobe.exe`, and required DLL dependencies into `workspace/FFmpeg`;
-13. write `build-report-<runId>.json`.
+### FFmpeg 빌드 단계
 
-## Library and options model
+1. FFmpeg 소스 아카이브, `.asc` 서명, 릴리스 서명 키를 다운로드합니다.
+2. 서명을 검증한 뒤 소스를 압축 해제합니다.
+3. 선택한 라이브러리에 필요한 MSYS2 패키지를 설치합니다.
+4. `configure` 스크립트를 생성·해시하고 비공개 MSYS2 Bash로 실행합니다.
+5. `make` 스크립트를 생성·해시하고 선택한 병렬 작업 수로 실행합니다.
+6. `ffmpeg.exe`, `ffprobe.exe`, 필요한 DLL을 `workspace/FFmpeg/`로 복사합니다.
+7. 선택한 라이브러리, 플래그, 라이선스 프로필, 파일 크기, SHA-256 해시를 담은 `build-report-<runId>.json`을 작성합니다.
 
-The Library page distinguishes FFmpeg components included in the official release from external libraries.
+### 라이브러리 및 옵션
 
-Included rows are checked and locked because they are built as part of a normal FFmpeg source build. External libraries are unchecked until selected and may add packages, configure flags, license effects, and warnings.
+**Library** 페이지는 FFmpeg의 내장 구성 요소와 외부 라이브러리를 구분합니다. 내장 항목은 체크되고 잠겨 있습니다. 외부 라이브러리는 기본적으로 꺼져 있으며, 켜면 패키지, configure 플래그, 라이선스 영향, 관련 경고가 추가됩니다.
 
-The Options page exposes common FFmpeg configure choices as named rows. Manual advanced flags remain an escape hatch and appear in Review before backend confirmation.
+**Options** 페이지는 일반적인 `configure` 선택지를 명명된 항목으로 제공합니다. 수동 고급 플래그는 탈출구(escape hatch)로 제공되며, 확인 전 검토 화면에 표시됩니다.
 
-See [LIBRARY_MODEL.md](https://github.com/magnomer/Prompful-Custom-FFmpeg-builder/blob/main/LIBRARY_MODEL.md) for the full model.
+전체 모델은 [LIBRARY_MODEL.md](LIBRARY_MODEL.md)를 참고하세요.
 
-## License
+### 실행 환경
 
-This project is licensed under the MIT License. See [LICENSE](./LICENSE).
+- Windows 10 이상 (Windows 전용; 다른 호스트에서는 계획 단계가 차단됨)
+- 소스 및 패키지 다운로드를 위한 인터넷 연결
+- 툴체인과 빌드를 위한 작업 공간 여유 디스크 공간 수 GB
 
-This license applies only to this build orchestrator application and its own source code.
+툴체인은 작업 공간 안의 비공개 MSYS2 아카이브를 사용합니다:
 
-It does not license FFmpeg, MSYS2, compiler toolchains, external codec libraries, downloaded source archives, generated binaries, or other third-party components. Build outputs may be subject to separate license terms depending on the selected configuration, enabled libraries, build flags, and distribution behavior.
+- 기본 셸 프로필: `ucrt64` (`mingw64`, `clang64`도 지원)
+- MSYS2 `.tar.zst`(권장) 및 `.tar.xz` 아카이브를 받음 — `.exe` 설치 프로그램은 사용하지 않음
+
+### 다운로드
+
+[Releases 페이지](https://github.com/magnomer/Prompful-Custom-FFmpeg-builder/releases/latest)에서 최신 빌드를 받으세요.
+
+### 소스에서 빌드
+
+```bash
+go install github.com/wailsapp/wails/v2/cmd/wails@latest
+cd frontend
+npm install
+cd ..
+wails dev
+```
+
+### 라이선스
+
+프로그램은 공식 출처에서 FFmpeg를 빌드하며, 결과 바이너리의 라이선스는 선택한 라이브러리와 옵션에 따라 달라집니다. Library 페이지에서 빌드 전에 파생된 라이선스 프로필(예: GPL 영향)을 확인할 수 있습니다.

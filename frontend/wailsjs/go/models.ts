@@ -1,25 +1,4 @@
-export namespace consent {
-	
-	export class ApprovalRequest {
-	    approvedActionName: string;
-	    approvedPlanHash: string;
-	    consentText: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new ApprovalRequest(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.approvedActionName = source["approvedActionName"];
-	        this.approvedPlanHash = source["approvedPlanHash"];
-	        this.consentText = source["consentText"];
-	    }
-	}
-
-}
-
-export namespace main {
+export namespace app {
 	
 	export class ApprovedActionResult {
 	    runId: string;
@@ -147,6 +126,27 @@ export namespace main {
 
 }
 
+export namespace consent {
+	
+	export class ApprovalRequest {
+	    approvedActionName: string;
+	    approvedPlanHash: string;
+	    consentText: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ApprovalRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.approvedActionName = source["approvedActionName"];
+	        this.approvedPlanHash = source["approvedPlanHash"];
+	        this.consentText = source["consentText"];
+	    }
+	}
+
+}
+
 export namespace planning {
 	
 	export class BuildToolSettings {
@@ -180,6 +180,7 @@ export namespace planning {
 	    technicalNote: string;
 	    defaultEnabled: boolean;
 	    locked: boolean;
+	    riskLevelName: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ConfigureOptionChoice(source);
@@ -195,11 +196,14 @@ export namespace planning {
 	        this.technicalNote = source["technicalNote"];
 	        this.defaultEnabled = source["defaultEnabled"];
 	        this.locked = source["locked"];
+	        this.riskLevelName = source["riskLevelName"];
 	    }
 	}
 	export class PlanWarning {
 	    riskLevelName: string;
 	    message: string;
+	    messageKey?: string;
+	    messageValues?: Record<string, string>;
 	
 	    static createFrom(source: any = {}) {
 	        return new PlanWarning(source);
@@ -209,11 +213,15 @@ export namespace planning {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.riskLevelName = source["riskLevelName"];
 	        this.message = source["message"];
+	        this.messageKey = source["messageKey"];
+	        this.messageValues = source["messageValues"];
 	    }
 	}
 	export class PlanOperation {
 	    operationName: string;
 	    summary: string;
+	    summaryKey?: string;
+	    summaryValues?: Record<string, string>;
 	
 	    static createFrom(source: any = {}) {
 	        return new PlanOperation(source);
@@ -223,6 +231,8 @@ export namespace planning {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.operationName = source["operationName"];
 	        this.summary = source["summary"];
+	        this.summaryKey = source["summaryKey"];
+	        this.summaryValues = source["summaryValues"];
 	    }
 	}
 	export class LibraryChoice {

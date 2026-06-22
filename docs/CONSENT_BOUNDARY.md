@@ -1,12 +1,12 @@
 # Consent boundary
 
-This app treats the frontend as a presentation layer, not as the final authority for approving work.
+This program treats the frontend as a presentation layer, not as the final authority for approving work.
 
 The backend creates executable plans, stores review sessions, validates approval requests, opens the native confirmation dialog, and only then creates the action-specific consent values used by download, extraction, installation, command execution, and cleanup code.
 
-## Where consent fits in the app
+## Where consent fits in the program
 
-The app's build flow is plan-first:
+The program's build flow is plan-first:
 
 1. The backend creates an executable plan.
 2. The backend stores that plan in a review session.

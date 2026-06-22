@@ -3,6 +3,8 @@ package main
 import (
 	"embed"
 
+	backendapp "customffmpegbuilder/internal/app"
+
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -12,23 +14,25 @@ import (
 var frontendAssets embed.FS
 
 func main() {
-	application := NewApp()
+	application := backendapp.New()
+	width, height := backendapp.InitialWindowSize(application)
 
 	err := wails.Run(&options.App{
-		Title:  "Promptful Custom FFmpeg Builder",
-		Width:  1200,
-		Height: 820,
+		Title:  backendapp.Localize("app.brand", nil),
+		Width:  width,
+		Height: height,
 		AssetServer: &assetserver.Options{
 			Assets: frontendAssets,
 		},
 		BackgroundColour: &options.RGBA{R: 18, G: 23, B: 34, A: 1},
 		OnStartup:        application.Startup,
+		OnBeforeClose:    application.BeforeClose,
 		OnShutdown:       application.Shutdown,
 		Bind: []interface{}{
 			application,
 		},
 	})
 	if err != nil {
-		println("CustomFFmpeg Builder failed:", err.Error())
+		println(backendapp.Localize("startup.failure", nil), err.Error())
 	}
 }

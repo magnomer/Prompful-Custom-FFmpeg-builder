@@ -3,6 +3,7 @@ package scripting
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -47,5 +48,52 @@ func TestWriteScriptFileRejectsSymlinkPath(t *testing.T) {
 	_, err := WriteScriptFile(ScriptFilePlan{WorkspaceDirectory: workspaceDirectory, ScriptFilePath: scriptPath, ScriptLines: []string{"#!/usr/bin/env bash", "echo safe"}})
 	if err == nil {
 		t.Fatal("expected symlink script path to be rejected")
+	}
+}
+
+func TestConfigureScriptLinesSkipsLensfunWhenFfmpegApiIsIncompatible(t *testing.T) {
+	lines, err := ConfigureScriptLines([]string{"--enable-liblensfun"})
+	if err != nil {
+		t.Fatalf("ConfigureScriptLines: %v", err)
+	}
+	joined := strings.Join(lines, "\n")
+	for _, expected := range []string{
+		"try_enable_lensfun",
+		"lensfun_ffmpeg_api_probe",
+		"lensfun is hidden from automatic presets for now. Backend support is left for future compatibility.",
+		"remove_configure_flag --enable-liblensfun",
+		"lensfun pkg-config diagnostic skipped because --enable-liblensfun was disabled after compatibility checks.",
+		"----- BEGIN ffbuild/config.log tail -----",
+	} {
+		if !strings.Contains(joined, expected) {
+			t.Fatalf("expected generated script to contain %q, got:\n%s", expected, joined)
+		}
+	}
+	if strings.Contains(joined, "apply_lensfun_compatibility_patch") || strings.Contains(joined, "lf_db_create/lf_db_new") {
+		t.Fatalf("lensfun fallback must not patch only part of the API mismatch, got:\n%s", joined)
+	}
+}
+
+func TestConfigureScriptLinesTriesAndSkipsSvtJpegxsWhenIncompatible(t *testing.T) {
+	lines, err := ConfigureScriptLines([]string{"--enable-libsvtjpegxs"})
+	if err != nil {
+		t.Fatalf("ConfigureScriptLines: %v", err)
+	}
+	joined := strings.Join(lines, "\n")
+	for _, expected := range []string{
+		"try_enable_svt_jpeg_xs",
+		"Trying MSYS2/package-provided SvtJpegxs first.",
+		"Trying official upstream SVT-JPEG-XS source as a fallback.",
+		"SVT JPEG XS is hidden from the UI for now. Backend support is left for future compatibility.",
+		"remove_configure_flag --enable-libsvtjpegxs",
+		"SVT JPEG XS pkg-config diagnostic skipped because --enable-libsvtjpegxs was disabled after compatibility checks.",
+		`./configure "${configure_flags[@]}"`,
+	} {
+		if !strings.Contains(joined, expected) {
+			t.Fatalf("expected generated script to contain %q, got:\n%s", expected, joined)
+		}
+	}
+	if strings.Contains(joined, "Patching SvtJpegxs.pc Version") {
+		t.Fatalf("SVT JPEG XS fallback must not fake the pkg-config version, got:\n%s", joined)
 	}
 }

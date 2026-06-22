@@ -1,0 +1,17 @@
+.ffmpeg-build-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+.ffmpeg-build-page .page-header {
+  margin-bottom: 0;
+}
+
+.ffmpeg-build-page .approval-panel,
+.ffmpeg-build-page .live-progress,
+.ffmpeg-build-page .empty-text {
+  margin-bottom: 0;
+}

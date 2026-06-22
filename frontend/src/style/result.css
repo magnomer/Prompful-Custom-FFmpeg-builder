@@ -1,0 +1,18 @@
+.result-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.result-files {
+  display: grid;
+  gap: 10px;
+}
+
+.result-file {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #dce3ef;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fbfcff;
+}

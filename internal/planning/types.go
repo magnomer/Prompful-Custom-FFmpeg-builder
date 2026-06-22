@@ -9,13 +9,17 @@ const (
 )
 
 type PlanWarning struct {
-	RiskLevel RiskLevel `json:"riskLevelName"`
-	Message   string    `json:"message"`
+	RiskLevel     RiskLevel         `json:"riskLevelName"`
+	Message       string            `json:"message"`
+	MessageKey    string            `json:"messageKey,omitempty"`
+	MessageValues map[string]string `json:"messageValues,omitempty"`
 }
 
 type PlanOperation struct {
-	OperationName string `json:"operationName"`
-	Summary       string `json:"summary"`
+	OperationName string            `json:"operationName"`
+	Summary       string            `json:"summary"`
+	SummaryKey    string            `json:"summaryKey,omitempty"`
+	SummaryValues map[string]string `json:"summaryValues,omitempty"`
 }
 
 type LibraryChoice struct {
@@ -41,6 +45,7 @@ type ConfigureOptionChoice struct {
 	TechnicalNote    string   `json:"technicalNote"`
 	DefaultEnabled   bool     `json:"defaultEnabled"`
 	Locked           bool     `json:"locked"`
+	RiskLevelName    string   `json:"riskLevelName"`
 }
 
 type BuildToolSettings struct {

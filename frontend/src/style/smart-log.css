@@ -1,0 +1,70 @@
+.smart-log { display: grid; gap: 12px; }
+
+.smart-log__section { display: grid; gap: 10px; }
+.smart-log__section + .smart-log__section { margin-top: 2rem; }
+.smart-log__section-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #68758c; margin: 0; padding-bottom: 6px; border-bottom: 1px solid #e0e8f4; }
+
+.smart-log__toolbar { display: flex; gap: 8px; margin-bottom: 4px; }
+.smart-log__mode-btn { background: none; border: 1px solid #dce3ef; border-radius: 8px; padding: 6px 14px; font-size: 0.85rem; color: #5d6980; cursor: pointer; }
+.smart-log__mode-btn--active { background: #e8edf7; border-color: #a0b0d0; color: #1e2a40; font-weight: 600; }
+
+.smart-log__banner { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 12px; border: 2px solid; margin-bottom: 4px; }
+.smart-log__banner--info { background: #edf4ee; border-color: #7ec88a; }
+.smart-log__banner--error { background: #fdf0f0; border-color: #e07070; }
+.smart-log__banner--warn { background: #fdf7e8; border-color: #d4a820; }
+.smart-log__banner-icon { font-size: 1.4rem; line-height: 1; }
+.smart-log__banner-text { flex: 1; font-weight: 600; font-size: 0.95rem; }
+.smart-log__banner-time { font-size: 0.82rem; color: #68758c; font-family: "Cascadia Code", "Fira Code", Consolas, monospace; white-space: nowrap; }
+
+.smart-log__stats { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px 0; border-bottom: 1px solid #e8edf7; margin-bottom: 4px; }
+.smart-log__stat { display: flex; flex-direction: column; align-items: center; background: #f4f7fd; border: 1px solid #dce3ef; border-radius: 10px; padding: 10px 16px; min-width: 90px; }
+.smart-log__stat--error { background: #fdf0f0; border-color: #efaaaa; }
+.smart-log__stat--warn { background: #fdf7e8; border-color: #ead28b; }
+.smart-log__stat-value { font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: #1e2a40; }
+.smart-log__stat--error .smart-log__stat-value { color: #b94040; }
+.smart-log__stat--warn .smart-log__stat-value { color: #8a6010; }
+.smart-log__stat-label { font-size: 0.75rem; color: #68758c; text-align: center; margin-top: 2px; }
+
+.smart-log__surface { border-radius: 10px; padding: 12px 16px; margin-bottom: 4px; }
+.smart-log__surface--error { background: #fdf0f0; border: 1px solid #efaaaa; }
+.smart-log__surface--warn { background: #fdf7e8; border: 1px solid #ead28b; }
+.smart-log__surface-title { font-size: 0.85rem; font-weight: 700; margin: 0 0 8px; color: #5d3030; }
+.smart-log__surface--warn .smart-log__surface-title { color: #6a4a10; }
+.smart-log__surface-entry { display: flex; gap: 10px; margin: 4px 0; font-size: 0.82rem; align-items: baseline; }
+
+.smart-log__phase { border: 1px solid #dce3ef; border-radius: 12px; overflow: hidden; }
+.smart-log__phase-header { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #f8fafd; border: none; cursor: pointer; text-align: left; }
+.smart-log__phase-header:hover { background: #eef2fa; }
+.smart-log__phase-label { font-weight: 600; font-size: 0.9rem; color: #1e2a40; flex: 1; }
+.smart-log__phase-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.smart-log__phase-chevron { font-size: 0.7rem; color: #8090a8; margin-left: 4px; }
+
+.smart-log__badge { font-size: 0.75rem; background: #e4ecf7; border: 1px solid #c0d0e8; border-radius: 20px; padding: 2px 9px; color: #3a5080; white-space: nowrap; }
+.smart-log__badge--ok { background: #e4f0e8; border-color: #90c8a0; color: #2a6040; }
+.smart-log__badge--dim { background: #f0f0f0; border-color: #d0d0d0; color: #707070; }
+.smart-log__time-range { font-size: 0.75rem; color: #8090a8; font-family: "Cascadia Code", "Fira Code", Consolas, monospace; white-space: nowrap; margin-left: 4px; }
+
+.smart-log__phase-body { padding: 12px 16px; display: grid; gap: 6px; border-top: 1px solid #eaf0f8; }
+
+.smart-log__compile-summary { font-size: 0.87rem; color: #3a5080; background: #f0f5fc; padding: 8px 12px; border-radius: 8px; }
+.smart-log__compile-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.smart-log__compile-file { font-size: 0.74rem; font-family: "Cascadia Code", "Fira Code", Consolas, monospace; background: #e8edf7; border: 1px solid #ccd5e8; border-radius: 5px; padding: 2px 7px; color: #2a3a60; white-space: nowrap; overflow: hidden; max-width: 200px; text-overflow: ellipsis; }
+.smart-log__compile-file--asm { background: #e8f0e8; border-color: #b0c8b0; color: #1a4020; }
+
+.smart-log__dll-section { display: grid; gap: 6px; }
+.smart-log__dll-heading { font-size: 0.8rem; color: #3a5080; font-weight: 700; }
+.smart-log__dll-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.smart-log__dll-tag { font-size: 0.76rem; font-family: "Cascadia Code", "Fira Code", Consolas, monospace; padding: 2px 9px; border-radius: 5px; border: 1px solid; white-space: nowrap; }
+.smart-log__dll-tag--copied { background: #e4f0e8; border-color: #90c8a0; color: #1a5030; }
+.smart-log__dll-tag--system { background: #f0f0f0; border-color: #d0d0d0; color: #606060; }
+.smart-log__dll-note { font-size: 0.83rem; color: #5d6980; margin: 0; }
+
+.smart-log__toggle-btn { background: none; border: 1px dashed #b0c0d8; border-radius: 7px; padding: 5px 12px; font-size: 0.8rem; color: #5070a0; cursor: pointer; }
+.smart-log__toggle-btn:hover { background: #f0f5fc; }
+
+.smart-log__pkg-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.smart-log__pkg-tag { font-size: 0.75rem; font-family: "Cascadia Code", "Fira Code", Consolas, monospace; background: #e8f0fc; border: 1px solid #b0c8e8; border-radius: 5px; padding: 2px 9px; color: #1a3060; }
+
+.smart-log__details { margin-top: 8px; }
+.smart-log__details-summary { font-size: 0.82rem; color: #5070a0; cursor: pointer; padding: 4px 0; user-select: none; }
+.smart-log__details-summary:hover { color: #2a4080; }

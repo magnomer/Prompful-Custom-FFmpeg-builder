@@ -1,0 +1,52 @@
+.approval-panel {
+  border: 1px solid #dce3ef;
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+.approval-panel__title { margin: 0 0 8px; }
+.approval-panel__summary { margin: 0 0 15px; color: #5d6980; line-height: 1.5; }
+
+.metadata {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 8px 12px;
+  margin: 0 0 16px;
+}
+.metadata dt { font-weight: 850; color: #33415c; }
+.metadata dd { margin: 0; overflow-wrap: anywhere; }
+.metadata__hash { font-family: "Cascadia Code", "Fira Code", Consolas, monospace; }
+
+.review-list { margin: 15px 0; }
+.review-list__title { margin: 0 0 8px; font-size: 1rem; }
+.review-list__items { margin: 0; padding-left: 20px; }
+.review-list__item { margin: 4px 0; overflow-wrap: anywhere; }
+.review-list__item--blocked { color: #b21f1f; font-weight: 750; }
+.review-list__item--warning { color: #7b5600; font-weight: 750; }
+.review-list__item--info { color: #2e5ca8; }
+
+.status-box {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #dce3ef;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.status-box__label { color: #5d6980; }
+.status-box__value { font-size: 1.4rem; }
+
+.log-list { display: grid; gap: 8px; }
+.log-list__entry {
+  display: grid;
+  grid-template-columns: 70px 60px minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  border: 1px solid #dce3ef;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.log-list__time { color: #68758c; font-size: 0.82rem; font-family: "Cascadia Code", "Fira Code", Consolas, monospace; white-space: nowrap; align-self: center; }
+.log-list__entry--error { border-color: #efaaaa; }
+.log-list__entry--warn { border-color: #ead28b; }
+.empty-text { color: #68758c; line-height: 1.5; }

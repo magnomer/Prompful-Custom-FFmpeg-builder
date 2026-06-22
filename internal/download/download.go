@@ -84,6 +84,7 @@ func downloadFile(ctx context.Context, downloadPlan DownloadPlan, emitProgress P
 	if err := checkDownloadPlan(downloadPlan); err != nil {
 		return err
 	}
+	warnIfHostNotAllowlisted(downloadPlan, emitProgress)
 	if reuseMatchingFile(downloadPlan, emitProgress) {
 		return nil
 	}
@@ -123,8 +124,8 @@ func downloadFile(ctx context.Context, downloadPlan DownloadPlan, emitProgress P
 			if redirectRequest.URL.Scheme != "https" {
 				return errors.New("download redirect target must use https")
 			}
-			if !isAllowedHost(redirectRequest.URL.Hostname(), downloadPlan.AllowedHosts) {
-				return fmt.Errorf("download redirect target host is not allowlisted: %s", redirectRequest.URL.Hostname())
+			if !isAllowedHost(redirectRequest.URL.Hostname(), downloadPlan.AllowedHosts) && emitProgress != nil {
+				emitProgress("warn", "Download for "+downloadPlan.DownloadSourceName+" redirected to a host that is not on the trusted allowlist: "+redirectRequest.URL.Hostname()+". Proceeding; downloaded content is still verified by signature/SHA-256.")
 			}
 			return nil
 		},
@@ -213,9 +214,6 @@ func checkDownloadPlan(downloadPlan DownloadPlan) error {
 	if parsedUrl.Scheme != "https" {
 		return errors.New("download url must use https")
 	}
-	if !isAllowedHost(parsedUrl.Hostname(), downloadPlan.AllowedHosts) {
-		return fmt.Errorf("download host is not allowlisted: %s", parsedUrl.Hostname())
-	}
 	if downloadPlan.DestinationFilePath == "" {
 		return errors.New("destination file path is empty")
 	}
@@ -256,6 +254,20 @@ func checkFileConflictPolicy(downloadPlan DownloadPlan) error {
 	default:
 		return fmt.Errorf("unknown download destination conflict policy: %s", policyName)
 	}
+}
+
+func warnIfHostNotAllowlisted(downloadPlan DownloadPlan, emitProgress ProgressFunc) {
+	if emitProgress == nil {
+		return
+	}
+	parsedUrl, err := url.Parse(downloadPlan.DownloadUrl)
+	if err != nil {
+		return
+	}
+	if isAllowedHost(parsedUrl.Hostname(), downloadPlan.AllowedHosts) {
+		return
+	}
+	emitProgress("warn", "Download host for "+downloadPlan.DownloadSourceName+" is not on the trusted allowlist: "+parsedUrl.Hostname()+". Proceeding because downloaded content is still verified by signature/SHA-256. Make sure you trust this host.")
 }
 
 func isAllowedHost(hostName string, allowedHostNames []string) bool {

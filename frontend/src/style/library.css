@@ -1,0 +1,370 @@
+.libraries-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.libraries-page .page-header {
+  margin-bottom: 0;
+}
+
+.libraries-briefing {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding: 18px 18px 18px 30px;
+  border: 1px solid #e4ebf5;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.libraries-briefing::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 0;
+  width: 8px;
+  background: #9bb7e8;
+}
+
+.libraries-briefing p {
+  margin: 0;
+  color: #5f6b7c;
+  line-height: 1.55;
+}
+
+.library-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.library-summary__item {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #dce3ef;
+  border-radius: 8px;
+  background: #fbfdff;
+}
+
+.library-summary__label {
+  color: #68758c;
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.library-summary__value {
+  color: #172033;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.library-summary__license {
+  justify-self: start;
+  min-width: max-content;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.library-summary__license--lgpl-local {
+  background: #e6f7ec;
+  color: #166534;
+}
+
+.library-summary__license--gpl-local {
+  background: #fff3cc;
+  color: #6a4b00;
+}
+
+.library-summary__license--nonfree-local {
+  background: #ffe0e0;
+  color: #8a1d1d;
+}
+
+.libraries-toolbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.libraries-technical-toggle {
+  min-width: 150px;
+  height: 42px;
+  padding: 0 14px;
+  font-size: 0.88rem;
+  line-height: 1;
+}
+
+.libraries-technical-toggle[aria-expanded="true"] {
+  background: #eef5ff;
+  border-color: #8fb3ff;
+  color: #2456d6;
+}
+
+.libraries-technical-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid #d7e2f0;
+  border-radius: 10px;
+  background: #fbfdff;
+}
+
+.libraries-technical-panel__title {
+  margin: 0;
+  color: #172033;
+  font-size: 1rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.libraries-technical-details {
+  display: grid;
+  gap: 14px;
+}
+
+.libraries-technical-detail {
+  display: grid;
+  gap: 6px;
+  padding-top: 14px;
+  border-top: 1px solid #edf2f8;
+}
+
+.libraries-technical-detail:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.libraries-technical-detail__title {
+  margin: 0;
+  color: #68758c;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.libraries-technical-detail__text {
+  margin: 0;
+  color: #5f6b7c;
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.preset-panel {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  padding: 18px 18px 18px 30px;
+  border: 1px solid #e4ebf5;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.preset-panel::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 0;
+  width: 8px;
+  background: #9bb7e8;
+}
+
+.preset-panel__header {
+  display: grid;
+  gap: 5px;
+}
+
+.preset-panel__title {
+  margin: 0;
+  color: #172033;
+  font-size: 1.08rem;
+  line-height: 1.3;
+}
+
+.preset-panel__text,
+.preset-panel__custom {
+  margin: 0;
+  color: #5f6b7c;
+  line-height: 1.45;
+}
+
+.preset-panel__custom {
+  font-weight: 750;
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.preset-card {
+  display: grid;
+  gap: 7px;
+  padding: 13px;
+  border: 1px solid #dce3ef;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #172033;
+  text-align: left;
+  cursor: pointer;
+}
+
+.preset-card:hover {
+  border-color: #9bb6f2;
+  background: #f4f7ff;
+}
+
+.preset-card--active {
+  border-color: #2456d6;
+  background: #eef4ff;
+  box-shadow: 0 0 0 2px rgba(36, 86, 214, 0.12);
+}
+
+.preset-card__name {
+  font-weight: 900;
+}
+
+.preset-card__plain {
+  color: #41506a;
+  line-height: 1.45;
+}
+
+.preset-card__technical {
+  color: #6c7890;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.library-list {
+  display: grid;
+  gap: 18px;
+}
+
+.library-group {
+  border: 1px solid #dce3ef;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.library-group__title {
+  margin: 0;
+  padding: 13px 16px;
+  background: #f3f6fb;
+  color: #172033;
+  font-size: 1rem;
+}
+
+.library-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 14px 16px;
+  border-top: 1px solid #e6ebf3;
+  cursor: pointer;
+}
+
+.library-row:hover {
+  background: #fbfdff;
+}
+
+.library-row__main {
+  display: grid;
+  gap: 5px;
+}
+
+.library-row__name {
+  font-weight: 850;
+}
+
+.library-row__note {
+  color: #5d6980;
+  line-height: 1.45;
+}
+
+.library-row__detail {
+  color: #6c7890;
+  font-size: 0.86rem;
+  font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.library-row__detail--why {
+  color: #34435e;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.library-row__license {
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #eef2f7;
+  color: #33415c;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.library-row__license--gpl {
+  background: #fff3cc;
+  color: #6a4b00;
+}
+
+.library-row__license--nonfree {
+  background: #ffe0e0;
+  color: #8a1d1d;
+}
+
+.library-row__license--included {
+  background: #e6f7ec;
+  color: #166534;
+}
+
+.library-row--locked {
+  background: #fbfdff;
+  cursor: default;
+}
+
+.library-row--locked input {
+  cursor: not-allowed;
+}
+
+/* No prebuilt MSYS2 package — build fails unless installed manually. */
+.library-row--unbuildable {
+  background: #fdecec;
+}
+
+.library-row--unbuildable:hover {
+  background: #fbe2e2;
+}
+
+.inline-options {
+  border-top: 2px solid #e6ebf3;
+  margin-top: 24px;
+  padding-top: 22px;
+}
+
+@media (max-width: 640px) {
+  .library-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .library-row__license {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
