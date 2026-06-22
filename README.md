@@ -6,11 +6,13 @@
 
 <br>
 
-**KO** · 비공개 MSYS2 툴체인으로 FFmpeg를 소스에서 직접 빌드해 주는 Windows 데스크톱 프로그램(Go + Wails)입니다. 빌드의 모든 단계는 사용자의 검토/승인을 받은 후에 이루어집니다.
+**KO** · 비공개 MSYS2 툴체인으로 FFmpeg 소스를 로컬에서 직접 빌드하는 Windows 데스크톱 프로그램(Go + Wails)입니다. 빌드의 모든 단계는 사용자의 검토/승인을 받은 후에 이루어집니다.
 
 <br>
 
 > Built with the help of Claude and ChatGPT. This is a personal project, so bugs may still exist.
+
+<br><br>
 
 <a href="#english"><img alt="English" src="https://img.shields.io/badge/English-Read-555555?style=for-the-badge"></a>
 &nbsp;·&nbsp;
