@@ -3,6 +3,7 @@
 # Promptful Custom FFmpeg Builder
 
 **EN** · A Windows desktop program (Go + Wails) that builds FFmpeg from source for you, using a private MSYS2 toolchain — after you review and approve each step.
+
 **KO** · 비공개 MSYS2 툴체인으로 FFmpeg를 소스에서 직접 빌드해 주는 Windows 데스크톱 프로그램(Go + Wails)입니다. 모든 단계는 검토·승인 후 실행됩니다.
 
 <br>
