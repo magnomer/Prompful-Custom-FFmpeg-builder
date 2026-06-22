@@ -4,6 +4,8 @@
 
 **EN** · A Windows desktop program (Go + Wails) that builds FFmpeg from source for you, using a private MSYS2 toolchain — after you review and approve each step.
 
+<br>
+
 **KO** · 비공개 MSYS2 툴체인으로 FFmpeg를 소스에서 직접 빌드해 주는 Windows 데스크톱 프로그램(Go + Wails)입니다. 모든 단계는 검토·승인 후 실행됩니다.
 
 <br>
@@ -21,6 +23,12 @@
 <a id="english"></a>
 
 ## English
+
+### Screenshot
+
+<img width="1465" height="891" alt="2026-06-23 08 22 33" src="https://github.com/user-attachments/assets/9c8ac695-75f6-4cec-a30f-1f6c39a55cc0" />
+<img width="1465" height="891" alt="2026-06-23 08 22 49" src="https://github.com/user-attachments/assets/fe0c6c47-1b69-420d-944f-3d6f39082d8e" />
+<img width="1465" height="891" alt="2026-06-23 08 23 07" src="https://github.com/user-attachments/assets/e8bfbfe9-9c2f-4f6c-affc-41bddcaba9e3" />
 
 ### What it is
 
@@ -93,23 +101,29 @@ The program builds FFmpeg from official sources; the resulting binary's license 
 
 ## 한국어
 
-### 소개
+### 스크린샷
 
-Promptful Custom FFmpeg Builder는 FFmpeg 로컬 빌드를 자동화하는 Windows GUI입니다. 라이브러리와 옵션을 고르고, 빌드 계획을 검토하여 커스텀 빌드를 작성할 수 있도록 도와줍니다. 빌드 계획이 문제 없을 경우 소스를 다운로드하여 작업 공간 내에 비공개 MSYS2 빌드 환경을 구성한 다음 `configure`와 `make`를 실행하고, 완성된 바이너리는 결과 폴더로 복사합니다.
+<img width="1465" height="891" alt="2026-06-23 08 27 15" src="https://github.com/user-attachments/assets/dd6929b2-0755-45c4-a5b7-622e8e70845c" />
+<img width="1465" height="891" alt="2026-06-23 08 22 54" src="https://github.com/user-attachments/assets/7ed18d3d-b2fb-4344-8e34-ad2c71205f90" />
+<img width="1465" height="891" alt="2026-06-23 08 23 04" src="https://github.com/user-attachments/assets/72590626-2b06-4256-9ee6-0af8b158dbfc" />
 
-프로그램에는 **FFmpeg 바이너리, 소스 아카이브, 번들된 코덱 라이브러리가 전혀 없습니다.** 모든 것은 사용자가 승인한 빌드 중 공식 출처에서 새로 다운로드됩니다.
+### 이 프로그램은
+
+Promptful Custom FFmpeg Builder는 FFmpeg 로컬 빌드를 자동화하는 Windows GUI입니다. 라이브러리와 옵션을 고르고, 빌드 계획을 검토하여 커스텀 빌드를 작성할 수 있도록 도와줍니다. 빌드 계획에 이상이 없을 경우 소스 파일을 다운로드하여 작업 공간 내에 비공개 MSYS2 빌드 환경을 구성하고 `configure`와 `make`를 실행한 다음, ffmpeg를 빌드합니다. 최종적으로 완성된 바이너리는 결과 폴더로 복사합니다.
+
+해당 프로그램은 **FFmpeg 바이너리, 소스, 혹은 코덱 라이브러리를 제공하지 않습니다.** 제공 받은 공식 출처 링크를 통해 다운로드 후 로컬 환경에서 빌드를 구성합니다.
 
 ### 작동 방식
 
-모든 빌드는 검토 후 승인 흐름을 거칩니다:
+모든 빌드는 계획 검토 후 사용자의 승인이 이루어졌을 때만 이행됩니다.
 
-1. UI에서 라이브러리와 configure 옵션을 선택합니다.
-2. 프로그램이 계획을 생성합니다: 정확한 패키지, configure 플래그, 스크립트, 라이선스 영향, 경고.
-3. 계획을 검토한 뒤 승인합니다.
-4. 실행 직전, Windows 기본 확인 대화상자가 한 번 더 묻습니다.
-5. 빌드가 실행되고 로그가 실시간으로 표시됩니다. 언제든 취소할 수 있습니다.
+1. 라이브러리와 configure 옵션을 선택합니다.
+2. 프로그램이 빌드 계획을 생성합니다. 이 계획에는 패키지 종류, configure 플래그, 스크립트, 라이선스 영향, 경고 사항 등이 담겨 있습니다.
+3. 계획을 검토한 뒤 사용자가 승인합니다.
+4. 실행 직전, Windows 기본 확인 대화상자가 한 번 확인합니다.
+5. 빌드가 실행 후에는 로그가 실시간으로 제공되며 언제든 중도에 취소할 수 있습니다.
 
-다운로드는 사용 전에 검증됩니다 — FFmpeg 소스는 PGP 서명으로, MSYS2 아카이브는 분리된(detached) 서명으로 확인합니다. 모든 작업은 선택한 작업 공간 폴더 안에서만 이루어지며, 시스템 전역 설치나 관리자 권한이 필요하지 않습니다.
+다운로드한 파일은 빌드 개시 전에 검증 절차를 거칩니다. FFmpeg 소스는 PGP 서명으로, MSYS2 아카이브는 분리된(detached) 서명으로 확인합니다. 모든 작업은 작업 공간 폴더 안에서만 이루어지며, 시스템 전역 설치나 관리자 권한이 필요하지 않습니다.
 
 ### FFmpeg 빌드 단계
 
@@ -123,15 +137,15 @@ Promptful Custom FFmpeg Builder는 FFmpeg 로컬 빌드를 자동화하는 Windo
 
 ### 라이브러리 및 옵션
 
-**Library** 페이지는 FFmpeg의 내장 구성 요소와 외부 라이브러리를 구분합니다. 내장 항목은 체크되고 잠겨 있습니다. 외부 라이브러리는 기본적으로 꺼져 있으며, 켜면 패키지, configure 플래그, 라이선스 영향, 관련 경고가 추가됩니다.
+**Library** 페이지는 FFmpeg의 내장 구성 요소와 외부 라이브러리가 별도로 구분하여 표시되어 있습니다. 내장 항목은 이미 체크되어 있으며 수정이 불가능합니다. 외부 라이브러리는 기본적으로는 체크되어 있지 않으나, 선택 시 패키지, configure 플래그, 라이선스 영향, 관련 경고 등이 추가될 수 있습니다.
 
-**Options** 페이지는 일반적인 `configure` 선택지를 명명된 항목으로 제공합니다. 수동 고급 플래그는 탈출구(escape hatch)로 제공되며, 확인 전 검토 화면에 표시됩니다.
+**Options** 페이지는 `configure` 옵션을 보여줍니다. 그리고 검토 화면에 다시 표시됩니다.
 
 전체 모델은 [LIBRARY_MODEL.md](LIBRARY_MODEL.md)를 참고하세요.
 
 ### 실행 환경
 
-- Windows 10 이상 (Windows 전용; 다른 호스트에서는 계획 단계가 차단됨)
+- Windows 10 이상 (Windows 전용, 다른 호스트에서는 계획 단계가 차단됨)
 - 소스 및 패키지 다운로드를 위한 인터넷 연결
 - 툴체인과 빌드를 위한 작업 공간 여유 디스크 공간 수 GB
 
@@ -156,4 +170,4 @@ wails dev
 
 ### 라이선스
 
-프로그램은 공식 출처에서 FFmpeg를 빌드하며, 결과 바이너리의 라이선스는 선택한 라이브러리와 옵션에 따라 달라집니다. Library 페이지에서 빌드 전에 파생된 라이선스 프로필(예: GPL 영향)을 확인할 수 있습니다.
+프로그램은 공식 출처에서 FFmpeg를 다운로드 하여 빌드하며, 빌드 된 바이너리의 라이선스는 선택한 라이브러리와 옵션에 따라 달라집니다. Library 페이지에서 빌드 전에 파생된 라이선스 프로필(예: GPL)을 확인할 수 있습니다.
