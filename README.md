@@ -10,13 +10,13 @@
 
 <br>
 
+> Built with the help of Claude and ChatGPT. This is a personal project, so bugs may still exist.
+
 <a href="#english"><img alt="English" src="https://img.shields.io/badge/English-Read-555555?style=for-the-badge"></a>
 &nbsp;·&nbsp;
 <a href="#korean"><img alt="한국어" src="https://img.shields.io/badge/한국어-읽기-555555?style=for-the-badge"></a>
 
 </div>
-
-> Built with the help of Claude and ChatGPT. This is a personal project, so bugs may still exist.
 
 ---
 
