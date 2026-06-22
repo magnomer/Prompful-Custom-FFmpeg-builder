@@ -1,4 +1,4 @@
-<div align="center">
+<div>
 
 # Promptful Custom FFmpeg Builder
 
@@ -6,7 +6,7 @@
 
 <br>
 
-**KO** · 비공개 MSYS2 툴체인으로 FFmpeg를 소스에서 직접 빌드해 주는 Windows 데스크톱 프로그램(Go + Wails)입니다. 모든 단계는 검토·승인 후 실행됩니다.
+**KO** · 비공개 MSYS2 툴체인으로 FFmpeg를 소스에서 직접 빌드해 주는 Windows 데스크톱 프로그램(Go + Wails)입니다. 빌드의 모든 단계는 사용자의 검토/승인을 받은 후에 이루어집니다.
 
 <br>
 
