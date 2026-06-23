@@ -158,7 +158,7 @@ Promptful Custom FFmpeg Builder는 FFmpeg 로컬 빌드를 자동화하는 Windo
 
 ### 다운로드
 
-[Releases 페이지](https://github.com/magnomer/Prompful-Custom-FFmpeg-builder/releases/latest)에서 최신 빌드를 받으세요.
+[최신 빌드](https://github.com/magnomer/Prompful-Custom-FFmpeg-builder/releases/latest)
 
 ### 소스에서 빌드
 
