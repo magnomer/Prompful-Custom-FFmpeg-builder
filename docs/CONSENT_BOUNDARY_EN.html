@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Consent boundary (EN) · Promptful Custom FFmpeg Builder Docs</title>
+<link href="style.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="shell">
+<main class="main">
+
+<section class="hero">
+<h1>Consent boundary <span class="lang-pill">EN</span></h1>
+<p class="hero-desc">How review sessions, native confirmation, typed consent, and workspace checks protect approved build actions.</p>
+</section>
+
+<section aria-label="Document section highlights" class="section-cards">
+<a class="section-card" href="#where-consent-fits-in-the-program"><span class="card-icon">1</span><span><strong>Where consent fits in the program</strong></span></a>
+<a class="section-card" href="#backend-owned-native-confirmation"><span class="card-icon">2</span><span><strong>Backend-owned native confirmation</strong></span></a>
+<a class="section-card" href="#rejected-confirmation-results"><span class="card-icon">3</span><span><strong>Rejected confirmation results</strong></span></a>
+<a class="section-card" href="#review-session-lifetime-and-storage"><span class="card-icon">4</span><span><strong>Review session lifetime and storage</strong></span></a>
+<a class="section-card" href="#approved-action-flows"><span class="card-icon">5</span><span><strong>Approved action flows</strong></span></a>
+<a class="section-card" href="#current-consent-types"><span class="card-icon">6</span><span><strong>Current consent types</strong></span></a>
+</section>
+
+<article class="doc-content">
+<h1 id="consent-boundary">Consent boundary</h1>
+<p>This program treats the frontend as a presentation layer, not as the final authority for approving work.</p>
+<p>The backend creates executable plans, stores in-memory review sessions, validates approval requests, opens the backend-owned native confirmation dialog, and only then creates the action-specific consent values used by the approved backend operation.</p>
+<p>Consent is one boundary layer. It is paired with plan-hash verification, generated-script hash verification, workspace containment checks, symlink checks, archive limits, fixed command allowlists, and audit/log records.</p>
+<h2 id="where-consent-fits-in-the-program">Where consent fits in the program</h2>
+<p>The program's mutating build flow is plan-first:</p>
+<ol type="1">
+<li>The backend creates an executable plan.</li>
+<li>The backend stores that plan in an in-memory review session.</li>
+<li>The frontend displays the plan, warnings, final configure flags, package list, license effects, and consent text.</li>
+<li>The frontend sends an approval request containing:
+<ul>
+<li>review session id,</li>
+<li>approved action name,</li>
+<li>approved plan hash,</li>
+<li>exact consent text.</li>
+</ul></li>
+<li>The backend retrieves the stored plan from the review session.</li>
+<li>The backend checks that the approval request still matches the stored review session:
+<ul>
+<li>session exists,</li>
+<li>action name matches,</li>
+<li>plan hash matches,</li>
+<li>consent text hash matches,</li>
+<li>session has not expired,</li>
+<li>session has not already been consumed.</li>
+</ul></li>
+<li>The backend recomputes the stored plan hash from the stored plan content.</li>
+<li>The backend checks that the stored plan is executable.</li>
+<li>The backend opens a native OS confirmation dialog.</li>
+<li>The backend creates action-specific consent values only after the native dialog returns <code>Yes</code>.</li>
+<li>The backend starts the approved action using the stored plan and matching consent values.</li>
+</ol>
+<h2 id="backend-owned-native-confirmation">Backend-owned native confirmation</h2>
+<p>Approval RPC calls are treated as requests to approve, not as final approval.</p>
+<p>The backend starts mutating work only after the stored review session is valid, the stored plan is executable, the recomputed plan hash still matches, the native confirmation dialog returns <code>Yes</code>, and the target function receives its matching action-specific consent type.</p>
+<p>The native dialog is intentionally owned by the backend rather than by the WebView frontend. This keeps a forged frontend message, injected JavaScript call, replayed local state value, WebView devtool call, or direct RPC call from becoming final proof of user intent.</p>
+<h2 id="rejected-confirmation-results">Rejected confirmation results</h2>
+<p>The native dialog is configured so the safe result is <code>No</code>.</p>
+<p>The backend treats every result other than <code>Yes</code> as rejection, including <code>No</code>, <code>Cancel</code>, Escape, window close, dialog errors, empty results, and unexpected button strings.</p>
+<p>A rejected or cancelled native dialog does not consume the review session. The same review session can be retried until it expires. The review session is consumed only after the backend native confirmation succeeds.</p>
+<h2 id="review-session-lifetime-and-storage">Review session lifetime and storage</h2>
+<p>Review sessions are single-use after successful native confirmation. Reusing the same review session id after it has been consumed fails.</p>
+<p>Current review sessions have a 30-minute lifetime. Expired sessions are rejected even when the action name, plan hash, and consent text still match.</p>
+<p>Review sessions are stored in memory. Closing or restarting the app invalidates outstanding review sessions.</p>
+<h2 id="approved-action-flows">Approved action flows</h2>
+<p>The approval request is converted into narrow consent values inside backend approval methods. A single approved plan can create several consent values that share the same approved action name, approved plan hash, and consent text.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Approved action</th>
+<th>Consent values created after native <code>Yes</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Private MSYS2 toolchain preparation</td>
+<td><code>Msys2DownloadConsent</code>, <code>ArchiveExtractionConsent</code>, <code>PacmanInstallConsent</code></td>
+</tr>
+<tr class="even">
+<td>FFmpeg build</td>
+<td><code>FfmpegSourceDownloadConsent</code>, <code>ArchiveExtractionConsent</code>, <code>PacmanInstallConsent</code>, <code>CommandExecutionConsent</code></td>
+</tr>
+</tbody>
+</table>
+<p>The MSYS2 download consent also covers approved MSYS2 signature and signing-key downloads that belong to the same toolchain preparation plan.</p>
+<p>The FFmpeg source download consent also covers approved FFmpeg signature and signing-key downloads, and approved source downloads for prepared libraries that belong to the same FFmpeg build plan.</p>
+<h2 id="current-consent-types">Current consent types</h2>
+<p>Current active consent types are:</p>
+<ul>
+<li><code>Msys2DownloadConsent</code></li>
+<li><code>FfmpegSourceDownloadConsent</code></li>
+<li><code>ArchiveExtractionConsent</code></li>
+<li><code>PacmanInstallConsent</code></li>
+<li><code>CommandExecutionConsent</code></li>
+</ul>
+<p>The code also defines <code>WorkspaceDeletionConsent</code>, but the current cleanup and removal paths do not use it as an active approval boundary. It is reserved/defined code, not part of the current approval flow.</p>
+<p>The code uses typed values instead of plain booleans so each guarded operation can check the exact consent kind, action name, and plan hash it was approved for.</p>
+<h2 id="operations-guarded-by-consent">Operations guarded by consent</h2>
+<p>The current active consent boundary guards the mutating build/install operations below:</p>
+<ul>
+<li>MSYS2 archive, signature, and signing-key downloads through <code>DownloadMsys2WithConsent</code>.</li>
+<li>FFmpeg source archive, signature, signing-key, and prepared-library source downloads through <code>DownloadFfmpegSourceWithConsent</code>.</li>
+<li>Approved archive extraction through <code>ExtractArchiveWithConsent</code>.</li>
+<li>Approved package installation through <code>RunPacmanWithConsent</code>.</li>
+<li>Approved configure, make, and prepared-library script execution through <code>RunCommandWithConsent</code>.</li>
+</ul>
+<p>These functions check the supplied consent kind, approved action name, and approved plan hash before performing the operation.</p>
+<h2 id="operations-outside-the-active-consent-boundary">Operations outside the active consent boundary</h2>
+<p>Not every backend command or file operation is routed through a typed consent value.</p>
+<p>Non-mutating or support operations are outside the current consent boundary and are constrained by fixed arguments and path checks instead. Examples include:</p>
+<ul>
+<li>opening result folders, reports, log folders, or local log files;</li>
+<li>reading package state from the private MSYS2 environment;</li>
+<li>verifying built <code>ffmpeg.exe</code> and <code>ffprobe.exe</code> with fixed inspection commands;</li>
+<li>stopping private MSYS2 background agents during cleanup.</li>
+</ul>
+<p>Cleanup/removal paths are also outside <code>WorkspaceDeletionConsent</code> in the current code. They run as consequences of an already approved operation or an explicit backend action, and they rely on workspace containment, real-path checks, root-refusal checks, symlink checks, and narrowly constructed target paths.</p>
+<h2 id="cleanup-and-removal-boundary">Cleanup and removal boundary</h2>
+<p>Current cleanup is action-scoped and workspace-contained, not separately consent-gated.</p>
+<p>Examples include:</p>
+<ul>
+<li>failed toolchain preparation cleanup;</li>
+<li>failed FFmpeg build cleanup;</li>
+<li>removal of stale FFmpeg artifact files before copying the new build result;</li>
+<li>removal of a previous private MSYS2 toolchain directory when preparing a fresh one;</li>
+<li>explicit removal of the private toolchain installation directory.</li>
+</ul>
+<p>These paths must not delete arbitrary user paths. They check that targets are inside the selected workspace, reject dangerous roots where applicable, avoid following unsafe symlinks where applicable, and construct deletion targets from the workspace layout rather than from free-form frontend input.</p>
+<h2 id="download-boundary">Download boundary</h2>
+<p>Approved downloads are still checked at execution time. The download layer verifies that:</p>
+<ul>
+<li>the URL uses HTTPS;</li>
+<li>the destination path is inside the selected workspace;</li>
+<li>the real destination path stays inside the selected workspace;</li>
+<li>partial download paths stay inside the selected workspace;</li>
+<li>expected file size minimum and maximum limits are respected;</li>
+<li>an existing destination file is reused only when the plan allows reuse and the expected SHA-256 hash matches;</li>
+<li>an expected SHA-256 hash is checked when the plan provides one.</li>
+</ul>
+<p>Host allowlists are warning-oriented in some download paths. A non-allowlisted host is reported as a warning, but it is not by itself always a hard block. The stronger enforcement comes from HTTPS, destination containment, size limits, and the hash/signature checks defined by the plan.</p>
+<h2 id="archive-extraction-boundary">Archive extraction boundary</h2>
+<p>Approved extraction is still checked at execution time. The extraction layer verifies that:</p>
+<ul>
+<li>the archive file is inside the selected workspace;</li>
+<li>the real archive file path is inside the selected workspace;</li>
+<li>the extraction destination is inside the selected workspace;</li>
+<li>the destination policy is satisfied;</li>
+<li>archive file count, total extracted bytes, and single-file bytes stay under limits;</li>
+<li>extracted paths do not escape the destination;</li>
+<li>unsafe symlink behavior is rejected.</li>
+</ul>
+<p>Extraction is therefore not controlled by consent alone. Consent authorizes the operation class for the approved plan; extraction validation constrains what the archive can write.</p>
+<h2 id="command-execution-boundary">Command execution boundary</h2>
+<p>Mutating build commands are consent-gated through <code>RunPacmanWithConsent</code> and <code>RunCommandWithConsent</code>.</p>
+<p>Command execution is additionally constrained by command-plan validation:</p>
+<ul>
+<li>executable path must be inside the workspace;</li>
+<li>real executable path must be inside the workspace;</li>
+<li>working directory must be inside the workspace;</li>
+<li>real working directory must be inside the workspace;</li>
+<li>MSYS2 root directory, when present, must be inside the workspace;</li>
+<li>run-log directory, when present, must be inside the workspace;</li>
+<li>executable basename must be in the command plan's allowlist;</li>
+<li>executable path must not contain shell metacharacters;</li>
+<li>arguments must not contain null bytes.</li>
+</ul>
+<p>These checks are meant to prevent an approved build step from silently turning into an arbitrary command outside the private workspace.</p>
+<h2 id="generated-script-boundary">Generated script boundary</h2>
+<p>Generated scripts are part of the executable boundary.</p>
+<p>When the backend prepares a command that runs a generated script, the command plan records:</p>
+<ul>
+<li>the script kind;</li>
+<li>the approved script file path;</li>
+<li>the approved script SHA-256 hash.</li>
+</ul>
+<p>Before execution, the command layer verifies that the script file is inside the workspace, verifies that the real script path is inside the workspace, checks that the script path appears in the command arguments, reads the script content, recomputes the SHA-256 hash, and rejects execution if the content no longer matches the approved hash.</p>
+<p>After that check, the command layer replaces the script-file argument with stdin execution. This prevents the command from silently running a different script path after the approved script content has been checked.</p>
+<h2 id="reason-for-this-design">Reason for this design</h2>
+<p>This design separates presentation from authority.</p>
+<p>The frontend can display the plan and request approval, but the backend owns the stored plan, plan hash, expected consent text, native confirmation, consent creation, and final execution checks.</p>
+<p>This also blocks approval replay: the backend stores review sessions, checks expiry, and removes a session after successful native confirmation.</p>
+</article>
+</main>
+<aside aria-label="Table of contents" class="rightbar"><div class="rightbar-language"><p class="toc-title">Language</p><div aria-label="Language switch" class="lang-switch">
+<a class="active" href="CONSENT_BOUNDARY_EN.html">EN</a>
+<a class="" href="CONSENT_BOUNDARY_KO.html">KO</a>
+</div></div>
+<p class="toc-title">On this page</p>
+<nav class="toc"><a href="#where-consent-fits-in-the-program">Where consent fits in the program</a>
+<a href="#backend-owned-native-confirmation">Backend-owned native confirmation</a>
+<a href="#rejected-confirmation-results">Rejected confirmation results</a>
+<a href="#review-session-lifetime-and-storage">Review session lifetime and storage</a>
+<a href="#approved-action-flows">Approved action flows</a>
+<a href="#current-consent-types">Current consent types</a>
+<a href="#operations-guarded-by-consent">Operations guarded by consent</a>
+<a href="#operations-outside-the-active-consent-boundary">Operations outside the active consent boundary</a>
+<a href="#cleanup-and-removal-boundary">Cleanup and removal boundary</a>
+<a href="#download-boundary">Download boundary</a>
+<a href="#archive-extraction-boundary">Archive extraction boundary</a>
+<a href="#command-execution-boundary">Command execution boundary</a>
+<a href="#generated-script-boundary">Generated script boundary</a>
+<a href="#reason-for-this-design">Reason for this design</a></nav>
+</aside>
+</div>
+</body>
+</html>

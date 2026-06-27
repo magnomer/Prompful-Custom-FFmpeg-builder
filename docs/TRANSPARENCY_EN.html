@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Transparency model (EN) · Promptful Custom FFmpeg Builder Docs</title>
+<link href="style.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="shell">
+<main class="main">
+
+<section class="hero">
+<h1>Transparency model <span class="lang-pill">EN</span></h1>
+<p class="hero-desc">How sensitive build behavior remains visible in source, review data, logs, reports, and audit records.</p>
+</section>
+
+<section aria-label="Document section highlights" class="section-cards">
+<a class="section-card" href="#1-what-the-transparency-model-covers"><span class="card-icon">1</span><span><strong>1. What the transparency model covers</strong></span></a>
+<a class="section-card" href="#2-main-source-areas"><span class="card-icon">2</span><span><strong>2. Main source areas</strong></span></a>
+<a class="section-card" href="#3-naming-model"><span class="card-icon">3</span><span><strong>3. Naming model</strong></span></a>
+<a class="section-card" href="#4-review-and-approval-visibility"><span class="card-icon">4</span><span><strong>4. Review and approval visibility</strong></span></a>
+<a class="section-card" href="#5-consent-gated-commands-and-support-commands"><span class="card-icon">5</span><span><strong>5. Consent-gated commands and support commands</strong></span></a>
+<a class="section-card" href="#6-generated-script-transparency"><span class="card-icon">6</span><span><strong>6. Generated-script transparency</strong></span></a>
+</section>
+
+<article class="doc-content">
+<h1 id="transparency-model">Transparency model</h1>
+<p>This document explains how Promptful Custom FFmpeg Builder keeps sensitive build behavior visible in the source tree, in the review flow, and in the files written during a build.</p>
+<p>The program builds FFmpeg by downloading source archives, unpacking them, installing MSYS2 packages, generating shell scripts, running build commands, copying build artifacts, and writing logs and reports. Those actions are intentionally named and placed so that a source reviewer can find the risky operations without first learning a private vocabulary.</p>
+<p>Transparency in this project does not mean that every operation is safe merely because it is visible. It means the program tries to make important operations explicit, reviewable, and locally auditable.</p>
+<h2 id="1-what-the-transparency-model-covers">1. What the transparency model covers</h2>
+<p>The transparency model has four layers:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>What it exposes</th>
+<th>Where it appears</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Source layout</td>
+<td>Which package owns downloads, extraction, planning, command execution, scripts, workspace checks, and audit writes</td>
+<td>Go packages under <code>internal/</code>, frontend files under <code>frontend/src/</code>, and scanner scripts under <code>scripts/</code></td>
+</tr>
+<tr class="even">
+<td>Review data</td>
+<td>What the program plans to download, install, prepare, configure, run, and copy</td>
+<td>Backend review objects displayed by the frontend before approval</td>
+</tr>
+<tr class="odd">
+<td>Runtime evidence</td>
+<td>What happened during an approved action</td>
+<td>live logs, saved log records, generated reports, and local audit JSONL</td>
+</tr>
+<tr class="even">
+<td>Boundary checks</td>
+<td>Which sensitive primitives are expected in which source areas</td>
+<td><code>scripts/security-scan.go</code> and <code>scripts/security-scan.ps1</code></td>
+</tr>
+</tbody>
+</table>
+<p>The frontend is part of the transparency layer because it displays plans, warnings, logs, and reports. It is not the security boundary by itself. Final approval and consent checks are backend-owned.</p>
+<h2 id="2-main-source-areas">2. Main source areas</h2>
+<p>The current source tree is split by responsibility rather than by a single large backend file.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Area</th>
+<th>Main files</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>App orchestration</td>
+<td><code>internal/app/*.go</code></td>
+<td>Wails-facing methods, review-session storage, native confirmation, toolchain preparation, FFmpeg build execution, library preparation, artifact copying, log records, verification helpers, and UI/window state files</td>
+</tr>
+<tr class="even">
+<td>Consent</td>
+<td><code>internal/consent/consent.go</code></td>
+<td>typed consent values and consent checks for approved action plans</td>
+</tr>
+<tr class="odd">
+<td>Review sessions</td>
+<td><code>internal/reviewsession/reviewsession.go</code></td>
+<td>short-lived backend-owned review sessions, consent text hashing, expiry, and approval matching</td>
+</tr>
+<tr class="even">
+<td>Planning</td>
+<td><code>internal/planning/*.go</code></td>
+<td>toolchain and FFmpeg build plans, library catalog, package lists, configure flags, warnings, license derivation, conflict validation, and plan hashes</td>
+</tr>
+<tr class="odd">
+<td>Library-source metadata</td>
+<td><code>shared/librarysources/*</code></td>
+<td>source/import metadata for libraries prepared outside normal MSYS2 package selection</td>
+</tr>
+<tr class="even">
+<td>Download</td>
+<td><code>internal/download/download.go</code></td>
+<td>HTTPS downloads, host allowlist warnings, destination checks, file-size limits, conflict policy, and optional SHA-256 checks</td>
+</tr>
+<tr class="odd">
+<td>Signature verification</td>
+<td><code>internal/app/signature.go</code></td>
+<td>detached signature verification for MSYS2 and FFmpeg source downloads</td>
+</tr>
+<tr class="even">
+<td>Extraction</td>
+<td><code>internal/extraction/extraction.go</code></td>
+<td>archive extraction and extraction limits</td>
+</tr>
+<tr class="odd">
+<td>Execution</td>
+<td><code>internal/execution/execution.go</code></td>
+<td>managed build-command execution, explicit MSYS2 environment construction, script-hash verification, and stdout/stderr capture</td>
+</tr>
+<tr class="even">
+<td>Scripting</td>
+<td><code>internal/scripting/scripting.go</code></td>
+<td>generated shell script text, script files, and script SHA-256 hashes</td>
+</tr>
+<tr class="odd">
+<td>Workspace</td>
+<td><code>internal/workspace/workspace.go</code></td>
+<td>workspace layout, path containment, real-path checks, and symlink rejection</td>
+</tr>
+<tr class="even">
+<td>Audit</td>
+<td><code>internal/audit/audit.go</code></td>
+<td>local JSONL action evidence for approved runs</td>
+</tr>
+<tr class="odd">
+<td>Frontend</td>
+<td><code>frontend/src/**</code></td>
+<td>user-facing pages, presets, review panels, logs, result display, localization, and saved UI state</td>
+</tr>
+<tr class="even">
+<td>Static scanner</td>
+<td><code>scripts/security-scan.go</code>, <code>scripts/security-scan.ps1</code></td>
+<td>text-based checks for sensitive source primitives</td>
+</tr>
+</tbody>
+</table>
+<p><code>internal/app/*.go</code> is the application boundary between the UI and the backend. It is intentionally broader than the lower-level packages because it coordinates review sessions, native confirmation, action startup, cancellation, reports, logs, and user-facing helper actions.</p>
+<h2 id="3-naming-model">3. Naming model</h2>
+<p>Security-sensitive functions and types use operation-oriented names. A reader should be able to tell what the function does from its name.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Area</th>
+<th>Names used in the code</th>
+<th>What the names expose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Downloads</td>
+<td><code>DownloadPlan</code>, <code>DownloadMsys2WithConsent</code>, <code>DownloadFfmpegSourceWithConsent</code>, <code>AllowedHosts</code></td>
+<td>what is downloaded, where it may come from, and which consent kind is required</td>
+</tr>
+<tr class="even">
+<td>Signatures and hashes</td>
+<td><code>verifyMsys2DetachedSignature</code>, <code>verifyFfmpegDetachedSignature</code>, <code>ExpectedSha256Hash</code>, <code>ApprovedScriptSha256Hash</code></td>
+<td>which signature, file hash, or script hash is being checked</td>
+</tr>
+<tr class="odd">
+<td>Extraction</td>
+<td><code>ExtractPlan</code>, <code>ExtractArchiveWithConsent</code>, <code>checkExtractTarget</code>, <code>MaximumExtractedByteCount</code></td>
+<td>which archive is extracted, where it is extracted, and what limits apply</td>
+</tr>
+<tr class="even">
+<td>Command execution</td>
+<td><code>CommandPlan</code>, <code>RunCommandWithConsent</code>, <code>RunPacmanWithConsent</code>, <code>ExecutablePath</code></td>
+<td>which command plan is approved and which executable path is used</td>
+</tr>
+<tr class="odd">
+<td>Generated scripts</td>
+<td><code>WriteScriptFile</code>, <code>ConfigureScriptLines</code>, <code>MakeScriptLines</code>, <code>PacmanInstallScriptLines</code></td>
+<td>which shell script text is generated before execution</td>
+</tr>
+<tr class="even">
+<td>Path safety</td>
+<td><code>CheckRealPathInsideWorkspace</code>, <code>CheckPathInsideWorkspace</code>, <code>RejectSymlinkComponents</code></td>
+<td>which workspace-containment or symlink check is being applied</td>
+</tr>
+<tr class="odd">
+<td>Consent and review</td>
+<td><code>Consent</code>, <code>CheckConsent</code>, <code>ApprovalRequest</code>, <code>PlanReviewSession</code>, <code>CheckReviewApproval</code></td>
+<td>where UI review data becomes backend-owned approval state</td>
+</tr>
+<tr class="even">
+<td>Libraries</td>
+<td><code>LibraryChoice</code>, <code>SelectedLibraries</code>, <code>RequiredMsys2PackageNames</code>, <code>GeneratedConfigureFlags</code>, <code>LicenseEffectName</code></td>
+<td>which selected libraries affect packages, configure flags, and license profile</td>
+</tr>
+<tr class="odd">
+<td>Results and audit</td>
+<td><code>BuildResult</code>, <code>BuildResultFile</code>, <code>artifactFilesForReport</code>, <code>NewWriter</code>, <code>WriteEvent</code></td>
+<td>which files are produced and which action events are recorded</td>
+</tr>
+</tbody>
+</table>
+<p>The project avoids using vague wrappers for operations such as downloading, extraction, command execution, deletion, or file writes. When such operations are used, their function names and package locations should make the operation visible.</p>
+<h2 id="4-review-and-approval-visibility">4. Review and approval visibility</h2>
+<p>Before a mutating build action starts, the program creates a plan and shows it to the user. The review data is meant to expose the important effects of the action before backend approval.</p>
+<p>A review can include:</p>
+<ul>
+<li>action name;</li>
+<li>plan hash;</li>
+<li>expected consent text;</li>
+<li>operation list;</li>
+<li>warnings grouped by severity;</li>
+<li>download URLs and verification expectations;</li>
+<li>MSYS2 package names;</li>
+<li>selected library integrations;</li>
+<li>selected configure options;</li>
+<li>generated library configure flags;</li>
+<li>extra manual flags;</li>
+<li>final configure flags;</li>
+<li>generated scripts and script hashes where applicable;</li>
+<li>derived license profile;</li>
+<li>whether the plan modifies PATH, requires admin rights, uses an existing MSYS2 installation, or deletes files.</li>
+</ul>
+<p>The frontend displays this information and sends an approval request. The backend then checks the request against a backend-owned review session. A native Windows confirmation dialog is the final approval step before the backend creates typed consent values and starts the action.</p>
+<p>The review session is not merely a frontend state object. The backend owns the session, the plan hash, and the consent text hash. The frontend cannot grant consent by keeping a checkbox or local state alone.</p>
+<h2 id="5-consent-gated-commands-and-support-commands">5. Consent-gated commands and support commands</h2>
+<p>The project separates mutating build/install commands from fixed-purpose support commands.</p>
+<p>Mutating build/install commands use typed consent and the managed execution layer. Examples include:</p>
+<ul>
+<li>installing required MSYS2 packages with <code>RunPacmanWithConsent</code>;</li>
+<li>running generated FFmpeg <code>configure</code> scripts with <code>RunCommandWithConsent</code>;</li>
+<li>running generated <code>make</code> scripts with <code>RunCommandWithConsent</code>;</li>
+<li>running library-preparation commands that are part of an approved build plan.</li>
+</ul>
+<p>Some commands are support actions rather than build-plan commands. They are not described as <code>CommandExecutionConsent</code> operations. Examples include:</p>
+<ul>
+<li>opening the result folder;</li>
+<li>opening a generated report;</li>
+<li>opening the log folder;</li>
+<li>opening a saved local log file;</li>
+<li>querying installed MSYS2 packages with fixed <code>pacman</code> arguments;</li>
+<li>verifying a built FFmpeg binary with fixed arguments such as <code>-version</code>, <code>-encoders</code>, or related probes;</li>
+<li>stopping private MSYS2 helper processes during cleanup.</li>
+</ul>
+<p>Those support actions should still remain visible in <code>internal/app/*.go</code>, use fixed arguments where possible, and be constrained by app-owned paths or workspace checks. They should not be casually mixed with arbitrary user-provided shell commands.</p>
+<h2 id="6-generated-script-transparency">6. Generated-script transparency</h2>
+<p>FFmpeg builds require shell scripts. The program does not treat those scripts as invisible implementation details.</p>
+<p>The scripting layer generates script text for package installation, configure, make, and selected preparation tasks. The app writes generated scripts into app-owned workspace locations, records their SHA-256 hashes, and passes the expected hash into the managed execution layer.</p>
+<p>Before executing a generated script, the execution layer verifies that the script file still matches the approved SHA-256 hash. For build scripts, execution is routed through a controlled MSYS2 Bash environment. This makes the generated script content, script path, and script hash part of the reviewable build boundary.</p>
+<p>Some compatibility fallbacks are implemented inside generated scripts rather than inside the planner. For example, selected flags such as <code>--enable-libsvtjpegxs</code>, <code>--enable-liblensfun</code>, and <code>--enable-vapoursynth</code> can be probed in the generated configure script and removed with a warning if the installed package does not expose the API expected by the selected FFmpeg source. That is a script-time compatibility path, not a general planner rule for every unavailable library.</p>
+<h2 id="7-download-extraction-and-workspace-visibility">7. Download, extraction, and workspace visibility</h2>
+<p>Downloads are implemented in the download layer and are paired with plan data. The download boundary includes:</p>
+<ul>
+<li>HTTPS-only source URLs;</li>
+<li>destination checks inside the workspace;</li>
+<li>file-size limits;</li>
+<li>redirect limits;</li>
+<li>optional SHA-256 verification;</li>
+<li>reuse only when an existing file matches the expected hash where a hash is supplied;</li>
+<li>host allowlist warnings for known source families.</li>
+</ul>
+<p>Signature and key downloads are treated as part of the approved source/toolchain download action. For example, FFmpeg source archive downloads, <code>.asc</code> downloads, and signing-key downloads use the FFmpeg source-download consent boundary.</p>
+<p>Extraction is handled by the extraction layer. It checks the destination, archive format, extracted-byte limits, and path traversal risks. Workspace checks and symlink rejection are a second layer beside typed consent: they restrict where downloaded, extracted, generated, copied, and deleted files can land.</p>
+<h2 id="8-logs-reports-and-audit-records">8. Logs, reports, and audit records</h2>
+<p>The program has several evidence layers. They should not be treated as the same thing.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Evidence layer</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Live process logs</td>
+<td>show stdout/stderr while an action is running</td>
+</tr>
+<tr class="even">
+<td>Saved local log records</td>
+<td>preserve previous local logs and categorize them for later review</td>
+</tr>
+<tr class="odd">
+<td>Build report JSON</td>
+<td>records build result metadata such as selected libraries, flags, license profile, output files, sizes, and SHA-256 hashes</td>
+</tr>
+<tr class="even">
+<td>Audit JSONL</td>
+<td>records local action evidence for approved runs</td>
+</tr>
+</tbody>
+</table>
+<p>Audit files are local evidence files. They are not a remote telemetry channel. Their purpose is to record what action was approved, which plan was used, and which major operation events happened locally.</p>
+<p>The result report and audit log are complementary. The report focuses on the finished build artifacts and build configuration. The audit log focuses on approved action execution events.</p>
+<h2 id="9-frontend-and-backend-responsibility">9. Frontend and backend responsibility</h2>
+<p>The frontend is responsible for display, selection, localization, saved UI state, and review presentation. It can request backend actions, but it does not own the security decision.</p>
+<p>The backend owns:</p>
+<ul>
+<li>plan creation;</li>
+<li>review-session creation and expiry;</li>
+<li>consent text hashing;</li>
+<li>plan-hash validation;</li>
+<li>native confirmation;</li>
+<li>typed consent creation;</li>
+<li>download, extraction, package installation, command execution, and artifact/report writes;</li>
+<li>workspace path checks;</li>
+<li>cancellation and cleanup behavior.</li>
+</ul>
+<p>This split matters because the UI can become stale, localized, or rearranged without changing what the backend is allowed to execute. The backend must still validate the approved plan and consent boundary.</p>
+<h2 id="10-static-boundary-scanner">10. Static boundary scanner</h2>
+<p>The static scanner is a small text-based source review tool. It searches Go source files for sensitive primitives such as:</p>
+<ul>
+<li>process startup;</li>
+<li>HTTP client/request use;</li>
+<li>recursive deletion;</li>
+<li>file deletion;</li>
+<li>file renaming;</li>
+<li>direct file writes;</li>
+<li>shell-string execution;</li>
+<li>unsafe Go operations.</li>
+</ul>
+<p>The scanner compares each hit against an allowlist of source locations that are expected to own that operation. This is useful because it can show when a sensitive primitive appears in a surprising location.</p>
+<p>However, the scanner is not a formal proof system. Its allowlist must be kept in sync with the actual source layout. The current source tree has split app orchestration into <code>internal/app/*.go</code>, while the scanner rules still use older path assumptions in several places. Therefore, a scanner mismatch can mean either:</p>
+<ol type="1">
+<li>a real source-boundary problem; or</li>
+<li>scanner rule drift after an intentional source-layout change.</li>
+</ol>
+<p>At the time this document was revised, the scanner should be treated as an intended boundary-review tool whose allowlist needs maintenance before a passing result can be used as evidence that the source tree fully matches the documented boundary.</p>
+<h2 id="11-how-to-read-boundary-changes">11. How to read boundary changes</h2>
+<p>When reviewing a source change, the most important transparency questions are:</p>
+<ol type="1">
+<li>Does a new download, extraction, command, deletion, write, or rename use the package that normally owns that operation?</li>
+<li>If it is a mutating build/install operation, is it tied to a reviewed plan and typed consent?</li>
+<li>If it is a support command, are the arguments fixed and the target paths constrained?</li>
+<li>Are generated scripts written, hashed, and verified before execution?</li>
+<li>Are workspace containment and symlink checks still applied around filesystem changes?</li>
+<li>Does the review UI expose the packages, libraries, flags, license effects, warnings, and deletion/admin/PATH indicators that matter to the user?</li>
+<li>Are logs, reports, and audit records still local and understandable?</li>
+<li>If the static scanner reports a mismatch, is it a real boundary expansion or a stale scanner rule?</li>
+</ol>
+<p>A source change that introduces a sensitive primitive in a new place should either move the operation into the existing boundary package, or update both the scanner and the transparency documentation so the new boundary is explicit.</p>
+</article>
+</main>
+<aside aria-label="Table of contents" class="rightbar"><div class="rightbar-language"><p class="toc-title">Language</p><div aria-label="Language switch" class="lang-switch">
+<a class="active" href="TRANSPARENCY_EN.html">EN</a>
+<a class="" href="TRANSPARENCY_KO.html">KO</a>
+</div></div>
+<p class="toc-title">On this page</p>
+<nav class="toc"><a href="#1-what-the-transparency-model-covers">1. What the transparency model covers</a>
+<a href="#2-main-source-areas">2. Main source areas</a>
+<a href="#3-naming-model">3. Naming model</a>
+<a href="#4-review-and-approval-visibility">4. Review and approval visibility</a>
+<a href="#5-consent-gated-commands-and-support-commands">5. Consent-gated commands and support commands</a>
+<a href="#6-generated-script-transparency">6. Generated-script transparency</a>
+<a href="#7-download-extraction-and-workspace-visibility">7. Download, extraction, and workspace visibility</a>
+<a href="#8-logs-reports-and-audit-records">8. Logs, reports, and audit records</a>
+<a href="#9-frontend-and-backend-responsibility">9. Frontend and backend responsibility</a>
+<a href="#10-static-boundary-scanner">10. Static boundary scanner</a>
+<a href="#11-how-to-read-boundary-changes">11. How to read boundary changes</a></nav>
+</aside>
+</div>
+</body>
+</html>

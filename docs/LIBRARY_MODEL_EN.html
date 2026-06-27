@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Library and options model (EN) · Promptful Custom FFmpeg Builder Docs</title>
+<link href="style.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="shell">
+<main class="main">
+
+<section class="hero">
+<h1>Library and options model <span class="lang-pill">EN</span></h1>
+<p class="hero-desc">How the program classifies FFmpeg library choices, presets, conflicts, configure options, and license effects.</p>
+</section>
+
+<section aria-label="Document section highlights" class="section-cards">
+<a class="section-card" href="#1-core-principle"><span class="card-icon">1</span><span><strong>1. Core principle</strong></span></a>
+<a class="section-card" href="#2-included-ffmpeg-rows"><span class="card-icon">2</span><span><strong>2. Included FFmpeg rows</strong></span></a>
+<a class="section-card" href="#3-library-tracks"><span class="card-icon">3</span><span><strong>3. Library tracks</strong></span></a>
+<a class="section-card" href="#4-what-a-library-row-contains"><span class="card-icon">4</span><span><strong>4. What a library row contains</strong></span></a>
+<a class="section-card" href="#5-ui-availability-and-catalog-availability-are-different"><span class="card-icon">5</span><span><strong>5. UI availability and catalog availability are different</strong></span></a>
+<a class="section-card" href="#6-special-configure-script-compatibility-fallbacks"><span class="card-icon">6</span><span><strong>6. Special configure-script compatibility fallbacks</strong></span></a>
+</section>
+
+<article class="doc-content">
+<h1 id="library-and-options-model">Library and options model</h1>
+<p>This document describes how the program models FFmpeg library choices, source-prepared integrations, configure options, presets, conflicts, and license effects.</p>
+<p>It is an implementation model document, not a user-facing feature list. A row can be present in the catalog without being normally selectable, and a row can be selectable without being available through an ordinary MSYS2 package.</p>
+<h2 id="1-core-principle">1. Core principle</h2>
+<p>The Library page does not treat every checkbox as the same kind of thing. Each catalog row has a role in the build model:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Meaning</th>
+<th>Normal build effect</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Included FFmpeg rows</td>
+<td>FFmpeg programs and core libraries that come from the FFmpeg source tree itself</td>
+<td>Locked on; no extra MSYS2 package and no <code>--enable-lib...</code> flag</td>
+</tr>
+<tr class="even">
+<td>Native package rows</td>
+<td>Optional FFmpeg integrations that are satisfied by MSYS2 packages</td>
+<td>Add MSYS2 package names and FFmpeg configure flags</td>
+</tr>
+<tr class="odd">
+<td>Internal-track rows</td>
+<td>Optional integrations that the builder prepares inside the private MSYS2 environment</td>
+<td>Run an internal preparation recipe before FFmpeg configure, then add configure flags</td>
+</tr>
+<tr class="even">
+<td>External-track rows</td>
+<td>Optional integrations that need an outside SDK/import path or an external preparation model</td>
+<td>Block normal planning unless an implemented import/preparation recipe exists</td>
+</tr>
+<tr class="odd">
+<td>UI-unavailable rows</td>
+<td>Catalog rows kept visible for transparency but locked in normal UI use</td>
+<td>Not selectable by normal users; excluded from presets and maximum-test selection</td>
+</tr>
+<tr class="even">
+<td>Profile-unavailable rows</td>
+<td>Rows not available for the active MSYS2 shell profile</td>
+<td>Dropped/disabled for that profile</td>
+</tr>
+</tbody>
+</table>
+<p>The word <code>external</code> therefore has a precise meaning in the code: it is a <code>LibraryTrackExternal</code> row. It should not be used casually to describe every optional non-included library.</p>
+<h2 id="2-included-ffmpeg-rows">2. Included FFmpeg rows</h2>
+<p>Rows marked as included are shown so the Library page can make clear what a normal FFmpeg source build already provides. They are checked and locked.</p>
+<p>The included rows are:</p>
+<ul>
+<li><code>ffmpeg-program</code></li>
+<li><code>ffprobe-program</code></li>
+<li><code>libavcodec</code></li>
+<li><code>libavformat</code></li>
+<li><code>libavfilter</code></li>
+<li><code>libavutil</code></li>
+<li><code>libswscale</code></li>
+<li><code>libswresample</code></li>
+<li><code>native-codecs</code></li>
+<li><code>native-formats</code></li>
+</ul>
+<p>Included rows do not add MSYS2 package names and do not add FFmpeg <code>./configure</code> flags. They are still part of the selected-library list so presets, summaries, and reports can show a complete picture of the build.</p>
+<h2 id="3-library-tracks">3. Library tracks</h2>
+<p>Every catalog row has a <code>trackName</code>.</p>
+<h3 id="native-track">Native track</h3>
+<p><code>native</code> is the default track. Native rows use packages from the selected MSYS2 shell profile.</p>
+<p>For example, under <code>ucrt64</code>, package names generally use this prefix:</p>
+<pre class="text"><code>mingw-w64-ucrt-x86_64-</code></pre>
+<p>The corresponding prefixes for other supported profiles are:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Shell profile</th>
+<th>Package prefix</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>ucrt64</code></td>
+<td><code>mingw-w64-ucrt-x86_64-</code></td>
+</tr>
+<tr class="even">
+<td><code>mingw64</code></td>
+<td><code>mingw-w64-x86_64-</code></td>
+</tr>
+<tr class="odd">
+<td><code>clang64</code></td>
+<td><code>mingw-w64-clang-x86_64-</code></td>
+</tr>
+</tbody>
+</table>
+<p>Native rows may add one or more package names and one or more configure flags. Some native rows add a package only and no configure flag; <code>png</code> is one example.</p>
+<h3 id="internal-track">Internal track</h3>
+<p><code>internal</code> rows are integrations that are not satisfied by simply adding a normal target-library package. The builder has to prepare them before FFmpeg configure runs.</p>
+<p>Currently modeled internal-track rows include:</p>
+<ul>
+<li><code>vvenc</code></li>
+<li><code>xavs2</code></li>
+<li><code>davs2</code></li>
+<li><code>uavs3d</code></li>
+<li><code>lcevc-dec</code></li>
+<li><code>avisynthplus</code></li>
+<li><code>mpeghdec</code></li>
+<li><code>pocketsphinx</code></li>
+<li><code>dc1394</code></li>
+<li><code>libtls</code></li>
+<li><code>quirc</code></li>
+<li><code>klvanc</code></li>
+</ul>
+<p>A selected internal-track row is allowed only when the backend has a preparation recipe for it. If no recipe exists, the planner emits a blocking warning instead of approving a configure flag that cannot be backed by a prepared library.</p>
+<p>Implemented preparation recipes currently exist for:</p>
+<ul>
+<li><code>avisynthplus</code></li>
+<li><code>davs2</code></li>
+<li><code>xavs2</code></li>
+<li><code>uavs3d</code></li>
+<li><code>lcevc-dec</code></li>
+<li><code>vvenc</code></li>
+<li><code>mpeghdec</code></li>
+<li><code>quirc</code></li>
+<li><code>klvanc</code></li>
+<li><code>libtls</code></li>
+</ul>
+<p>The frontend also keeps some internal rows locked in normal use if the backend or user experience is not ready for ordinary selection.</p>
+<h3 id="external-track">External track</h3>
+<p><code>external</code> rows represent libraries that need an import path, vendor SDK, outside build product, or other non-native preparation model.</p>
+<p>Currently modeled external-track rows include:</p>
+<ul>
+<li><code>libmfx</code></li>
+<li><code>cuda-nvcc</code></li>
+<li><code>decklink</code></li>
+<li><code>smbclient</code></li>
+<li><code>openvino</code></li>
+<li><code>torch</code></li>
+<li><code>tensorflow</code></li>
+</ul>
+<p>These rows are not the same thing as ordinary optional FFmpeg libraries. A normal user should not be allowed to select an external-track row unless the program has a concrete, verified preparation/import path for it.</p>
+<p><code>tensorflow</code> has a preparation definition in the backend, but it is still UI-disabled. A preparation definition by itself does not mean a row is ready for normal user selection.</p>
+<h2 id="4-what-a-library-row-contains">4. What a library row contains</h2>
+<p>A library row can contain:</p>
+<ul>
+<li><code>libraryId</code></li>
+<li>track name</li>
+<li>display name</li>
+<li>category name</li>
+<li>FFmpeg configure flags</li>
+<li>MSYS2 package names</li>
+<li>license effect</li>
+<li>official webpage URL</li>
+<li>plain explanation</li>
+<li>technical explanation</li>
+<li>default/locked state</li>
+</ul>
+<p>The build planner uses this data to derive package installation, source-preparation requirements, configure flags, warnings, and license profile. The frontend uses the same catalog to render the Library page, preset summaries, disabled reasons, and technical details.</p>
+<h2 id="5-ui-availability-and-catalog-availability-are-different">5. UI availability and catalog availability are different</h2>
+<p>A row can be present in the catalog while still not being normally selectable.</p>
+<h3 id="ui-disabled-rows">UI-disabled rows</h3>
+<p>The following rows are deliberately visible but locked in the normal UI:</p>
+<ul>
+<li><code>lensfun</code></li>
+<li><code>svtjpegxs</code></li>
+<li><code>vapoursynth</code></li>
+<li><code>tensorflow</code></li>
+<li><code>onnxruntime</code></li>
+</ul>
+<p>They are not hidden from the library list. They remain visible so users can see that the program knows about them and why they are not ordinary selections.</p>
+<p>These rows are excluded from automatic presets and from the developer maximum-test preset candidate set.</p>
+<h3 id="unimplemented-build-rows">Unimplemented-build rows</h3>
+<p>The following rows are present in the catalog but do not yet have a normal implemented build/preparation path:</p>
+<ul>
+<li><code>smbclient</code></li>
+<li><code>openvino</code></li>
+<li><code>torch</code></li>
+<li><code>libmfx</code></li>
+<li><code>pocketsphinx</code></li>
+<li><code>dc1394</code></li>
+<li><code>decklink</code></li>
+<li><code>cuda-nvcc</code></li>
+</ul>
+<p>Normal users cannot check these rows. Developer unlock can make them selectable for testing, but the backend still blocks planning if a selected non-native row has no implemented preparation recipe.</p>
+<h3 id="profile-unavailable-rows">Profile-unavailable rows</h3>
+<p>Some libraries are unavailable only for particular shell profiles. The frontend and backend both model this with a profile-unavailability map.</p>
+<p>Currently:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Library</th>
+<th>Unavailable profile</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>onnxruntime</code></td>
+<td><code>mingw64</code></td>
+</tr>
+</tbody>
+</table>
+<p>In the backend catalog, profile-unavailable rows are omitted for the active shell profile. In the frontend, they are shown as unavailable according to the matching UI map.</p>
+<p><code>onnxruntime</code> also has a broader UI-disabled reason: the relevant FFmpeg ONNX Runtime DNN backend support is not a normal official-release-source path for this program yet. It should not be described as only a missing MSYS2 package issue.</p>
+<h2 id="6-special-configure-script-compatibility-fallbacks">6. Special configure-script compatibility fallbacks</h2>
+<p>Some fragile rows are locked in the UI but still have backend catalog entries for future compatibility and for old/manual selections.</p>
+<p>For these rows, fallback handling is not performed by the planner:</p>
+<ul>
+<li><code>svtjpegxs</code></li>
+<li><code>lensfun</code></li>
+<li><code>vapoursynth</code></li>
+</ul>
+<p>If one of their configure flags reaches the generated FFmpeg configure script, the script runs a targeted compatibility check before the final <code>./configure</code> call. When the installed package does not expose the API required by the selected FFmpeg source, the script removes that specific configure flag, prints a warning, skips the related pkg-config diagnostic, and continues.</p>
+<p>This is a narrow generated-script fallback. It is not a general rule for all disabled, unavailable, or incompatible libraries. For example, <code>tensorflow</code> and <code>onnxruntime</code> should not be described as having the same fallback unless a matching probe-and-remove path exists.</p>
+<h2 id="7-library-presets">7. Library presets</h2>
+<p>Library presets are frontend selection templates. They are not the authoritative backend catalog.</p>
+<h3 id="public-broadening-presets">Public broadening presets</h3>
+<p>The public presets are:</p>
+<ul>
+<li><code>minimal</code></li>
+<li><code>default</code></li>
+<li><code>efficiency</code></li>
+<li><code>compatibility</code></li>
+<li><code>editor</code></li>
+<li><code>full</code></li>
+<li><code>custom</code></li>
+</ul>
+<p>The public broadening presets are nested. Higher public tiers build on the lower tiers:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Preset</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>minimal</code></td>
+<td>Included FFmpeg rows only</td>
+</tr>
+<tr class="even">
+<td><code>default</code></td>
+<td>Common codecs, audio helpers, subtitle/font helpers, hardware acceleration, and common protocol/filter support</td>
+</tr>
+<tr class="odd">
+<td><code>efficiency</code></td>
+<td><code>default</code> plus quality/efficiency helpers such as high-quality AAC/resampling choices</td>
+</tr>
+<tr class="even">
+<td><code>compatibility</code></td>
+<td>broader codec, subtitle, caption, and protocol coverage</td>
+</tr>
+<tr class="odd">
+<td><code>editor</code></td>
+<td>editing/filtering/color/audio-analysis/subtitle/transcription-oriented additions</td>
+</tr>
+<tr class="even">
+<td><code>full</code></td>
+<td>broadest normal packageable selection after mutually exclusive choices are normalized</td>
+</tr>
+<tr class="odd">
+<td><code>custom</code></td>
+<td>synthetic state shown when the current selection no longer exactly matches a preset</td>
+</tr>
+</tbody>
+</table>
+<p>Applying a preset still leaves ordinary selectable libraries editable. Locked included rows remain selected.</p>
+<h3 id="extended-preset-mode">Extended preset mode</h3>
+<p>The Extended toggle is not a separate preset ID. It modifies selected broadening presets by adding internal/source-prepared rows.</p>
+<p>Current extended additions are:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Preset</th>
+<th>Extended additions</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>efficiency</code></td>
+<td><code>vvenc</code>, <code>uavs3d</code>, <code>lcevc-dec</code></td>
+</tr>
+<tr class="even">
+<td><code>compatibility</code></td>
+<td><code>davs2</code>, <code>uavs3d</code>, <code>lcevc-dec</code>, <code>avisynthplus</code>, <code>xavs2</code></td>
+</tr>
+<tr class="odd">
+<td><code>editor</code></td>
+<td><code>avisynthplus</code>, <code>lcevc-dec</code></td>
+</tr>
+<tr class="even">
+<td><code>full</code></td>
+<td><code>vvenc</code>, <code>xavs2</code>, <code>davs2</code>, <code>uavs3d</code>, <code>lcevc-dec</code>, <code>avisynthplus</code>, <code>mpeghdec</code></td>
+</tr>
+</tbody>
+</table>
+<p>Extended presets can change the derived license boundary. For example, <code>xavs2</code>, <code>davs2</code>, and <code>avisynthplus</code> have GPL effects, while <code>mpeghdec</code> has a nonfree effect.</p>
+<h3 id="hidden-focused-presets">Hidden focused presets</h3>
+<p>The frontend also defines focused presets that are hidden from the normal preset UI:</p>
+<ul>
+<li><code>ai</code></li>
+<li><code>streaming</code></li>
+</ul>
+<p>These are intentionally not nested broadening presets. They are <code>default</code> plus their own focused additions. They do not inherit <code>efficiency</code>, <code>compatibility</code>, <code>editor</code>, or <code>full</code>.</p>
+<h3 id="developer-maximum-test-preset">Developer maximum-test preset</h3>
+<p>The developer preset is:</p>
+<ul>
+<li><code>maxtest</code></li>
+</ul>
+<p>It is shown only when the developer unlock is enabled. Its candidate set is derived from the live catalog and excludes:</p>
+<ul>
+<li>UI-disabled rows;</li>
+<li>rows with no implemented build/preparation path;</li>
+<li>rows unavailable for the active shell profile.</li>
+</ul>
+<p>The selection is then normalized so mutually exclusive groups are reduced to a buildable set. Under the stronger sudo developer tier, the frontend can relax the TLS UI pruning for testing, but backend configure-conflict validation still matters if conflicting flags reach the final plan.</p>
+<h2 id="8-mutually-exclusive-choices">8. Mutually exclusive choices</h2>
+<p>Some libraries cannot be enabled together because FFmpeg configure rejects the combination or because they represent alternate bindings for the same role.</p>
+<p>Current groups are:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Group</th>
+<th>Members</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>TLS backend</td>
+<td><code>openssl</code>, <code>gnutls</code>, <code>mbedtls</code>, <code>libtls</code></td>
+<td>normally choose one</td>
+</tr>
+<tr class="even">
+<td>Runtime shader compiler</td>
+<td><code>shaderc</code>, <code>glslang</code></td>
+<td>choose at most one</td>
+</tr>
+<tr class="odd">
+<td>EVC decoder binding</td>
+<td><code>xevd</code>, <code>xevdb</code></td>
+<td>choose one profile binding</td>
+</tr>
+<tr class="even">
+<td>EVC encoder binding</td>
+<td><code>xeve</code>, <code>xeveb</code></td>
+<td>choose one profile binding</td>
+</tr>
+</tbody>
+</table>
+<p>The UI removes conflicting selections as the user toggles rows. The planner also validates the final configure flag list and emits a blocking warning if mutually exclusive flags reach the backend.</p>
+<h2 id="9-planning-behavior">9. Planning behavior</h2>
+<p>The FFmpeg build planner receives selected library IDs, configure option IDs, extra configure flags, source settings, workspace settings, shell profile, and job count.</p>
+<p>The planner then:</p>
+<ol type="1">
+<li>cleans the settings;</li>
+<li>resolves selected library IDs against the active catalog;</li>
+<li>derives native package installation from selected native rows;</li>
+<li>resolves source-preparation/import requirements for selected internal/external rows;</li>
+<li>recovers known catalog rows from matching manual configure flags;</li>
+<li>merges generated library flags, option flags, manual flags, and derived license flags;</li>
+<li>validates conflicts and risky combinations;</li>
+<li>derives the local license profile;</li>
+<li>produces the reviewable plan.</li>
+</ol>
+<p>Native packages are installed before FFmpeg configure. Internal/external preparations run before their configure flags are treated as approved for the final configure script.</p>
+<h2 id="10-manual-configure-flag-recovery">10. Manual configure-flag recovery</h2>
+<p>The advanced flags box is an escape hatch. It is not outside the model.</p>
+<p>If an extra configure flag exactly matches a configure flag from a catalog row that is not already selected, the planner treats that row as an effective library. This lets the planner add native packages, license effects, and preparation gates that the matching checkbox would have provided.</p>
+<p>This recovery is catalog-wide. It is not limited to external-track rows.</p>
+<p>The recovery has an important limit: it only works for catalog rows with configure flags. Rows that add packages without configure flags cannot be recovered from a manual <code>--enable-lib...</code> flag unless such a flag exists in the catalog row.</p>
+<h2 id="11-configure-option-catalog">11. Configure option catalog</h2>
+<p>The Options page is separate from the Library page. It models FFmpeg build switches that are not library rows.</p>
+<p>Each configure option has:</p>
+<ul>
+<li>option ID;</li>
+<li>category;</li>
+<li>configure flags;</li>
+<li>plain explanation;</li>
+<li>technical explanation;</li>
+<li>risk level;</li>
+<li>default/locked state.</li>
+</ul>
+<p>Locked defaults are:</p>
+<ul>
+<li><code>default-static</code></li>
+<li><code>default-programs</code></li>
+<li><code>default-ffmpeg</code></li>
+<li><code>default-ffprobe</code></li>
+</ul>
+<p>Optional options include:</p>
+<ul>
+<li>Output type: <code>enable-shared</code></li>
+<li>Programs: <code>disable-ffplay</code></li>
+<li>Security/reproducibility: <code>disable-autodetect</code>, <code>disable-network</code></li>
+<li>Compatibility: <code>disable-asm</code>, <code>disable-x86asm</code>, <code>pkg-config-static</code>, <code>enable-runtime-cpudetect</code></li>
+<li>Size/speed: <code>disable-doc</code>, <code>enable-small</code>, <code>enable-lto</code></li>
+<li>Debugging: <code>disable-debug</code>, <code>disable-stripping</code></li>
+</ul>
+<p>The Options page does not expose ordinary checkbox toggles for <code>--enable-gpl</code>, <code>--enable-nonfree</code>, or <code>--enable-version3</code>. Those are derived from selected libraries and final flags. If the user enters these flags manually through the advanced field, the backend still validates them and derives the corresponding license boundary.</p>
+<p>The program also does not expose <code>disable-programs</code> or <code>disable-ffprobe</code> as normal options because those would contradict the locked program defaults.</p>
+<h2 id="12-option-risk-levels">12. Option risk levels</h2>
+<p>Configure options use a separate risk-level model. The visual treatment resembles library labels, but the meaning is different: option risk describes build/runtime surprise, not license effect.</p>
+<p>Current risk interpretation:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Risk</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>High</td>
+<td>Can substantially change build shape, portability, or performance; examples include <code>enable-shared</code> and <code>disable-asm</code></td>
+</tr>
+<tr class="even">
+<td>Medium</td>
+<td>Can reasonably surprise users or reduce capability/performance in specific cases; examples include <code>disable-network</code>, <code>disable-x86asm</code>, and <code>enable-lto</code></td>
+</tr>
+<tr class="odd">
+<td>Low</td>
+<td>Ordinary defaults or relatively safe toggles</td>
+</tr>
+</tbody>
+</table>
+<p><code>enable-shared</code> is treated as high risk because it switches the build toward DLL output and away from the static-linking expectation of this builder. <code>disable-asm</code> is high risk because it removes most SIMD optimization.</p>
+<h2 id="13-option-presets">13. Option presets</h2>
+<p>Option presets are flat intent profiles. They are not nested in the same way as library presets.</p>
+<p>Current option presets are:</p>
+<ul>
+<li><code>none</code></li>
+<li><code>standard</code></li>
+<li><code>compact</code></li>
+<li><code>portable</code></li>
+<li><code>performance</code></li>
+<li><code>custom</code></li>
+</ul>
+<p><code>standard</code> is the initial practical default. It selects <code>pkg-config-static</code> and <code>disable-doc</code>.</p>
+<p>High-risk or troubleshooting options such as <code>enable-shared</code>, <code>disable-asm</code>, <code>disable-x86asm</code>, and <code>disable-network</code> are intentionally absent from ordinary presets.</p>
+<p>When <code>disable-network</code> is selected together with network libraries such as SRT, libssh, librtmp, librist, ZeroMQ, or RabbitMQ-C, the planner emits a warning because those integrations will not be useful in a network-disabled FFmpeg build.</p>
+<h2 id="14-license-profile-derivation">14. License profile derivation</h2>
+<p>The backend derives the license boundary from selected libraries and the final configure flags.</p>
+<p>Current local profile names are:</p>
+<ul>
+<li><code>lgpl-local</code></li>
+<li><code>gpl-local</code></li>
+<li><code>nonfree-local</code></li>
+</ul>
+<p>The effective ordering is:</p>
+<pre class="text"><code>nonfree-local &gt; gpl-local &gt; lgpl-local</code></pre>
+<p>GPL libraries or <code>--enable-gpl</code> move the build to <code>gpl-local</code>. Nonfree libraries or <code>--enable-nonfree</code> move the build to <code>nonfree-local</code> and produce a redistribution warning.</p>
+<p>Libraries that require FFmpeg's version-3 license switch cause <code>--enable-version3</code> to be added automatically and produce an informational warning. The current implemented version-3 list is:</p>
+<ul>
+<li><code>opencore-amr</code></li>
+<li><code>vo-amrwbenc</code></li>
+<li><code>libaribb24</code></li>
+<li><code>lensfun</code></li>
+</ul>
+<p><code>--enable-version3</code> is not a separate license-profile name. It is an additional final configure flag and warning layer inside the derived local profile.</p>
+<h2 id="15-known-boundary-notes">15. Known boundary notes</h2>
+<p>The catalog is broader than the normal user-selectable set. This is intentional. It lets the UI show known-but-not-ready libraries, keeps old/manual paths recognizable, and gives developer mode a way to test future integrations.</p>
+<p>However, support claims must distinguish clearly between:</p>
+<ul>
+<li>listed in the catalog;</li>
+<li>visible in the UI;</li>
+<li>selectable by normal users;</li>
+<li>selected by a public preset;</li>
+<li>prepared from source by an implemented recipe;</li>
+<li>imported from an external SDK/path;</li>
+<li>passed to FFmpeg configure;</li>
+<li>finally accepted by FFmpeg configure.</li>
+</ul>
+<p>A library should be described as fully covered only when the appropriate package/preparation/import path exists and the normal plan can approve it without blocked warnings.</p>
+</article>
+</main>
+<aside aria-label="Table of contents" class="rightbar"><div class="rightbar-language"><p class="toc-title">Language</p><div aria-label="Language switch" class="lang-switch">
+<a class="active" href="LIBRARY_MODEL_EN.html">EN</a>
+<a class="" href="LIBRARY_MODEL_KO.html">KO</a>
+</div></div>
+<p class="toc-title">On this page</p>
+<nav class="toc"><a href="#1-core-principle">1. Core principle</a>
+<a href="#2-included-ffmpeg-rows">2. Included FFmpeg rows</a>
+<a href="#3-library-tracks">3. Library tracks</a>
+<a href="#4-what-a-library-row-contains">4. What a library row contains</a>
+<a href="#5-ui-availability-and-catalog-availability-are-different">5. UI availability and catalog availability are different</a>
+<a href="#6-special-configure-script-compatibility-fallbacks">6. Special configure-script compatibility fallbacks</a>
+<a href="#7-library-presets">7. Library presets</a>
+<a href="#8-mutually-exclusive-choices">8. Mutually exclusive choices</a>
+<a href="#9-planning-behavior">9. Planning behavior</a>
+<a href="#10-manual-configure-flag-recovery">10. Manual configure-flag recovery</a>
+<a href="#11-configure-option-catalog">11. Configure option catalog</a>
+<a href="#12-option-risk-levels">12. Option risk levels</a>
+<a href="#13-option-presets">13. Option presets</a>
+<a href="#14-license-profile-derivation">14. License profile derivation</a>
+<a href="#15-known-boundary-notes">15. Known boundary notes</a></nav>
+</aside>
+</div>
+</body>
+</html>
