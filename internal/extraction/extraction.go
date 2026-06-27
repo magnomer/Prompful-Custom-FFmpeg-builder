@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -195,12 +196,8 @@ func extractTarArchive(ctx context.Context, extractPlan ExtractPlan) error {
 		if err != nil {
 			return err
 		}
-		cleanEntryName, err := cleanEntryName(header.Name)
+		targetPath, err := safeExtractTargetPath(extractPlan.DestinationDirectory, header.Name)
 		if err != nil {
-			return err
-		}
-		targetPath := filepath.Join(extractPlan.DestinationDirectory, filepath.FromSlash(cleanEntryName))
-		if err := checkExtractTarget(extractPlan.DestinationDirectory, targetPath, header.Name); err != nil {
 			return err
 		}
 		if err := workspace.CheckPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetPath); err != nil {
@@ -313,18 +310,17 @@ func extractZipArchive(ctx context.Context, extractPlan ExtractPlan) error {
 		if zipEntry.Mode()&os.ModeSymlink != 0 {
 			return fmt.Errorf("archive links are blocked for safety: %s", zipEntry.Name)
 		}
-		cleanName, err := cleanEntryName(zipEntry.Name)
+		targetPath, err := safeExtractTargetPath(extractPlan.DestinationDirectory, zipEntry.Name)
 		if err != nil {
-			return err
-		}
-		targetPath := filepath.Join(extractPlan.DestinationDirectory, filepath.FromSlash(cleanName))
-		if err := checkExtractTarget(extractPlan.DestinationDirectory, targetPath, zipEntry.Name); err != nil {
 			return err
 		}
 		if err := workspace.CheckPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetPath); err != nil {
 			return err
 		}
 		if zipEntry.FileInfo().IsDir() {
+			if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, filepath.Dir(targetPath)); err != nil {
+				return err
+			}
 			if err := os.MkdirAll(targetPath, 0o755); err != nil {
 				return err
 			}
@@ -349,6 +345,9 @@ func extractZipArchive(ctx context.Context, extractPlan ExtractPlan) error {
 			return errors.New("archive extracted byte count exceeds limit")
 		}
 		targetDirectory := filepath.Dir(targetPath)
+		if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetDirectory); err != nil {
+			return err
+		}
 		if err := os.MkdirAll(targetDirectory, 0o755); err != nil {
 			return err
 		}
@@ -427,16 +426,36 @@ func openArchiveReader(archiveFile *os.File, archiveFormatName ArchiveFormat) (i
 	}
 }
 
+func safeExtractTargetPath(destinationDirectory string, headerName string) (string, error) {
+	cleanName, err := cleanEntryName(headerName)
+	if err != nil {
+		return "", err
+	}
+	localName := filepath.FromSlash(cleanName)
+	if !filepath.IsLocal(localName) {
+		return "", fmt.Errorf("unsafe archive path: %s", headerName)
+	}
+	targetPath := filepath.Join(destinationDirectory, localName)
+	if err := checkExtractTarget(destinationDirectory, targetPath, headerName); err != nil {
+		return "", err
+	}
+	return targetPath, nil
+}
+
 func cleanEntryName(headerName string) (string, error) {
 	if headerName == "" {
 		return "", errors.New("archive entry has empty path")
 	}
 	normalizedName := strings.ReplaceAll(headerName, "\\", "/")
 	cleanName := path.Clean(normalizedName)
-	if cleanName == "." || cleanName == ".." || strings.HasPrefix(cleanName, "../") || strings.HasPrefix(cleanName, "/") || strings.Contains(cleanName, "/../") {
+	if cleanName == "." || !fs.ValidPath(cleanName) || path.IsAbs(normalizedName) || hasWindowsDrivePrefix(normalizedName) || strings.HasPrefix(cleanName, "../") || strings.Contains(cleanName, "/../") {
 		return "", fmt.Errorf("unsafe archive path: %s", headerName)
 	}
 	return cleanName, nil
+}
+
+func hasWindowsDrivePrefix(name string) bool {
+	return len(name) >= 2 && name[1] == ':' && ((name[0] >= 'A' && name[0] <= 'Z') || (name[0] >= 'a' && name[0] <= 'z'))
 }
 
 func checkExtractTarget(destinationDirectory string, targetPath string, originalHeaderName string) error {
