@@ -1,11 +1,12 @@
 import React from "react";
-import { PageHeader } from "./shared";
+import { DescriptionLines, PageHeader } from "./shared";
 import { t } from "../i18n";
 import { libraryLicenseLabel, libraryText } from "../catalogText";
+import { isDevUnlockEnabled, isSudoDevUnlockEnabled } from "../devUnlock";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type LibraryPresetId = "minimal" | "default" | "efficiency" | "compatibility" | "editor" | "full" | "custom";
+export type LibraryPresetId = "minimal" | "default" | "efficiency" | "compatibility" | "editor" | "full" | "ai" | "streaming" | "maxtest" | "custom";
 
 // Localized text (name/plain/technical) is resolved at render time via t() using
 // presetId, so a locale switch updates the preset buttons. Only the structural
@@ -13,6 +14,11 @@ export type LibraryPresetId = "minimal" | "default" | "efficiency" | "compatibil
 export type LibraryPreset = {
   presetId: LibraryPresetId;
   libraryIds: string[];
+  hidden?: boolean;
+  // dev presets are shown only when the hidden About-tab developer unlock is on, and
+  // always render last. Their libraryIds are computed from the live catalog (see
+  // maximumTestLibraryIds), so the static libraryIds array is left empty.
+  dev?: boolean;
 };
 
 // ─── Preset data ─────────────────────────────────────────────────────────────
@@ -38,18 +44,21 @@ export const defaultPresetLibraryIds = [
   "zimg", "vmaf", "vidstab", "srt", "ssh", "zmq", "openal", "sdl2", "gme", "openmpt",
 ];
 
-// Preset tiers are nested: each higher tier adds to the one below it.
-// Efficiency: best-quality encode/resample. Compatibility: broadest codec,
-// caption, and protocol I/O. Editor: filtering, audio plugins, color, and
-// subtitle/transcription tooling. Full: packageable advanced features. Prefer
-// shaderc over glslang because FFmpeg configure rejects selecting both together.
-// lensfun and SVT JPEG XS are intentionally hidden from the UI and automatic presets for now.
-// Backend support remains for future compatibility: old saved/manual requests are
-// checked before configure, and incompatible flags are skipped with a warning.
+// Preset tiers are nested for the public broadening presets. Hidden focused
+// presets are intentionally Default + their own focused additions only; they do
+// not inherit Efficiency, Compatibility, Editor, or Full. Prefer shaderc over
+// glslang because FFmpeg configure rejects selecting both together.
+// lensfun, SVT JPEG XS, and VapourSynth are intentionally hidden from the UI and
+// automatic presets for now. Backend support remains for future compatibility: old
+// saved/manual requests are checked before configure, and incompatible flags are
+// skipped with a warning.
 // lensfun is hidden because current MSYS2 lensfun exposes an older API than the
 // FFmpeg lensfun filter source expects.
 // SVT JPEG XS is hidden because current package/repository states may not satisfy
 // FFmpeg's SvtJpegxs requirement.
+// VapourSynth is hidden because the MSYS2 package is older than FFmpeg's required
+// API and, even when it builds, the result needs a Python + VapourSynth runtime
+// (non-portable).
 const efficiencyExtraLibraryIds = ["fdk-aac", "soxr"];
 const compatibilityExtraLibraryIds = [...efficiencyExtraLibraryIds, "rav1e", "openh264", "ilbc", "twolame", "xevd", "shine", "codec2", "lc3", "snappy", "rsvg", "zvbi", "aribb24", "aribcaption", "rtmp"];
 const editorExtraLibraryIds = [
@@ -62,12 +71,25 @@ const editorExtraLibraryIds = [
 ];
 const fullExtraLibraryIds = [
   ...editorExtraLibraryIds,
-  "bluray", "dvdread", "cdio",
+  "kvazaar",
+  "bluray", "dvdread", "dvdnav", "cdio",
   "modplug",
   "openssl", "rist", "rabbitmq",
   "tesseract",
   "jack", "pulse",
   "caca", "opencl",
+];
+
+const aiExtraLibraryIds = [
+  "onnxruntime", "openvino", "torch", "tensorflow",
+  "whisper", "tesseract", "opencv",
+  "libplacebo", "opencl", "png", "libjxl",
+];
+
+const streamingExtraLibraryIds = [
+  "fdk-aac", "soxr",
+  "rtmp", "rist", "gnutls",
+  "libplacebo", "opencl",
 ];
 
 export const libraryPresets: LibraryPreset[] = [
@@ -77,43 +99,159 @@ export const libraryPresets: LibraryPreset[] = [
   { presetId: "compatibility", libraryIds: [...baseIncludedLibraryIds, ...defaultPresetLibraryIds, ...compatibilityExtraLibraryIds] },
   { presetId: "editor", libraryIds: [...baseIncludedLibraryIds, ...defaultPresetLibraryIds, ...editorExtraLibraryIds] },
   { presetId: "full", libraryIds: [...baseIncludedLibraryIds, ...defaultPresetLibraryIds, ...fullExtraLibraryIds] },
+  { presetId: "ai", libraryIds: [...baseIncludedLibraryIds, ...defaultPresetLibraryIds, ...aiExtraLibraryIds], hidden: true },
+  { presetId: "streaming", libraryIds: [...baseIncludedLibraryIds, ...defaultPresetLibraryIds, ...streamingExtraLibraryIds], hidden: true },
+  { presetId: "maxtest", libraryIds: [], dev: true },
 ];
+
+// Source-build (Internal track) libraries added to each broadening preset when the
+// "Extended" toggle is on. These have no prebuilt MSYS2 package, so they are prepared
+// from source. Extended presets may therefore land on a stricter license boundary than
+// their base preset (see per-id license effect in the catalog):
+//   - vvenc/uavs3d/lcevc-dec: LGPL-safe
+//   - xavs2/davs2/avisynthplus: flip the build to GPL
+//   - mpeghdec: flips the build to nonfree (Full only, which already pulls openssl)
+const extendedPresetExtraLibraryIds: Partial<Record<LibraryPresetId, string[]>> = {
+  efficiency: ["vvenc", "uavs3d", "lcevc-dec"],
+  compatibility: ["davs2", "uavs3d", "lcevc-dec", "avisynthplus", "xavs2"],
+  editor: ["avisynthplus", "lcevc-dec"],
+  full: ["vvenc", "xavs2", "davs2", "uavs3d", "lcevc-dec", "avisynthplus", "mpeghdec"],
+};
+
+// Effective library ids for a preset. With the Extended toggle on, the broadening
+// presets gain their source-build extras; Minimal/Default/dev presets are unchanged.
+export function presetLibraryIds(preset: LibraryPreset, extendedLibraries: boolean): string[] {
+  if (!extendedLibraries) return preset.libraryIds;
+  return [...preset.libraryIds, ...(extendedPresetExtraLibraryIds[preset.presetId] ?? [])];
+}
+
+// maximumTestLibraryIds returns every catalog library except those with no implemented
+// build recipe (unimplementedBuildLibraryIds) and the libraries deliberately disabled in
+// the UI (uiDisabledLibraryIds, e.g. lensfun/vapoursynth/onnxruntime). normalizeLibrarySelection
+// then resolves the mutually-exclusive groups and drops any library unavailable for the
+// active profile, so the result is a buildable superset.
+export function maximumTestLibraryIds(catalog: LibraryChoice[], windowsShellProfileName?: string): string[] {
+  const candidateIds = catalog
+    .map((library) => library.libraryId)
+    .filter((libraryId) => !unimplementedBuildLibraryIds.has(libraryId) && !uiDisabledLibraryIds.has(libraryId));
+  return normalizeLibrarySelection(candidateIds, windowsShellProfileName);
+}
 
 // ─── Library selection utilities ─────────────────────────────────────────────
 
-export function normalizeLibrarySelection(selectedLibraryIds: string[]): string[] {
+// TLS backends form a pick-one group in normal AND basic dev mode (rendered as radio
+// buttons). Only the sudo dev tier relaxes this so every backend can be selected at once
+// for build testing, so the mutual-exclusion pruning below is skipped only when sudo.
+export const tlsBackendLibraryIds = new Set(["openssl", "gnutls", "mbedtls", "libtls"]);
+
+// shaderc/glslang are a pick-one shader-compiler group. They are not a radio group (zero
+// may be selected), but they share the TLS group's shortened-divider visual so the two
+// rows read as one "choose at most one" block.
+export const shaderCompilerLibraryIds = new Set(["shaderc", "glslang"]);
+
+// xevd/xevdb and xeve/xeveb are EVC full-profile and baseline-profile bindings.
+// FFmpeg configure rejects enabling both members of either pair, so they share the
+// same pick-one radio + divider treatment with separate radio groups.
+export const evcDecoderLibraryIds = new Set(["xevd", "xevdb"]);
+export const evcEncoderLibraryIds = new Set(["xeve", "xeveb"]);
+
+export function normalizeLibrarySelection(selectedLibraryIds: string[], windowsShellProfileName?: string): string[] {
   const selectedSet = new Set<string>([...baseIncludedLibraryIds, ...selectedLibraryIds]);
-  if (selectedSet.has("openssl") && selectedSet.has("gnutls")) {
-    selectedSet.delete("gnutls");
+  // Only one TLS backend may be selected. Priority: openssl > gnutls > mbedtls > libtls.
+  // Only the sudo dev tier keeps all selected backends so the TLS section can be tested
+  // together; basic dev still enforces the normal pick-one rule.
+  if (!isSudoDevUnlockEnabled()) {
+    if (selectedSet.has("openssl")) {
+      selectedSet.delete("gnutls");
+      selectedSet.delete("mbedtls");
+      selectedSet.delete("libtls");
+    } else if (selectedSet.has("gnutls")) {
+      selectedSet.delete("mbedtls");
+      selectedSet.delete("libtls");
+    } else if (selectedSet.has("mbedtls")) {
+      selectedSet.delete("libtls");
+    }
   }
   if (selectedSet.has("shaderc") && selectedSet.has("glslang")) {
     selectedSet.delete("glslang");
   }
+  // FFmpeg configure rejects enabling the full-profile and baseline-profile EVC bindings
+  // together ("libxevd and libxevdb must not be enabled at the same time", same for the
+  // encoder). Keep the full-profile binding, drop the baseline one.
+  if (selectedSet.has("xevd") && selectedSet.has("xevdb")) {
+    selectedSet.delete("xevdb");
+  }
+  if (selectedSet.has("xeve") && selectedSet.has("xeveb")) {
+    selectedSet.delete("xeveb");
+  }
+  // Drop libraries that have no package for the active profile (e.g. onnxruntime
+  // on mingw64), so the selection always matches what the profile can build.
+  if (windowsShellProfileName) {
+    for (const libraryId of [...selectedSet]) {
+      if (!isLibraryAvailableForProfile(libraryId, windowsShellProfileName)) {
+        selectedSet.delete(libraryId);
+      }
+    }
+  }
   return Array.from(selectedSet);
 }
 
-export function matchLibraryPresetId(selectedLibraryIds: string[]): LibraryPresetId {
-  const normalizedSelection = normalizeLibrarySelection(selectedLibraryIds).slice().sort();
+function sameLibrarySet(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((libraryId, index) => libraryId === b[index]);
+}
+
+export function matchLibraryPresetId(selectedLibraryIds: string[], windowsShellProfileName?: string, catalog?: LibraryChoice[], extendedLibraries = false): LibraryPresetId {
+  const normalizedSelection = normalizeLibrarySelection(selectedLibraryIds, windowsShellProfileName).slice().sort();
   for (const preset of libraryPresets) {
-    if (preset.presetId === "custom") continue;
-    const normalizedPreset = normalizeLibrarySelection(preset.libraryIds).slice().sort();
-    if (normalizedSelection.length === normalizedPreset.length && normalizedSelection.every((libraryId, index) => libraryId === normalizedPreset[index])) {
+    if (preset.presetId === "custom" || preset.hidden || preset.dev) continue;
+    const normalizedPreset = normalizeLibrarySelection(presetLibraryIds(preset, extendedLibraries), windowsShellProfileName).slice().sort();
+    if (sameLibrarySet(normalizedSelection, normalizedPreset)) {
       return preset.presetId;
     }
+  }
+  // Maximum test is catalog-derived, so it can only be matched when the catalog is
+  // available. Checked last so a narrower named preset always wins.
+  if (catalog && isDevUnlockEnabled()) {
+    const maxTest = maximumTestLibraryIds(catalog, windowsShellProfileName).slice().sort();
+    if (sameLibrarySet(normalizedSelection, maxTest)) return "maxtest";
   }
   return "custom";
 }
 
 export function isValidLibraryPresetId(value: unknown): value is LibraryPresetId {
-  return value === "minimal" || value === "default" || value === "efficiency" || value === "compatibility" || value === "editor" || value === "full" || value === "custom";
+  return value === "minimal" || value === "default" || value === "efficiency" || value === "compatibility" || value === "editor" || value === "full" || value === "ai" || value === "streaming" || value === "maxtest" || value === "custom";
+}
+
+// Presets whose displayed name is never prefixed with "Extended" even when the
+// extended-libraries toggle is on. Only the broadening presets get the prefix.
+const nonExtendedPresetIds = new Set<LibraryPresetId>(["minimal", "default", "maxtest", "custom"]);
+
+// Resolves the localized preset name, prepending the "Extended" prefix when the
+// extended-libraries toggle is on (descriptions are left unchanged).
+function libraryPresetDisplayName(presetId: LibraryPresetId, extendedLibraries: boolean): string {
+  const baseName = t(`libraries.presets.${presetId}.name`);
+  if (!extendedLibraries || nonExtendedPresetIds.has(presetId)) return baseName;
+  return t("libraries.extended.presetPrefix") + baseName;
 }
 
 export function removeMutuallyExclusiveLibraries(selectedLibraryIds: string[], selectedLibraryId: string): string[] {
+  // shaderc/glslang and the EVC profile bindings stay mutually exclusive always (FFmpeg
+  // configure rejects both). The TLS pick-one group is relaxed only under the sudo dev
+  // tier for build testing; basic dev keeps it.
   const exclusiveGroups: Record<string, string[]> = {
-    openssl: ["gnutls"],
-    gnutls: ["openssl"],
+    ...(isSudoDevUnlockEnabled() ? {} : {
+      openssl: ["gnutls", "mbedtls", "libtls"],
+      gnutls: ["openssl", "mbedtls", "libtls"],
+      mbedtls: ["openssl", "gnutls", "libtls"],
+      libtls: ["openssl", "gnutls", "mbedtls"],
+    }),
     shaderc: ["glslang"],
     glslang: ["shaderc"],
+    // EVC full-profile vs baseline-profile bindings are mutually exclusive in FFmpeg configure.
+    xevd: ["xevdb"],
+    xevdb: ["xevd"],
+    xeve: ["xeveb"],
+    xeveb: ["xeve"],
   };
   const conflicts = exclusiveGroups[selectedLibraryId] ?? [];
   if (conflicts.length === 0) return selectedLibraryIds;
@@ -121,8 +259,8 @@ export function removeMutuallyExclusiveLibraries(selectedLibraryIds: string[], s
 }
 
 
-export function deriveLicenseBoundaryFromSelectedLibraries(selectedLibraryIds: string[], catalog: LibraryChoice[]): string {
-  const selectedLibraries = visibleLibraries(catalog).filter((library) => selectedLibraryIds.includes(library.libraryId));
+export function deriveLicenseBoundaryFromSelectedLibraries(selectedLibraryIds: string[], catalog: LibraryChoice[], windowsShellProfileName: string): string {
+  const selectedLibraries = visibleLibraries(catalog, windowsShellProfileName).filter((library) => selectedLibraryIds.includes(library.libraryId));
   if (selectedLibraries.some((library) => library.licenseEffectName === "nonfree")) return "nonfree-local";
   if (selectedLibraries.some((library) => library.licenseEffectName === "gpl")) return "gpl-local";
   return "lgpl-local";
@@ -145,18 +283,72 @@ function renderRichNote(text: string): React.ReactNode {
   ));
 }
 
-const hiddenLibraryIds = new Set(["lensfun", "svtjpegxs"]);
+const uiDisabledLibraryIds = new Set(["lensfun", "svtjpegxs", "vapoursynth", "tensorflow", "onnxruntime"]);
 
-// Libraries with no prebuilt MSYS2 package: configure fails unless the user
-// builds and installs them manually. Flagged with a pastel-red row background.
-const unbuildableLibraryIds = new Set(["vvenc", "xavs2"]);
+// Libraries that are present in the catalog but still have no implemented
+// preparation/build recipe. They remain visible for transparency, but normal users
+// cannot check them until the backend can actually prepare them. The hidden About
+// tab developer unlock still makes them selectable for development testing.
+const unimplementedBuildLibraryIds = new Set([
+  "smbclient",
+  "openvino",
+  "torch",
+  // No MSYS2 package and no preparation recipe yet, so these block the build. libmfx is
+  // also dead upstream (FFmpeg removed --enable-libmfx in 7.0); the rest need a source/SDK
+  // import path before they can be selected by normal users.
+  "libmfx",
+  "pocketsphinx",
+  "dc1394",
+  "decklink",
+  "cuda-nvcc",
+]);
 
-function visibleLibraries(catalog: LibraryChoice[]): LibraryChoice[] {
-  return catalog.filter((library) => !hiddenLibraryIds.has(library.libraryId));
+// Per-library shell profiles with no prebuilt MSYS2 package. Keep in sync with the
+// backend libraryProfileUnavailability map. A library unavailable for the active
+// profile is shown disabled, not preset-selectable, and dropped from the selection.
+const libraryUnavailableProfiles: Record<string, string[]> = {
+  onnxruntime: ["mingw64"],
+};
+
+// Libraries kept in the catalog and backend (recipe, prep, import all stay) but made
+// unselectable in the UI, with a shown reason. They remain visible so the user can see
+// that the program knows about them, but cannot accidentally select a fragile option.
+function isLibraryAvailableForProfile(libraryId: string, windowsShellProfileName: string): boolean {
+  return !(libraryUnavailableProfiles[libraryId] ?? []).includes(windowsShellProfileName);
 }
 
-function groupLibrariesByCategory(catalog: LibraryChoice[]) {
-  return visibleLibraries(catalog).reduce<Record<string, LibraryChoice[]>>((groups, library) => {
+function libraryTrackLabel(trackName: string): string {
+  return t(`libraries.row.track.${trackName || "native"}`);
+}
+
+function visibleLibraries(catalog: LibraryChoice[], windowsShellProfileName: string): LibraryChoice[] {
+  void windowsShellProfileName;
+  return catalog;
+}
+
+function isLibraryUiUnavailable(libraryId: string, windowsShellProfileName: string): boolean {
+  return uiDisabledLibraryIds.has(libraryId) || unimplementedBuildLibraryIds.has(libraryId) || !isLibraryAvailableForProfile(libraryId, windowsShellProfileName);
+}
+
+// Whether the checkbox is actually locked. Same as UI-unavailable, except the hidden
+// About-tab developer unlock makes otherwise-unavailable libraries checkable for testing.
+// The unavailable styling still shows regardless of unlock.
+function isLibraryCheckboxLocked(libraryId: string, windowsShellProfileName: string): boolean {
+  return isLibraryUiUnavailable(libraryId, windowsShellProfileName) && !isDevUnlockEnabled();
+}
+
+// Returns the localization key suffix for an unavailable row's note, or "" when no
+// note should be shown. Unimplemented-build rows show no note: the disabled styling
+// already signals they cannot be selected, and a generic "Not selectable." line added
+// nothing.
+function libraryUiUnavailableReasonKey(libraryId: string, windowsShellProfileName: string): string {
+  if (!isLibraryAvailableForProfile(libraryId, windowsShellProfileName)) return "profileUnavailable";
+  if (unimplementedBuildLibraryIds.has(libraryId)) return "";
+  return libraryId;
+}
+
+function groupLibrariesByCategory(catalog: LibraryChoice[], windowsShellProfileName: string) {
+  return visibleLibraries(catalog, windowsShellProfileName).reduce<Record<string, LibraryChoice[]>>((groups, library) => {
     const categoryName = libraryText(library, "categoryName") || t("common.other");
     groups[categoryName] = groups[categoryName] || [];
     groups[categoryName].push(library);
@@ -164,81 +356,491 @@ function groupLibrariesByCategory(catalog: LibraryChoice[]) {
   }, {});
 }
 
-function LibraryPresetSelector(props: { presets: LibraryPreset[]; selectedPresetId: LibraryPresetId; onApplyPreset: (presetId: LibraryPresetId) => void; showTechnicalDetails: boolean }) {
+
+function selectableLibraryPresets(): Array<LibraryPreset & { presetId: Exclude<LibraryPresetId, "custom"> }> {
+  return libraryPresets.filter((preset): preset is LibraryPreset & { presetId: Exclude<LibraryPresetId, "custom"> } =>
+    preset.presetId !== "custom" && !preset.hidden && (!preset.dev || isDevUnlockEnabled())
+  );
+}
+
+function SimpleLibraryPresetCard(props: { selectedPresetId: LibraryPresetId; onApplyPreset: (presetId: LibraryPresetId) => void; extendedLibraries: boolean }) {
+  const presets = selectableLibraryPresets();
+  const selectedPreset = presets.find((preset) => preset.presetId === props.selectedPresetId);
+  const selectedPresetDescription = selectedPreset
+    ? t(`libraries.presets.${selectedPreset.presetId}.plain`)
+    : t("libraries.presetSelector.custom");
+
+  return (
+    <section className="card card--blue libraries-simple-card libraries-simple-preset-card">
+      <span className="card__badge" aria-hidden="true" />
+      <div className="card__head">
+        <h2 className="card__title">{t("libraries.simple.preset.title")}</h2>
+      </div>
+      <div className="card__control libraries-simple-card__control">
+        <select
+          className="card__input"
+          value={props.selectedPresetId}
+          onChange={(event) => props.onApplyPreset(event.target.value as LibraryPresetId)}
+        >
+          {props.selectedPresetId === "custom" && <option value="custom">{t("libraries.presets.custom.name")}</option>}
+          {presets.map((preset) => (
+            <option value={preset.presetId} key={preset.presetId}>
+              {libraryPresetDisplayName(preset.presetId, props.extendedLibraries)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="libraries-simple-preset-card__description" aria-live="polite">
+        {selectedPresetDescription}
+      </div>
+    </section>
+  );
+}
+
+function SimpleLibraryCard(props: {
+  catalog: LibraryChoice[];
+  selectedLibraryIds: string[];
+  onToggleLibrary: (libraryId: string) => void;
+  windowsShellProfileName: string;
+  searchQuery: string;
+  onSearchQueryChange: (value: string) => void;
+  sectionFilters: LibrarySectionFilter[];
+  sectionOptions: string[];
+  onSectionFiltersChange: (value: LibrarySectionFilter[]) => void;
+  onOpenOfficialWebpage: (url: string) => void;
+}) {
+  return (
+    <section className="card card--teal libraries-simple-card libraries-simple-library-card">
+      <span className="card__badge" aria-hidden="true" />
+      <div className="card__head">
+        <h2 className="card__title">{t("libraries.simple.library.title")}</h2>
+      </div>
+      <div className="libraries-simple-library-card__body">
+        <div className="libraries-simple-library-card__controls">
+          <label className="libraries-search">
+            <span className="visually-hidden">{t("libraries.search.label")}</span>
+            <input value={props.searchQuery} onChange={(event) => props.onSearchQueryChange(event.target.value)} placeholder={t("libraries.search.placeholder")} />
+          </label>
+          <LibrarySectionDropdown
+            selectedSections={props.sectionFilters}
+            sectionOptions={props.sectionOptions}
+            onChangeSections={props.onSectionFiltersChange}
+          />
+        </div>
+        <div className="libraries-simple-library-card__results">
+          <LibraryList
+            catalog={props.catalog}
+            selectedLibraryIds={props.selectedLibraryIds}
+            onToggleLibrary={props.onToggleLibrary}
+            showTechnicalDetails={false}
+            windowsShellProfileName={props.windowsShellProfileName}
+            searchQuery={props.searchQuery}
+            sectionFilters={props.sectionFilters}
+            onOpenOfficialWebpage={props.onOpenOfficialWebpage}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LibraryPresetSelector(props: { presets: LibraryPreset[]; selectedPresetId: LibraryPresetId; onApplyPreset: (presetId: LibraryPresetId) => void; showTechnicalDetails: boolean; extendedLibraries: boolean }) {
+  const selectedPreset = props.presets.find((preset) => preset.presetId === props.selectedPresetId && preset.presetId !== "custom") as (LibraryPreset & { presetId: Exclude<LibraryPresetId, "custom"> }) | undefined;
+
   return (
     <section className="preset-panel">
-      <div className="preset-panel__header">
-        <h2 className="preset-panel__title">{t("libraries.presetSelector.title")}</h2>
-        <p className="preset-panel__text">{t("libraries.presetSelector.text")}</p>
-      </div>
       <div className="preset-grid">
-        {props.presets.filter((preset) => preset.presetId !== "custom").map((preset) => (
-          <button className={`preset-card ${props.selectedPresetId === preset.presetId ? "preset-card--active" : ""}`} type="button" key={preset.presetId} onClick={() => props.onApplyPreset(preset.presetId)}>
-            <span className="preset-card__name">{t(`libraries.presets.${preset.presetId}.name`)}</span>
-            <span className="preset-card__plain">{t(`libraries.presets.${preset.presetId}.plain`)}</span>
-            {props.showTechnicalDetails && <span className="preset-card__technical">{t(`libraries.presets.${preset.presetId}.technical`)}</span>}
+        {props.presets.filter((preset): preset is LibraryPreset & { presetId: Exclude<LibraryPresetId, "custom"> } => selectableLibraryPresets().some((selectablePreset) => selectablePreset.presetId === preset.presetId)).map((preset) => (
+          <button className={`preset-card ${preset.dev ? "preset-card--dev" : ""} ${props.selectedPresetId === preset.presetId ? "preset-card--active" : ""}`} type="button" key={preset.presetId} onClick={() => props.onApplyPreset(preset.presetId)}>
+            <span>
+              <span className="preset-card__name">{libraryPresetDisplayName(preset.presetId, props.extendedLibraries)}</span>
+              <span className="preset-card__plain">{t(`libraries.presets.${preset.presetId}.plain`)}</span>
+            </span>
+            {props.selectedPresetId === preset.presetId && <span className="preset-card__check" aria-hidden="true">✓</span>}
           </button>
         ))}
       </div>
-      {props.selectedPresetId === "custom" && <p className="preset-panel__custom">{t("libraries.presetSelector.custom")}</p>}
+      {props.showTechnicalDetails && selectedPreset && (
+        <section className="preset-technical-card" aria-label={t("libraries.technical.show")}>
+          <div className="preset-technical-card__header">
+            <span className="preset-technical-card__title">
+              <strong>{libraryPresetDisplayName(selectedPreset.presetId, props.extendedLibraries)}</strong>
+              <span>{t("libraries.technical.show")}</span>
+            </span>
+          </div>
+          <p className="preset-technical-card__text">{t(`libraries.presets.${selectedPreset.presetId}.technical`)}</p>
+        </section>
+      )}
     </section>
   );
 }
 
-function LibrarySelectionSummary(props: { catalog: LibraryChoice[]; selectedLibraryIds: string[]; selectedPresetId: LibraryPresetId }) {
-  const normalizedSelection = normalizeLibrarySelection(props.selectedLibraryIds);
-  const licenseBoundary = deriveLicenseBoundaryFromSelectedLibraries(normalizedSelection, props.catalog);
-  const selectedExternalCount = visibleLibraries(props.catalog).filter((library) => normalizedSelection.includes(library.libraryId) && !library.defaultChecked).length;
-  const includedCount = visibleLibraries(props.catalog).filter((library) => library.defaultChecked).length;
+function LibrarySelectionSummary(props: { catalog: LibraryChoice[]; selectedLibraryIds: string[]; selectedPresetId: LibraryPresetId; windowsShellProfileName: string; extendedLibraries: boolean }) {
+  const normalizedSelection = normalizeLibrarySelection(props.selectedLibraryIds, props.windowsShellProfileName);
+  const visibleCatalog = visibleLibraries(props.catalog, props.windowsShellProfileName);
+  const licenseBoundary = deriveLicenseBoundaryFromSelectedLibraries(normalizedSelection, props.catalog, props.windowsShellProfileName);
+  const selectedOptionalCount = visibleCatalog.filter((library) => normalizedSelection.includes(library.libraryId) && !library.defaultChecked).length;
+  const selectedInternalCount = visibleCatalog.filter((library) => normalizedSelection.includes(library.libraryId) && library.trackName === "internal").length;
+  const selectedExternalCount = visibleCatalog.filter((library) => normalizedSelection.includes(library.libraryId) && library.trackName === "external").length;
+  const includedCount = visibleCatalog.filter((library) => library.defaultChecked).length;
+
+  const selectedPresetName = libraryPresetDisplayName(props.selectedPresetId, props.extendedLibraries);
+  const selectionMessage = props.selectedPresetId === "custom"
+    ? t("libraries.presetSelector.custom")
+    : t("libraries.summary.currentPreset", { preset: selectedPresetName });
 
   return (
-    <section className="library-summary" aria-label={t("libraries.summary.ariaLabel")}>
-      <div className="library-summary__item">
-        <span className="library-summary__label">{t("libraries.summary.preset")}</span>
-        <strong className="library-summary__value">{t(`libraries.presets.${props.selectedPresetId}.name`)}</strong>
+    <section className="library-summary-card" aria-label={t("libraries.summary.ariaLabel")}>
+      <div className="library-summary-card__header">
+        <span className="library-summary-card__status" aria-hidden="true">✓</span>
+        <span className="library-summary-card__copy">
+          <strong className="library-summary-card__title">{t("libraries.summary.currentTitle")}</strong>
+          <span className="library-summary-card__message">{selectionMessage}</span>
+        </span>
       </div>
-      <div className="library-summary__item">
-        <span className="library-summary__label">{t("libraries.summary.external")}</span>
-        <strong className="library-summary__value">{selectedExternalCount}</strong>
-      </div>
-      <div className="library-summary__item">
-        <span className="library-summary__label">{t("libraries.summary.included")}</span>
-        <strong className="library-summary__value">{includedCount}</strong>
-      </div>
-      <div className="library-summary__item">
-        <span className="library-summary__label">{t("libraries.summary.license")}</span>
-        <strong className={`library-summary__value library-summary__license library-summary__license--${licenseBoundary}`}>{t(`libraries.summary.license.${licenseBoundary}`)}</strong>
+      <div className="library-summary">
+        <div className="library-summary__item">
+          <span className="library-summary__text">
+            <span className="library-summary__label">{t("libraries.summary.license")}</span>
+            <strong className={`library-summary__value library-summary__license library-summary__license--${licenseBoundary}`}>{t(`libraries.summary.license.${licenseBoundary}`)}</strong>
+          </span>
+        </div>
+        <div className="library-summary__item">
+          <span className="library-summary__text">
+            <span className="library-summary__label">{t("libraries.summary.optional")}</span>
+            <strong className="library-summary__value">{selectedOptionalCount}</strong>
+          </span>
+        </div>
+        <div className="library-summary__item">
+          <span className="library-summary__text">
+            <span className="library-summary__label">{t("libraries.summary.internal")}</span>
+            <strong className="library-summary__value">{selectedInternalCount}</strong>
+          </span>
+        </div>
+        <div className="library-summary__item">
+          <span className="library-summary__text">
+            <span className="library-summary__label">{t("libraries.summary.externalTrack")}</span>
+            <strong className="library-summary__value">{selectedExternalCount}</strong>
+          </span>
+        </div>
+        <div className="library-summary__item">
+          <span className="library-summary__text">
+            <span className="library-summary__label">{t("libraries.summary.included")}</span>
+            <strong className="library-summary__value">{includedCount}</strong>
+          </span>
+        </div>
       </div>
     </section>
   );
 }
 
-function LibraryList(props: { catalog: LibraryChoice[]; selectedLibraryIds: string[]; onToggleLibrary: (libraryId: string) => void; showTechnicalDetails: boolean }) {
-  const groupedLibraries = groupLibrariesByCategory(props.catalog);
+type LibrarySectionFilter = string;
+
+function libraryCategoryName(library: LibraryChoice): string {
+  return libraryText(library, "categoryName") || t("common.other");
+}
+
+function isDefaultLibraryCategory(categoryName: string): boolean {
+  const normalizedCategoryName = categoryName.toLocaleLowerCase();
+  return normalizedCategoryName.includes("included by default") || normalizedCategoryName.includes("기본 포함");
+}
+
+function librarySectionFilterLabel(categoryName: LibrarySectionFilter): string {
+  if (isDefaultLibraryCategory(categoryName)) return t("libraries.categoryFilter.default");
+  return categoryName;
+}
+
+function librarySectionFilterSummary(selectedSections: LibrarySectionFilter[]): string {
+  if (selectedSections.length === 0) return t("libraries.categoryFilter.all");
+  if (selectedSections.length === 1) return librarySectionFilterLabel(selectedSections[0]);
+  return t("libraries.categoryFilter.selectedCount").replace("{count}", String(selectedSections.length));
+}
+
+function librarySectionOptions(catalog: LibraryChoice[], windowsShellProfileName: string): string[] {
+  const categoryNames: string[] = [];
+  for (const library of visibleLibraries(catalog, windowsShellProfileName)) {
+    const categoryName = libraryCategoryName(library);
+    if (!categoryNames.includes(categoryName)) categoryNames.push(categoryName);
+  }
+  return categoryNames;
+}
+
+function filterLibraries(catalog: LibraryChoice[], windowsShellProfileName: string, searchQuery: string, sectionFilters: LibrarySectionFilter[]): LibraryChoice[] {
+  const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
+  return visibleLibraries(catalog, windowsShellProfileName).filter((library) => {
+    const categoryName = libraryCategoryName(library);
+    if (sectionFilters.length > 0 && !sectionFilters.includes(categoryName)) return false;
+    if (!normalizedQuery) return true;
+    const searchableText = [
+      library.libraryId,
+      libraryText(library, "displayName"),
+      categoryName,
+      libraryText(library, "plainExplanation"),
+      libraryText(library, "technicalExplanation"),
+      library.configureFlags.join(" "),
+      library.packageNames.join(" "),
+      library.officialWebpageUrl || "",
+    ].join(" ").toLocaleLowerCase();
+    return searchableText.includes(normalizedQuery);
+  });
+}
+
+
+function splitLibraryDisplayName(displayName: string): { buildName: string; featureName: string } {
+  const separator = " / ";
+  if (!displayName.includes(separator)) {
+    return { buildName: displayName, featureName: "" };
+  }
+  const [buildName, ...featureParts] = displayName.split(separator);
+  return { buildName: buildName.trim(), featureName: cleanLibraryFeatureName(featureParts.join(separator).trim()) };
+}
+
+function cleanLibraryFeatureName(featureName: string): string {
+  const suffixes = [
+    " encoding",
+    " decoding",
+    " support",
+    " input",
+    " output",
+    " 인코딩",
+    " 디코딩",
+    " 지원",
+    " 입력",
+    " 출력",
+  ];
+  for (const suffix of suffixes) {
+    if (featureName.toLocaleLowerCase().endsWith(suffix.toLocaleLowerCase())) {
+      return featureName.slice(0, -suffix.length).trim();
+    }
+  }
+  return featureName;
+}
+
+function groupFilteredLibraries(libraries: LibraryChoice[]) {
+  return libraries.reduce<Record<string, LibraryChoice[]>>((groups, library) => {
+    const categoryName = libraryCategoryName(library);
+    groups[categoryName] = groups[categoryName] || [];
+    groups[categoryName].push(library);
+    return groups;
+  }, {});
+}
+
+function LibraryList(props: { catalog: LibraryChoice[]; selectedLibraryIds: string[]; onToggleLibrary: (libraryId: string) => void; showTechnicalDetails: boolean; windowsShellProfileName: string; searchQuery: string; sectionFilters: LibrarySectionFilter[]; onOpenOfficialWebpage: (url: string) => void }) {
+  const filteredLibraries = filterLibraries(props.catalog, props.windowsShellProfileName, props.searchQuery, props.sectionFilters);
+  const groupedLibraries = groupFilteredLibraries(filteredLibraries);
   return (
     <div className="library-list">
+      {filteredLibraries.length === 0 && <p className="library-list__empty">{t("libraries.list.empty")}</p>}
       {Object.entries(groupedLibraries).map(([categoryName, libraries]) => (
         <section className="library-group" key={categoryName}>
           <h2 className="library-group__title">{categoryName}</h2>
           {libraries.map((library) => {
-            const isChecked = props.selectedLibraryIds.includes(library.libraryId) || library.defaultChecked;
-            const isExternal = !library.defaultChecked;
+            const isUiUnavailable = isLibraryUiUnavailable(library.libraryId, props.windowsShellProfileName);
+            const unavailableReasonKey = libraryUiUnavailableReasonKey(library.libraryId, props.windowsShellProfileName);
+            const isCheckboxLocked = isLibraryCheckboxLocked(library.libraryId, props.windowsShellProfileName);
+            const isChecked = (props.selectedLibraryIds.includes(library.libraryId) || library.defaultChecked) && !isCheckboxLocked;
+            // TLS backends, shaderc/glslang, and the EVC binding pairs each render as a
+            // radio group (pick one) in normal and basic dev mode; clicking the selected
+            // radio clears it (FFmpeg allows zero). Only the sudo dev tier switches them
+            // back to checkboxes so several can be selected for testing. Each group needs
+            // its own radio `name` so unrelated groups do not clear each other.
+            const radioGroupName = isSudoDevUnlockEnabled()
+              ? undefined
+              : tlsBackendLibraryIds.has(library.libraryId)
+                ? "tls-backend"
+                : shaderCompilerLibraryIds.has(library.libraryId)
+                  ? "shader-compiler"
+                  : evcDecoderLibraryIds.has(library.libraryId)
+                    ? "evc-decoder"
+                    : evcEncoderLibraryIds.has(library.libraryId)
+                      ? "evc-encoder"
+                      : undefined;
+            const isExclusiveRadio = radioGroupName !== undefined;
+            const trackName = library.trackName || "native";
+            const isNativeTrack = trackName === "native";
+            const showsOfficialWebpage = !isNativeTrack && Boolean(library.officialWebpageUrl);
+            const showsPackageNames = isNativeTrack;
+            const packageValue = library.packageNames.length > 0 ? library.packageNames.join(", ") : t("libraries.row.ffmpegSourcePackage");
+            const hasTechnicalMetadata = library.configureFlags.length > 0 || showsOfficialWebpage || showsPackageNames;
+            const displayName = libraryText(library, "displayName");
+            const { buildName, featureName } = splitLibraryDisplayName(displayName);
+            const statusLabel = library.defaultChecked ? t("libraries.row.included") : libraryLicenseLabel(library.licenseEffectName);
             return (
-              <label className={`library-row ${library.locked ? "library-row--locked" : ""} ${unbuildableLibraryIds.has(library.libraryId) ? "library-row--unbuildable" : ""}`} key={library.libraryId}>
-                <input type="checkbox" checked={isChecked} disabled={library.locked} onChange={() => props.onToggleLibrary(library.libraryId)} />
+              <label className={`library-row library-row--track-${trackName} ${props.showTechnicalDetails ? "library-row--technical-open" : ""} ${library.locked ? "library-row--locked" : ""} ${isUiUnavailable ? "library-row--unavailable" : ""} ${isExclusiveRadio ? "library-row--tls" : ""}`} key={library.libraryId}>
+                <input
+                  type={isExclusiveRadio ? "radio" : "checkbox"}
+                  name={radioGroupName}
+                  checked={isChecked}
+                  disabled={library.locked || isCheckboxLocked}
+                  onChange={() => props.onToggleLibrary(library.libraryId)}
+                  onClick={isExclusiveRadio && isChecked ? (event) => { event.preventDefault(); props.onToggleLibrary(library.libraryId); } : undefined}
+                />
                 <span className="library-row__main">
-                  <span className="library-row__name">{libraryText(library, "displayName")}</span>
-                  <span className="library-row__note">{renderRichNote(libraryText(library, "plainExplanation") || libraryText(library, "reviewNote"))}</span>
-                  {props.showTechnicalDetails && libraryText(library, "technicalExplanation") && <span className={`library-row__detail ${isExternal ? "library-row__detail--why" : ""}`}>{libraryText(library, "technicalExplanation")}</span>}
-                  {props.showTechnicalDetails && library.configureFlags.length > 0 && <span className="library-row__detail"><strong>{t("libraries.row.flagsLabel")}</strong> {library.configureFlags.join(" ")}</span>}
-                  {props.showTechnicalDetails && library.packageNames.length > 0 && <span className="library-row__detail"><strong>{t("libraries.row.packagesLabel")}</strong> {library.packageNames.join(", ")}</span>}
+                  <span className="library-row__heading">
+                    <span className="library-row__name">{buildName}</span>
+                    {!isNativeTrack && <span className={`library-row__track library-row__track--${trackName}`}>{libraryTrackLabel(trackName)}</span>}
+                  </span>
+                  <span className="library-row__copy">
+                    {featureName && <span className="library-row__feature">{featureName}</span>}
+                    <span className="library-row__note">{renderRichNote(libraryText(library, "plainExplanation"))}</span>
+                    {isUiUnavailable && unavailableReasonKey && <span className="library-row__note">{t(`libraries.row.unavailable.${unavailableReasonKey}`)}</span>}
+                  </span>
+                  {props.showTechnicalDetails && libraryText(library, "technicalExplanation") && <span className="library-row__detail">{libraryText(library, "technicalExplanation")}</span>}
+                  {props.showTechnicalDetails && hasTechnicalMetadata &&
+                    <span className="library-row__technical-metadata">
+                      {library.configureFlags.length > 0 &&
+                        <span className="library-row__technical-line">
+                          <span className="library-row__technical-badge library-row__technical-badge--flag">{t("libraries.row.flagsLabel")}</span>
+                          <span className="library-row__technical-value">{library.configureFlags.join(" ")}</span>
+                        </span>
+                      }
+                      {showsPackageNames &&
+                        <span className="library-row__technical-line">
+                          <span className="library-row__technical-badge library-row__technical-badge--package">{t("libraries.row.packagesLabel")}</span>
+                          <span className="library-row__technical-value">{packageValue}</span>
+                        </span>
+                      }
+                      {showsOfficialWebpage &&
+                        <span className="library-row__technical-line">
+                          <span className="library-row__technical-badge library-row__technical-badge--official">{t("libraries.row.officialWebpageLabel")}</span>
+                          <button
+                            className="library-row__technical-link"
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              props.onOpenOfficialWebpage(library.officialWebpageUrl);
+                            }}
+                          >
+                            {library.officialWebpageUrl}
+                          </button>
+                        </span>
+                      }
+                    </span>
+                  }
                 </span>
-                <span className={`library-row__license library-row__license--${library.licenseEffectName}`}>{library.defaultChecked ? t("libraries.row.included") : libraryLicenseLabel(library.licenseEffectName)}</span>
+                {!props.showTechnicalDetails &&
+                  <span className="library-row__status">
+                    <span className={`library-row__license library-row__license--${library.licenseEffectName}`}>{statusLabel}</span>
+                  </span>
+                }
+                {props.showTechnicalDetails &&
+                  <span className="library-row__status library-row__status--technical">
+                    <span className={`library-row__license library-row__license--${library.licenseEffectName}`}>{statusLabel}</span>
+                  </span>
+                }
               </label>
             );
           })}
         </section>
       ))}
+    </div>
+  );
+}
+
+
+
+function LibrarySectionDropdown(props: { selectedSections: LibrarySectionFilter[]; sectionOptions: string[]; onChangeSections: (value: LibrarySectionFilter[]) => void }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    function handlePointerDown(event: PointerEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [isOpen]);
+
+  function toggleSection(sectionName: LibrarySectionFilter) {
+    const nextSections = props.selectedSections.includes(sectionName)
+      ? props.selectedSections.filter((selectedSection) => selectedSection !== sectionName)
+      : [...props.selectedSections, sectionName];
+    props.onChangeSections(nextSections);
+  }
+
+  return (
+    <div className="libraries-section-dropdown" ref={dropdownRef}>
+      <button
+        className={`libraries-section-dropdown__button ${isOpen ? "libraries-section-dropdown__button--open" : ""}`}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((value) => !value)}
+      >
+        <strong className="libraries-section-dropdown__value">{librarySectionFilterSummary(props.selectedSections)}</strong>
+        <span className="libraries-section-dropdown__chevron" aria-hidden="true" />
+      </button>
+      {isOpen && (
+        <div className="libraries-section-dropdown__menu" role="listbox" aria-multiselectable="true" aria-label={t("libraries.categoryFilter.ariaLabel")}>
+          <button
+            className={`libraries-section-dropdown__option ${props.selectedSections.length === 0 ? "libraries-section-dropdown__option--active" : ""}`}
+            type="button"
+            role="option"
+            aria-selected={props.selectedSections.length === 0}
+            onClick={() => props.onChangeSections([])}
+          >
+            <span>{t("libraries.categoryFilter.all")}</span>
+            {props.selectedSections.length === 0
+              ? <span className="libraries-section-dropdown__check" aria-hidden="true">✓</span>
+              : <span className="libraries-section-dropdown__check-placeholder" aria-hidden="true" />
+            }
+          </button>
+          {props.sectionOptions.map((sectionName) => {
+            const isSelected = props.selectedSections.includes(sectionName);
+            return (
+              <button
+                className={`libraries-section-dropdown__option ${isSelected ? "libraries-section-dropdown__option--active" : ""}`}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                key={sectionName}
+                onClick={() => toggleSection(sectionName)}
+              >
+                <span>{librarySectionFilterLabel(sectionName)}</span>
+                {isSelected
+                  ? <span className="libraries-section-dropdown__check" aria-hidden="true">✓</span>
+                  : <span className="libraries-section-dropdown__check-placeholder" aria-hidden="true" />
+                }
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LibrariesToolbar(props: {
+  showTechnicalDetails: boolean;
+  onToggleTechnicalDetails: () => void;
+  searchQuery: string;
+  onSearchQueryChange: (value: string) => void;
+  sectionFilters: LibrarySectionFilter[];
+  sectionOptions: string[];
+  onSectionFiltersChange: (value: LibrarySectionFilter[]) => void;
+  onResetFilters: () => void;
+}) {
+  return (
+    <div className="libraries-toolbar">
+      <button className="button libraries-technical-toggle" type="button" aria-expanded={props.showTechnicalDetails} onClick={props.onToggleTechnicalDetails}>
+        {props.showTechnicalDetails ? t("libraries.technical.hide") : t("libraries.technical.show")}
+      </button>
+      <label className="libraries-search">
+        <span className="visually-hidden">{t("libraries.search.label")}</span>
+        <input value={props.searchQuery} onChange={(event) => props.onSearchQueryChange(event.target.value)} placeholder={t("libraries.search.placeholder")} />
+      </label>
+      <LibrarySectionDropdown
+        selectedSections={props.sectionFilters}
+        sectionOptions={props.sectionOptions}
+        onChangeSections={props.onSectionFiltersChange}
+      />
+      <button className="button libraries-reset" type="button" onClick={props.onResetFilters}>
+        {t("libraries.filter.reset")}
+      </button>
     </div>
   );
 }
@@ -249,51 +851,104 @@ export type LibrariesTabProps = {
   initialApplicationState: InitialApplicationState;
   ffmpegBuildSettings: FfmpegBuildSettings;
   libraryPresetId: LibraryPresetId;
+  extendedLibraries: boolean;
+  libraryDetailedView: boolean;
+  setLibraryDetailedView: (value: boolean) => void;
+  showTechnicalDetails: boolean;
+  setShowTechnicalDetails: (value: boolean) => void;
+  sectionFilters: LibrarySectionFilter[];
+  setSectionFilters: (value: LibrarySectionFilter[]) => void;
   toggleLibrary: (libraryId: string) => void;
   applyLibraryPreset: (presetId: LibraryPresetId) => void;
+  setExtendedLibraries: (value: boolean) => void;
+  openInUserBrowser: (url: string) => Promise<void>;
 };
 
-export function LibrariesTab({ initialApplicationState, ffmpegBuildSettings, libraryPresetId, toggleLibrary, applyLibraryPreset }: LibrariesTabProps) {
-  const [showTechnicalDetails, setShowTechnicalDetails] = React.useState(false);
+export function LibrariesTab({ initialApplicationState, ffmpegBuildSettings, libraryPresetId, extendedLibraries, libraryDetailedView, setLibraryDetailedView, showTechnicalDetails, setShowTechnicalDetails, sectionFilters, setSectionFilters, toggleLibrary, applyLibraryPreset, setExtendedLibraries, openInUserBrowser }: LibrariesTabProps) {
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const sectionOptions = librarySectionOptions(initialApplicationState.defaultLibraryCatalog, ffmpegBuildSettings.windowsShellProfileName);
+
+  React.useEffect(() => {
+    const prunedSections = sectionFilters.filter((sectionName) => sectionOptions.includes(sectionName));
+    if (prunedSections.length !== sectionFilters.length) setSectionFilters(prunedSections);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sectionOptions]);
 
   return (
     <section className="tab-page libraries-page">
-      <PageHeader title={t("libraries.title")} text={t("libraries.intro")} />
-      <section className="libraries-briefing">
-        <p>{t("libraries.info.builtIn")}</p>
-        <p>{t("libraries.info.external")}</p>
-      </section>
-      <LibraryPresetSelector presets={libraryPresets} selectedPresetId={libraryPresetId} onApplyPreset={applyLibraryPreset} showTechnicalDetails={showTechnicalDetails} />
-      <LibrarySelectionSummary catalog={initialApplicationState.defaultLibraryCatalog} selectedLibraryIds={ffmpegBuildSettings.selectedLibraryIds} selectedPresetId={libraryPresetId} />
-      <div className="libraries-toolbar">
-        <button className="button libraries-technical-toggle" type="button" aria-expanded={showTechnicalDetails} onClick={() => setShowTechnicalDetails((value) => !value)}>
-          {showTechnicalDetails ? t("libraries.technical.hide") : t("libraries.technical.show")}
-        </button>
+      <div className="libraries-page__header-row">
+        <PageHeader title={t("libraries.title")} text={t("libraries.intro")} />
+        <label className="libraries-design-toggle">
+          <input type="checkbox" checked={libraryDetailedView} onChange={(event) => setLibraryDetailedView(event.target.checked)} />
+          <span className="libraries-design-toggle__text">{t("libraries.designToggle.label")}</span>
+        </label>
       </div>
-      {showTechnicalDetails && (
-        <section className="libraries-technical-panel">
-          <h2 className="libraries-technical-panel__title">{t("libraries.technical.title")}</h2>
-          <div className="libraries-technical-details">
-            <section className="libraries-technical-detail">
-              <h3 className="libraries-technical-detail__title">{t("libraries.technical.builtIn.title")}</h3>
-              <p className="libraries-technical-detail__text">{t("libraries.technical.builtIn.text")}</p>
-            </section>
-            <section className="libraries-technical-detail">
-              <h3 className="libraries-technical-detail__title">{t("libraries.technical.external.title")}</h3>
-              <p className="libraries-technical-detail__text">{t("libraries.technical.external.text")}</p>
-            </section>
-            <section className="libraries-technical-detail">
-              <h3 className="libraries-technical-detail__title">{t("libraries.technical.configure.title")}</h3>
-              <p className="libraries-technical-detail__text">{t("libraries.technical.configure.text")}</p>
-            </section>
-            <section className="libraries-technical-detail">
-              <h3 className="libraries-technical-detail__title">{t("libraries.technical.license.title")}</h3>
-              <p className="libraries-technical-detail__text">{t("libraries.technical.license.text")}</p>
-            </section>
-          </div>
-        </section>
+
+      {!libraryDetailedView && (
+        <div className="libraries-simple-layout">
+          <SimpleLibraryPresetCard selectedPresetId={libraryPresetId} onApplyPreset={applyLibraryPreset} extendedLibraries={extendedLibraries} />
+          <SimpleLibraryCard
+            catalog={initialApplicationState.defaultLibraryCatalog}
+            selectedLibraryIds={ffmpegBuildSettings.selectedLibraryIds}
+            onToggleLibrary={toggleLibrary}
+            windowsShellProfileName={ffmpegBuildSettings.windowsShellProfileName}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            sectionFilters={sectionFilters}
+            sectionOptions={sectionOptions}
+            onSectionFiltersChange={setSectionFilters}
+            onOpenOfficialWebpage={openInUserBrowser}
+          />
+        </div>
       )}
-      <LibraryList catalog={initialApplicationState.defaultLibraryCatalog} selectedLibraryIds={ffmpegBuildSettings.selectedLibraryIds} onToggleLibrary={toggleLibrary} showTechnicalDetails={showTechnicalDetails} />
+
+      {libraryDetailedView && (
+        <>
+          <LibraryPresetSelector presets={libraryPresets} selectedPresetId={libraryPresetId} onApplyPreset={applyLibraryPreset} showTechnicalDetails={showTechnicalDetails} extendedLibraries={extendedLibraries} />
+          <label className="library-extended-toggle">
+            <input type="checkbox" checked={extendedLibraries} onChange={(event) => setExtendedLibraries(event.target.checked)} />
+            <span className="library-extended-toggle__label">{t("libraries.extended.label")}</span>
+          </label>
+          <LibrarySelectionSummary catalog={initialApplicationState.defaultLibraryCatalog} selectedLibraryIds={ffmpegBuildSettings.selectedLibraryIds} selectedPresetId={libraryPresetId} windowsShellProfileName={ffmpegBuildSettings.windowsShellProfileName} extendedLibraries={extendedLibraries} />
+          <LibrariesToolbar
+            showTechnicalDetails={showTechnicalDetails}
+            onToggleTechnicalDetails={() => setShowTechnicalDetails(!showTechnicalDetails)}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            sectionFilters={sectionFilters}
+            sectionOptions={sectionOptions}
+            onSectionFiltersChange={setSectionFilters}
+            onResetFilters={() => {
+              setSearchQuery("");
+              setSectionFilters([]);
+            }}
+          />
+          {showTechnicalDetails && (
+            <section className="libraries-technical-panel">
+              <h2 className="libraries-technical-panel__title">{t("libraries.technical.title")}</h2>
+              <div className="libraries-technical-details">
+                <section className="libraries-technical-detail">
+                  <h3 className="libraries-technical-detail__title">{t("libraries.technical.builtIn.title")}</h3>
+                  <p className="libraries-technical-detail__text">{t("libraries.technical.builtIn.text")}</p>
+                </section>
+                <section className="libraries-technical-detail">
+                  <h3 className="libraries-technical-detail__title">{t("libraries.technical.sourceBuild.title")}</h3>
+                  <p className="libraries-technical-detail__text">{t("libraries.technical.sourceBuild.text")}</p>
+                </section>
+                <section className="libraries-technical-detail">
+                  <h3 className="libraries-technical-detail__title">{t("libraries.technical.customBuild.title")}</h3>
+                  <p className="libraries-technical-detail__text">{t("libraries.technical.customBuild.text")}</p>
+                </section>
+                <section className="libraries-technical-detail">
+                  <h3 className="libraries-technical-detail__title">{t("libraries.technical.license.title")}</h3>
+                  <p className="libraries-technical-detail__text">{t("libraries.technical.license.text")}</p>
+                </section>
+              </div>
+            </section>
+          )}
+          <LibraryList catalog={initialApplicationState.defaultLibraryCatalog} selectedLibraryIds={ffmpegBuildSettings.selectedLibraryIds} onToggleLibrary={toggleLibrary} showTechnicalDetails={showTechnicalDetails} windowsShellProfileName={ffmpegBuildSettings.windowsShellProfileName} searchQuery={searchQuery} sectionFilters={sectionFilters} onOpenOfficialWebpage={openInUserBrowser} />
+        </>
+      )}
     </section>
   );
 }

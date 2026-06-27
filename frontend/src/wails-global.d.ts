@@ -15,16 +15,49 @@ type PlanOperation = {
 
 type LibraryChoice = {
   libraryId: string;
+  trackName: 'native' | 'internal' | 'external' | string;
   displayName: string;
   categoryName: string;
   configureFlags: string[];
   packageNames: string[];
+  officialWebpageUrl: string;
   licenseEffectName: string;
-  reviewNote: string;
   plainExplanation: string;
   technicalExplanation: string;
   defaultChecked: boolean;
   locked: boolean;
+};
+
+
+type TrackedLibrarySelection = {
+  trackName: 'native' | 'internal' | 'external' | string;
+  libraries: LibraryChoice[];
+};
+
+type LibraryPreparation = {
+  libraryId: string;
+  displayName: string;
+  trackName: 'internal' | 'external' | string;
+  method: 'internal-source-build' | 'external-vendor-import' | string;
+  buildSystem: 'cmake' | 'autotools' | 'make' | string;
+  version: string;
+  buildDependencyPackages?: string[];
+  archiveUrl: string;
+  archiveSha256Hash: string;
+  allowedDownloadHost: string;
+  archiveFormat: string;
+  cmakeOptions?: string[];
+  cmakeBuildTargets?: string[];
+  configureSubdir?: string;
+  configureOptions?: string[];
+  makeBuildTargets?: string[];
+  makeInstallTargets?: string[];
+  importIncludeSubdir?: string;
+  importLibSubdir?: string;
+  pkgConfigName?: string;
+  pkgConfigAppendLibs?: string[];
+  verifyHeaderRelativePath: string;
+  verifyLibStem: string;
 };
 
 type ConfigureOptionChoice = {
@@ -39,7 +72,7 @@ type ConfigureOptionChoice = {
   riskLevelName: string;
 };
 
-type BuildToolSettings = {
+type BuildConfigSettings = {
   workspaceDirectory: string;
   msys2ArchiveUrl: string;
   msys2ArchiveSha256Hash: string;
@@ -91,6 +124,11 @@ type FfmpegBuildPlan = {
   ffmpegSourceSha256Hash: string;
   selectedLibraryIds: string[];
   selectedLibraries: LibraryChoice[];
+  selectedNativeLibraries: LibraryChoice[];
+  selectedInternalLibraries: LibraryChoice[];
+  selectedExternalLibraries: LibraryChoice[];
+  selectedLibrariesByTrack: TrackedLibrarySelection[];
+  libraryPreparations: LibraryPreparation[];
   requiredMsys2PackageNames: string[];
   generatedConfigureFlags: string[];
   selectedConfigureOptions: ConfigureOptionChoice[];
@@ -130,7 +168,7 @@ type InitialApplicationState = {
   kindExplanation: string;
   securityRuleSummary: string;
   namingRuleSummary: string;
-  defaultBuildToolSettings: BuildToolSettings;
+  defaultBuildConfigSettings: BuildConfigSettings;
   defaultFfmpegBuildSettings: FfmpegBuildSettings;
   defaultLibraryCatalog: LibraryChoice[];
   defaultConfigureOptionCatalog: ConfigureOptionChoice[];
@@ -164,4 +202,23 @@ type BuildResult = {
   configureFlags: string[];
   licenseProfileName: string;
   createdAt: string;
+};
+
+type ToolchainStatus = {
+  installed: boolean;
+  healthy: boolean;
+  msys2RootDirectory: string;
+  createdAt: string;
+  windowsShellProfileName: string;
+  msys2ArchiveUrl: string;
+  packageCount: number;
+  packageNames: string[];
+  planHash: string;
+};
+
+type ToolchainVerification = {
+  verified: boolean;
+  checkedPackageCount: number;
+  missingPackageNames: string[];
+  message: string;
 };

@@ -1,66 +1,107 @@
 import React from "react";
 import { t } from "../i18n";
-import { PageHeader } from "./shared";
+import { DescriptionLines, PageHeader } from "./shared";
+import technicalDetailsIcon from "../assets/button-icons/TechnicalDetails.svg";
+import buildToolsIcon from "../assets/build-config-card-icons/BuildTools.svg";
+import buildShellIcon from "../assets/build-config-card-icons/BuildShell.svg";
 
-export type BuildToolsTabProps = {
-  buildToolSettings: BuildToolSettings;
-  updateBuildToolSettings: (partial: Partial<BuildToolSettings>) => void;
-  updateFfmpegBuildSettings: (partial: Partial<FfmpegBuildSettings>) => void;
+export type BuildConfigTabProps = {
+  buildConfigSettings: BuildConfigSettings;
+  changeShellProfile: (profileName: string) => void;
   msys2PackageText: string;
   onMsys2PackageTextChange: (text: string) => void;
 };
 
-export function BuildToolsTab({ buildToolSettings, updateBuildToolSettings, updateFfmpegBuildSettings, msys2PackageText, onMsys2PackageTextChange }: BuildToolsTabProps) {
-  const [isTechnicalOpen, setIsTechnicalOpen] = React.useState(false);
+function TechnicalPanel(props: { sections: { title: string; text: string }[]; tools?: string[] }) {
+  return (
+    <div className="card__panel">
+      <h2 className="card__panel-title">{t("buildConfig.technical.title")}</h2>
+      <div className="card__details">
+        {props.sections.map((section) => (
+          <section className="card__detail" key={section.title}>
+            <h3 className="card__detail-title">{section.title}</h3>
+            <DescriptionLines text={section.text} className="card__detail-text" groupSentences />
+          </section>
+        ))}
+        {props.tools && props.tools.length > 0 && (
+          <section className="card__detail">
+            <h3 className="card__detail-title">{t("buildConfig.technical.tools.title")}</h3>
+            <dl className="tool-glossary">
+              {props.tools.map((toolId) => (
+                <div className="tool-glossary__row" key={toolId}>
+                  <dt className="tool-glossary__name">{toolId}</dt>
+                  <dd className="tool-glossary__text">{t(`buildConfig.technical.tool.${toolId}`)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}
 
-  const technicalSections = [
-    { title: t("buildTools.technical.shell.title"), text: t("buildTools.technical.shell.text") },
-    { title: t("buildTools.technical.packages.title"), text: t("buildTools.technical.packages.text") },
-    { title: t("buildTools.technical.scope.title"), text: t("buildTools.technical.scope.text") },
+// Base package names (profile prefix stripped) of the default toolchain, in the
+// same order as the recommended list. Explanations are looked up per id.
+const toolchainGlossaryIds = [
+  "base-devel", "git", "make", "diffutils", "binutils", "crt", "gcc", "headers",
+  "libmangle", "libwinpthread", "pkgconf", "tools", "winpthreads", "winstorecompat",
+  "cmake", "ninja", "nasm", "yasm",
+];
+
+export function BuildConfigTab({ buildConfigSettings, changeShellProfile, msys2PackageText, onMsys2PackageTextChange }: BuildConfigTabProps) {
+  const [isShellTechnicalOpen, setIsShellTechnicalOpen] = React.useState(false);
+  const [isPackagesTechnicalOpen, setIsPackagesTechnicalOpen] = React.useState(false);
+
+  const shellSections = [
+    { title: t("buildConfig.technical.shell.ucrt64.title"), text: t("buildConfig.technical.shell.ucrt64.text") },
+    { title: t("buildConfig.technical.shell.mingw64.title"), text: t("buildConfig.technical.shell.mingw64.text") },
+    { title: t("buildConfig.technical.shell.clang64.title"), text: t("buildConfig.technical.shell.clang64.text") },
+  ];
+  const packageSections = [
+    { title: t("buildConfig.technical.packages.title"), text: t("buildConfig.technical.packages.text") },
+    { title: t("buildConfig.technical.scope.title"), text: t("buildConfig.technical.scope.text") },
   ];
 
   return (
-    <section className="tab-page build-tools-page">
-      <PageHeader title={t("buildTools.title")} text={t("buildTools.intro")} />
+    <section className="tab-page build-config-page">
+      <PageHeader title={t("buildConfig.title")} text={t("buildConfig.intro")} />
 
-      <section className="build-tools-section">
-        <label className="field build-tools-field">
-          <span className="field__label">{t("buildTools.shell.label")}</span>
-          <span className="field__hint">{t("buildTools.shell.hint")}</span>
-          <select className="field__input" value={buildToolSettings.windowsShellProfileName} onChange={(event) => { updateBuildToolSettings({ windowsShellProfileName: event.target.value }); updateFfmpegBuildSettings({ windowsShellProfileName: event.target.value }); }}>
-            <option value="ucrt64">{t("buildTools.shell.ucrt64")}</option>
-            <option value="mingw64">{t("buildTools.shell.mingw64")}</option>
-            <option value="clang64">{t("buildTools.shell.clang64")}</option>
+      <section className="card card--blue">
+        <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={buildShellIcon} alt="" /></span>
+        <div className="card__head">
+          <h2 className="card__title">{t("buildConfig.shell.label")}</h2>
+          <DescriptionLines text={t("buildConfig.shell.hint")} />
+        </div>
+        <div className="card__control">
+          <select className="card__input" value={buildConfigSettings.windowsShellProfileName} onChange={(event) => changeShellProfile(event.target.value)}>
+            <option value="ucrt64">{t("buildConfig.shell.ucrt64")}</option>
+            <option value="mingw64">{t("buildConfig.shell.mingw64")}</option>
+            <option value="clang64">{t("buildConfig.shell.clang64")}</option>
           </select>
-        </label>
+          <button className="button card__toggle" type="button" aria-expanded={isShellTechnicalOpen} onClick={() => setIsShellTechnicalOpen((value) => !value)}>
+            <img className="card__btn-icon" src={technicalDetailsIcon} alt="" aria-hidden="true" />
+            {isShellTechnicalOpen ? t("buildConfig.technical.hide") : t("buildConfig.technical.show")}
+          </button>
+        </div>
+        {isShellTechnicalOpen && <TechnicalPanel sections={shellSections} />}
       </section>
 
-      <section className="build-tools-section">
-        <label className="field build-tools-field">
-          <span className="field__label">{t("buildTools.packages.label")}</span>
-          <span className="field__hint">{t("buildTools.packages.hint")}</span>
-          <textarea className="field__textarea build-tools-packages" rows={12} value={msys2PackageText} onChange={(event) => onMsys2PackageTextChange(event.target.value)} />
-        </label>
-      </section>
-
-      <div className="build-tools-technical">
-        <button className="button build-tools-technical-toggle" type="button" aria-expanded={isTechnicalOpen} onClick={() => setIsTechnicalOpen((value) => !value)}>
-          {isTechnicalOpen ? t("buildTools.technical.hide") : t("buildTools.technical.show")}
+      <section className="card card--teal">
+        <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={buildToolsIcon} alt="" /></span>
+        <div className="card__head">
+          <h2 className="card__title">{t("buildConfig.packages.label")}</h2>
+          <DescriptionLines text={t("buildConfig.packages.hint")} />
+        </div>
+        <div className="card__control">
+          <textarea className="card__input build-config-packages" rows={12} value={msys2PackageText} onChange={(event) => onMsys2PackageTextChange(event.target.value)} />
+        </div>
+        <button className="button card__toggle card__toggle--block" type="button" aria-expanded={isPackagesTechnicalOpen} onClick={() => setIsPackagesTechnicalOpen((value) => !value)}>
+          <img className="card__btn-icon" src={technicalDetailsIcon} alt="" aria-hidden="true" />
+          {isPackagesTechnicalOpen ? t("buildConfig.technical.hide") : t("buildConfig.technical.show")}
         </button>
-        {isTechnicalOpen && (
-          <div className="build-tools-technical-panel">
-            <h2 className="build-tools-technical-panel__title">{t("buildTools.technical.title")}</h2>
-            <div className="build-tools-technical-details">
-              {technicalSections.map((section) => (
-                <section className="build-tools-technical-detail" key={section.title}>
-                  <h3 className="build-tools-technical-detail__title">{section.title}</h3>
-                  <p className="build-tools-technical-detail__text">{section.text}</p>
-                </section>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+        {isPackagesTechnicalOpen && <TechnicalPanel sections={packageSections} tools={toolchainGlossaryIds} />}
+      </section>
     </section>
   );
 }

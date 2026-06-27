@@ -6,14 +6,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"customffmpegbuilder/internal/audit"
-	"customffmpegbuilder/internal/consent"
-	"customffmpegbuilder/internal/download"
-	"customffmpegbuilder/internal/execution"
-	"customffmpegbuilder/internal/extraction"
-	"customffmpegbuilder/internal/planning"
-	"customffmpegbuilder/internal/scripting"
-	"customffmpegbuilder/internal/workspace"
+	"promptfulcustomffmpegbuilder/internal/audit"
+	"promptfulcustomffmpegbuilder/internal/consent"
+	"promptfulcustomffmpegbuilder/internal/download"
+	"promptfulcustomffmpegbuilder/internal/execution"
+	"promptfulcustomffmpegbuilder/internal/extraction"
+	"promptfulcustomffmpegbuilder/internal/planning"
+	"promptfulcustomffmpegbuilder/internal/scripting"
+	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
 const ffmpegReleaseSigningKeyUrl = "https://ffmpeg.org/ffmpeg-devel.asc"
@@ -96,9 +96,19 @@ func (app *App) buildFfmpeg(ctx context.Context, runId string, plan planning.Ffm
 		app.emitLocalizedFailure("run.failure.ffmpegSourceDirectoryMissing", "Could not locate extracted FFmpeg source directory", err)
 		return
 	}
+	if err := app.validateLibraryVersionsAgainstFfmpeg(plan, ffmpegSourceDirectory, emitProgress); err != nil {
+		_ = auditWriter.WriteEvent("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		app.emitLocalizedFailure("run.failure.libraryVersionIncompatible", "A prepared library version is incompatible with the selected FFmpeg release", err)
+		return
+	}
 	if err := app.installFfmpegLibraryPackages(ctx, plan, userLibraryPackageInstallConsent, auditWriter, emitProgress); err != nil {
 		_ = auditWriter.WriteEvent("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
 		app.emitLocalizedFailure("run.failure.ffmpegLibraryPackageInstall", "FFmpeg library package installation failed", err)
+		return
+	}
+	if err := app.prepareNonNativeLibraries(ctx, plan, userFfmpegSourceDownloadConsent, userArchiveExtractionConsent, userLibraryPackageInstallConsent, userExternalCommandExecutionConsent, auditWriter, emitProgress); err != nil {
+		_ = auditWriter.WriteEvent("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		app.emitLocalizedFailure("run.failure.libraryPreparation", "Non-Native library preparation failed", err)
 		return
 	}
 	if err := app.executeFfmpegConfigure(ctx, plan, ffmpegSourceDirectory, userExternalCommandExecutionConsent, auditWriter, emitProgress); err != nil {
@@ -156,6 +166,13 @@ func (app *App) cleanupFailedFfmpegRun(plan planning.FfmpegBuildPlan, workspaceL
 		filepath.Join(workspaceLayout.BuildDirectory, "scripts", "ffmpeg-configure-"+plan.PlanHash+".sh"),
 		filepath.Join(workspaceLayout.BuildDirectory, "scripts", "ffmpeg-make-"+plan.PlanHash+".sh"),
 	}
+	for _, preparation := range plan.LibraryPreparations {
+		cleanupTargets = append(cleanupTargets,
+			filepath.Join(workspaceLayout.BuildDirectory, "prep", preparation.LibraryId+"-"+plan.PlanHash),
+			filepath.Join(workspaceLayout.BuildDirectory, "scripts", "prep-"+preparation.LibraryId+"-"+plan.PlanHash+".sh"),
+			filepath.Join(workspaceLayout.BuildDirectory, "scripts", "prep-builddeps-"+preparation.LibraryId+"-"+plan.PlanHash+".sh"),
+		)
+	}
 	app.cleanupWorkspaceTargets(plan.WorkspaceDirectory, cleanupTargets)
 }
 
@@ -187,18 +204,40 @@ func pkgConfigPathFor(plan planning.FfmpegBuildPlan) string {
 		profileDirectoryName = "ucrt64"
 	}
 	msys2Prefix := "/" + profileDirectoryName
-	paths := []string{
-		msys2Prefix + "/lib/pkgconfig",
-		msys2Prefix + "/share/pkgconfig",
+	// Privately-installed libraries (e.g. libtls) live in their own per-library prefix to
+	// avoid archive-name collisions in the shared prefix; their pkgconfig dirs go first so
+	// pkg-config resolves them (and their isolated libssl/libcrypto) ahead of the shared
+	// prefix's same-named modules.
+	paths := append([]string{}, privatePkgConfigDirsFor(plan)...)
+	paths = append(paths,
+		msys2Prefix+"/lib/pkgconfig",
+		msys2Prefix+"/share/pkgconfig",
 		"/usr/lib/pkgconfig",
 		"/usr/share/pkgconfig",
-	}
+	)
 	return strings.Join(paths, ":")
+}
+
+// privatePkgConfigDirsFor returns the unix pkgconfig directories of every privately-installed
+// library in the plan (see planning.LibraryPreparation.PrivatePrefixInstall), in plan order.
+func privatePkgConfigDirsFor(plan planning.FfmpegBuildPlan) []string {
+	profileDirectoryName := strings.ToLower(plan.WindowsShellProfileName)
+	if profileDirectoryName == "" {
+		profileDirectoryName = "ucrt64"
+	}
+	msys2Prefix := "/" + profileDirectoryName
+	dirs := []string{}
+	for _, preparation := range plan.LibraryPreparations {
+		if preparation.PrivatePrefixInstall && preparation.PkgConfigName != "" {
+			dirs = append(dirs, scripting.PrivateLibraryPkgConfigDir(msys2Prefix, preparation.PkgConfigName))
+		}
+	}
+	return dirs
 }
 
 func (app *App) executeFfmpegConfigure(ctx context.Context, plan planning.FfmpegBuildPlan, ffmpegSourceDirectory string, userExternalCommandExecutionConsent consent.CommandExecutionConsent, auditWriter *audit.Writer, emitProgress func(string, string)) error {
 	workspaceLayout := workspace.WorkspaceLayoutFor(plan.WorkspaceDirectory)
-	scriptLines, err := scripting.ConfigureScriptLines(plan.ConfigureFlags)
+	scriptLines, err := scripting.ConfigureScriptLines(plan.ConfigureFlags, privatePkgConfigDirsFor(plan))
 	if err != nil {
 		return err
 	}

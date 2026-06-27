@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"customffmpegbuilder/internal/audit"
-	"customffmpegbuilder/internal/consent"
-	"customffmpegbuilder/internal/download"
-	"customffmpegbuilder/internal/execution"
-	"customffmpegbuilder/internal/extraction"
-	"customffmpegbuilder/internal/planning"
-	"customffmpegbuilder/internal/scripting"
-	"customffmpegbuilder/internal/workspace"
+	"promptfulcustomffmpegbuilder/internal/audit"
+	"promptfulcustomffmpegbuilder/internal/consent"
+	"promptfulcustomffmpegbuilder/internal/download"
+	"promptfulcustomffmpegbuilder/internal/execution"
+	"promptfulcustomffmpegbuilder/internal/extraction"
+	"promptfulcustomffmpegbuilder/internal/planning"
+	"promptfulcustomffmpegbuilder/internal/scripting"
+	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
 const msys2InstallerSigningKeyUrl = "https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&search=0x0EBF782C5D53F7E5FB02A66746BD761F7A49B0EC"
@@ -100,6 +100,9 @@ func (app *App) prepareToolchain(ctx context.Context, runId string, plan plannin
 		_ = auditWriter.WriteEvent("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
 		app.emitLocalizedFailure("run.failure.msys2PackageInstall", "MSYS2 package installation failed", err)
 		return
+	}
+	if err := writeToolchainManifest(plan); err != nil {
+		emitProgress("warn", localize("run.log.toolchainManifestFailed", nil))
 	}
 	_ = auditWriter.WriteEvent("action-completed", plan.ActionName, plan.PlanHash, "info", "Approved private MSYS2 environment is ready.")
 	emitProgress("info", localize("run.log.toolchainReady", nil))
@@ -200,7 +203,7 @@ func (app *App) installPacmanPackages(ctx context.Context, plan planning.Toolcha
 		return err
 	}
 	workspaceLayout := workspace.WorkspaceLayoutFor(plan.WorkspaceDirectory)
-	scriptLines, err := scripting.PacmanInstallScriptLines(plan.Msys2PackageNames)
+	scriptLines, err := scripting.PacmanInstallScriptLines(plan.Msys2PackageNames, plan.WindowsShellProfileName)
 	if err != nil {
 		return err
 	}

@@ -10,9 +10,15 @@ export function ApproveToolchainPreparationPlan(arg1:string,arg2:consent.Approva
 
 export function CancelApprovedAction():Promise<boolean>;
 
+export function ClearBuildEnvironments(arg1:string):Promise<void>;
+
 export function GetBuildResult(arg1:string):Promise<app.BuildResult>;
 
 export function GetInitialApplicationState():Promise<app.InitialApplicationState>;
+
+export function GetInstalledToolchainProfiles(arg1:string):Promise<Array<app.ToolchainStatus>>;
+
+export function GetToolchainStatus(arg1:string,arg2:string):Promise<app.ToolchainStatus>;
 
 export function LoadUiState():Promise<string>;
 
@@ -20,10 +26,16 @@ export function OpenExternalUrl(arg1:string):Promise<void>;
 
 export function OpenResultFolder(arg1:string):Promise<void>;
 
+export function OpenResultReport(arg1:string):Promise<void>;
+
 export function RequestFfmpegBuildPlan(arg1:planning.FfmpegBuildSettings):Promise<planning.FfmpegBuildPlanReview>;
 
-export function RequestToolchainPreparationPlan(arg1:planning.BuildToolSettings):Promise<planning.ToolchainPreparationPlanReview>;
+export function RequestToolchainPreparationPlan(arg1:planning.BuildConfigSettings):Promise<planning.ToolchainPreparationPlanReview>;
 
 export function SaveUiState(arg1:string):Promise<void>;
 
 export function SelectWorkspace():Promise<string>;
+
+export function SetLocale(arg1:string):Promise<void>;
+
+export function VerifyToolchainInstallation(arg1:string,arg2:string):Promise<app.ToolchainVerification>;

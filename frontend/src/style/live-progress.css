@@ -117,3 +117,11 @@
 }
 .live-progress__last-label { font-size: 0.73rem; color: #8090a8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 .live-progress__last-msg   { font-size: 0.83rem; color: #2a3a60; font-family: "Cascadia Code", "Fira Code", Consolas, monospace; word-break: break-all; }
+
+.live-progress__failure {
+  display: flex; flex-direction: column; gap: 3px;
+  background: #fdf3f3; border: 1px solid #efaaaa; border-radius: 9px;
+  padding: 8px 12px;
+}
+.live-progress__failure-label { font-size: 0.73rem; color: #b21f1f; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.live-progress__failure-msg   { font-size: 0.83rem; color: #7a1f1f; word-break: break-word; }

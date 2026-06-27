@@ -84,7 +84,7 @@ export namespace app {
 	    kindExplanation: string;
 	    securityRuleSummary: string;
 	    namingRuleSummary: string;
-	    defaultBuildToolSettings: planning.BuildToolSettings;
+	    defaultBuildConfigSettings: planning.BuildConfigSettings;
 	    defaultFfmpegBuildSettings: planning.FfmpegBuildSettings;
 	    defaultLibraryCatalog: planning.LibraryChoice[];
 	    defaultConfigureOptionCatalog: planning.ConfigureOptionChoice[];
@@ -99,7 +99,7 @@ export namespace app {
 	        this.kindExplanation = source["kindExplanation"];
 	        this.securityRuleSummary = source["securityRuleSummary"];
 	        this.namingRuleSummary = source["namingRuleSummary"];
-	        this.defaultBuildToolSettings = this.convertValues(source["defaultBuildToolSettings"], planning.BuildToolSettings);
+	        this.defaultBuildConfigSettings = this.convertValues(source["defaultBuildConfigSettings"], planning.BuildConfigSettings);
 	        this.defaultFfmpegBuildSettings = this.convertValues(source["defaultFfmpegBuildSettings"], planning.FfmpegBuildSettings);
 	        this.defaultLibraryCatalog = this.convertValues(source["defaultLibraryCatalog"], planning.LibraryChoice);
 	        this.defaultConfigureOptionCatalog = this.convertValues(source["defaultConfigureOptionCatalog"], planning.ConfigureOptionChoice);
@@ -122,6 +122,52 @@ export namespace app {
 		    }
 		    return a;
 		}
+	}
+	export class ToolchainStatus {
+	    installed: boolean;
+	    healthy: boolean;
+	    msys2RootDirectory: string;
+	    createdAt: string;
+	    windowsShellProfileName: string;
+	    msys2ArchiveUrl: string;
+	    packageCount: number;
+	    packageNames: string[];
+	    planHash: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ToolchainStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.installed = source["installed"];
+	        this.healthy = source["healthy"];
+	        this.msys2RootDirectory = source["msys2RootDirectory"];
+	        this.createdAt = source["createdAt"];
+	        this.windowsShellProfileName = source["windowsShellProfileName"];
+	        this.msys2ArchiveUrl = source["msys2ArchiveUrl"];
+	        this.packageCount = source["packageCount"];
+	        this.packageNames = source["packageNames"];
+	        this.planHash = source["planHash"];
+	    }
+	}
+	export class ToolchainVerification {
+	    verified: boolean;
+	    checkedPackageCount: number;
+	    missingPackageNames: string[];
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ToolchainVerification(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.verified = source["verified"];
+	        this.checkedPackageCount = source["checkedPackageCount"];
+	        this.missingPackageNames = source["missingPackageNames"];
+	        this.message = source["message"];
+	    }
 	}
 
 }
@@ -149,7 +195,7 @@ export namespace consent {
 
 export namespace planning {
 	
-	export class BuildToolSettings {
+	export class BuildConfigSettings {
 	    workspaceDirectory: string;
 	    msys2ArchiveUrl: string;
 	    msys2ArchiveSha256Hash: string;
@@ -158,7 +204,7 @@ export namespace planning {
 	    windowsShellProfileName: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new BuildToolSettings(source);
+	        return new BuildConfigSettings(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -235,14 +281,153 @@ export namespace planning {
 	        this.summaryValues = source["summaryValues"];
 	    }
 	}
+	export class LibrarySourcePatch {
+	    file: string;
+	    find: string;
+	    replace: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LibrarySourcePatch(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.file = source["file"];
+	        this.find = source["find"];
+	        this.replace = source["replace"];
+	    }
+	}
+	export class LibraryPreparation {
+	    libraryId: string;
+	    displayName: string;
+	    trackName: string;
+	    method: string;
+	    buildSystem: string;
+	    version: string;
+	    buildDependencyPackages?: string[];
+	    msysBuildDependencyPackages?: string[];
+	    archiveUrl: string;
+	    archiveSha256Hash: string;
+	    allowedDownloadHost: string;
+	    archiveFormat: string;
+	    cmakeOptions?: string[];
+	    cmakeBuildTargets?: string[];
+	    configureSubdir?: string;
+	    configureOptions?: string[];
+	    makeBuildTargets?: string[];
+	    makeInstallTargets?: string[];
+	    runAutogen?: boolean;
+	    makeVariables?: string[];
+	    makeInstallHeaderFiles?: string[];
+	    makeStaticLibFile?: string;
+	    importIncludeSubdir?: string;
+	    importLibSubdir?: string;
+	    pkgConfigName?: string;
+	    pkgConfigAppendLibs?: string[];
+	    pkgConfigLibsLine?: string;
+	    privatePrefixInstall?: boolean;
+	    verifyHeaderRelativePath: string;
+	    verifyLibStem: string;
+	    sourcePatches?: LibrarySourcePatch[];
+	
+	    static createFrom(source: any = {}) {
+	        return new LibraryPreparation(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.libraryId = source["libraryId"];
+	        this.displayName = source["displayName"];
+	        this.trackName = source["trackName"];
+	        this.method = source["method"];
+	        this.buildSystem = source["buildSystem"];
+	        this.version = source["version"];
+	        this.buildDependencyPackages = source["buildDependencyPackages"];
+	        this.msysBuildDependencyPackages = source["msysBuildDependencyPackages"];
+	        this.archiveUrl = source["archiveUrl"];
+	        this.archiveSha256Hash = source["archiveSha256Hash"];
+	        this.allowedDownloadHost = source["allowedDownloadHost"];
+	        this.archiveFormat = source["archiveFormat"];
+	        this.cmakeOptions = source["cmakeOptions"];
+	        this.cmakeBuildTargets = source["cmakeBuildTargets"];
+	        this.configureSubdir = source["configureSubdir"];
+	        this.configureOptions = source["configureOptions"];
+	        this.makeBuildTargets = source["makeBuildTargets"];
+	        this.makeInstallTargets = source["makeInstallTargets"];
+	        this.runAutogen = source["runAutogen"];
+	        this.makeVariables = source["makeVariables"];
+	        this.makeInstallHeaderFiles = source["makeInstallHeaderFiles"];
+	        this.makeStaticLibFile = source["makeStaticLibFile"];
+	        this.importIncludeSubdir = source["importIncludeSubdir"];
+	        this.importLibSubdir = source["importLibSubdir"];
+	        this.pkgConfigName = source["pkgConfigName"];
+	        this.pkgConfigAppendLibs = source["pkgConfigAppendLibs"];
+	        this.pkgConfigLibsLine = source["pkgConfigLibsLine"];
+	        this.privatePrefixInstall = source["privatePrefixInstall"];
+	        this.verifyHeaderRelativePath = source["verifyHeaderRelativePath"];
+	        this.verifyLibStem = source["verifyLibStem"];
+	        this.sourcePatches = this.convertValues(source["sourcePatches"], LibrarySourcePatch);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class TrackedLibrarySelection {
+	    trackName: string;
+	    libraries: LibraryChoice[];
+	
+	    static createFrom(source: any = {}) {
+	        return new TrackedLibrarySelection(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.trackName = source["trackName"];
+	        this.libraries = this.convertValues(source["libraries"], LibraryChoice);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class LibraryChoice {
 	    libraryId: string;
+	    trackName: string;
 	    displayName: string;
 	    categoryName: string;
 	    configureFlags: string[];
 	    packageNames: string[];
+	    officialWebpageUrl: string;
 	    licenseEffectName: string;
-	    reviewNote: string;
 	    plainExplanation: string;
 	    technicalExplanation: string;
 	    defaultChecked: boolean;
@@ -255,12 +440,13 @@ export namespace planning {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.libraryId = source["libraryId"];
+	        this.trackName = source["trackName"];
 	        this.displayName = source["displayName"];
 	        this.categoryName = source["categoryName"];
 	        this.configureFlags = source["configureFlags"];
 	        this.packageNames = source["packageNames"];
+	        this.officialWebpageUrl = source["officialWebpageUrl"];
 	        this.licenseEffectName = source["licenseEffectName"];
-	        this.reviewNote = source["reviewNote"];
 	        this.plainExplanation = source["plainExplanation"];
 	        this.technicalExplanation = source["technicalExplanation"];
 	        this.defaultChecked = source["defaultChecked"];
@@ -277,6 +463,11 @@ export namespace planning {
 	    ffmpegSourceSha256Hash: string;
 	    selectedLibraryIds: string[];
 	    selectedLibraries: LibraryChoice[];
+	    selectedNativeLibraries: LibraryChoice[];
+	    selectedInternalLibraries: LibraryChoice[];
+	    selectedExternalLibraries: LibraryChoice[];
+	    selectedLibrariesByTrack: TrackedLibrarySelection[];
+	    libraryPreparations: LibraryPreparation[];
 	    requiredMsys2PackageNames: string[];
 	    generatedConfigureFlags: string[];
 	    selectedConfigureOptions: ConfigureOptionChoice[];
@@ -311,6 +502,11 @@ export namespace planning {
 	        this.ffmpegSourceSha256Hash = source["ffmpegSourceSha256Hash"];
 	        this.selectedLibraryIds = source["selectedLibraryIds"];
 	        this.selectedLibraries = this.convertValues(source["selectedLibraries"], LibraryChoice);
+	        this.selectedNativeLibraries = this.convertValues(source["selectedNativeLibraries"], LibraryChoice);
+	        this.selectedInternalLibraries = this.convertValues(source["selectedInternalLibraries"], LibraryChoice);
+	        this.selectedExternalLibraries = this.convertValues(source["selectedExternalLibraries"], LibraryChoice);
+	        this.selectedLibrariesByTrack = this.convertValues(source["selectedLibrariesByTrack"], TrackedLibrarySelection);
+	        this.libraryPreparations = this.convertValues(source["libraryPreparations"], LibraryPreparation);
 	        this.requiredMsys2PackageNames = source["requiredMsys2PackageNames"];
 	        this.generatedConfigureFlags = source["generatedConfigureFlags"];
 	        this.selectedConfigureOptions = this.convertValues(source["selectedConfigureOptions"], ConfigureOptionChoice);
@@ -419,6 +615,8 @@ export namespace planning {
 	        this.licenseProfileName = source["licenseProfileName"];
 	    }
 	}
+	
+	
 	
 	
 	

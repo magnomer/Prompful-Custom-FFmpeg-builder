@@ -19,6 +19,38 @@ function actionNameLabel(actionName: string): string {
   return tFallback(`approval.action.${actionName}`, actionName);
 }
 
+export function DescriptionLines(props: { text: string; className?: string; groupSentences?: boolean }) {
+  const sentences = props.text.split(/(?<=[.!?。])\s+/).filter((sentence) => sentence.trim().length > 0);
+  const isSubordinate = (sentence: string) => sentence.trim().startsWith("(");
+
+  let lines: { text: string; sub: boolean }[];
+  if (props.groupSentences) {
+    // Keep regular sentences flowing together; only break parentheticals onto their own line.
+    lines = [];
+    let buffer: string[] = [];
+    for (const sentence of sentences) {
+      if (isSubordinate(sentence)) {
+        if (buffer.length > 0) { lines.push({ text: buffer.join(" "), sub: false }); buffer = []; }
+        lines.push({ text: sentence, sub: true });
+      } else {
+        buffer.push(sentence);
+      }
+    }
+    if (buffer.length > 0) lines.push({ text: buffer.join(" "), sub: false });
+  } else {
+    // One sentence per line.
+    lines = sentences.map((sentence) => ({ text: sentence, sub: isSubordinate(sentence) }));
+  }
+
+  return (
+    <p className={props.className ?? "card__desc"}>
+      {lines.map((line, index) => (
+        <span className={`card__desc-line ${line.sub ? "card__desc-line--sub" : ""}`} key={index}>{line.text}</span>
+      ))}
+    </p>
+  );
+}
+
 export function PageHeader(props: { title: string; text: string }) {
   return (
     <header className="page-header">
@@ -49,9 +81,37 @@ export function EmptyReview(props: { text: string }) {
   return <p className="empty-text">{props.text}</p>;
 }
 
-export function ReviewList(props: { title: string; items: string[] }) {
+function CopyableField(props: { value: string; ariaLabel: string }) {
+  const [copied, setCopied] = React.useState(false);
+  async function copyToClipboard() {
+    try {
+      await navigator.clipboard.writeText(props.value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard may be unavailable; the field is still selectable for manual copy.
+    }
+  }
   return (
-    <section className="review-list">
+    <div className="copy-field">
+      <textarea
+        className="card__input metadata__field"
+        readOnly
+        rows={2}
+        value={props.value}
+        onFocus={(event) => event.currentTarget.select()}
+        aria-label={props.ariaLabel}
+      />
+      <button className="button copy-field__btn" type="button" onClick={copyToClipboard}>
+        {copied ? t("actions.copied") : t("actions.copy")}
+      </button>
+    </div>
+  );
+}
+
+export function ReviewList(props: { title: string; items: string[]; dense?: boolean }) {
+  return (
+    <section className={`review-list ${props.dense ? "review-list--dense" : ""}`}>
       <h3 className="review-list__title">{props.title}</h3>
       <ul className="review-list__items">
         {props.items.map((item) => <li className="review-list__item" key={item}>{item}</li>)}
@@ -79,7 +139,9 @@ export type ApprovalPanelProps = {
   operations: PlanOperation[];
   warnings: PlanWarning[];
   isExecutable: boolean;
+  variant?: string;
   selectedLibraries?: LibraryChoice[];
+  libraryPreparations?: LibraryPreparation[];
   requiredMsys2PackageNames?: string[];
   generatedConfigureFlags?: string[];
   selectedConfigureOptions?: ConfigureOptionChoice[];
@@ -89,18 +151,27 @@ export type ApprovalPanelProps = {
   onRequestBackendConfirmation: () => void;
 };
 
-export function ApprovalPanel(props: ApprovalPanelProps) {
+function ApprovalPanelBody(props: ApprovalPanelProps) {
   return (
-    <section className="approval-panel">
-      <h2 className="approval-panel__title">{props.title}</h2>
-      <p className="approval-panel__summary">{t("approval.summary")}</p>
+    <>
       <dl className="metadata">
         <dt>{t("approval.metadata.action")}</dt><dd>{actionNameLabel(props.actionName)}</dd>
-        <dt>{t("approval.metadata.planHash")}</dt><dd className="metadata__hash">{props.planHash}</dd>
-        <dt>{t("approval.metadata.backendPhrase")}</dt><dd>{props.expectedConsentText}</dd>
+        <dt>{t("approval.metadata.planHash")}</dt>
+        <dd><CopyableField value={props.planHash} ariaLabel={t("approval.metadata.planHash")} /></dd>
+        <dt>{t("approval.metadata.backendPhrase")}</dt>
+        <dd><CopyableField value={props.expectedConsentText} ariaLabel={t("approval.metadata.backendPhrase")} /></dd>
       </dl>
       {props.selectedLibraries && props.selectedLibraries.length > 0 && (
         <ReviewList title={t("approval.review.selectedLibraries")} items={props.selectedLibraries.map((library) => `${libraryText(library, "displayName")} | ${libraryLicenseLabel(library.licenseEffectName)} | ${library.configureFlags.join(" ")}`)} />
+      )}
+      {props.libraryPreparations && props.libraryPreparations.length > 0 && (
+        <ReviewList title={t("approval.review.libraryPreparations")} items={props.libraryPreparations.map((preparation) => {
+          const name = preparation.version ? `${preparation.displayName} ${preparation.version}` : preparation.displayName;
+          const base = `${name} | ${t(`approval.preparation.method.${preparation.method}`)} | ${preparation.allowedDownloadHost}`;
+          return preparation.buildDependencyPackages && preparation.buildDependencyPackages.length > 0
+            ? `${base} | ${t("approval.preparation.buildDependencies")}: ${preparation.buildDependencyPackages.join(" ")}`
+            : base;
+        })} />
       )}
       {props.requiredMsys2PackageNames && props.requiredMsys2PackageNames.length > 0 && <ReviewList title={t("approval.review.requiredLibraryPackages")} items={props.requiredMsys2PackageNames} />}
       {props.generatedConfigureFlags && props.generatedConfigureFlags.length > 0 && <ReviewList title={t("approval.review.generatedLibraryFlags")} items={props.generatedConfigureFlags} />}
@@ -108,8 +179,34 @@ export function ApprovalPanel(props: ApprovalPanelProps) {
       {props.generatedOptionFlags && props.generatedOptionFlags.length > 0 && <ReviewList title={t("approval.review.generatedOptionFlags")} items={props.generatedOptionFlags} />}
       {props.extraConfigureFlags && props.extraConfigureFlags.length > 0 && <ReviewList title={t("approval.review.advancedManualFlags")} items={props.extraConfigureFlags} />}
       {props.finalConfigureFlags && props.finalConfigureFlags.length > 0 && <ReviewList title={t("approval.review.finalConfigureFlags")} items={props.finalConfigureFlags} />}
-      <ReviewList title={t("approval.review.operations")} items={props.operations.map((operation) => planOperationText(operation))} />
+      <ReviewList title={t("approval.review.operations")} items={props.operations.map((operation) => planOperationText(operation))} dense />
       {props.warnings.length > 0 && <WarningList warnings={props.warnings} />}
+    </>
+  );
+}
+
+export function ApprovalPanel(props: ApprovalPanelProps) {
+  // Card variant borrows the Source tab card design (colored accent + badge +
+  // card head). The plain variant keeps the original review-panel look.
+  if (props.variant) {
+    return (
+      <section className={`card card--${props.variant} approval-card`}>
+        <span className="card__badge" aria-hidden="true" />
+        <div className="card__head">
+          <h2 className="card__title">{props.title}</h2>
+          <DescriptionLines text={t("approval.summary")} />
+        </div>
+        <div className="approval-card__body">
+          <ApprovalPanelBody {...props} />
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className="approval-panel">
+      <h2 className="approval-panel__title">{props.title}</h2>
+      <p className="approval-panel__summary">{t("approval.summary")}</p>
+      <ApprovalPanelBody {...props} />
     </section>
   );
 }
@@ -196,6 +293,15 @@ export function LiveBuildProgress(props: {
         <div className="live-progress__last-line">
           <span className="live-progress__last-label">{t("progress.lastMessage")}</span>
           <span className="live-progress__last-msg">{runtimeLogText(lastMeaningful)}</span>
+        </div>
+      )}
+
+      {hasFailed && progress.failureMessages.length > 0 && (
+        <div className="live-progress__failure">
+          <span className="live-progress__failure-label">{t("progress.failureReason")}</span>
+          {progress.failureMessages.map((failureMessage, index) => (
+            <span className="live-progress__failure-msg" key={index}>{runtimeLogText(failureMessage)}</span>
+          ))}
         </div>
       )}
 

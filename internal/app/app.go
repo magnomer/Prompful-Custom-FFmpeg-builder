@@ -12,12 +12,12 @@ import (
 	"sync"
 	"time"
 
-	"customffmpegbuilder/internal/audit"
-	"customffmpegbuilder/internal/consent"
-	"customffmpegbuilder/internal/download"
-	"customffmpegbuilder/internal/planning"
-	"customffmpegbuilder/internal/reviewsession"
-	"customffmpegbuilder/internal/workspace"
+	"promptfulcustomffmpegbuilder/internal/audit"
+	"promptfulcustomffmpegbuilder/internal/consent"
+	"promptfulcustomffmpegbuilder/internal/download"
+	"promptfulcustomffmpegbuilder/internal/planning"
+	"promptfulcustomffmpegbuilder/internal/reviewsession"
+	"promptfulcustomffmpegbuilder/internal/workspace"
 
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -31,6 +31,8 @@ type App struct {
 	toolchainReviewSessionStore map[string]storedToolchainPreparationReviewSession
 	ffmpegReviewSessionStore    map[string]storedFfmpegBuildReviewSession
 	startupWindowState          windowState
+	uiLocale                    string
+	uiLocaleMutex               sync.RWMutex
 }
 
 type storedToolchainPreparationReviewSession struct {
@@ -48,7 +50,7 @@ type InitialApplicationState struct {
 	KindExplanation               string                           `json:"kindExplanation"`
 	SecurityRuleSummary           string                           `json:"securityRuleSummary"`
 	NamingRuleSummary             string                           `json:"namingRuleSummary"`
-	DefaultBuildToolSettings      planning.BuildToolSettings       `json:"defaultBuildToolSettings"`
+	DefaultBuildConfigSettings    planning.BuildConfigSettings     `json:"defaultBuildConfigSettings"`
 	DefaultFfmpegBuildSettings    planning.FfmpegBuildSettings     `json:"defaultFfmpegBuildSettings"`
 	DefaultLibraryCatalog         []planning.LibraryChoice         `json:"defaultLibraryCatalog"`
 	DefaultConfigureOptionCatalog []planning.ConfigureOptionChoice `json:"defaultConfigureOptionCatalog"`
@@ -115,13 +117,35 @@ func (app *App) Shutdown(ctx context.Context) {
 	app.CancelApprovedAction()
 }
 
+// SetLocale records the UI language so the backend-rendered native confirmation
+// dialog can follow it. Only the dialog is localized; log and error messages stay
+// English. Unknown locales fall back to English.
+func (app *App) SetLocale(locale string) {
+	normalizedLocale := "en"
+	if locale == "ko" {
+		normalizedLocale = "ko"
+	}
+	app.uiLocaleMutex.Lock()
+	app.uiLocale = normalizedLocale
+	app.uiLocaleMutex.Unlock()
+}
+
+func (app *App) currentLocale() string {
+	app.uiLocaleMutex.RLock()
+	defer app.uiLocaleMutex.RUnlock()
+	if app.uiLocale == "" {
+		return "en"
+	}
+	return app.uiLocale
+}
+
 func (app *App) GetInitialApplicationState() InitialApplicationState {
 	return InitialApplicationState{
 		HostOS:                        runtime.GOOS,
 		KindExplanation:               localize("initial.kindExplanation", nil),
 		SecurityRuleSummary:           localize("initial.securityRuleSummary", nil),
 		NamingRuleSummary:             localize("initial.namingRuleSummary", nil),
-		DefaultBuildToolSettings:      planning.DefaultBuildToolSettings(),
+		DefaultBuildConfigSettings:    planning.DefaultBuildConfigSettings(),
 		DefaultFfmpegBuildSettings:    planning.DefaultFfmpegBuildSettings(),
 		DefaultLibraryCatalog:         planning.LibraryCatalogForShellProfile(planning.DefaultFfmpegBuildSettings().WindowsShellProfileName),
 		DefaultConfigureOptionCatalog: planning.ConfigureOptionCatalog(),
@@ -211,6 +235,25 @@ func (app *App) OpenResultFolder(workspaceDirectory string) error {
 	}
 }
 
+func (app *App) OpenResultReport(workspaceDirectory string) error {
+	workspaceLayout := workspace.WorkspaceLayoutFor(workspaceDirectory)
+	reportPath, _, err := readLatestArtifactReport(workspaceLayout)
+	if err != nil {
+		return err
+	}
+	if err := workspace.CheckRealPathInsideWorkspace(workspaceLayout.WorkspaceDirectory, reportPath); err != nil {
+		return err
+	}
+	switch runtime.GOOS {
+	case "windows":
+		return exec.Command("rundll32.exe", "url.dll,FileProtocolHandler", reportPath).Start()
+	case "darwin":
+		return exec.Command("open", reportPath).Start()
+	default:
+		return exec.Command("xdg-open", reportPath).Start()
+	}
+}
+
 func (app *App) OpenExternalUrl(urlToOpen string) error {
 	wailsRuntime.BrowserOpenURL(app.ctx, urlToOpen)
 	return nil
@@ -224,8 +267,8 @@ func (app *App) SelectWorkspace() (string, error) {
 	return selection, nil
 }
 
-func (app *App) RequestToolchainPreparationPlan(buildToolSettings planning.BuildToolSettings) (planning.ToolchainPreparationPlanReview, error) {
-	plan, err := planning.PlanToolchainSetup(buildToolSettings)
+func (app *App) RequestToolchainPreparationPlan(buildConfigSettings planning.BuildConfigSettings) (planning.ToolchainPreparationPlanReview, error) {
+	plan, err := planning.PlanToolchainSetup(buildConfigSettings)
 	if err != nil {
 		return planning.ToolchainPreparationPlanReview{}, err
 	}
@@ -255,7 +298,7 @@ func (app *App) RequestFfmpegBuildPlan(ffmpegBuildSettings planning.FfmpegBuildS
 }
 
 func (app *App) ApproveToolchainPreparationPlan(reviewSessionId string, approval consent.ApprovalRequest) (ApprovedActionResult, error) {
-	storedReviewSession, err := app.takeToolchainReviewSession(reviewSessionId, approval)
+	storedReviewSession, err := app.validateToolchainReviewSession(reviewSessionId, approval)
 	if err != nil {
 		return ApprovedActionResult{}, err
 	}
@@ -273,6 +316,9 @@ func (app *App) ApproveToolchainPreparationPlan(reviewSessionId string, approval
 	if !confirmedByNativeDialog {
 		return ApprovedActionResult{}, errors.New("user rejected approval in backend-owned native confirmation dialog")
 	}
+	// Confirmed: consume the session now so it is single-use, but only after the
+	// dialog succeeded, so a cancelled/failed dialog leaves it retryable.
+	app.consumeToolchainReviewSession(reviewSessionId)
 	userMsys2DownloadConsent, err := consent.Msys2DownloadApproval(approval)
 	if err != nil {
 		return ApprovedActionResult{}, err
@@ -294,7 +340,7 @@ func (app *App) ApproveToolchainPreparationPlan(reviewSessionId string, approval
 }
 
 func (app *App) ApproveFfmpegBuildPlan(reviewSessionId string, approval consent.ApprovalRequest) (ApprovedActionResult, error) {
-	storedReviewSession, err := app.takeFfmpegReviewSession(reviewSessionId, approval)
+	storedReviewSession, err := app.validateFfmpegReviewSession(reviewSessionId, approval)
 	if err != nil {
 		return ApprovedActionResult{}, err
 	}
@@ -305,6 +351,9 @@ func (app *App) ApproveFfmpegBuildPlan(reviewSessionId string, approval consent.
 	if err := verifyFfmpegPlanHash(plan); err != nil {
 		return ApprovedActionResult{}, err
 	}
+	if err := checkToolchainPreparedForBuild(plan.WorkspaceDirectory, plan.WindowsShellProfileName); err != nil {
+		return ApprovedActionResult{}, err
+	}
 	confirmedByNativeDialog, err := app.askNativeUserApproval(plan.ActionName, plan.PlanHash)
 	if err != nil {
 		return ApprovedActionResult{}, err
@@ -312,6 +361,9 @@ func (app *App) ApproveFfmpegBuildPlan(reviewSessionId string, approval consent.
 	if !confirmedByNativeDialog {
 		return ApprovedActionResult{}, errors.New("user rejected approval in backend-owned native confirmation dialog")
 	}
+	// Confirmed: consume the session now so it is single-use, but only after the
+	// dialog succeeded, so a cancelled/failed dialog leaves it retryable.
+	app.consumeFfmpegReviewSession(reviewSessionId)
 	userFfmpegSourceDownloadConsent, err := consent.FfmpegSourceDownloadApproval(approval)
 	if err != nil {
 		return ApprovedActionResult{}, err
@@ -336,7 +388,11 @@ func (app *App) ApproveFfmpegBuildPlan(reviewSessionId string, approval consent.
 	return ApprovedActionResult{RunId: runId, StartedAt: time.Now().UTC().Format(time.RFC3339)}, nil
 }
 
-func (app *App) takeToolchainReviewSession(reviewSessionId string, approval consent.ApprovalRequest) (storedToolchainPreparationReviewSession, error) {
+// validateToolchainReviewSession checks the session without consuming it, so a
+// later step (the native confirmation dialog) can still be cancelled or retried.
+// The session is only removed by consumeToolchainReviewSession once the user has
+// confirmed, which keeps it single-use without losing it on a rejected dialog.
+func (app *App) validateToolchainReviewSession(reviewSessionId string, approval consent.ApprovalRequest) (storedToolchainPreparationReviewSession, error) {
 	app.reviewSessionMutex.Lock()
 	defer app.reviewSessionMutex.Unlock()
 	storedReviewSession, exists := app.toolchainReviewSessionStore[reviewSessionId]
@@ -346,11 +402,16 @@ func (app *App) takeToolchainReviewSession(reviewSessionId string, approval cons
 	if err := reviewsession.CheckReviewApproval(storedReviewSession.ReviewSession, approval.ApprovedActionName, approval.ApprovedPlanHash, approval.ConsentText); err != nil {
 		return storedToolchainPreparationReviewSession{}, err
 	}
-	delete(app.toolchainReviewSessionStore, reviewSessionId)
 	return storedReviewSession, nil
 }
 
-func (app *App) takeFfmpegReviewSession(reviewSessionId string, approval consent.ApprovalRequest) (storedFfmpegBuildReviewSession, error) {
+func (app *App) consumeToolchainReviewSession(reviewSessionId string) {
+	app.reviewSessionMutex.Lock()
+	defer app.reviewSessionMutex.Unlock()
+	delete(app.toolchainReviewSessionStore, reviewSessionId)
+}
+
+func (app *App) validateFfmpegReviewSession(reviewSessionId string, approval consent.ApprovalRequest) (storedFfmpegBuildReviewSession, error) {
 	app.reviewSessionMutex.Lock()
 	defer app.reviewSessionMutex.Unlock()
 	storedReviewSession, exists := app.ffmpegReviewSessionStore[reviewSessionId]
@@ -360,20 +421,26 @@ func (app *App) takeFfmpegReviewSession(reviewSessionId string, approval consent
 	if err := reviewsession.CheckReviewApproval(storedReviewSession.ReviewSession, approval.ApprovedActionName, approval.ApprovedPlanHash, approval.ConsentText); err != nil {
 		return storedFfmpegBuildReviewSession{}, err
 	}
-	delete(app.ffmpegReviewSessionStore, reviewSessionId)
 	return storedReviewSession, nil
+}
+
+func (app *App) consumeFfmpegReviewSession(reviewSessionId string) {
+	app.reviewSessionMutex.Lock()
+	defer app.reviewSessionMutex.Unlock()
+	delete(app.ffmpegReviewSessionStore, reviewSessionId)
 }
 
 func (app *App) askNativeUserApproval(actionName string, planHash string) (bool, error) {
 	if app.ctx == nil {
 		return false, errors.New("application context is not ready for native approval dialog")
 	}
-	message := localize("native.approval.message", map[string]string{"action": localize("approval.action."+actionName, nil), "planHash": planHash})
-	noButtonLabel := localize("native.approval.no", nil)
-	yesButtonLabel := localize("native.approval.yes", nil)
+	locale := app.currentLocale()
+	message := localizeForLocale(locale, "native.approval.message", map[string]string{"action": localizeForLocale(locale, "approval.action."+actionName, nil), "planHash": planHash})
+	noButtonLabel := localizeForLocale(locale, "native.approval.no", nil)
+	yesButtonLabel := localizeForLocale(locale, "native.approval.yes", nil)
 	choice, err := wailsRuntime.MessageDialog(app.ctx, wailsRuntime.MessageDialogOptions{
 		Type:          wailsRuntime.QuestionDialog,
-		Title:         localize("native.approval.title", nil),
+		Title:         localizeForLocale(locale, "native.approval.title", nil),
 		Message:       message,
 		Buttons:       []string{noButtonLabel, yesButtonLabel},
 		DefaultButton: noButtonLabel,
@@ -382,7 +449,10 @@ func (app *App) askNativeUserApproval(actionName string, planHash string) (bool,
 	if err != nil {
 		return false, err
 	}
-	return choice == yesButtonLabel, nil
+	// On Windows, Wails' QuestionDialog ignores custom button labels and returns
+	// the native "Yes"/"No" strings, so a localized yes label would never match.
+	// Accept the localized label or the native English "Yes".
+	return choice == yesButtonLabel || choice == "Yes", nil
 }
 
 func (app *App) CancelApprovedAction() bool {

@@ -1,4 +1,4 @@
-module customffmpegbuilder
+module promptfulcustomffmpegbuilder
 
 go 1.22.0
 

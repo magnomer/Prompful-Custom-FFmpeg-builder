@@ -7,20 +7,52 @@
 .approval-panel__title { margin: 0 0 8px; }
 .approval-panel__summary { margin: 0 0 15px; color: #5d6980; line-height: 1.5; }
 
+/* Card variant of the approval panel — borrows the Source tab card design. */
+.approval-card { min-height: auto; }
+.approval-card__body { grid-column: 2; }
+.approval-card__body > :first-child { margin-top: 0; }
+.approval-card__body .review-list:last-child { margin-bottom: 0; }
+
 .metadata {
   display: grid;
   grid-template-columns: 150px minmax(0, 1fr);
   gap: 8px 12px;
   margin: 0 0 16px;
 }
-.metadata dt { font-weight: 850; color: #33415c; }
+.metadata dt { font-weight: 850; color: #33415c; align-self: start; padding-top: 7px; }
 .metadata dd { margin: 0; overflow-wrap: anywhere; }
-.metadata__hash { font-family: "Cascadia Code", "Fira Code", Consolas, monospace; }
+
+/* Read-only, selectable value fields so users can copy the hash / phrase. */
+.copy-field {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.metadata__field {
+  width: 100%;
+  min-height: 0;
+  padding: 7px 11px;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  background: #f8fafc;
+  cursor: text;
+  resize: none;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.copy-field__btn {
+  flex: none;
+  align-self: stretch;
+  min-width: 72px;
+  justify-content: center;
+  font-size: 0.82rem;
+}
 
 .review-list { margin: 15px 0; }
 .review-list__title { margin: 0 0 8px; font-size: 1rem; }
 .review-list__items { margin: 0; padding-left: 20px; }
 .review-list__item { margin: 4px 0; overflow-wrap: anywhere; }
+.review-list--dense .review-list__item { font-size: 0.82rem; line-height: 1.45; }
 .review-list__item--blocked { color: #b21f1f; font-weight: 750; }
 .review-list__item--warning { color: #7b5600; font-weight: 750; }
 .review-list__item--info { color: #2e5ca8; }

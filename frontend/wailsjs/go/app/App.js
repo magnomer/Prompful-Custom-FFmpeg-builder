@@ -14,12 +14,24 @@ export function CancelApprovedAction() {
   return window['go']['app']['App']['CancelApprovedAction']();
 }
 
+export function ClearBuildEnvironments(arg1) {
+  return window['go']['app']['App']['ClearBuildEnvironments'](arg1);
+}
+
 export function GetBuildResult(arg1) {
   return window['go']['app']['App']['GetBuildResult'](arg1);
 }
 
 export function GetInitialApplicationState() {
   return window['go']['app']['App']['GetInitialApplicationState']();
+}
+
+export function GetInstalledToolchainProfiles(arg1) {
+  return window['go']['app']['App']['GetInstalledToolchainProfiles'](arg1);
+}
+
+export function GetToolchainStatus(arg1, arg2) {
+  return window['go']['app']['App']['GetToolchainStatus'](arg1, arg2);
 }
 
 export function LoadUiState() {
@@ -32,6 +44,10 @@ export function OpenExternalUrl(arg1) {
 
 export function OpenResultFolder(arg1) {
   return window['go']['app']['App']['OpenResultFolder'](arg1);
+}
+
+export function OpenResultReport(arg1) {
+  return window['go']['app']['App']['OpenResultReport'](arg1);
 }
 
 export function RequestFfmpegBuildPlan(arg1) {
@@ -48,4 +64,12 @@ export function SaveUiState(arg1) {
 
 export function SelectWorkspace() {
   return window['go']['app']['App']['SelectWorkspace']();
+}
+
+export function SetLocale(arg1) {
+  return window['go']['app']['App']['SetLocale'](arg1);
+}
+
+export function VerifyToolchainInstallation(arg1, arg2) {
+  return window['go']['app']['App']['VerifyToolchainInstallation'](arg1, arg2);
 }

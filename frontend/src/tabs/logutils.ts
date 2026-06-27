@@ -67,6 +67,7 @@ export type LiveProgress = {
   assembleCount: number;
   copiedDllCount: number;
   lastMessage: string | null;
+  failureMessages: string[];
   isComplete: boolean;
   hasFailed: boolean;
   phaseGroups?: LogPhaseGroup[];
@@ -350,7 +351,7 @@ export function computeProgress(entries: SecurityLogEntry[], approvedActionStatu
   const phaseSet = new Set<LogPhaseId>(phaseOrder);
 
   if (entries.length === 0) {
-    return { currentPhaseLabel: null, currentPhaseId: null, compileCount: 0, assembleCount: 0, copiedDllCount: 0, lastMessage: null, isComplete: false, hasFailed: false };
+    return { currentPhaseLabel: null, currentPhaseId: null, compileCount: 0, assembleCount: 0, copiedDllCount: 0, lastMessage: null, failureMessages: [], isComplete: false, hasFailed: false };
   }
 
   const parsed = entries.map((e) => parseLogEntry(e, context));
@@ -362,7 +363,11 @@ export function computeProgress(entries: SecurityLogEntry[], approvedActionStatu
       ? parsed.some((e) => e.message.startsWith("Approved FFmpeg build completed"))
       : parsed.some((e) => e.message.startsWith("Approved private MSYS2 environment is ready")));
 
-  const hasFailed = !isComplete && (parsed.some((e) => e.level === "error") || approvedActionStatus === "failed");
+  // Failure is driven by the backend's authoritative run status, not by scraping
+  // log lines. Tools like pacman emit non-fatal "error:" lines (e.g. a transient
+  // mirror 404 on one repo's .db during sync) and then recover; those must not
+  // flip the UI to "failed" while the run keeps going and ultimately completes.
+  const hasFailed = !isComplete && approvedActionStatus === "failed";
 
   const IGNORED = context === "ffmpeg"
     ? ["Approved FFmpeg build completed", "Artifact report"]
@@ -386,6 +391,14 @@ export function computeProgress(entries: SecurityLogEntry[], approvedActionStatu
     if (!NOISY.some((p) => msg.startsWith(p))) { lastMessage = msg; break; }
   }
 
+  // Error-level lines so a failed run can show the cause inline instead of forcing
+  // the user to open the Logs tab. The last error is usually a generic wrapper
+  // ("... failed: exit status 1"), so keep the tail of error lines — the real cause
+  // (e.g. pacman "error: failed retrieving file ...") sits just before it.
+  const failureMessages = hasFailed
+    ? parsed.filter((e) => e.level === "error").map((e) => e.message).slice(-6)
+    : [];
+
   return {
     currentPhaseLabel,
     currentPhaseId,
@@ -393,6 +406,7 @@ export function computeProgress(entries: SecurityLogEntry[], approvedActionStatu
     assembleCount: groups.reduce((s, g) => s + g.assembleCount, 0),
     copiedDllCount: groups.reduce((s, g) => s + g.copiedDlls.length, 0),
     lastMessage,
+    failureMessages,
     isComplete,
     hasFailed,
     phaseGroups: groups,

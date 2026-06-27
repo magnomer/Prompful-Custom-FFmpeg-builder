@@ -1,113 +1,58 @@
-.build-tools-page {
+/* Build Tools tab — page layout + tool-specific overrides. Card styling lives in card.css. */
+
+.build-config-page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  max-width: 1360px;
-  margin: 0 auto;
+  gap: 18px;
 }
 
-.build-tools-page .page-header {
+.build-config-page .page-header {
   margin-bottom: 0;
 }
 
-.build-tools-section {
-  position: relative;
+.build-config-packages {
+  min-height: 260px;
+  resize: vertical;
+  font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+  line-height: 1.5;
+}
+
+/* Per-tool glossary inside the Build tools technical panel. */
+.tool-glossary {
   display: grid;
   gap: 10px;
-  padding: 18px 18px 18px 30px;
-  border: 1px solid #e4ebf5;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #ffffff;
-}
-
-.build-tools-section::before {
-  content: "";
-  position: absolute;
-  top: 1px;
-  bottom: 1px;
-  left: 0;
-  width: 8px;
-  background: #9bb7e8;
-}
-
-.build-tools-field {
-  margin-bottom: 0;
-}
-
-.build-tools-packages {
-  min-height: 260px;
-}
-
-.build-tools-technical {
-  display: grid;
-  gap: 12px;
-  justify-items: start;
-}
-
-.build-tools-technical-toggle {
-  min-width: 150px;
-  height: 42px;
-  padding: 0 14px;
-  font-size: 0.88rem;
-  line-height: 1;
-}
-
-.build-tools-technical-toggle[aria-expanded="true"] {
-  background: #eef5ff;
-  border-color: #8fb3ff;
-  color: #2456d6;
-}
-
-.build-tools-technical-panel {
-  display: grid;
-  gap: 16px;
-  width: 100%;
-  padding: 18px;
-  border: 1px solid #d7e2f0;
-  border-radius: 10px;
-  background: #fbfdff;
-}
-
-.build-tools-technical-panel__title {
   margin: 0;
-  color: #172033;
-  font-size: 1rem;
-  font-weight: 850;
-  line-height: 1.25;
 }
 
-.build-tools-technical-details {
+.tool-glossary__row {
   display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
   gap: 14px;
-  max-width: 1120px;
+  align-items: baseline;
+  padding-top: 10px;
+  border-top: 1px solid #e8edf4;
 }
-
-.build-tools-technical-detail {
-  display: grid;
-  gap: 6px;
-  padding-top: 14px;
-  border-top: 1px solid #edf2f8;
-}
-
-.build-tools-technical-detail:first-child {
+.tool-glossary__row:first-child {
   padding-top: 0;
   border-top: 0;
 }
 
-.build-tools-technical-detail__title {
+.tool-glossary__name {
   margin: 0;
-  color: #68758c;
-  font-size: 0.78rem;
-  font-weight: 850;
-  letter-spacing: 0.04em;
-  line-height: 1.2;
-  text-transform: uppercase;
+  color: #1f2a3d;
+  font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-size: 0.84rem;
+  font-weight: 700;
+  word-break: break-word;
 }
 
-.build-tools-technical-detail__text {
+.tool-glossary__text {
   margin: 0;
   color: #5f6b7c;
-  font-size: 0.94rem;
-  line-height: 1.55;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .tool-glossary__row { grid-template-columns: 1fr; gap: 4px; }
 }

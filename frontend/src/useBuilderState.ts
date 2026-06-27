@@ -3,31 +3,39 @@ import {
   ApproveFfmpegBuildPlan,
   ApproveToolchainPreparationPlan,
   CancelApprovedAction,
+  ClearBuildEnvironments,
   GetBuildResult,
   GetInitialApplicationState,
+  GetToolchainStatus,
+  GetInstalledToolchainProfiles,
+  VerifyToolchainInstallation,
   LoadUiState,
   SaveUiState,
   RequestFfmpegBuildPlan,
   RequestToolchainPreparationPlan,
   OpenResultFolder,
+  OpenResultReport,
   SelectWorkspace,
+  SetLocale,
 } from "../wailsjs/go/app/App";
 import { BrowserOpenURL, EventsOn, WindowGetPosition, WindowGetSize, WindowSetPosition, WindowSetSize } from "../wailsjs/runtime/runtime";
 
 import { SecurityLogEntry, SecurityLogPayload, ApprovedActionStatusPayload, LiveProgress, computeProgress } from "./tabs/logutils";
 import {
-  LibraryPresetId, libraryPresets,
+  LibraryPresetId, libraryPresets, presetLibraryIds,
   normalizeLibrarySelection, matchLibraryPresetId, isValidLibraryPresetId,
   deriveLicenseBoundaryFromSelectedLibraries, removeMutuallyExclusiveLibraries,
+  maximumTestLibraryIds,
 } from "./tabs/libraries";
 import { OptionPresetId, optionPresets } from "./tabs/options";
 import {
   TabId, SavedUiState, SavedWindowState, savedWindowStateKey,
-  emptyBuildToolSettings, emptyFfmpegBuildSettings, defaultInitialApplicationState,
+  emptyBuildConfigSettings, emptyFfmpegBuildSettings, defaultInitialApplicationState,
   splitLines, normalizeLogLevel, isValidTabId,
   createApprovalRequest, parseSavedUiState, readSavedWindowState,
+  remapMsys2PackagePrefixes,
 } from "./appstate";
-import { t } from "./i18n";
+import { t, getLocale } from "./i18n";
 
 // ─── Window state helpers ─────────────────────────────────────────────────────
 
@@ -66,10 +74,21 @@ export function useBuilderState() {
   const [activeTabId, setActiveTabId] = useState<TabId>("source");
   const hasLoadedSavedState = useRef(false);
   const tabPanelRef = useRef<HTMLElement>(null);
+  // Tabs whose scroll position is remembered when leaving and restored when
+  // returning (within the session). Every other tab still scrolls back to top.
+  const scrollRememberedTabIds = useRef(new Set<TabId>(["options", "buildFfmpeg"]));
+  const tabScrollPositions = useRef<Partial<Record<TabId, number>>>({});
+  const activeTabIdRef = useRef<TabId>("source");
   const [initialApplicationState, setInitialApplicationState] = useState<InitialApplicationState>(defaultInitialApplicationState);
-  const [buildToolSettings, setBuildToolSettings] = useState<BuildToolSettings>(emptyBuildToolSettings);
+  const [buildConfigSettings, setBuildConfigSettings] = useState<BuildConfigSettings>(emptyBuildConfigSettings);
   const [ffmpegBuildSettings, setFfmpegBuildSettings] = useState<FfmpegBuildSettings>(emptyFfmpegBuildSettings);
   const [libraryPresetId, setLibraryPresetId] = useState<LibraryPresetId>("default");
+  const [extendedLibraries, setExtendedLibrariesState] = useState(false);
+  const [libraryDetailedView, setLibraryDetailedView] = useState(false);
+  const [optionsDetailedView, setOptionsDetailedView] = useState(false);
+  const [libraryTechnicalDetails, setLibraryTechnicalDetails] = useState(false);
+  const [optionsTechnicalDetails, setOptionsTechnicalDetails] = useState(false);
+  const [librarySectionFilters, setLibrarySectionFilters] = useState<string[]>([]);
   const [msys2PackageText, setMsys2PackageText] = useState("");
   const [extraConfigureFlagText, setExtraConfigureFlagText] = useState("");
   const [toolchainPreparationPlanReview, setToolchainPreparationPlanReview] = useState<ToolchainPreparationPlanReview | null>(null);
@@ -80,9 +99,14 @@ export function useBuilderState() {
   const [ffmpegLogEntries, setFfmpegLogEntries] = useState<SecurityLogEntry[]>([]);
   const [buildResult, setBuildResult] = useState<BuildResult | null>(null);
   const [buildResultError, setBuildResultError] = useState("");
+  const [toolchainStatus, setToolchainStatus] = useState<ToolchainStatus | null>(null);
+  const [installedToolchainProfiles, setInstalledToolchainProfiles] = useState<ToolchainStatus[]>([]);
+  const [toolchainVerification, setToolchainVerification] = useState<ToolchainVerification | null>(null);
+  const [isVerifyingToolchain, setIsVerifyingToolchain] = useState(false);
 
   const approvedActionPhaseRef = useRef<"toolchain" | "ffmpeg" | null>(null);
   approvedActionPhaseRef.current = approvedActionPhase;
+  activeTabIdRef.current = activeTabId;
 
   const canCancelApprovedAction = useMemo(() => approvedActionStatus !== "idle" && approvedActionStatus !== "completed" && approvedActionStatus !== "failed", [approvedActionStatus]);
   const canCancelToolchain = canCancelApprovedAction && approvedActionPhase === "toolchain";
@@ -90,27 +114,42 @@ export function useBuilderState() {
   const toolchainProgress = useMemo<LiveProgress>(() => computeProgress(toolchainLogEntries, approvedActionStatus, "toolchain"), [toolchainLogEntries, approvedActionStatus]);
   const ffmpegProgress = useMemo<LiveProgress>(() => computeProgress(ffmpegLogEntries, approvedActionStatus, "ffmpeg"), [ffmpegLogEntries, approvedActionStatus]);
   const securityLogEntries = useMemo(() => [...toolchainLogEntries, ...ffmpegLogEntries], [toolchainLogEntries, ffmpegLogEntries]);
+  // Current Build configuration package list (live textarea), used by Prep to flag
+  // drift between what is configured now and what the prepared toolchain installed.
+  const configuredMsys2PackageNames = useMemo(() => splitLines(msys2PackageText), [msys2PackageText]);
 
   useEffect(() => {
+    // Keep the backend in sync with the UI language so the native confirmation
+    // dialog is shown in the same language. Logs stay English by design.
+    void SetLocale(getLocale());
+    const onLocaleChange = () => { void SetLocale(getLocale()); };
+    window.addEventListener("customffmpeg-locale-change", onLocaleChange);
+
     GetInitialApplicationState().then(async (nextState: InitialApplicationState) => {
       const saved = parseSavedUiState(await LoadUiState());
-      const savedBts = saved.buildToolSettings ? { ...nextState.defaultBuildToolSettings, ...saved.buildToolSettings } : nextState.defaultBuildToolSettings;
+      const savedBts = saved.buildConfigSettings ? { ...nextState.defaultBuildConfigSettings, ...saved.buildConfigSettings } : nextState.defaultBuildConfigSettings;
       let resolvedFbs = saved.ffmpegBuildSettings ? { ...nextState.defaultFfmpegBuildSettings, ...saved.ffmpegBuildSettings } : nextState.defaultFfmpegBuildSettings;
       const hasSavedPreset = isValidLibraryPresetId(saved.libraryPresetId);
       const resolvedPresetId: LibraryPresetId = hasSavedPreset ? saved.libraryPresetId! : "default";
       if (!hasSavedPreset && !saved.ffmpegBuildSettings) {
         const defaultPreset = libraryPresets.find((p) => p.presetId === "default");
         if (defaultPreset) {
-          const nextIds = normalizeLibrarySelection(defaultPreset.libraryIds);
-          resolvedFbs = { ...resolvedFbs, selectedLibraryIds: nextIds, licenseProfileName: deriveLicenseBoundaryFromSelectedLibraries(nextIds, nextState.defaultLibraryCatalog) };
+          const nextIds = normalizeLibrarySelection(defaultPreset.libraryIds, resolvedFbs.windowsShellProfileName);
+          resolvedFbs = { ...resolvedFbs, selectedLibraryIds: nextIds, licenseProfileName: deriveLicenseBoundaryFromSelectedLibraries(nextIds, nextState.defaultLibraryCatalog, resolvedFbs.windowsShellProfileName) };
         }
       }
       setInitialApplicationState(nextState);
-      setBuildToolSettings(savedBts);
+      setBuildConfigSettings(savedBts);
       setFfmpegBuildSettings(resolvedFbs);
       setMsys2PackageText(saved.msys2PackageText ?? savedBts.msys2PackageNames.join("\n"));
       setExtraConfigureFlagText(saved.extraConfigureFlagText ?? resolvedFbs.extraConfigureFlags.join("\n"));
       setLibraryPresetId(resolvedPresetId);
+      if (typeof saved.extendedLibraries === "boolean") setExtendedLibrariesState(saved.extendedLibraries);
+      if (typeof saved.libraryDetailedView === "boolean") setLibraryDetailedView(saved.libraryDetailedView);
+      if (typeof saved.optionsDetailedView === "boolean") setOptionsDetailedView(saved.optionsDetailedView);
+      if (typeof saved.libraryTechnicalDetails === "boolean") setLibraryTechnicalDetails(saved.libraryTechnicalDetails);
+      if (typeof saved.optionsTechnicalDetails === "boolean") setOptionsTechnicalDetails(saved.optionsTechnicalDetails);
+      if (Array.isArray(saved.librarySectionFilters)) setLibrarySectionFilters(saved.librarySectionFilters.filter((value): value is string => typeof value === "string"));
       if (isValidTabId(saved.activeTabId)) setActiveTabId(saved.activeTabId);
       hasLoadedSavedState.current = true;
       restoreWindowState();
@@ -132,18 +171,18 @@ export function useBuilderState() {
       if (payload.status === "failed") { setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null); setBuildResult(null); }
       if (payload.status === "completed") { setBuildResult(null); setApprovedActionPhase(null); }
     });
-    return () => { removeLogListener(); removeStatusListener(); };
+    return () => { removeLogListener(); removeStatusListener(); window.removeEventListener("customffmpeg-locale-change", onLocaleChange); };
   }, []);
 
   useEffect(() => {
     if (!hasLoadedSavedState.current) return;
     void SaveUiState(JSON.stringify({
       activeTabId,
-      buildToolSettings: { ...buildToolSettings, msys2PackageNames: splitLines(msys2PackageText) },
+      buildConfigSettings: { ...buildConfigSettings, msys2PackageNames: splitLines(msys2PackageText) },
       ffmpegBuildSettings: { ...ffmpegBuildSettings, extraConfigureFlags: splitLines(extraConfigureFlagText), configureFlags: splitLines(extraConfigureFlagText) },
-      msys2PackageText, extraConfigureFlagText, libraryPresetId,
+      msys2PackageText, extraConfigureFlagText, libraryPresetId, extendedLibraries, libraryDetailedView, optionsDetailedView, libraryTechnicalDetails, optionsTechnicalDetails, librarySectionFilters,
     } satisfies SavedUiState));
-  }, [activeTabId, buildToolSettings, ffmpegBuildSettings, msys2PackageText, extraConfigureFlagText, libraryPresetId]);
+  }, [activeTabId, buildConfigSettings, ffmpegBuildSettings, msys2PackageText, extraConfigureFlagText, libraryPresetId, extendedLibraries, libraryDetailedView, optionsDetailedView, libraryTechnicalDetails, optionsTechnicalDetails, librarySectionFilters]);
 
   useEffect(() => {
     const id = window.setInterval(() => { saveWindowState(); }, 2000);
@@ -153,27 +192,97 @@ export function useBuilderState() {
 
   useEffect(() => {
     if (activeTabId === "result") refreshBuildResult();
-  }, [activeTabId, buildToolSettings.workspaceDirectory]);
+  }, [activeTabId, buildConfigSettings.workspaceDirectory]);
+
+  // Recover the "already prepared" state from disk so Prep remembers a prior
+  // successful install across relaunches. Re-check when entering Prep or when the
+  // workspace changes; clear any stale deep-verify result on workspace change.
+  useEffect(() => {
+    if (activeTabId === "prep") refreshToolchainStatus();
+  }, [activeTabId, buildConfigSettings.workspaceDirectory, buildConfigSettings.windowsShellProfileName]);
 
   useEffect(() => {
-    if (tabPanelRef.current) tabPanelRef.current.scrollTop = 0;
+    setToolchainVerification(null);
+  }, [buildConfigSettings.workspaceDirectory, buildConfigSettings.windowsShellProfileName]);
+
+  // After a toolchain run finishes, re-read disk so the recovery card reflects
+  // the fresh install. This effect re-runs with current settings, avoiding the
+  // stale closure of the once-registered event listener.
+  useEffect(() => {
+    if (approvedActionStatus === "completed") refreshToolchainStatus();
+  }, [approvedActionStatus]);
+
+  // Continuously record the scroll position of the active tab so it can be
+  // restored on return. Registered once; reads the current tab via a ref.
+  useEffect(() => {
+    const el = tabPanelRef.current;
+    if (!el) return;
+    const onScroll = () => { tabScrollPositions.current[activeTabIdRef.current] = el.scrollTop; };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // On tab change, restore the remembered scroll position for the remembered
+  // tabs; every other tab scrolls back to the top.
+  useEffect(() => {
+    const el = tabPanelRef.current;
+    if (!el) return;
+    el.scrollTop = scrollRememberedTabIds.current.has(activeTabId)
+      ? tabScrollPositions.current[activeTabId] ?? 0
+      : 0;
   }, [activeTabId]);
 
   async function refreshBuildResult() {
-    const dir = buildToolSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
     if (!dir) { setBuildResult(null); setBuildResultError(t("result.error.chooseWorkspaceFirst")); return; }
     try { const r = await GetBuildResult(dir); setBuildResult(r); setBuildResultError(""); }
     catch (err) { setBuildResult(null); setBuildResultError(err instanceof Error ? err.message : String(err)); }
   }
 
+  async function refreshToolchainStatus() {
+    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+    if (!dir) { setToolchainStatus(null); setInstalledToolchainProfiles([]); return; }
+    try { setToolchainStatus(await GetToolchainStatus(dir, buildConfigSettings.windowsShellProfileName)); }
+    catch { setToolchainStatus(null); }
+    try { setInstalledToolchainProfiles(await GetInstalledToolchainProfiles(dir)); }
+    catch { setInstalledToolchainProfiles([]); }
+  }
+
+
+  async function clearBuildEnvironments() {
+    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+    if (!dir) return;
+    const confirmed = window.confirm(t("prep.profiles.clearConfirm"));
+    if (!confirmed) return;
+    setToolchainVerification(null);
+    await ClearBuildEnvironments(dir);
+    await refreshToolchainStatus();
+  }
+
+  async function verifyToolchain() {
+    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+    if (!dir) return;
+    setIsVerifyingToolchain(true);
+    setToolchainVerification(null);
+    try { setToolchainVerification(await VerifyToolchainInstallation(dir, buildConfigSettings.windowsShellProfileName)); }
+    catch (err) { setToolchainVerification({ verified: false, checkedPackageCount: 0, missingPackageNames: [], message: err instanceof Error ? err.message : String(err) }); }
+    finally { setIsVerifyingToolchain(false); }
+  }
+
   async function openResultFolder() {
-    const dir = buildToolSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
     if (!dir) { setBuildResultError(t("result.error.chooseWorkspaceFirst")); return; }
     await OpenResultFolder(dir);
   }
 
-  function updateBuildToolSettings(next: Partial<BuildToolSettings>) {
-    setBuildToolSettings((s) => ({ ...s, ...next }));
+  async function openResultReport() {
+    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+    if (!dir) { setBuildResultError(t("result.error.chooseWorkspaceFirst")); return; }
+    await OpenResultReport(dir);
+  }
+
+  function updateBuildConfigSettings(next: Partial<BuildConfigSettings>) {
+    setBuildConfigSettings((s) => ({ ...s, ...next }));
     setToolchainPreparationPlanReview(null);
   }
 
@@ -182,8 +291,26 @@ export function useBuilderState() {
     setFfmpegBuildPlanReview(null);
   }
 
+  // Changing the shell profile must remap the MSYS2 package prefixes in the
+  // toolchain textarea too, otherwise a non-ucrt64 profile would still install
+  // ucrt64 toolchain packages (wrong compiler/runtime for the chosen prefix).
+  function changeShellProfile(profileName: string) {
+    // Re-normalize the library selection for the new profile so libraries with no
+    // package there (e.g. onnxruntime on mingw64) are dropped, and recompute the
+    // preset/license to match.
+    const nextLibraryIds = normalizeLibrarySelection(ffmpegBuildSettings.selectedLibraryIds, profileName);
+    updateBuildConfigSettings({ windowsShellProfileName: profileName });
+    updateFfmpegBuildSettings({
+      windowsShellProfileName: profileName,
+      selectedLibraryIds: nextLibraryIds,
+      licenseProfileName: deriveLicenseBoundaryFromSelectedLibraries(nextLibraryIds, initialApplicationState.defaultLibraryCatalog, profileName),
+    });
+    setLibraryPresetId(matchLibraryPresetId(nextLibraryIds, profileName, initialApplicationState.defaultLibraryCatalog, extendedLibraries));
+    setMsys2PackageText((text) => remapMsys2PackagePrefixes(text, profileName));
+  }
+
   function updateMsys2ArchiveUrl(nextUrl: string) {
-    setBuildToolSettings((s) => {
+    setBuildConfigSettings((s) => {
       const oldAuto = s.msys2ArchiveUrl ? `${s.msys2ArchiveUrl}.sig` : "";
       const shouldUpdate = s.msys2ArchiveSignatureUrl === "" || s.msys2ArchiveSignatureUrl === oldAuto;
       return { ...s, msys2ArchiveUrl: nextUrl, msys2ArchiveSignatureUrl: shouldUpdate && nextUrl ? `${nextUrl}.sig` : s.msys2ArchiveSignatureUrl };
@@ -194,12 +321,12 @@ export function useBuilderState() {
   async function chooseWorkspaceDirectory() {
     const dir = await SelectWorkspace();
     if (!dir) return;
-    updateBuildToolSettings({ workspaceDirectory: dir });
+    updateBuildConfigSettings({ workspaceDirectory: dir });
     updateFfmpegBuildSettings({ workspaceDirectory: dir });
   }
 
-  async function addBuildToolsPlanAndContinueToPrep() {
-    const review = await RequestToolchainPreparationPlan({ ...buildToolSettings, msys2PackageNames: splitLines(msys2PackageText) });
+  async function addBuildConfigPlanAndContinueToPrep() {
+    const review = await RequestToolchainPreparationPlan({ ...buildConfigSettings, msys2PackageNames: splitLines(msys2PackageText) });
     setToolchainPreparationPlanReview(review);
     setActiveTabId("prep");
   }
@@ -245,19 +372,38 @@ export function useBuilderState() {
     if (library?.locked) return;
     const current = ffmpegBuildSettings.selectedLibraryIds;
     const removing = current.includes(libraryId);
+    const profile = ffmpegBuildSettings.windowsShellProfileName;
     let next = removing ? current.filter((id) => id !== libraryId) : [...current, libraryId];
     if (!removing) next = removeMutuallyExclusiveLibraries(next, libraryId);
-    next = normalizeLibrarySelection(next);
-    setLibraryPresetId(matchLibraryPresetId(next));
-    updateFfmpegBuildSettings({ selectedLibraryIds: next, licenseProfileName: deriveLicenseBoundaryFromSelectedLibraries(next, initialApplicationState.defaultLibraryCatalog) });
+    next = normalizeLibrarySelection(next, profile);
+    setLibraryPresetId(matchLibraryPresetId(next, profile, initialApplicationState.defaultLibraryCatalog, extendedLibraries));
+    updateFfmpegBuildSettings({ selectedLibraryIds: next, licenseProfileName: deriveLicenseBoundaryFromSelectedLibraries(next, initialApplicationState.defaultLibraryCatalog, profile) });
   }
 
   function applyLibraryPreset(presetId: LibraryPresetId) {
     const preset = libraryPresets.find((p) => p.presetId === presetId);
     if (!preset || preset.presetId === "custom") return;
-    const next = normalizeLibrarySelection(preset.libraryIds);
+    const profile = ffmpegBuildSettings.windowsShellProfileName;
+    const next = preset.dev
+      ? maximumTestLibraryIds(initialApplicationState.defaultLibraryCatalog, profile)
+      : normalizeLibrarySelection(presetLibraryIds(preset, extendedLibraries), profile);
     setLibraryPresetId(presetId);
-    updateFfmpegBuildSettings({ selectedLibraryIds: next, licenseProfileName: deriveLicenseBoundaryFromSelectedLibraries(next, initialApplicationState.defaultLibraryCatalog) });
+    updateFfmpegBuildSettings({ selectedLibraryIds: next, licenseProfileName: deriveLicenseBoundaryFromSelectedLibraries(next, initialApplicationState.defaultLibraryCatalog, profile) });
+  }
+
+  // Toggling the Extended mode re-applies the active named preset under the new mode so
+  // its source-build extras are added/removed and the highlighted button stays truthful.
+  // Custom/dev selections keep their libraries and are just re-matched against the new mode.
+  function setExtendedLibraries(next: boolean) {
+    const profile = ffmpegBuildSettings.windowsShellProfileName;
+    const preset = libraryPresets.find((p) => p.presetId === libraryPresetId);
+    if (preset && preset.presetId !== "custom" && !preset.dev) {
+      const nextIds = normalizeLibrarySelection(presetLibraryIds(preset, next), profile);
+      updateFfmpegBuildSettings({ selectedLibraryIds: nextIds, licenseProfileName: deriveLicenseBoundaryFromSelectedLibraries(nextIds, initialApplicationState.defaultLibraryCatalog, profile) });
+    } else {
+      setLibraryPresetId(matchLibraryPresetId(ffmpegBuildSettings.selectedLibraryIds, profile, initialApplicationState.defaultLibraryCatalog, next));
+    }
+    setExtendedLibrariesState(next);
   }
 
   function toggleConfigureOption(optionId: string) {
@@ -274,7 +420,8 @@ export function useBuilderState() {
   }
 
   function restoreRecommendedToolchainPackages() {
-    setMsys2PackageText(initialApplicationState.defaultBuildToolSettings.msys2PackageNames.join("\n"));
+    const recommended = initialApplicationState.defaultBuildConfigSettings.msys2PackageNames.join("\n");
+    setMsys2PackageText(remapMsys2PackagePrefixes(recommended, buildConfigSettings.windowsShellProfileName));
     setToolchainPreparationPlanReview(null);
   }
 
@@ -292,9 +439,15 @@ export function useBuilderState() {
     tabPanelRef,
     activeTabId, setActiveTabId,
     initialApplicationState,
-    buildToolSettings,
+    buildConfigSettings,
     ffmpegBuildSettings,
     libraryPresetId,
+    extendedLibraries,
+    libraryDetailedView, setLibraryDetailedView,
+    optionsDetailedView, setOptionsDetailedView,
+    libraryTechnicalDetails, setLibraryTechnicalDetails,
+    optionsTechnicalDetails, setOptionsTechnicalDetails,
+    librarySectionFilters, setLibrarySectionFilters,
     msys2PackageText,
     extraConfigureFlagText,
     toolchainPreparationPlanReview,
@@ -304,17 +457,21 @@ export function useBuilderState() {
     toolchainLogEntries,
     ffmpegLogEntries,
     buildResult, buildResultError,
+    toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain,
+    configuredMsys2PackageNames,
     canCancelToolchain, canCancelFfmpeg,
+    isApprovedActionRunning: canCancelApprovedAction,
     toolchainProgress, ffmpegProgress,
     securityLogEntries,
-    updateBuildToolSettings, updateFfmpegBuildSettings, updateMsys2ArchiveUrl,
+    updateBuildConfigSettings, updateFfmpegBuildSettings, updateMsys2ArchiveUrl, changeShellProfile,
     chooseWorkspaceDirectory,
-    addBuildToolsPlanAndContinueToPrep, reviewFfmpegPlans,
+    addBuildConfigPlanAndContinueToPrep, reviewFfmpegPlans,
     approveToolchainPreparationPlan, approveFfmpegBuildPlan, cancelApprovedAction,
     openInUserBrowser,
-    toggleLibrary, applyLibraryPreset, toggleConfigureOption, applyOptionPreset,
+    toggleLibrary, applyLibraryPreset, setExtendedLibraries, toggleConfigureOption, applyOptionPreset,
     restoreRecommendedToolchainPackages, restoreRecommendedExtraFlags,
     handleMsys2PackageTextChange, handleExtraFlagTextChange,
-    refreshBuildResult, openResultFolder,
+    refreshBuildResult, openResultFolder, openResultReport,
+    refreshToolchainStatus, verifyToolchain, clearBuildEnvironments,
   };
 }

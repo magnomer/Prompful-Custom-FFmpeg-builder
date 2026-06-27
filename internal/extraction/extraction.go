@@ -2,6 +2,7 @@ package extraction
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"compress/bzip2"
 	"compress/gzip"
 	"context"
@@ -13,10 +14,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"customffmpegbuilder/internal/consent"
-	"customffmpegbuilder/internal/workspace"
 	"github.com/klauspost/compress/zstd"
 	"github.com/ulikunitz/xz"
+	"promptfulcustomffmpegbuilder/internal/consent"
+	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
 type ArchiveFormat string
@@ -31,6 +32,7 @@ const (
 	TarXz              ArchiveFormat = "tar-xz"
 	TarZst             ArchiveFormat = "tar-zst"
 	ArchiveFormatTar   ArchiveFormat = "tar"
+	ArchiveFormatZip   ArchiveFormat = "zip"
 
 	RequireNewDirectory                    ExtractDestinationPolicy = "must-not-exist"
 	ExtractionDestinationPolicyMustBeEmpty ExtractDestinationPolicy = "must-be-empty"
@@ -66,6 +68,9 @@ func ExtractArchiveWithConsent(ctx context.Context, userArchiveExtractionConsent
 	}
 	if emitProgress != nil {
 		emitProgress("info", "Extracting approved archive inside workspace.")
+	}
+	if extractPlan.ArchiveFormat == ArchiveFormatZip {
+		return extractZipArchive(ctx, extractPlan)
 	}
 	return extractTarArchive(ctx, extractPlan)
 }
@@ -273,6 +278,124 @@ func extractTarArchive(ctx context.Context, extractPlan ExtractPlan) error {
 			// Ignore metadata-only entries such as pax headers.
 		}
 	}
+}
+
+// extractZipArchive extracts a .zip archive (used for vendor binary archives that
+// ship as .zip on Windows) under the same safety bounds as the tar path: zip-slip
+// protection via cleanEntryName + checkExtractTarget + workspace containment checks,
+// per-file and total size limits, file-count limit, no symlinks, and the file-mode
+// policy. archive/zip needs random access, so this is a separate path from the
+// streaming tar reader rather than another openArchiveReader case.
+func extractZipArchive(ctx context.Context, extractPlan ExtractPlan) error {
+	if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, filepath.Dir(extractPlan.DestinationDirectory)); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(extractPlan.DestinationDirectory, 0o755); err != nil {
+		return err
+	}
+	if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, extractPlan.DestinationDirectory); err != nil {
+		return err
+	}
+	zipReader, err := zip.OpenReader(extractPlan.ArchiveFilePath)
+	if err != nil {
+		return err
+	}
+	defer zipReader.Close()
+
+	totalExtractedBytes := int64(0)
+	fileCount := 0
+	for _, zipEntry := range zipReader.File {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		if zipEntry.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("archive links are blocked for safety: %s", zipEntry.Name)
+		}
+		cleanName, err := cleanEntryName(zipEntry.Name)
+		if err != nil {
+			return err
+		}
+		targetPath := filepath.Join(extractPlan.DestinationDirectory, filepath.FromSlash(cleanName))
+		if err := checkExtractTarget(extractPlan.DestinationDirectory, targetPath, zipEntry.Name); err != nil {
+			return err
+		}
+		if err := workspace.CheckPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetPath); err != nil {
+			return err
+		}
+		if zipEntry.FileInfo().IsDir() {
+			if err := os.MkdirAll(targetPath, 0o755); err != nil {
+				return err
+			}
+			if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetPath); err != nil {
+				return err
+			}
+			continue
+		}
+		fileCount++
+		if fileCount > extractPlan.MaximumFileCount {
+			return errors.New("archive contains more files than allowed")
+		}
+		entrySize := int64(zipEntry.UncompressedSize64)
+		if entrySize < 0 {
+			return fmt.Errorf("archive entry has invalid size: %s", zipEntry.Name)
+		}
+		if entrySize > extractPlan.MaximumSingleFileByteCount {
+			return fmt.Errorf("archive entry exceeds single file size limit: %s", zipEntry.Name)
+		}
+		totalExtractedBytes += entrySize
+		if totalExtractedBytes > extractPlan.MaximumExtractedByteCount {
+			return errors.New("archive extracted byte count exceeds limit")
+		}
+		targetDirectory := filepath.Dir(targetPath)
+		if err := os.MkdirAll(targetDirectory, 0o755); err != nil {
+			return err
+		}
+		if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetDirectory); err != nil {
+			return err
+		}
+		if extractPlan.ExtractDestinationPolicy != OverwriteExtractedFiles {
+			if _, statError := os.Lstat(targetPath); statError == nil {
+				return fmt.Errorf("archive extraction would overwrite existing file: %s", zipEntry.Name)
+			} else if !errors.Is(statError, os.ErrNotExist) {
+				return statError
+			}
+		}
+		if err := writeZipEntry(zipEntry, targetPath, entrySize, extractPlan); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func writeZipEntry(zipEntry *zip.File, targetPath string, entrySize int64, extractPlan ExtractPlan) error {
+	entryReader, err := zipEntry.Open()
+	if err != nil {
+		return err
+	}
+	defer entryReader.Close()
+	fileMode := safeFileMode(zipEntry.Mode(), extractPlan.ExtractedFileModePolicy)
+	outputFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, fileMode)
+	if err != nil {
+		if extractPlan.ExtractDestinationPolicy == OverwriteExtractedFiles && errors.Is(err, os.ErrExist) {
+			if fileInfo, lstatErr := os.Lstat(targetPath); lstatErr != nil {
+				return lstatErr
+			} else if fileInfo.Mode()&os.ModeSymlink != 0 {
+				return errors.New("archive extraction refuses to overwrite symlink")
+			}
+			outputFile, err = os.OpenFile(targetPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, fileMode)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	_, copyErr := io.CopyN(outputFile, entryReader, entrySize)
+	closeErr := outputFile.Close()
+	if copyErr != nil {
+		return copyErr
+	}
+	return closeErr
 }
 
 func openArchiveReader(archiveFile *os.File, archiveFormatName ArchiveFormat) (io.Reader, func(), error) {

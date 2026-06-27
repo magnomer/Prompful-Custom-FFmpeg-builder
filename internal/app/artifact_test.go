@@ -1,6 +1,10 @@
 package app
 
-import "testing"
+import (
+	"testing"
+
+	"promptfulcustomffmpegbuilder/internal/planning"
+)
 
 func TestIsFfmpegSharedLibraryName(t *testing.T) {
 	matching := []string{
@@ -36,5 +40,16 @@ func TestIsFfmpegSharedLibraryName(t *testing.T) {
 		if isFfmpegSharedLibraryName(name) {
 			t.Errorf("expected %s to NOT be recognized as an FFmpeg shared library", name)
 		}
+	}
+}
+
+func TestPlanBuildsSharedLibraries(t *testing.T) {
+	staticPlan := planning.FfmpegBuildPlan{ConfigureFlags: []string{"--enable-libvvenc", "--pkg-config-flags=--static"}}
+	if planBuildsSharedLibraries(staticPlan) {
+		t.Fatal("a static build (no --enable-shared) must not be treated as shared")
+	}
+	sharedPlan := planning.FfmpegBuildPlan{ConfigureFlags: []string{"--enable-shared", "--disable-static"}}
+	if !planBuildsSharedLibraries(sharedPlan) {
+		t.Fatal("a build with --enable-shared must be treated as shared")
 	}
 }

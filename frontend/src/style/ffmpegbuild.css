@@ -15,3 +15,82 @@
 .ffmpeg-build-page .empty-text {
   margin-bottom: 0;
 }
+
+.build-plan-shell {
+  display: grid;
+  gap: 20px;
+}
+
+.build-plan-confirmation-panel {
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+}
+
+.build-plan-confirmation-value {
+  min-width: 0;
+  padding: 4px 0;
+  color: #172033;
+  font-size: 0.88rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.build-plan-warning-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #ead28b;
+  border-radius: 14px;
+  padding: 16px;
+  background: #fffaf0;
+}
+
+.build-plan-section-title {
+  margin: 0;
+  color: #172033;
+  font-size: 0.96rem;
+  font-weight: 900;
+}
+
+.build-plan-warning-list {
+  display: grid;
+  gap: 8px;
+}
+
+.build-plan-warning {
+  border: 1px solid rgba(234, 210, 139, 0.75);
+  border-radius: 10px;
+  padding: 11px 12px;
+  background: #ffffff;
+  color: #5f4708;
+  font-size: 0.88rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.build-plan-warning--blocked {
+  border-color: #efaaaa;
+  color: #9d2222;
+}
+
+.build-plan-warning--info {
+  border-color: #cbd8f5;
+  color: #284a88;
+}
+
+.build-plan-details-card {
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.07);
+}
+
+.build-plan-list-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.build-plan-list {
+  box-shadow: none;
+}
+
+.build-plan-list__item {
+  min-height: 58px;
+}
+

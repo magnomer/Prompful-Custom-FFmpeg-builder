@@ -3,7 +3,7 @@ package main
 import (
 	"embed"
 
-	backendapp "customffmpegbuilder/internal/app"
+	backendapp "promptfulcustomffmpegbuilder/internal/app"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"

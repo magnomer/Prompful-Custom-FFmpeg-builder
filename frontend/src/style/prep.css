@@ -1,9 +1,7 @@
 .prep-page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  max-width: 1360px;
-  margin: 0 auto;
+  gap: 18px;
 }
 
 .prep-page .page-header {
@@ -15,3 +13,94 @@
 .prep-page .empty-text {
   margin-bottom: 0;
 }
+
+/* Prepared build environments — lists every profile that has its own toolchain. */
+.prep-profiles {
+  display: grid;
+  gap: 12px;
+  padding: 20px 24px;
+  border: 1px solid #e6ecf4;
+  border-radius: 14px;
+  background: #f8fafd;
+}
+.prep-profiles__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.prep-profiles__title {
+  margin: 0;
+  color: #172033;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.prep-profiles__clear {
+  flex: 0 0 auto;
+}
+.prep-profiles__list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.prep-profiles__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f1;
+  border-radius: 10px;
+  background: #ffffff;
+}
+.prep-profiles__item--current {
+  border-color: #8fb3ff;
+  background: #f3f8ff;
+}
+.prep-profiles__name {
+  font-weight: 700;
+  color: #1f2a3d;
+  font-size: 0.9rem;
+}
+.prep-profiles__detail {
+  color: #5f6b7c;
+  font-size: 0.85rem;
+}
+.prep-profiles__tag {
+  margin-left: auto;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #2456d6;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Toolchain recovery card — shown when a prior build environment is found on disk. */
+.card--green::before { background: #00a36a; }
+.card--green .card__badge { background: #e6f7f0; }
+
+.prep-page .card__control {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.prep-page .card--green .empty-text {
+  grid-column: 2;
+  margin: 0;
+}
+
+.prep-recovery__verify-result,
+.prep-recovery__drift {
+  grid-column: 2;
+  display: grid;
+  gap: 10px;
+}
+
+.empty-text--ok { color: #0f7a4d; }
+.empty-text--warn { color: #b25408; }

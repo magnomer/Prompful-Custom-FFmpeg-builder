@@ -1,6 +1,6 @@
 import { t, tFallback } from "./i18n";
 
-export function libraryText(library: LibraryChoice, field: "displayName" | "categoryName" | "reviewNote" | "plainExplanation" | "technicalExplanation"): string {
+export function libraryText(library: LibraryChoice, field: "displayName" | "categoryName" | "plainExplanation" | "technicalExplanation"): string {
   return tFallback(`catalog.libraries.${library.libraryId}.${field}`, library[field] ?? "");
 }
 

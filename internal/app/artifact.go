@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"customffmpegbuilder/internal/planning"
-	"customffmpegbuilder/internal/workspace"
+	"promptfulcustomffmpegbuilder/internal/planning"
+	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
 func verifyToolchainPlanHash(plan planning.ToolchainPreparationPlan) error {
@@ -104,7 +104,7 @@ func copyFfmpegBuildOutputs(ffmpegSourceDirectory string, workspaceLayout worksp
 	// in libraries that omit selected encoders (for example libfdk_aac,
 	// libopenh264, libilbc, libtwolame, libvo_amrwbenc) and triggers FFmpeg's
 	// "library configuration mismatch" warning at runtime.
-	builtSharedLibraryPaths, err := copyBuiltFfmpegSharedLibraries(ffmpegSourceDirectory, workspaceLayout, emitProgress)
+	builtSharedLibraryPaths, err := copyBuiltFfmpegSharedLibraries(ffmpegSourceDirectory, workspaceLayout, planBuildsSharedLibraries(plan), emitProgress)
 	if err != nil {
 		return err
 	}
@@ -115,10 +115,11 @@ func copyFfmpegBuildOutputs(ffmpegSourceDirectory string, workspaceLayout worksp
 		profileDirectoryName = "ucrt64"
 	}
 	msys2BinDirectory := filepath.Join(plan.Msys2RootDirectory, profileDirectoryName, "bin")
-	// String-only workspace check — CheckRealPathInsideWorkspace uses
+	// String-only workspace check ??CheckRealPathInsideWorkspace uses
 	// filepath.EvalSymlinks which fails on MSYS2's internal reparse points.
 	// The path is trusted by construction: Msys2RootDirectory is always
-	// filepath.Join(workspaceDirectory, "toolchains", "msys2").
+	// planning.Msys2RootDirectoryForProfile(workspaceDirectory, profile), i.e.
+	// workspaceDirectory/toolchains/msys2-<profile>.
 	if err := workspace.CheckPathInsideWorkspace(workspaceLayout.WorkspaceDirectory, msys2BinDirectory); err != nil {
 		return fmt.Errorf("MSYS2 bin directory is outside workspace: %w", err)
 	}
@@ -147,7 +148,7 @@ func copyFfmpegBuildOutputs(ffmpegSourceDirectory string, workspaceLayout worksp
 // artifact directory. A shared, in-tree build places these DLLs in per-library
 // subdirectories, so they are located with a recursive walk. The returned paths
 // are the artifact-directory destinations.
-func copyBuiltFfmpegSharedLibraries(ffmpegSourceDirectory string, workspaceLayout workspace.WorkspaceLayout, emitProgress func(string, string)) ([]string, error) {
+func copyBuiltFfmpegSharedLibraries(ffmpegSourceDirectory string, workspaceLayout workspace.WorkspaceLayout, isSharedBuild bool, emitProgress func(string, string)) ([]string, error) {
 	copiedByBaseName := map[string]bool{}
 	var copiedPaths []string
 	walkErr := filepath.WalkDir(ffmpegSourceDirectory, func(path string, dirEntry os.DirEntry, walkErr error) error {
@@ -180,11 +181,28 @@ func copyBuiltFfmpegSharedLibraries(ffmpegSourceDirectory string, workspaceLayou
 		return nil, fmt.Errorf("could not collect built FFmpeg shared libraries from %s: %w", ffmpegSourceDirectory, walkErr)
 	}
 	if len(copiedPaths) == 0 {
-		emitProgress("warn", "No built FFmpeg shared libraries (libav*/libsw*) were found in the build directory. The artifact may load stock MSYS2 FFmpeg libraries instead, which can omit selected encoders.")
+		if isSharedBuild {
+			emitProgress("warn", "No built FFmpeg shared libraries (libav*/libsw*) were found in the build directory. The artifact may load stock MSYS2 FFmpeg libraries instead, which can omit selected encoders.")
+		} else {
+			emitProgress("info", "Static build: the FFmpeg libraries are linked into ffmpeg.exe/ffprobe.exe, so there are no separate shared libraries to bundle.")
+		}
 	} else {
 		emitProgress("info", fmt.Sprintf("Copied %d built FFmpeg shared libraries from the build directory.", len(copiedPaths)))
 	}
 	return copiedPaths, nil
+}
+
+// planBuildsSharedLibraries reports whether the plan configures a shared (DLL) FFmpeg
+// build, i.e. its configure flags request --enable-shared. A static build (the default)
+// links the FFmpeg libraries into the executables, so the absence of libav*/libsw* DLLs
+// in the build directory is expected rather than a problem.
+func planBuildsSharedLibraries(plan planning.FfmpegBuildPlan) bool {
+	for _, configureFlag := range plan.ConfigureFlags {
+		if configureFlag == "--enable-shared" {
+			return true
+		}
+	}
+	return false
 }
 
 // isFfmpegSharedLibraryName reports whether fileName is an FFmpeg shared library

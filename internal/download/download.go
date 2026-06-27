@@ -12,10 +12,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
-	"customffmpegbuilder/internal/consent"
-	"customffmpegbuilder/internal/workspace"
+	"promptfulcustomffmpegbuilder/internal/consent"
+	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
 type FileConflictPolicy string
@@ -41,6 +42,40 @@ type DownloadPlan struct {
 }
 
 type ProgressFunc func(level string, message string)
+
+// A download can fail for transient reasons: the official URL redirects to a
+// CDN mirror that stalls, a connection drops, or a mirror returns a 5xx. Each
+// retry re-issues the request to the *official* DownloadUrl (not the redirected
+// mirror), so the server is free to redirect to a healthier mirror. These
+// constants bound the retries and define when a transfer counts as stalled.
+const (
+	maxDownloadAttempts       = 10
+	downloadRetryInitialDelay = 5 * time.Second
+	downloadRetryMaxDelay     = 60 * time.Second
+
+	// downloadStallPoll is how often the watchdog samples transfer progress.
+	downloadStallPoll = 2 * time.Second
+
+	// Cap 1 ??zero download: abort when not a single byte arrives within this
+	// window. Catches a fully dead transfer (DNS resolved, connection open, but
+	// nothing flowing) without waiting for the overall client Timeout.
+	downloadZeroDataTimeout = 10 * time.Second
+
+	// Cap 2 ??too slow: abort when the average speed over a sliding window stays
+	// below the floor. Catches a transfer that trickles (so it never trips the
+	// zero-data cap) yet is effectively never going to finish. Mirrors pacman's
+	// low-speed-limit/low-speed-time behavior.
+	downloadLowSpeedWindow              = 20 * time.Second
+	downloadLowSpeedFloorBytesPerSecond = 1024 // 1 KiB/s averaged over the window
+)
+
+// Stall kinds reported by the watchdog so the failure message can tell a fully
+// dead transfer apart from a merely too-slow one.
+const (
+	stallKindNone int32 = iota
+	stallKindZeroData
+	stallKindTooSlow
+)
 
 func DownloadMsys2WithConsent(ctx context.Context, userDownloadConsent consent.Msys2DownloadConsent, downloadPlan DownloadPlan, emitProgress ProgressFunc) error {
 	if err := consent.CheckConsent(userDownloadConsent.Consent, consent.ConsentKindMsys2Download, downloadPlan.ActionName, downloadPlan.PlanHash); err != nil {
@@ -105,15 +140,98 @@ func downloadFile(ctx context.Context, downloadPlan DownloadPlan, emitProgress P
 	if err := workspace.CheckRealPathInsideWorkspace(downloadPlan.WorkspaceDirectory, temporaryPath); err != nil {
 		return err
 	}
-	downloadSucceeded := false
-	defer func() {
-		if !downloadSucceeded {
+
+	retryDelay := downloadRetryInitialDelay
+	for attemptNumber := 1; ; attemptNumber++ {
+		transientFailure, err := downloadAttempt(ctx, downloadPlan, temporaryPath, emitProgress)
+		if err == nil {
+			return nil
+		}
+		// Stop on user cancellation, a clearly non-transient failure (bad status,
+		// size/hash mismatch), or once the attempt budget is spent.
+		if ctx.Err() != nil || !transientFailure || attemptNumber >= maxDownloadAttempts {
 			_ = os.Remove(temporaryPath)
+			return err
+		}
+		if emitProgress != nil {
+			emitProgress("warn", fmt.Sprintf("Transient download failure for %s (attempt %d of %d): %v. Retrying from the official URL in %s...", downloadPlan.DownloadSourceName, attemptNumber, maxDownloadAttempts, err, retryDelay))
+		}
+		select {
+		case <-ctx.Done():
+			_ = os.Remove(temporaryPath)
+			return err
+		case <-time.After(retryDelay):
+		}
+		if retryDelay *= 2; retryDelay > downloadRetryMaxDelay {
+			retryDelay = downloadRetryMaxDelay
+		}
+	}
+}
+
+// downloadAttempt performs one download to temporaryPath. Each call re-requests
+// downloadPlan.DownloadUrl (the official URL) so a retry lets the server pick a
+// fresh, possibly healthier, redirect target. It reports whether the failure was
+// transient (stalled transfer, dropped connection, 5xx) so the caller can retry.
+func downloadAttempt(ctx context.Context, downloadPlan DownloadPlan, temporaryPath string, emitProgress ProgressFunc) (bool, error) {
+	// Clear any partial file left by a prior failed attempt; O_EXCL below needs a
+	// clean slate.
+	_ = os.Remove(temporaryPath)
+
+	attemptCtx, cancelAttempt := context.WithCancel(ctx)
+	defer cancelAttempt()
+
+	var bytesTransferred atomic.Int64
+	var stallKind atomic.Int32
+	watchdogDone := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(downloadStallPoll)
+		defer ticker.Stop()
+		now := time.Now()
+		// Cap 1 (zero data): bytes seen at the last poll and when they last moved.
+		lastSeenBytes := int64(0)
+		lastProgressTime := now
+		// Cap 2 (too slow): bytes and time at the start of the current speed window.
+		windowStartBytes := int64(0)
+		windowStartTime := now
+		for {
+			select {
+			case <-watchdogDone:
+				return
+			case <-attemptCtx.Done():
+				return
+			case <-ticker.C:
+				now := time.Now()
+				currentBytes := bytesTransferred.Load()
+
+				// Cap 1 ??zero download: not one byte within the timeout.
+				if currentBytes > lastSeenBytes {
+					lastSeenBytes = currentBytes
+					lastProgressTime = now
+				} else if now.Sub(lastProgressTime) >= downloadZeroDataTimeout {
+					stallKind.Store(stallKindZeroData)
+					cancelAttempt()
+					return
+				}
+
+				// Cap 2 ??too slow: average speed over a full window below the floor.
+				if elapsed := now.Sub(windowStartTime); elapsed >= downloadLowSpeedWindow {
+					averageBytesPerSecond := float64(currentBytes-windowStartBytes) / elapsed.Seconds()
+					if averageBytesPerSecond < downloadLowSpeedFloorBytesPerSecond {
+						stallKind.Store(stallKindTooSlow)
+						cancelAttempt()
+						return
+					}
+					windowStartBytes = currentBytes
+					windowStartTime = now
+				}
+			}
 		}
 	}()
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadPlan.DownloadUrl, nil)
+	defer close(watchdogDone)
+
+	request, err := http.NewRequestWithContext(attemptCtx, http.MethodGet, downloadPlan.DownloadUrl, nil)
 	if err != nil {
-		return err
+		return false, err
 	}
 	client := &http.Client{
 		Timeout: 60 * time.Minute,
@@ -132,38 +250,45 @@ func downloadFile(ctx context.Context, downloadPlan DownloadPlan, emitProgress P
 	}
 	response, err := client.Do(request)
 	if err != nil {
-		return err
+		// Any connection-level error (DNS, reset, refused) ??or a stall the watchdog
+		// turned into a cancellation ??is transient. A genuine user cancellation is
+		// caught by the caller's ctx.Err() check.
+		return true, describeStallError(stallKind.Load(), err)
 	}
 	defer response.Body.Close()
 	if response.StatusCode < 200 || response.StatusCode > 299 {
-		return fmt.Errorf("unexpected download status: %s", response.Status)
+		return isRetryableStatusCode(response.StatusCode), fmt.Errorf("unexpected download status: %s", response.Status)
 	}
 	if response.ContentLength > downloadPlan.ExpectedFileSizeMaximum && downloadPlan.ExpectedFileSizeMaximum > 0 {
-		return errors.New("download is larger than allowed maximum")
+		return false, errors.New("download is larger than allowed maximum")
 	}
 	outputFile, err := os.OpenFile(temporaryPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
 	if err != nil {
-		return err
+		return false, err
 	}
 	hash := sha256.New()
-	writtenByteCount, copyErr := io.Copy(io.MultiWriter(outputFile, hash), response.Body)
+	activityTrackingBody := &activityTrackingReader{reader: response.Body, bytesTransferred: &bytesTransferred}
+	writtenByteCount, copyErr := io.Copy(io.MultiWriter(outputFile, hash), activityTrackingBody)
 	closeErr := outputFile.Close()
 	if copyErr != nil {
-		return copyErr
+		_ = os.Remove(temporaryPath)
+		// A stall the watchdog aborted, or a mid-stream read failure (connection
+		// dropped), is transient.
+		return true, describeStallError(stallKind.Load(), copyErr)
 	}
 	if closeErr != nil {
-		return closeErr
+		return false, closeErr
 	}
 	if downloadPlan.ExpectedFileSizeMinimum > 0 && writtenByteCount < downloadPlan.ExpectedFileSizeMinimum {
-		return errors.New("download is smaller than allowed minimum")
+		return false, errors.New("download is smaller than allowed minimum")
 	}
 	if downloadPlan.ExpectedFileSizeMaximum > 0 && writtenByteCount > downloadPlan.ExpectedFileSizeMaximum {
-		return errors.New("download is larger than allowed maximum")
+		return false, errors.New("download is larger than allowed maximum")
 	}
 	actualSha256Hash := hex.EncodeToString(hash.Sum(nil))
 	if downloadPlan.ExpectedSha256Hash != "" {
 		if !strings.EqualFold(actualSha256Hash, downloadPlan.ExpectedSha256Hash) {
-			return fmt.Errorf("sha256 mismatch: expected %s but got %s", downloadPlan.ExpectedSha256Hash, actualSha256Hash)
+			return false, fmt.Errorf("sha256 mismatch: expected %s but got %s", downloadPlan.ExpectedSha256Hash, actualSha256Hash)
 		}
 	} else if emitProgress != nil {
 		emitProgress("info", "Calculated SHA-256 for "+downloadPlan.DownloadSourceName+": "+actualSha256Hash)
@@ -172,10 +297,48 @@ func downloadFile(ctx context.Context, downloadPlan DownloadPlan, emitProgress P
 		_ = os.Remove(downloadPlan.DestinationFilePath)
 	}
 	if err := os.Rename(temporaryPath, downloadPlan.DestinationFilePath); err != nil {
-		return err
+		return false, err
 	}
-	downloadSucceeded = true
-	return nil
+	return false, nil
+}
+
+// activityTrackingReader accumulates the running total of bytes read so the
+// stall watchdog can measure both whether data is flowing at all and how fast.
+type activityTrackingReader struct {
+	reader           io.Reader
+	bytesTransferred *atomic.Int64
+}
+
+func (r *activityTrackingReader) Read(p []byte) (int, error) {
+	n, err := r.reader.Read(p)
+	if n > 0 {
+		r.bytesTransferred.Add(int64(n))
+	}
+	return n, err
+}
+
+// describeStallError wraps a transfer error with the watchdog's reason when the
+// attempt was aborted for being dead or too slow, so the retry message tells the
+// two cases apart. With no stall it returns the underlying error unchanged.
+func describeStallError(stallKind int32, baseErr error) error {
+	switch stallKind {
+	case stallKindZeroData:
+		return fmt.Errorf("download stalled: no data received for %s: %w", downloadZeroDataTimeout, baseErr)
+	case stallKindTooSlow:
+		return fmt.Errorf("download too slow: averaged under %d bytes/sec over %s: %w", downloadLowSpeedFloorBytesPerSecond, downloadLowSpeedWindow, baseErr)
+	default:
+		return baseErr
+	}
+}
+
+// isRetryableStatusCode reports whether an HTTP status warrants a retry: server
+// errors (5xx) and the standard "slow down / try again" codes. Other non-2xx
+// codes (e.g. 404) are permanent and are not retried.
+func isRetryableStatusCode(statusCode int) bool {
+	if statusCode >= 500 {
+		return true
+	}
+	return statusCode == http.StatusTooManyRequests || statusCode == http.StatusRequestTimeout
 }
 
 func reuseMatchingFile(downloadPlan DownloadPlan, emitProgress ProgressFunc) bool {

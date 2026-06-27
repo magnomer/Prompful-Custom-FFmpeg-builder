@@ -57,11 +57,15 @@ Most external library package names are generated from the selected Windows shel
 - `mingw64` uses `mingw-w64-x86_64-...`
 - `clang64` uses `mingw-w64-clang-x86_64-...`
 
-A few entries (`xavs2`, `vvenc`) are real FFmpeg configure options that have no prebuilt MSYS2 package. They carry no package name, so the installer never tries to fetch one; instead the planner emits a warning that FFmpeg configure will fail for that library unless the user builds and installs it into the selected MSYS2 prefix themselves.
+A few entries such as `xavs2` and `vvenc` are real FFmpeg configure options that have no prebuilt MSYS2 package. They are modeled as Internal-track source-build libraries, so they do not contribute MSYS2 package names; the builder prepares them from a verified upstream source archive before FFmpeg configure runs. A non-native library with no implemented preparation recipe stays blocked through the non-native preparation gate.
 
 ## Hidden libraries
 
-`lensfun` and `svtjpegxs` stay in the backend catalog but are hidden from the UI and from automatic presets. They are kept for future compatibility: an old saved or manual request that names one is still honored, but the planner skips the incompatible flag with a warning when the installed package does not match the FFmpeg source.
+`lensfun`, `svtjpegxs`, and `vapoursynth` stay in the backend catalog but are hidden from the UI and from automatic presets. They are kept for future compatibility: an old saved or manual request that names one is still honored, but the planner skips the incompatible flag with a warning when the installed package does not match the FFmpeg source. `vapoursynth` is hidden because the MSYS2 package is older than the API the FFmpeg source requires, and even when it builds the result needs a Python + VapourSynth runtime, so it is not portable.
+
+## Profile-specific availability
+
+Some MSYS2 packages exist for only certain shell profiles. `onnxruntime` has no prebuilt `mingw64` package, so `LibraryCatalogForShellProfile` omits it for that profile and the UI hides it. The selection is re-normalized when the profile changes, so switching to `mingw64` drops a previously selected `onnxruntime`, and the planner ignores it as an unknown id if it ever reaches the backend. The frontend `libraryUnavailableProfiles` map mirrors the backend `libraryProfileUnavailability` map.
 
 ## Library presets
 
@@ -81,8 +85,10 @@ Applying a preset still leaves individual external libraries editable. Locked in
 
 The UI prevents known mutually exclusive selections. The current mutually exclusive groups are:
 
-- `openssl` / `gnutls` — only one TLS backend stays selected (FFmpeg configure rejects both);
-- `shaderc` / `glslang` — only one runtime shader compiler stays selected (FFmpeg configure rejects both).
+- `openssl` / `gnutls` / `mbedtls` — only one TLS backend stays selected (FFmpeg configure rejects more than one);
+- `shaderc` / `glslang` — only one runtime shader compiler stays selected (FFmpeg configure rejects both);
+- `xevd` / `xevdb` — only one EVC decoder binding stays selected (FFmpeg configure rejects both);
+- `xeve` / `xeveb` — only one EVC encoder binding stays selected (FFmpeg configure rejects both).
 
 Selecting one member of a group clears the other, and the planner also emits a blocking warning if both ever reach the final flag list.
 

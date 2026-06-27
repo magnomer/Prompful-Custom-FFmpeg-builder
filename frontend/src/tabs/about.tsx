@@ -1,6 +1,7 @@
 import React from "react";
 import { t } from "../i18n";
 import { PageHeader, ExternalLinkButton } from "./shared";
+import { isDevUnlockEnabled, isSudoDevUnlockEnabled, registerVersionClick, registerDevUnlockIndicatorClick } from "../devUnlock";
 
 declare const __APP_VERSION__: string;
 
@@ -10,6 +11,21 @@ export type AboutTabProps = {
 
 export function AboutTab({ openInUserBrowser }: AboutTabProps) {
   const [showTechnicalDetails, setShowTechnicalDetails] = React.useState(false);
+  // Hidden developer feature: twelve clicks on the version number toggle basic dev
+  // unlock (UI-unavailable libraries become selectable); with basic on, twelve clicks
+  // on the dev indicator below toggle the sudo tier (relaxes pick-one groups). See
+  // devUnlock.ts.
+  const [devUnlocked, setDevUnlocked] = React.useState(isDevUnlockEnabled());
+  const [sudoDevUnlocked, setSudoDevUnlocked] = React.useState(isSudoDevUnlockEnabled());
+
+  // Toggling basic dev off also clears sudo; keep the indicator's state in sync.
+  function handleVersionClick() {
+    const nextDevUnlocked = registerVersionClick();
+    setDevUnlocked(nextDevUnlocked);
+    if (!nextDevUnlocked) {
+      setSudoDevUnlocked(false);
+    }
+  }
 
   return (
     <section className="tab-page about-page">
@@ -18,7 +34,16 @@ export function AboutTab({ openInUserBrowser }: AboutTabProps) {
       <section className="about-summary">
         <section className="about-version-card" aria-label={t("about.version.ariaLabel")}>
           <span className="about-version-card__label">{t("about.version.label")}</span>
-          <strong className="about-version-card__value">{t("about.version.value", { version: __APP_VERSION__ })}</strong>
+          <strong
+            className="about-version-card__value"
+            onClick={handleVersionClick}
+          >{t("about.version.value", { version: __APP_VERSION__ })}</strong>
+          {devUnlocked && (
+            <span
+              className={`about-version-card__dev-unlock ${sudoDevUnlocked ? "about-version-card__dev-unlock--sudo" : ""}`}
+              onClick={() => setSudoDevUnlocked(registerDevUnlockIndicatorClick())}
+            >{t(sudoDevUnlocked ? "about.version.sudoDevUnlocked" : "about.version.devUnlocked")}</span>
+          )}
         </section>
 
         <section className="about-flow" aria-labelledby="about-flow-title">

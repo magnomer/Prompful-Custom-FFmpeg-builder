@@ -52,6 +52,24 @@
   color: #172033;
   font-size: 1.08rem;
   line-height: 1.3;
+  /* The version number doubles as a hidden developer toggle (twelve clicks). Prevent
+     text selection so rapid clicks do not highlight it; no pointer cursor, to keep the
+     feature undiscoverable. */
+  user-select: none;
+}
+
+.about-version-card__dev-unlock {
+  display: block;
+  margin-top: 4px;
+  color: #2f7d32;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.about-version-card__dev-unlock--sudo {
+  color: #b3261e;
 }
 
 .about-flow,

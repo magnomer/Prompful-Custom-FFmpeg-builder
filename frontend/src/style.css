@@ -3,8 +3,9 @@
 @import "./style/review.css";
 @import "./style/live-progress.css";
 @import "./style/smart-log.css";
+@import "./style/card.css";
 @import "./style/source.css";
-@import "./style/buildtools.css";
+@import "./style/buildconfig.css";
 @import "./style/prep.css";
 @import "./style/options.css";
 @import "./style/ffmpegbuild.css";

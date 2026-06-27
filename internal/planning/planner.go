@@ -8,16 +8,16 @@ import (
 	"runtime"
 	"strings"
 
-	"customffmpegbuilder/internal/scripting"
+	"promptfulcustomffmpegbuilder/internal/scripting"
 )
 
-func DefaultBuildToolSettings() BuildToolSettings {
-	return BuildToolSettings{
+func DefaultBuildConfigSettings() BuildConfigSettings {
+	return BuildConfigSettings{
 		WorkspaceDirectory:       filepath.Join(defaultUserDataDirectory(), "CustomFFmpegBuilder", "workspace"),
 		Msys2ArchiveUrl:          "https://repo.msys2.org/distrib/msys2-x86_64-latest.tar.zst",
 		Msys2ArchiveSha256Hash:   "",
 		Msys2ArchiveSignatureUrl: "https://repo.msys2.org/distrib/msys2-x86_64-latest.tar.zst.sig",
-		Msys2PackageNames:        defaultMsys2PackageNames(),
+		Msys2PackageNames:        defaultMsys2PackageNames("ucrt64"),
 		WindowsShellProfileName:  "ucrt64",
 	}
 }
@@ -46,57 +46,108 @@ func localizedOperation(operationName string, fallback string) PlanOperation {
 	return PlanOperation{OperationName: operationName, Summary: fallback, SummaryKey: "plan.operations." + operationName}
 }
 
-func PlanToolchainSetup(buildToolSettings BuildToolSettings) (ToolchainPreparationPlan, error) {
-	buildToolSettings = cleanBuildToolSettings(buildToolSettings)
-	warnings := validateCommonWindowsWorkspace(buildToolSettings.WorkspaceDirectory)
+// appendUnpreparedTrackWarnings blocks the build only for selected non-Native
+// libraries that do not have an implemented preparation recipe yet. Libraries with a
+// recipe are prepared before configure and do not block.
+func appendUnpreparedTrackWarnings(warnings []PlanWarning, blockedLibraries []LibraryChoice) ([]PlanWarning, bool) {
+	blockedInternal := librariesForTrack(blockedLibraries, LibraryTrackInternal)
+	blockedExternal := librariesForTrack(blockedLibraries, LibraryTrackExternal)
+	hasBlockedWarning := false
+	if len(blockedInternal) > 0 {
+		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.internalTrackNotPrepared", "Internal-track libraries are selected, but MSYS2-internal source-build preparation is not implemented yet for them. The build is blocked so configure flags are not approved before those libraries are prepared: "+joinLibraryDisplayNames(blockedInternal)+".", map[string]string{"libraries": joinLibraryDisplayNames(blockedInternal)}))
+		hasBlockedWarning = true
+	}
+	if len(blockedExternal) > 0 {
+		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.externalTrackNotPrepared", "External-track libraries are selected, but outside-build/import preparation is not implemented yet for them. The build is blocked so configure flags are not approved before those libraries are imported and verified: "+joinLibraryDisplayNames(blockedExternal)+".", map[string]string{"libraries": joinLibraryDisplayNames(blockedExternal)}))
+		hasBlockedWarning = true
+	}
+	return warnings, hasBlockedWarning
+}
+
+func joinLibraryDisplayNames(libraries []LibraryChoice) string {
+	names := make([]string, 0, len(libraries))
+	for _, library := range libraries {
+		names = append(names, library.DisplayName)
+	}
+	return strings.Join(names, ", ")
+}
+
+func ffmpegBuildOperations(hasInternalLibraries bool, hasExternalLibraries bool) []PlanOperation {
+	operations := []PlanOperation{
+		localizedOperation("download-ffmpeg-source", "Download the approved FFmpeg source archive."),
+		localizedOperation("verify-ffmpeg-source-signature", "Verify the FFmpeg source archive with the matching .asc PGP signature before extraction."),
+		localizedOperation("extract-ffmpeg-source", "Extract source into the private workspace."),
+		localizedOperation("review-selected-libraries", "Show selected FFmpeg libraries, generated package names, generated configure flags, and license effects."),
+		localizedOperation("install-selected-library-packages", "Install only the MSYS2 packages required by the selected FFmpeg libraries before configure runs."),
+	}
+	if hasInternalLibraries {
+		operations = append(operations, localizedOperation("prepare-internal-libraries", "Build selected Internal-track libraries inside the selected MSYS2 environment before configure runs."))
+	}
+	if hasExternalLibraries {
+		operations = append(operations, localizedOperation("prepare-external-libraries", "Import selected External-track libraries into the selected MSYS2 environment before configure runs."))
+	}
+	if hasInternalLibraries || hasExternalLibraries {
+		operations = append(operations, localizedOperation("verify-prepared-libraries", "Verify prepared non-Native libraries before their FFmpeg configure flags are approved."))
+	}
+	operations = append(operations,
+		localizedOperation("run-approved-configure-script", "Run FFmpeg configure with exactly the approved final flags."),
+		localizedOperation("run-approved-make-command", "Run make with the approved parallel job count."),
+		localizedOperation("create-artifact-report", "Write a build report with source hashes, libraries, flags, and artifact paths."),
+	)
+	return operations
+}
+
+func PlanToolchainSetup(buildConfigSettings BuildConfigSettings) (ToolchainPreparationPlan, error) {
+	buildConfigSettings = cleanBuildConfigSettings(buildConfigSettings)
+	warnings := validateCommonWindowsWorkspace(buildConfigSettings.WorkspaceDirectory)
 	isExecutable := !hasBlockedWarnings(warnings)
 
 	if runtime.GOOS != "windows" {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.windowsOnly", "This project profile is Windows-only.", nil))
 		isExecutable = false
 	}
-	if buildToolSettings.Msys2ArchiveUrl == "" {
+	if buildConfigSettings.Msys2ArchiveUrl == "" {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.msys2ArchiveUrlEmpty", "MSYS2 archive URL is empty. Use an official MSYS2 tar archive URL before approval. .tar.zst is recommended, and .tar.xz is accepted as a fallback.", nil))
 		isExecutable = false
-	} else if strings.HasSuffix(strings.ToLower(buildToolSettings.Msys2ArchiveUrl), ".sig") || strings.HasSuffix(strings.ToLower(buildToolSettings.Msys2ArchiveUrl), ".exe") || strings.HasSuffix(strings.ToLower(buildToolSettings.Msys2ArchiveUrl), ".sfx.exe") {
+	} else if strings.HasSuffix(strings.ToLower(buildConfigSettings.Msys2ArchiveUrl), ".sig") || strings.HasSuffix(strings.ToLower(buildConfigSettings.Msys2ArchiveUrl), ".exe") || strings.HasSuffix(strings.ToLower(buildConfigSettings.Msys2ArchiveUrl), ".sfx.exe") {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.msys2ArchiveUrlNotTar", "Use an MSYS2 tar archive URL here. The official .exe installer is valid MSYS2, but this app does not run installers; it verifies and extracts tar archives inside the selected workspace. Use .tar.zst when possible, or .tar.xz as a fallback. Put the matching .sig URL in the signature field.", nil))
 		isExecutable = false
-	} else if !(strings.HasSuffix(strings.ToLower(buildToolSettings.Msys2ArchiveUrl), ".tar.zst") || strings.HasSuffix(strings.ToLower(buildToolSettings.Msys2ArchiveUrl), ".tar.xz")) {
+	} else if !(strings.HasSuffix(strings.ToLower(buildConfigSettings.Msys2ArchiveUrl), ".tar.zst") || strings.HasSuffix(strings.ToLower(buildConfigSettings.Msys2ArchiveUrl), ".tar.xz")) {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.msys2ArchiveUrlBadExtension", "MSYS2 archive URL must end with .tar.zst or .tar.xz. This app uses tar archives so it can verify and extract files itself without running an installer.", nil))
 		isExecutable = false
 	}
-	if buildToolSettings.Msys2ArchiveSignatureUrl == "" {
+	if buildConfigSettings.Msys2ArchiveSignatureUrl == "" {
 		warnings = append(warnings, localizedWarning(RiskLevelWarning, "plan.warnings.msys2SignatureMissing", "No MSYS2 .sig URL was supplied. The app can calculate SHA-256, but signature verification is the better official authenticity check.", nil))
-	} else if !strings.HasSuffix(strings.ToLower(buildToolSettings.Msys2ArchiveSignatureUrl), ".sig") {
+	} else if !strings.HasSuffix(strings.ToLower(buildConfigSettings.Msys2ArchiveSignatureUrl), ".sig") {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.msys2SignatureBadExtension", "MSYS2 signature URL must end with .sig.", nil))
 		isExecutable = false
-	} else if buildToolSettings.Msys2ArchiveUrl != "" && buildToolSettings.Msys2ArchiveSignatureUrl != buildToolSettings.Msys2ArchiveUrl+".sig" {
+	} else if buildConfigSettings.Msys2ArchiveUrl != "" && buildConfigSettings.Msys2ArchiveSignatureUrl != buildConfigSettings.Msys2ArchiveUrl+".sig" {
 		warnings = append(warnings, localizedWarning(RiskLevelWarning, "plan.warnings.msys2SignatureMismatch", "MSYS2 signature URL does not exactly match the archive URL plus .sig. This may be intentional, but usually the signature URL should be the archive URL followed by .sig.", nil))
 	}
-	if buildToolSettings.Msys2ArchiveSha256Hash != "" && !isSha256Hex(buildToolSettings.Msys2ArchiveSha256Hash) {
+	if buildConfigSettings.Msys2ArchiveSha256Hash != "" && !isSha256Hex(buildConfigSettings.Msys2ArchiveSha256Hash) {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.msys2ShaBad", "MSYS2 SHA-256 must be exactly 64 hexadecimal characters. If you pasted a .sig file, remove it; .sig is a signature file, not a hash.", nil))
 		isExecutable = false
 	}
-	for _, packageName := range buildToolSettings.Msys2PackageNames {
+	for _, packageName := range buildConfigSettings.Msys2PackageNames {
 		if err := scripting.ValidateMsys2PackageName(packageName); err != nil {
 			warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.validationError", err.Error(), map[string]string{"message": err.Error()}))
 			isExecutable = false
 		}
 	}
-	if !isSupportedWindowsShellProfileName(buildToolSettings.WindowsShellProfileName) {
+	if !isSupportedWindowsShellProfileName(buildConfigSettings.WindowsShellProfileName) {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.shellProfileBad", "Windows shell profile must be ucrt64, mingw64, or clang64.", nil))
 		isExecutable = false
 	}
 
 	plan := ToolchainPreparationPlan{
 		ActionName:                 "prepare-private-msys2-toolchain",
-		WorkspaceDirectory:         buildToolSettings.WorkspaceDirectory,
-		Msys2RootDirectory:         filepath.Join(buildToolSettings.WorkspaceDirectory, "toolchains", "msys2"),
-		Msys2ArchiveUrl:            buildToolSettings.Msys2ArchiveUrl,
-		Msys2ArchiveSha256Hash:     buildToolSettings.Msys2ArchiveSha256Hash,
-		Msys2ArchiveSignatureUrl:   buildToolSettings.Msys2ArchiveSignatureUrl,
-		Msys2PackageNames:          buildToolSettings.Msys2PackageNames,
-		WindowsShellProfileName:    buildToolSettings.WindowsShellProfileName,
+		WorkspaceDirectory:         buildConfigSettings.WorkspaceDirectory,
+		Msys2RootDirectory:         Msys2RootDirectoryForProfile(buildConfigSettings.WorkspaceDirectory, buildConfigSettings.WindowsShellProfileName),
+		Msys2ArchiveUrl:            buildConfigSettings.Msys2ArchiveUrl,
+		Msys2ArchiveSha256Hash:     buildConfigSettings.Msys2ArchiveSha256Hash,
+		Msys2ArchiveSignatureUrl:   buildConfigSettings.Msys2ArchiveSignatureUrl,
+		Msys2PackageNames:          buildConfigSettings.Msys2PackageNames,
+		WindowsShellProfileName:    buildConfigSettings.WindowsShellProfileName,
 		WillModifySystemPath:       false,
 		WillRequireAdminRights:     false,
 		WillUseExistingMsys2:       false,
@@ -130,6 +181,29 @@ func PlanFfmpegBuild(ffmpegBuildSettings FfmpegBuildSettings) (FfmpegBuildPlan, 
 	warnings := validateCommonWindowsWorkspace(ffmpegBuildSettings.WorkspaceDirectory)
 	isExecutable := !hasBlockedWarnings(warnings)
 	selectedLibraries, unknownLibraryIds := selectLibraries(ffmpegBuildSettings.WindowsShellProfileName, ffmpegBuildSettings.SelectedLibraryIds)
+	// Resolve raw ExtraConfigureFlags back to catalog libraries (excluding ones already
+	// explicitly selected) so a flag like --enable-libdavs2 typed in the extra-flags box
+	// is subject to the same track gating, operations, and license effects as a checkbox.
+	extraLibraries := librariesForConfigureFlags(ffmpegBuildSettings.WindowsShellProfileName, ffmpegBuildSettings.ExtraConfigureFlags, selectedLibraries)
+	allEffectiveLibraries := append(append([]LibraryChoice{}, selectedLibraries...), extraLibraries...)
+	selectedNativeLibraries := librariesForTrack(selectedLibraries, LibraryTrackNative)
+	selectedInternalLibraries := librariesForTrack(selectedLibraries, LibraryTrackInternal)
+	selectedExternalLibraries := librariesForTrack(selectedLibraries, LibraryTrackExternal)
+	selectedLibrariesByTrack := groupLibrariesByTrack(selectedLibraries)
+	// Track gate and prep operations key off every internal/external library that ends up
+	// in the build, including extra-flag ones, so a raw flag cannot bypass the gate.
+	// Libraries with an implemented prep recipe are prepared before configure; libraries
+	// without one yet still block the build.
+	gatedInternalLibraries := librariesForTrack(allEffectiveLibraries, LibraryTrackInternal)
+	gatedExternalLibraries := librariesForTrack(allEffectiveLibraries, LibraryTrackExternal)
+	gatedNonNativeLibraries := append(append([]LibraryChoice{}, gatedInternalLibraries...), gatedExternalLibraries...)
+	ffmpegVersion := ffmpegVersionFromArchiveUrl(ffmpegBuildSettings.FfmpegSourceArchiveUrl)
+	libraryPreparations, blockedNonNativeLibraries := partitionNonNativeLibraries(gatedNonNativeLibraries, ffmpegVersion)
+	prefixPreparationBuildDependencyPackages(libraryPreparations, ffmpegBuildSettings.WindowsShellProfileName)
+	warnings, hasNonNativeBlockedWarning := appendUnpreparedTrackWarnings(warnings, blockedNonNativeLibraries)
+	if hasNonNativeBlockedWarning {
+		isExecutable = false
+	}
 	for _, unknownLibraryId := range unknownLibraryIds {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.unknownLibraryId", "Unknown library id: "+unknownLibraryId, map[string]string{"id": unknownLibraryId}))
 		isExecutable = false
@@ -144,10 +218,9 @@ func PlanFfmpegBuild(ffmpegBuildSettings FfmpegBuildSettings) (FfmpegBuildPlan, 
 	optionFlags := uniqueFlagsFromConfigureOptions(selectedConfigureOptions)
 	finalConfigureFlags := mergeUniqueStrings(libraryFlags, optionFlags)
 	finalConfigureFlags = mergeUniqueStrings(finalConfigureFlags, ffmpegBuildSettings.ExtraConfigureFlags)
-	extraLibraries := librariesForConfigureFlags(ffmpegBuildSettings.WindowsShellProfileName, ffmpegBuildSettings.ExtraConfigureFlags, selectedLibraries)
 	libraryPackages = mergeUniqueStrings(libraryPackages, uniquePackagesFromLibraries(extraLibraries))
-	derivedLicenseProfileName := deriveLicenseProfileName(selectedLibraries, finalConfigureFlags)
-	finalConfigureFlags = addLicenseFlags(finalConfigureFlags, derivedLicenseProfileName, selectedLibraries)
+	derivedLicenseProfileName := deriveLicenseProfileName(allEffectiveLibraries, finalConfigureFlags)
+	finalConfigureFlags = addLicenseFlags(finalConfigureFlags, derivedLicenseProfileName, allEffectiveLibraries)
 
 	if runtime.GOOS != "windows" {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.windowsOnly", "This project profile is Windows-only.", nil))
@@ -194,22 +267,13 @@ func PlanFfmpegBuild(ffmpegBuildSettings FfmpegBuildSettings) (FfmpegBuildPlan, 
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.shellProfileBad", "Windows shell profile must be ucrt64, mingw64, or clang64.", nil))
 		isExecutable = false
 	}
-	librariesWithoutMsys2Package := map[string]string{
-		"xavs2": "xavs2",
-		"vvenc": "vvenc",
-	}
-	for _, lib := range selectedLibraries {
-		if upstreamName, exists := librariesWithoutMsys2Package[lib.LibraryId]; exists {
-			warnings = append(warnings, localizedWarning(RiskLevelWarning, "plan.warnings.libraryNoMsys2Package", "No prebuilt MSYS2 package exists for "+lib.DisplayName+" ("+upstreamName+"). FFmpeg configure will fail for this library unless you build and install "+upstreamName+" into the selected MSYS2 prefix yourself.", map[string]string{"library": lib.DisplayName, "upstream": upstreamName}))
-		}
-	}
 	if ffmpegBuildSettings.ParallelJobCount > 256 {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.parallelJobTooHigh", "Parallel job count must not exceed 256.", nil))
 		isExecutable = false
 	}
-	licenseWarnings, licenseBlocked := validateLicenseProfile(derivedLicenseProfileName, selectedLibraries, finalConfigureFlags)
+	licenseWarnings, licenseBlocked := validateLicenseProfile(derivedLicenseProfileName, allEffectiveLibraries, finalConfigureFlags)
 	warnings = append(warnings, licenseWarnings...)
-	if selectedLibrariesRequireVersion3(selectedLibraries) {
+	if selectedLibrariesRequireVersion3(allEffectiveLibraries) {
 		warnings = append(warnings, localizedWarning(RiskLevelInfo, "plan.warnings.version3Added", "FFmpeg version-3 license switch was added because a selected library requires --enable-version3.", nil))
 	}
 	if licenseBlocked {
@@ -219,12 +283,17 @@ func PlanFfmpegBuild(ffmpegBuildSettings FfmpegBuildSettings) (FfmpegBuildPlan, 
 	plan := FfmpegBuildPlan{
 		ActionName:                 "build-ffmpeg-from-approved-source",
 		WorkspaceDirectory:         ffmpegBuildSettings.WorkspaceDirectory,
-		Msys2RootDirectory:         filepath.Join(ffmpegBuildSettings.WorkspaceDirectory, "toolchains", "msys2"),
+		Msys2RootDirectory:         Msys2RootDirectoryForProfile(ffmpegBuildSettings.WorkspaceDirectory, ffmpegBuildSettings.WindowsShellProfileName),
 		FfmpegSourceArchiveUrl:     ffmpegBuildSettings.FfmpegSourceArchiveUrl,
 		FfmpegSourceSignatureUrl:   ffmpegBuildSettings.FfmpegSourceSignatureUrl,
 		FfmpegSourceSha256Hash:     ffmpegBuildSettings.FfmpegSourceSha256Hash,
 		SelectedLibraryIds:         ffmpegBuildSettings.SelectedLibraryIds,
 		SelectedLibraries:          selectedLibraries,
+		SelectedNativeLibraries:    selectedNativeLibraries,
+		SelectedInternalLibraries:  selectedInternalLibraries,
+		SelectedExternalLibraries:  selectedExternalLibraries,
+		SelectedLibrariesByTrack:   selectedLibrariesByTrack,
+		LibraryPreparations:        libraryPreparations,
 		RequiredMsys2PackageNames:  libraryPackages,
 		GeneratedConfigureFlags:    libraryFlags,
 		SelectedConfigureOptions:   selectedConfigureOptions,
@@ -240,18 +309,9 @@ func PlanFfmpegBuild(ffmpegBuildSettings FfmpegBuildSettings) (FfmpegBuildPlan, 
 		WillDeleteFiles:            false,
 		DownloadConflictPolicyName: "reuse-if-hash-matches",
 		ExtractDestinationPolicy:   "must-not-exist",
-		Operations: []PlanOperation{
-			localizedOperation("download-ffmpeg-source", "Download the approved FFmpeg source archive."),
-			localizedOperation("verify-ffmpeg-source-signature", "Verify the FFmpeg source archive with the matching .asc PGP signature before extraction."),
-			localizedOperation("extract-ffmpeg-source", "Extract source into the private workspace."),
-			localizedOperation("review-selected-libraries", "Show selected FFmpeg libraries, generated package names, generated configure flags, and license effects."),
-			localizedOperation("install-selected-library-packages", "Install only the MSYS2 packages required by the selected FFmpeg libraries before configure runs."),
-			localizedOperation("run-approved-configure-script", "Run FFmpeg configure with exactly the approved final flags."),
-			localizedOperation("run-approved-make-command", "Run make with the approved parallel job count."),
-			localizedOperation("create-artifact-report", "Write a build report with source hashes, libraries, flags, and artifact paths."),
-		},
-		Warnings:     warnings,
-		IsExecutable: isExecutable,
+		Operations:                 ffmpegBuildOperations(len(preparationsForTrack(libraryPreparations, LibraryTrackInternal)) > 0, len(preparationsForTrack(libraryPreparations, LibraryTrackExternal)) > 0),
+		Warnings:                   warnings,
+		IsExecutable:               isExecutable,
 	}
 
 	planWithoutHash := plan
@@ -271,21 +331,21 @@ func CheckPlanCanRun(isExecutable bool) error {
 	return nil
 }
 
-func cleanBuildToolSettings(buildToolSettings BuildToolSettings) BuildToolSettings {
-	defaults := DefaultBuildToolSettings()
-	if buildToolSettings.WorkspaceDirectory == "" {
-		buildToolSettings.WorkspaceDirectory = defaults.WorkspaceDirectory
+func cleanBuildConfigSettings(buildConfigSettings BuildConfigSettings) BuildConfigSettings {
+	defaults := DefaultBuildConfigSettings()
+	if buildConfigSettings.WorkspaceDirectory == "" {
+		buildConfigSettings.WorkspaceDirectory = defaults.WorkspaceDirectory
 	}
-	if buildToolSettings.Msys2ArchiveSignatureUrl == "" && buildToolSettings.Msys2ArchiveUrl != "" {
-		buildToolSettings.Msys2ArchiveSignatureUrl = buildToolSettings.Msys2ArchiveUrl + ".sig"
+	if buildConfigSettings.Msys2ArchiveSignatureUrl == "" && buildConfigSettings.Msys2ArchiveUrl != "" {
+		buildConfigSettings.Msys2ArchiveSignatureUrl = buildConfigSettings.Msys2ArchiveUrl + ".sig"
 	}
-	if buildToolSettings.WindowsShellProfileName == "" {
-		buildToolSettings.WindowsShellProfileName = defaults.WindowsShellProfileName
+	if buildConfigSettings.WindowsShellProfileName == "" {
+		buildConfigSettings.WindowsShellProfileName = defaults.WindowsShellProfileName
 	}
-	if len(buildToolSettings.Msys2PackageNames) == 0 {
-		buildToolSettings.Msys2PackageNames = defaults.Msys2PackageNames
+	if len(buildConfigSettings.Msys2PackageNames) == 0 {
+		buildConfigSettings.Msys2PackageNames = defaults.Msys2PackageNames
 	}
-	return buildToolSettings
+	return buildConfigSettings
 }
 
 func cleanFfmpegBuildSettings(ffmpegBuildSettings FfmpegBuildSettings) FfmpegBuildSettings {
@@ -338,6 +398,18 @@ func hasBlockedWarnings(planWarnings []PlanWarning) bool {
 	return false
 }
 
+// Msys2RootDirectoryForProfile returns the per-profile private MSYS2 root. Each
+// shell profile gets its own isolated install (toolchains/msys2-<profile>) so a
+// ucrt64 environment survives when the user switches to mingw64/clang64 and
+// prepares those separately, instead of one shared root being wiped on each prep.
+func Msys2RootDirectoryForProfile(workspaceDirectory string, windowsShellProfileName string) string {
+	profileName := windowsShellProfileName
+	if profileName == "" {
+		profileName = "ucrt64"
+	}
+	return filepath.Join(workspaceDirectory, "toolchains", "msys2-"+profileName)
+}
+
 func isSupportedWindowsShellProfileName(windowsShellProfileName string) bool {
 	switch windowsShellProfileName {
 	case "ucrt64", "mingw64", "clang64":
@@ -354,12 +426,30 @@ func validateConfigureFlagConflicts(finalConfigureFlags []string) ([]PlanWarning
 	}
 	warnings := []PlanWarning{}
 	blocked := false
-	if flagSet["--enable-gnutls"] && flagSet["--enable-openssl"] {
-		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.tlsBackendConflict", "Choose one TLS backend: OpenSSL or GnuTLS. FFmpeg cannot configure both --enable-openssl and --enable-gnutls at the same time.", nil))
+	tlsBackendCount := 0
+	for _, tlsFlag := range []string{"--enable-openssl", "--enable-gnutls", "--enable-mbedtls", "--enable-libtls"} {
+		if flagSet[tlsFlag] {
+			tlsBackendCount++
+		}
+	}
+	if tlsBackendCount > 1 {
+		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.tlsBackendConflict", "Choose one TLS backend: OpenSSL, GnuTLS, mbedTLS, or libtls. FFmpeg cannot configure more than one TLS backend at the same time.", nil))
 		blocked = true
 	}
 	if flagSet["--enable-libshaderc"] && flagSet["--enable-libglslang"] {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.shaderCompilerConflict", "Choose one runtime shader compiler: libshaderc or libglslang. FFmpeg configure rejects --enable-libshaderc and --enable-libglslang together; if in doubt, keep libshaderc and disable libglslang.", nil))
+		blocked = true
+	}
+	// FFmpeg forbids enabling the full-profile and baseline-profile EVC bindings of the same
+	// codec together (they bind the same XEVD/XEVE library): "libxevd and libxevdb must not be
+	// enabled at the same time" (and likewise for the encoder). Keep the full-profile binding,
+	// which is the superset.
+	if flagSet["--enable-libxevd"] && flagSet["--enable-libxevdb"] {
+		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.evcDecoderConflict", "Choose one EVC decoder binding: libxevd (full profile) or libxevdb (baseline profile). FFmpeg configure rejects enabling both; if in doubt, keep libxevd and disable libxevdb.", nil))
+		blocked = true
+	}
+	if flagSet["--enable-libxeve"] && flagSet["--enable-libxeveb"] {
+		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.evcEncoderConflict", "Choose one EVC encoder binding: libxeve (full profile) or libxeveb (baseline profile). FFmpeg configure rejects enabling both; if in doubt, keep libxeve and disable libxeveb.", nil))
 		blocked = true
 	}
 	if flagSet["--disable-network"] {

@@ -14,17 +14,33 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync/atomic"
+	"time"
 
-	"customffmpegbuilder/internal/consent"
-	"customffmpegbuilder/internal/workspace"
+	"promptfulcustomffmpegbuilder/internal/consent"
+	"promptfulcustomffmpegbuilder/internal/workspace"
+)
+
+// Transient network failures (a stalled download, a dropped connection, an
+// unresolved host) abort an otherwise-healthy command. Because pacman resumes
+// from its package cache, make resumes from existing object files, configure is
+// idempotent, and source clones are individually guarded, re-running the whole
+// command is safe. These constants bound how many times and how long apart a
+// command is retried before its failure is treated as real.
+const (
+	maxCommandAttempts        = 10
+	commandRetryInitialDelay  = 5 * time.Second
+	commandRetryBackoffFactor = 2
+	commandRetryMaxDelay      = 60 * time.Second
 )
 
 type ScriptKind string
 
 const (
-	PacmanInstallScript   ScriptKind = "pacman-install"
-	FfmpegConfigureScript ScriptKind = "ffmpeg-configure"
-	FfmpegMakeScript      ScriptKind = "ffmpeg-make"
+	PacmanInstallScript      ScriptKind = "pacman-install"
+	FfmpegConfigureScript    ScriptKind = "ffmpeg-configure"
+	FfmpegMakeScript         ScriptKind = "ffmpeg-make"
+	LibraryPreparationScript ScriptKind = "library-preparation"
 )
 
 type CommandPlan struct {
@@ -64,32 +80,14 @@ func executeCommand(ctx context.Context, commandPlan CommandPlan, emitProgress P
 	if err := ValidateCommandPlan(commandPlan); err != nil {
 		return err
 	}
-	var stdinReader io.Reader
+	var scriptBytes []byte
 	if commandPlan.ApprovedScriptFilePath != "" {
-		scriptBytes, updatedArgumentValues, err := prepareScriptForStdin(commandPlan)
+		preparedScriptBytes, updatedArgumentValues, err := prepareScriptForStdin(commandPlan)
 		if err != nil {
 			return err
 		}
-		stdinReader = bytes.NewReader(scriptBytes)
+		scriptBytes = preparedScriptBytes
 		commandPlan.ArgumentValues = updatedArgumentValues
-	}
-	if emitProgress != nil {
-		emitProgress("info", "Running approved command: "+filepath.Base(commandPlan.ExecutablePath))
-	}
-	command := exec.CommandContext(ctx, commandPlan.ExecutablePath, commandPlan.ArgumentValues...)
-	command.Dir = commandPlan.WorkingDirectory
-	command.Env = createMsys2Env(commandPlan)
-	if stdinReader != nil {
-		command.Stdin = stdinReader
-	}
-
-	stdoutPipe, err := command.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	stderrPipe, err := command.StderrPipe()
-	if err != nil {
-		return err
 	}
 	stdoutLogFile, stderrLogFile, err := openCommandLogs(commandPlan.WorkspaceDirectory, commandPlan.RunLogDirectory)
 	if err != nil {
@@ -101,15 +99,75 @@ func executeCommand(ctx context.Context, commandPlan CommandPlan, emitProgress P
 	if stderrLogFile != nil {
 		defer stderrLogFile.Close()
 	}
-	if err := command.Start(); err != nil {
-		return err
+
+	retryDelay := commandRetryInitialDelay
+	for attemptNumber := 1; ; attemptNumber++ {
+		transientFailureSeen, runErr := runCommandAttempt(ctx, commandPlan, scriptBytes, stdoutLogFile, stderrLogFile, emitProgress)
+		if runErr == nil {
+			return nil
+		}
+		// Never retry a cancelled run, a clearly non-transient failure, or once
+		// the attempt budget is spent. Surface the real error in those cases.
+		if ctx.Err() != nil || !transientFailureSeen || attemptNumber >= maxCommandAttempts {
+			return runErr
+		}
+		if emitProgress != nil {
+			emitProgress("warn", fmt.Sprintf("Transient network failure detected (attempt %d of %d): %v. Retrying in %s...", attemptNumber, maxCommandAttempts, runErr, retryDelay))
+		}
+		select {
+		case <-ctx.Done():
+			return runErr
+		case <-time.After(retryDelay):
+		}
+		if retryDelay *= commandRetryBackoffFactor; retryDelay > commandRetryMaxDelay {
+			retryDelay = commandRetryMaxDelay
+		}
 	}
+}
+
+// runCommandAttempt executes the planned command exactly once. It reports
+// whether any streamed line looked like a transient network failure so the
+// caller can decide to retry. Fresh pipes and a fresh stdin reader are built
+// per attempt because both are single-use.
+func runCommandAttempt(ctx context.Context, commandPlan CommandPlan, scriptBytes []byte, stdoutLogFile, stderrLogFile *os.File, emitProgress ProgressFunc) (bool, error) {
+	if emitProgress != nil {
+		emitProgress("info", "Running approved command: "+filepath.Base(commandPlan.ExecutablePath))
+	}
+	command := exec.CommandContext(ctx, commandPlan.ExecutablePath, commandPlan.ArgumentValues...)
+	command.Dir = commandPlan.WorkingDirectory
+	command.Env = createMsys2Env(commandPlan)
+	if scriptBytes != nil {
+		command.Stdin = bytes.NewReader(scriptBytes)
+	}
+
+	stdoutPipe, err := command.StdoutPipe()
+	if err != nil {
+		return false, err
+	}
+	stderrPipe, err := command.StderrPipe()
+	if err != nil {
+		return false, err
+	}
+	if err := command.Start(); err != nil {
+		return false, err
+	}
+	var transientFailureSeen atomic.Bool
+	var lastErrorLine atomic.Pointer[string]
 	doneChannel := make(chan struct{}, 2)
-	go copyCommandOutput(stdoutPipe, stdoutLogFile, "info", emitProgress, doneChannel)
-	go copyCommandOutput(stderrPipe, stderrLogFile, "warn", emitProgress, doneChannel)
+	go copyCommandOutput(stdoutPipe, stdoutLogFile, "info", emitProgress, &transientFailureSeen, &lastErrorLine, doneChannel)
+	go copyCommandOutput(stderrPipe, stderrLogFile, "warn", emitProgress, &transientFailureSeen, &lastErrorLine, doneChannel)
 	<-doneChannel
 	<-doneChannel
-	return command.Wait()
+	waitErr := command.Wait()
+	// Turn an opaque "exit status 1" into something diagnosable by attaching the
+	// last line that classified as an error (the compiler/configure/pacman line
+	// that actually caused the failure). The full log is still on disk.
+	if waitErr != nil {
+		if errorLine := lastErrorLine.Load(); errorLine != nil {
+			waitErr = fmt.Errorf("%w: %s", waitErr, *errorLine)
+		}
+	}
+	return transientFailureSeen.Load(), waitErr
 }
 
 func ValidateCommandPlan(commandPlan CommandPlan) error {
@@ -339,7 +397,7 @@ func replaceScriptFileWithStdinFlag(argumentValues []string, scriptFilePath stri
 	return updatedArgumentValues, false
 }
 
-func copyCommandOutput(pipeReader interface{ Read([]byte) (int, error) }, logFile *os.File, level string, emitProgress ProgressFunc, doneChannel chan<- struct{}) {
+func copyCommandOutput(pipeReader interface{ Read([]byte) (int, error) }, logFile *os.File, level string, emitProgress ProgressFunc, transientFailureSeen *atomic.Bool, lastErrorLine *atomic.Pointer[string], doneChannel chan<- struct{}) {
 	defer func() { doneChannel <- struct{}{} }()
 	scanner := bufio.NewScanner(pipeReader)
 	for scanner.Scan() {
@@ -347,10 +405,57 @@ func copyCommandOutput(pipeReader interface{ Read([]byte) (int, error) }, logFil
 		if logFile != nil {
 			_, _ = logFile.WriteString(line + "\n")
 		}
+		if transientFailureSeen != nil && isTransientNetworkFailureLine(line) {
+			transientFailureSeen.Store(true)
+		}
+		classifiedLevel := classifyLogLine(level, line)
+		if lastErrorLine != nil && classifiedLevel == "error" {
+			capturedLine := strings.TrimSpace(line)
+			lastErrorLine.Store(&capturedLine)
+		}
 		if emitProgress != nil {
-			emitProgress(classifyLogLine(level, line), line)
+			emitProgress(classifiedLevel, line)
 		}
 	}
+}
+
+// transientNetworkFailureMarkers are substrings (matched case-insensitively)
+// that signal a download or connection failed for a transient reason rather
+// than a real build/install error: a stalled transfer, a dropped or refused
+// connection, DNS failure, or a 5xx from a mirror. A line carrying any of these
+// makes the whole command eligible for retry. Markers are kept specific so a
+// genuine compile/link error is never mistaken for a network blip.
+var transientNetworkFailureMarkers = []string{
+	"operation too slow",
+	"failed retrieving file",
+	"could not resolve host",
+	"name or service not known",
+	"temporary failure in name resolution",
+	"connection timed out",
+	"connection refused",
+	"connection reset",
+	"network is unreachable",
+	"transfer closed",
+	"timeout was reached",
+	"failed to commit transaction (unexpected error)",
+	"rpc failed",
+	"early eof",
+	"the remote end hung up unexpectedly",
+	"gnutls recv error",
+	"ssl_read",
+	"unexpected disconnect",
+}
+
+// isTransientNetworkFailureLine reports whether a streamed output line indicates
+// a transient network failure that warrants retrying the command.
+func isTransientNetworkFailureLine(line string) bool {
+	lower := strings.ToLower(line)
+	for _, marker := range transientNetworkFailureMarkers {
+		if strings.Contains(lower, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 // compilerSourceEchoRegex matches the source-echo and caret lines GCC prints
@@ -372,6 +477,33 @@ func classifyLogLine(defaultLevel string, line string) string {
 	}
 	lower := strings.ToLower(trimmed)
 
+	// A failed retrieval of a repository database (.db/.files) during refresh is
+	// non-fatal: pacman falls back to other repos and the cached database, and a
+	// repo not needed by the selected profile (e.g. clang64 for a mingw64 build)
+	// does not affect the install. Demote to warn so it does not read as a failure.
+	// Failed *package* (.pkg) retrievals are not demoted and stay errors.
+	if strings.Contains(lower, "failed retrieving file") &&
+		(strings.Contains(lower, ".db") || strings.Contains(lower, ".files")) {
+		return "warn"
+	}
+
+	// A make recipe prefixed with '-' prints "[Makefile:NN: target] Error 1
+	// (ignored)" and keeps going; it is non-fatal continuation noise, not the
+	// failure. Demote so it neither reads as an error nor is mistaken for the
+	// cause attached to an exit status. Checked before the error block below.
+	if strings.Contains(line, "(ignored)") && strings.Contains(line, "] Error ") {
+		return "info"
+	}
+
+	// "strip: ... has no sections" is binutils refusing an intentionally-empty object:
+	// x264/xavs2-style build systems assemble a 32-bit-only .asm (e.g. pixel-32.asm) even
+	// in a 64-bit build, where every symbol is guarded out, yielding a 0-section object the
+	// makefile then strips with an ignored ('-') rule. The build succeeds and the empty
+	// object links harmlessly, so this strip message is benign tool noise, not a failure.
+	if strings.Contains(lower, "has no sections") {
+		return "info"
+	}
+
 	// Genuine failures: compiler/linker/configure/pacman errors and aborted make.
 	if strings.Contains(lower, "error:") ||
 		strings.Contains(lower, "undefined reference") ||
@@ -391,6 +523,7 @@ func classifyLogLine(defaultLevel string, line string) string {
 		strings.HasPrefix(trimmed, "In function") ||
 		strings.HasPrefix(trimmed, "inlined from") ||
 		strings.Contains(line, ": In function") ||
+		isBenignThirdPartyBuildWarning(lower) ||
 		compilerSourceEchoRegex.MatchString(line) {
 		return "info"
 	}
@@ -402,4 +535,28 @@ func classifyLogLine(defaultLevel string, line string) string {
 	}
 
 	return defaultLevel
+}
+
+// isBenignThirdPartyBuildWarning matches compiler/assembler warnings that flood the log
+// when building Internal-track libraries from their own upstream source (uavs3d, davs2,
+// etc.) but are not actionable here: unused symbols, MSVC-only #pragma warning lines,
+// macro/type redefinitions, and x264/nasm legacy macro-parameter warnings. They are
+// demoted to info so genuine warnings stay visible. Deliberately NOT included:
+// stringop-overflow and similar correctness warnings, which can flag real bugs and stay
+// at warn. `lower` is the already-lowercased line.
+func isBenignThirdPartyBuildWarning(lower string) bool {
+	for _, marker := range []string{
+		"-wunused-variable",
+		"-wunused-but-set-variable",
+		"-wunused-function",
+		"-wunknown-pragmas",
+		"pp-macro-params-legacy",
+		"ignoring '#pragma",
+		"' redefined",
+	} {
+		if strings.Contains(lower, marker) {
+			return true
+		}
+	}
+	return false
 }

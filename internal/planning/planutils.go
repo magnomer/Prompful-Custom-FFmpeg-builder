@@ -1,6 +1,25 @@
 package planning
 
-import "sort"
+import (
+	"regexp"
+	"sort"
+)
+
+// ffmpegArchiveVersionPattern extracts the dotted-numeric release from an FFmpeg source
+// archive filename, e.g. ".../ffmpeg-8.1.2.tar.xz" -> "8.1.2".
+var ffmpegArchiveVersionPattern = regexp.MustCompile(`ffmpeg-(\d+(?:\.\d+){0,2})`)
+
+// ffmpegVersionFromArchiveUrl derives the FFmpeg version from its source archive URL so
+// the library version layer can be resolved for that release. Returns "" when the URL
+// carries no recognizable version (e.g. a git snapshot), which makes the resolver fall
+// back to the highest recorded release.
+func ffmpegVersionFromArchiveUrl(archiveUrl string) string {
+	match := ffmpegArchiveVersionPattern.FindStringSubmatch(archiveUrl)
+	if match == nil {
+		return ""
+	}
+	return match[1]
+}
 
 func selectConfigureOptions(selectedOptionIds []string) ([]ConfigureOptionChoice, []string) {
 	catalog := ConfigureOptionCatalog()
@@ -97,6 +116,9 @@ func uniquePackagesFromLibraries(libraries []LibraryChoice) []string {
 	packages := []string{}
 	seen := map[string]bool{}
 	for _, library := range libraries {
+		if library.TrackName != LibraryTrackNative {
+			continue
+		}
 		for _, packageName := range library.PackageNames {
 			if !seen[packageName] {
 				packages = append(packages, packageName)
@@ -106,6 +128,24 @@ func uniquePackagesFromLibraries(libraries []LibraryChoice) []string {
 	}
 	sort.Strings(packages)
 	return packages
+}
+
+func librariesForTrack(libraries []LibraryChoice, trackName LibraryTrackName) []LibraryChoice {
+	trackedLibraries := []LibraryChoice{}
+	for _, library := range libraries {
+		if library.TrackName == trackName {
+			trackedLibraries = append(trackedLibraries, library)
+		}
+	}
+	return trackedLibraries
+}
+
+func groupLibrariesByTrack(libraries []LibraryChoice) []TrackedLibrarySelection {
+	return []TrackedLibrarySelection{
+		{TrackName: LibraryTrackNative, Libraries: librariesForTrack(libraries, LibraryTrackNative)},
+		{TrackName: LibraryTrackInternal, Libraries: librariesForTrack(libraries, LibraryTrackInternal)},
+		{TrackName: LibraryTrackExternal, Libraries: librariesForTrack(libraries, LibraryTrackExternal)},
+	}
 }
 
 func uniqueFlagsFromLibraries(libraries []LibraryChoice) []string {
