@@ -28,9 +28,10 @@
 
 ### Screenshot
 
-<img width="1465" height="891" alt="2026-06-23 08 22 33" src="https://github.com/user-attachments/assets/9c8ac695-75f6-4cec-a30f-1f6c39a55cc0" />
-<img width="1465" height="891" alt="2026-06-23 08 22 49" src="https://github.com/user-attachments/assets/fe0c6c47-1b69-420d-944f-3d6f39082d8e" />
-<img width="1465" height="891" alt="2026-06-23 08 23 07" src="https://github.com/user-attachments/assets/e8bfbfe9-9c2f-4f6c-affc-41bddcaba9e3" />
+<img width="1349" height="953" alt="Screenshot-EN-1" src="https://github.com/user-attachments/assets/18a3d24a-d032-4737-9716-2fab3223d563" />
+<img width="1349" height="953" alt="Screenshot-EN-2" src="https://github.com/user-attachments/assets/ff49f6f5-9808-4bb3-83cc-35a3c9ac0df3" />
+<img width="1349" height="953" alt="Screenshot-EN-3" src="https://github.com/user-attachments/assets/9dcd6223-9c08-44b3-adb3-5edf6e50b8f6" />
+<img width="1349" height="953" alt="Screenshot-EN-4" src="https://github.com/user-attachments/assets/30de29b2-4cb7-4b32-9cd3-0f716ff82309" />
 
 ### What it is
 
@@ -127,9 +128,10 @@ These commands start the development version.
 
 ### 스크린샷
 
-<img width="1465" height="891" alt="2026-06-23 08 27 15" src="https://github.com/user-attachments/assets/dd6929b2-0755-45c4-a5b7-622e8e70845c" />
-<img width="1465" height="891" alt="2026-06-23 08 22 54" src="https://github.com/user-attachments/assets/7ed18d3d-b2fb-4344-8e34-ad2c71205f90" />
-<img width="1465" height="891" alt="2026-06-23 08 23 04" src="https://github.com/user-attachments/assets/72590626-2b06-4256-9ee6-0af8b158dbfc" />
+<img width="1349" height="953" alt="Screenshot-KO-1" src="https://github.com/user-attachments/assets/401ef4b5-23ef-4d1e-8d29-57750dab97ae" />
+<img width="1349" height="953" alt="Screenshot-KO-2" src="https://github.com/user-attachments/assets/c487b728-73d0-49cb-9cfe-45168a697a34" />
+<img width="1349" height="953" alt="Screenshot-KO-3" src="https://github.com/user-attachments/assets/9531c660-ce9a-40bc-9841-3aec962280ee" />
+<img width="1349" height="953" alt="Screenshot-KO-4" src="https://github.com/user-attachments/assets/2e4f3d67-8ad7-45bc-af3e-6a54d2e465fa" />
 
 ### 이 프로그램은?
 
