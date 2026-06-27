@@ -67,8 +67,6 @@ The **Library** page splits FFmpeg's built-in components from external libraries
 
 The **Options** page exposes common `configure` choices as named rows. Manual advanced flags are available as an escape hatch and appear in the review before you confirm.
 
-See [LIBRARY_MODEL.md](LIBRARY_MODEL.md) for the full model.
-
 ### Requirements
 
 - Windows 10 or later (Windows-only; planning is blocked on other hosts)
@@ -113,7 +111,7 @@ The program builds FFmpeg from official sources; the resulting binary's license 
 
 ### 이 프로그램은
 
-Promptful Custom FFmpeg Builder는 FFmpeg 로컬 빌드를 자동화하는 Windows GUI입니다. 라이브러리와 옵션을 고르고, 빌드 계획을 검토하여 커스텀 빌드를 작성할 수 있도록 도와줍니다. 빌드 계획에 이상이 없을 경우 소스 파일을 다운로드하여 작업 공간 내에 비공개 MSYS2 빌드 환경을 구성하고 `configure`와 `make`를 실행한 다음, ffmpeg를 빌드합니다. 최종적으로 완성된 바이너리는 결과 폴더로 복사합니다.
+Promptful Custom FFmpeg Builder는 FFmpeg 로컬 빌드를 자동화하는 Windows GUI 프로그램입니다. 라이브러리와 옵션을 고르고, 빌드 계획을 검토하여 커스텀 빌드를 작성할 수 있도록 도와주는 것을 목표로 합니다. 빌드 계획에 이상이 없을 경우 소스 파일을 다운로드하여 작업 공간 내에 비공개 MSYS2 빌드 환경을 구성한 다음, ffmpeg를 빌드합니다. 최종적으로 완성된 바이너리는 결과 폴더로 복사됩니다.
 
 해당 프로그램은 **FFmpeg 바이너리, 소스, 혹은 코덱 라이브러리를 제공하지 않습니다.** 제공 받은 공식 출처 링크를 통해 다운로드 후 로컬 환경에서 빌드를 구성합니다.
 
@@ -144,8 +142,6 @@ Promptful Custom FFmpeg Builder는 FFmpeg 로컬 빌드를 자동화하는 Windo
 **Library** 페이지는 FFmpeg의 내장 구성 요소와 외부 라이브러리가 별도로 구분하여 표시되어 있습니다. 내장 항목은 이미 체크되어 있으며 수정이 불가능합니다. 외부 라이브러리는 기본적으로는 체크되어 있지 않으나, 선택 시 패키지, configure 플래그, 라이선스 영향, 관련 경고 등이 추가될 수 있습니다.
 
 **Options** 페이지는 `configure` 옵션을 보여줍니다. 그리고 검토 화면에 다시 표시됩니다.
-
-전체 모델은 [LIBRARY_MODEL.md](LIBRARY_MODEL.md)를 참고하세요.
 
 ### 실행 환경
 
