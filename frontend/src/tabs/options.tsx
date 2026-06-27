@@ -2,6 +2,15 @@ import React from "react";
 import { t } from "../i18n";
 import { configureOptionText } from "../catalogText";
 import { PageHeader } from "./shared";
+import optionPresetCardIcon from "../assets/option-card-icons/OptionPreset.svg";
+import optionsCardIcon from "../assets/option-card-icons/Options.svg";
+import optionNoneIcon from "../assets/option-preset-icons/PresetNone.svg";
+import optionStandardIcon from "../assets/option-preset-icons/PresetStandard.svg";
+import optionCompactIcon from "../assets/option-preset-icons/PresetCompact.svg";
+import optionPortableIcon from "../assets/option-preset-icons/PresetPortable.svg";
+import optionPerformanceIcon from "../assets/option-preset-icons/PresetPerformance.svg";
+import technicalDetailsIcon from "../assets/button-icons/TechnicalDetails.svg";
+import resetIcon from "../assets/button-icons/Reset.svg";
 
 // ─── Preset data ───────────────────────────────────────────────────────────────
 
@@ -84,6 +93,20 @@ export function matchOptionPresetId(
   return "custom";
 }
 
+const optionPresetIconById: Partial<Record<OptionPresetId, string>> = {
+  none: optionNoneIcon,
+  standard: optionStandardIcon,
+  compact: optionCompactIcon,
+  portable: optionPortableIcon,
+  performance: optionPerformanceIcon,
+};
+
+function OptionPresetIcon(props: { presetId: OptionPresetId; className?: string }) {
+  const icon = optionPresetIconById[props.presetId];
+  if (!icon) return null;
+  return <img className={props.className ?? ""} src={icon} alt="" aria-hidden="true" />;
+}
+
 function selectableOptionPresets(): Array<OptionPreset & { presetId: Exclude<OptionPresetId, "custom"> }> {
   return optionPresets.filter((preset): preset is OptionPreset & { presetId: Exclude<OptionPresetId, "custom"> } => preset.presetId !== "custom");
 }
@@ -104,6 +127,7 @@ function OptionPresetSelector(props: {
               key={preset.presetId}
               onClick={() => props.onApplyPreset(preset.presetId)}
             >
+              <OptionPresetIcon presetId={preset.presetId} className="preset-card__icon" />
               <span>
                 <span className="preset-card__name">
                   {t(`options.presets.${preset.presetId}.name`)}
@@ -145,7 +169,7 @@ function SimpleOptionPresetCard(props: {
 
   return (
     <section className="card card--blue options-simple-card options-simple-preset-card">
-      <span className="card__badge" aria-hidden="true" />
+      <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={optionPresetCardIcon} alt="" /></span>
       <div className="card__head">
         <h2 className="card__title">{t("options.simple.preset.title")}</h2>
       </div>
@@ -241,7 +265,7 @@ export function licenseBoundaryLabel(licenseProfileName: string): string {
   }
 }
 
-function licenseBoundaryShortLabel(licenseProfileName: string): string {
+export function licenseBoundaryShortLabel(licenseProfileName: string): string {
   switch (licenseProfileName) {
     case "gpl-local":
       return t("options.summary.license.gpl-local");
@@ -606,7 +630,7 @@ function SimpleOptionsCard(props: {
 }) {
   return (
     <section className="card card--teal options-simple-card options-simple-options-card">
-      <span className="card__badge" aria-hidden="true" />
+      <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={optionsCardIcon} alt="" /></span>
       <div className="card__head">
         <h2 className="card__title">{t("options.simple.options.title")}</h2>
       </div>
@@ -749,6 +773,7 @@ export function OptionsTab({
               aria-expanded={showTechnicalDetails}
               onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
             >
+              <img className="card__btn-icon" src={technicalDetailsIcon} alt="" aria-hidden="true" />
               {showTechnicalDetails
                 ? t("options.technical.hide")
                 : t("options.technical.show")}
@@ -772,6 +797,18 @@ export function OptionsTab({
                 setCategoryDropdownOpen(false);
               }}
             />
+            <button
+              className="button options-reset"
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedCategoryName("");
+                setCategoryDropdownOpen(false);
+              }}
+            >
+              <img className="card__btn-icon" src={resetIcon} alt="" aria-hidden="true" />
+              {t("options.filter.reset")}
+            </button>
           </div>
 
           {showTechnicalDetails && <OptionTechnicalPanel />}

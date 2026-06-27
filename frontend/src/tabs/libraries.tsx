@@ -3,6 +3,17 @@ import { DescriptionLines, PageHeader } from "./shared";
 import { t } from "../i18n";
 import { libraryLicenseLabel, libraryText } from "../catalogText";
 import { isDevUnlockEnabled, isSudoDevUnlockEnabled } from "../devUnlock";
+import libraryMinimalIcon from "../assets/library-preset-icons/LibraryMinimal.svg";
+import libraryDefaultIcon from "../assets/library-preset-icons/LibraryDefault.svg";
+import libraryMaximumEfficiencyIcon from "../assets/library-preset-icons/LibraryMaximumEfficiency.svg";
+import libraryMaximumCompatibilityIcon from "../assets/library-preset-icons/LibraryMaximumCompatibility.svg";
+import libraryMaximumAudioVideoEditorIcon from "../assets/library-preset-icons/LibraryMaximumAudioVideoEditor.svg";
+import libraryMaximumFullIcon from "../assets/library-preset-icons/LibraryMaximumFull.svg";
+import libraryDevIcon from "../assets/library-preset-icons/LibraryDev.svg";
+import libraryPresetCardIcon from "../assets/library-card-icons/LibraryPreset.svg";
+import librariesCardIcon from "../assets/library-card-icons/Libraries.svg";
+import technicalDetailsIcon from "../assets/button-icons/TechnicalDetails.svg";
+import resetIcon from "../assets/button-icons/Reset.svg";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -226,12 +237,28 @@ export function isValidLibraryPresetId(value: unknown): value is LibraryPresetId
 // extended-libraries toggle is on. Only the broadening presets get the prefix.
 const nonExtendedPresetIds = new Set<LibraryPresetId>(["minimal", "default", "maxtest", "custom"]);
 
+const libraryPresetIconById: Partial<Record<LibraryPresetId, string>> = {
+  minimal: libraryMinimalIcon,
+  default: libraryDefaultIcon,
+  efficiency: libraryMaximumEfficiencyIcon,
+  compatibility: libraryMaximumCompatibilityIcon,
+  editor: libraryMaximumAudioVideoEditorIcon,
+  full: libraryMaximumFullIcon,
+  maxtest: libraryDevIcon,
+};
+
 // Resolves the localized preset name, prepending the "Extended" prefix when the
 // extended-libraries toggle is on (descriptions are left unchanged).
 function libraryPresetDisplayName(presetId: LibraryPresetId, extendedLibraries: boolean): string {
   const baseName = t(`libraries.presets.${presetId}.name`);
   if (!extendedLibraries || nonExtendedPresetIds.has(presetId)) return baseName;
   return t("libraries.extended.presetPrefix") + baseName;
+}
+
+function LibraryPresetIcon(props: { presetId: LibraryPresetId; className?: string }) {
+  const icon = libraryPresetIconById[props.presetId];
+  if (!icon) return null;
+  return <img className={props.className ?? ""} src={icon} alt="" aria-hidden="true" />;
 }
 
 export function removeMutuallyExclusiveLibraries(selectedLibraryIds: string[], selectedLibraryId: string): string[] {
@@ -372,7 +399,7 @@ function SimpleLibraryPresetCard(props: { selectedPresetId: LibraryPresetId; onA
 
   return (
     <section className="card card--blue libraries-simple-card libraries-simple-preset-card">
-      <span className="card__badge" aria-hidden="true" />
+      <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={libraryPresetCardIcon} alt="" /></span>
       <div className="card__head">
         <h2 className="card__title">{t("libraries.simple.preset.title")}</h2>
       </div>
@@ -411,7 +438,7 @@ function SimpleLibraryCard(props: {
 }) {
   return (
     <section className="card card--teal libraries-simple-card libraries-simple-library-card">
-      <span className="card__badge" aria-hidden="true" />
+      <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={librariesCardIcon} alt="" /></span>
       <div className="card__head">
         <h2 className="card__title">{t("libraries.simple.library.title")}</h2>
       </div>
@@ -452,6 +479,7 @@ function LibraryPresetSelector(props: { presets: LibraryPreset[]; selectedPreset
       <div className="preset-grid">
         {props.presets.filter((preset): preset is LibraryPreset & { presetId: Exclude<LibraryPresetId, "custom"> } => selectableLibraryPresets().some((selectablePreset) => selectablePreset.presetId === preset.presetId)).map((preset) => (
           <button className={`preset-card ${preset.dev ? "preset-card--dev" : ""} ${props.selectedPresetId === preset.presetId ? "preset-card--active" : ""}`} type="button" key={preset.presetId} onClick={() => props.onApplyPreset(preset.presetId)}>
+            <LibraryPresetIcon presetId={preset.presetId} className="preset-card__icon" />
             <span>
               <span className="preset-card__name">{libraryPresetDisplayName(preset.presetId, props.extendedLibraries)}</span>
               <span className="preset-card__plain">{t(`libraries.presets.${preset.presetId}.plain`)}</span>
@@ -827,6 +855,7 @@ function LibrariesToolbar(props: {
   return (
     <div className="libraries-toolbar">
       <button className="button libraries-technical-toggle" type="button" aria-expanded={props.showTechnicalDetails} onClick={props.onToggleTechnicalDetails}>
+        <img className="card__btn-icon" src={technicalDetailsIcon} alt="" aria-hidden="true" />
         {props.showTechnicalDetails ? t("libraries.technical.hide") : t("libraries.technical.show")}
       </button>
       <label className="libraries-search">
@@ -839,6 +868,7 @@ function LibrariesToolbar(props: {
         onChangeSections={props.onSectionFiltersChange}
       />
       <button className="button libraries-reset" type="button" onClick={props.onResetFilters}>
+        <img className="card__btn-icon" src={resetIcon} alt="" aria-hidden="true" />
         {t("libraries.filter.reset")}
       </button>
     </div>

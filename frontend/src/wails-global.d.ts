@@ -204,6 +204,51 @@ type BuildResult = {
   createdAt: string;
 };
 
+type LibraryVerification = {
+  libraryId: string;
+  displayName: string;
+  method: string;
+  expectedFlags: string[];
+  missingFlags: string[];
+  components: string[];
+  status: string;
+};
+
+type BuildVerification = {
+  ffmpegPath: string;
+  ffmpegVersion: string;
+  libraries: LibraryVerification[];
+  unexpectedEnableFlags: string[];
+  okCount: number;
+  totalCount: number;
+  overall: string;
+  message: string;
+  verifiedAt: string;
+};
+
+
+type LocalLogEntry = {
+  level: 'info' | 'warn' | 'error';
+  message: string;
+  timestamp: string;
+};
+
+type LocalLogRecord = {
+  runId: string;
+  createdAt: string;
+  displayTime: string;
+  kind: 'toolchain' | 'ffmpeg' | 'unknown' | string;
+  status: string;
+  directory: string;
+  entries: LocalLogEntry[];
+  rawText: string;
+  errorCount: number;
+  warnCount: number;
+  hasStdoutLog: boolean;
+  hasStderrLog: boolean;
+  hasSecurityEvents: boolean;
+};
+
 type ToolchainStatus = {
   installed: boolean;
   healthy: boolean;

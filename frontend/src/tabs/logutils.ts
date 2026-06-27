@@ -44,7 +44,6 @@ export type ParsedLogEntry = SecurityLogEntry & {
   dllAction?: "copied" | "skipped" | "system" | "found";
   dllDep?: string;
   isSystemDll?: boolean;
-  isFinalStatus?: boolean;
 };
 
 export type LogPhaseGroup = {
@@ -317,10 +316,6 @@ export function parseLogEntry(entry: SecurityLogEntry, context: "toolchain" | "f
     const m = msg.match(/^PE DLL dependencies for (.+?):/);
     if (m) parsed.dllName = m[1];
   }
-  if (
-    msg.startsWith("Approved FFmpeg build completed") || msg.startsWith("Approved FFmpeg build started") ||
-    msg.startsWith("Approved private MSYS2 environment is ready") || msg.startsWith("Approved private MSYS2 preparation started")
-  ) parsed.isFinalStatus = true;
   return parsed;
 }
 

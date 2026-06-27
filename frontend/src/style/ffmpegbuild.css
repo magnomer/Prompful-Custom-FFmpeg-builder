@@ -10,6 +10,14 @@
   margin-bottom: 0;
 }
 
+/* Single CTA: don't let it stretch the 1fr control column to full card width
+   (would render an enormously wide button). Size to content, like the Prep
+   recovery-card buttons. */
+.ffmpeg-build-empty-card .card__control {
+  grid-template-columns: auto;
+  justify-content: start;
+}
+
 .ffmpeg-build-page .approval-panel,
 .ffmpeg-build-page .live-progress,
 .ffmpeg-build-page .empty-text {
@@ -38,10 +46,11 @@
 .build-plan-warning-card {
   display: grid;
   gap: 12px;
-  border: 1px solid #ead28b;
+  border: 1px solid #e6ebf3;
   border-radius: 14px;
   padding: 16px;
-  background: #fffaf0;
+  background: #fbfcfe;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
 }
 
 .build-plan-section-title {
@@ -56,25 +65,96 @@
   gap: 8px;
 }
 
+/* Each row carries its own severity colour: a round status badge, a thick
+   left accent stripe, and a faint tinted fill. */
 .build-plan-warning {
-  border: 1px solid rgba(234, 210, 139, 0.75);
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  border: 1px solid #e2e8f2;
+  border-left: 4px solid #b6c2d6;
   border-radius: 10px;
-  padding: 11px 12px;
+  padding: 11px 13px;
   background: #ffffff;
-  color: #5f4708;
-  font-size: 0.88rem;
-  font-weight: 750;
-  line-height: 1.45;
 }
 
-.build-plan-warning--blocked {
-  border-color: #efaaaa;
-  color: #9d2222;
+.build-plan-warning__icon {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #b6c2d6;
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.build-plan-warning__icon::before {
+  content: "!";
+}
+
+.build-plan-warning__text {
+  margin: 0;
+  color: #3a4660;
+  font-size: 0.88rem;
+  font-weight: 650;
+  line-height: 1.5;
 }
 
 .build-plan-warning--info {
-  border-color: #cbd8f5;
-  color: #284a88;
+  border-left-color: #3b76e8;
+  background: #f4f8ff;
+}
+.build-plan-warning--info .build-plan-warning__icon {
+  background: #3b76e8;
+}
+.build-plan-warning--info .build-plan-warning__icon::before {
+  content: "i";
+}
+.build-plan-warning--info .build-plan-warning__text {
+  color: #21385f;
+}
+
+.build-plan-warning--warning {
+  border-left-color: #e0a526;
+  background: #fff9ee;
+}
+.build-plan-warning--warning .build-plan-warning__icon {
+  background: #e0a526;
+}
+.build-plan-warning--warning .build-plan-warning__text {
+  color: #6b4e0c;
+}
+
+.build-plan-warning--blocked {
+  border-left-color: #d6463f;
+  background: #fdf1f0;
+}
+.build-plan-warning--blocked .build-plan-warning__icon {
+  background: #d6463f;
+}
+.build-plan-warning--blocked .build-plan-warning__icon::before {
+  content: "\00d7";
+}
+.build-plan-warning--blocked .build-plan-warning__text {
+  color: #8c2420;
+}
+
+/* Non-redistributable (nonfree license boundary): red, but keeps the "!"
+   warning badge since the build is not actually blocked. */
+.build-plan-warning--danger {
+  border-left-color: #d6463f;
+  background: #fdf1f0;
+}
+.build-plan-warning--danger .build-plan-warning__icon {
+  background: #d6463f;
+}
+.build-plan-warning--danger .build-plan-warning__text {
+  color: #8c2420;
 }
 
 .build-plan-details-card {

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { t } from "../i18n";
-import { PageHeader } from "./shared";
+import emptyStatePurpleIcon from "../assets/empty-card-icons/EmptyStatePurple.svg";
 import {
   SecurityLogEntry, LogPhaseId, LogPhaseGroup,
   TOOLCHAIN_PHASE_ORDER, FFMPEG_PHASE_ORDER,
@@ -11,15 +11,15 @@ export type { SecurityLogEntry, LogPhaseGroup };
 export type { SecurityLogPayload, ApprovedActionStatusPayload, LiveProgress, LogPhaseId, ParsedLogEntry } from "./logutils";
 export { computeProgress, getToolchainPipeline, getFfmpegPipeline } from "./logutils";
 
-function SmartLogViewer(props: { entries: SecurityLogEntry[]; context?: "toolchain" | "ffmpeg" }) {
+function SmartLogViewer(props: { entries: SecurityLogEntry[]; context?: "toolchain" | "ffmpeg"; viewMode?: "smart" | "raw"; hideModeToolbar?: boolean }) {
   const [expandedPhases, setExpandedPhases] = useState<Set<LogPhaseId>>(new Set());
   const [showSystemDlls, setShowSystemDlls] = useState(false);
-  const [viewMode, setViewMode] = useState<"smart" | "raw">("smart");
+  const [internalViewMode, setInternalViewMode] = useState<"smart" | "raw">("smart");
+  const viewMode = props.viewMode ?? internalViewMode;
 
   const parsed = useMemo(() => props.entries.map((e) => parseLogEntry(e, props.context ?? "ffmpeg")), [props.entries, props.context]);
   const phaseOrder = props.context === "toolchain" ? TOOLCHAIN_PHASE_ORDER : props.context === "ffmpeg" ? FFMPEG_PHASE_ORDER : [...TOOLCHAIN_PHASE_ORDER, ...FFMPEG_PHASE_ORDER];
   const phaseGroups = useMemo(() => buildPhaseGroups(parsed, phaseOrder), [parsed, phaseOrder]);
-  const finalEntry = useMemo(() => [...parsed].reverse().find((e) => e.isFinalStatus), [parsed]);
   const errorEntries = useMemo(() => parsed.filter((e) => e.level === "error"), [parsed]);
   const warnEntries = useMemo(() => parsed.filter((e) => e.level === "warn"), [parsed]);
 
@@ -40,10 +40,12 @@ function SmartLogViewer(props: { entries: SecurityLogEntry[]; context?: "toolcha
 
   return (
     <div className="smart-log">
-      <div className="smart-log__toolbar">
-        <button className={`smart-log__mode-btn ${viewMode === "smart" ? "smart-log__mode-btn--active" : ""}`} type="button" onClick={() => setViewMode("smart")}>{t("logs.view.summary")}</button>
-        <button className={`smart-log__mode-btn ${viewMode === "raw" ? "smart-log__mode-btn--active" : ""}`} type="button" onClick={() => setViewMode("raw")}>{t("logs.view.raw", { count: props.entries.length })}</button>
-      </div>
+      {!props.hideModeToolbar && (
+        <div className="smart-log__toolbar">
+          <button className={`smart-log__mode-btn ${viewMode === "smart" ? "smart-log__mode-btn--active" : ""}`} type="button" onClick={() => setInternalViewMode("smart")}>{t("logs.view.summary")}</button>
+          <button className={`smart-log__mode-btn ${viewMode === "raw" ? "smart-log__mode-btn--active" : ""}`} type="button" onClick={() => setInternalViewMode("raw")}>{t("logs.view.raw", { count: props.entries.length })}</button>
+        </div>
+      )}
 
       {viewMode === "raw" && (
         <div className="log-list" aria-live="polite">
@@ -57,13 +59,6 @@ function SmartLogViewer(props: { entries: SecurityLogEntry[]; context?: "toolcha
 
       {viewMode === "smart" && (
         <>
-          {finalEntry && (
-            <div className={`smart-log__banner smart-log__banner--${finalEntry.level}`}>
-              <span className="smart-log__banner-icon">{finalEntry.level === "error" ? t("logs.banner.errorMark") : t("logs.banner.okMark")}</span>
-              <span className="smart-log__banner-text">{runtimeLogText(finalEntry.message)}</span>
-              <time className="smart-log__banner-time">{finalEntry.timestamp}</time>
-            </div>
-          )}
           <div className="smart-log__stats">
             {totalCompile > 0 && <Stat value={totalCompile} label={t("logs.stats.cFilesCompiled")} />}
             {totalAssemble > 0 && <Stat value={totalAssemble} label={t("logs.stats.asmFilesAssembled")} />}
@@ -166,7 +161,7 @@ function PhaseBody({ group, showSystemDlls, onToggleSystemDlls }: { group: LogPh
       {group.phase === "tc-install" && (
         <>
           <div className="smart-log__pkg-list">{group.entries.filter((e) => e.message.startsWith("reinstalling ")).map((e, i) => <span className="smart-log__pkg-tag" key={`pkg-${i}`}>{e.message.replace("reinstalling ", "").trim()}</span>)}</div>
-          <details className="smart-log__details"><summary className="smart-log__details-summary">{t("logs.packages.showAll", { count: group.entries.length })}</summary>{group.entries.map((e, i) => <RawLogEntry entry={e} id={`pkg-raw-${i}`} key={`pkg-raw-${i}`} />)}</details>
+          {group.entries.map((e, i) => <RawLogEntry entry={e} id={`pkg-raw-${i}`} key={`pkg-raw-${i}`} />)}
         </>
       )}
       {group.phase === "ff-configure" && (
@@ -201,18 +196,280 @@ function isKeyConfigureEntry(e: SecurityLogEntry): boolean {
   return e.message.startsWith("FFmpeg configure") || e.message.startsWith("Starting FFmpeg configure") || e.message.startsWith("License:") || e.message.startsWith("C compiler") || e.message.startsWith("C library") || e.message.startsWith("ARCH ") || e.message.startsWith("threading") || e.message.startsWith("static ") || e.message.startsWith("shared ") || e.message.startsWith("x86 assembler") || e.message.startsWith("Running approved");
 }
 
+function LogsEmptyCard(props: { onGoToPrep: () => void; onGoToBuild: () => void }) {
+  return (
+    <section className="card card--purple logs-empty-card">
+      <span className="card__badge" aria-hidden="true">
+        <img className="card__badge-icon" src={emptyStatePurpleIcon} alt="" />
+      </span>
+      <div className="card__head logs-empty-card__head">
+        <h2 className="card__title">{t("logs.empty")}</h2>
+        <p className="card__desc">{t("logs.empty.description")}</p>
+      </div>
+      <div className="logs-empty-card__actions">
+        <button className="button" type="button" onClick={props.onGoToBuild}>{t("logs.actions.goToBuild")}</button>
+        <button className="button button--primary" type="button" onClick={props.onGoToPrep}>{t("logs.actions.goToPrep")}</button>
+      </div>
+    </section>
+  );
+}
+
+type LocalLogViewTabId = "summary" | "raw";
+type NormalizedLocalLogKind = "toolchain" | "ffmpeg" | "unknown";
+
+function normalizeLocalRecordKind(kind: string): NormalizedLocalLogKind {
+  if (kind === "toolchain") return "toolchain";
+  if (kind === "ffmpeg") return "ffmpeg";
+  return "unknown";
+}
+
+function localLogKindLabel(kind: string): string {
+  if (kind === "toolchain") return t("logs.local.kind.toolchain");
+  if (kind === "ffmpeg") return t("logs.local.kind.ffmpeg");
+  return t("logs.local.kind.unknown");
+}
+
+function localLogStatusLabel(status: string): string {
+  return t(`logs.local.status.${status}`);
+}
+
+function makeLiveLocalRecords(toolchainLogEntries: SecurityLogEntry[], ffmpegLogEntries: SecurityLogEntry[]): LocalLogRecord[] {
+  const records: LocalLogRecord[] = [];
+  if (ffmpegLogEntries.length > 0) {
+    records.push({
+      runId: "live-ffmpeg",
+      createdAt: "",
+      displayTime: t("logs.local.live"),
+      kind: "ffmpeg",
+      status: "running",
+      directory: "",
+      entries: ffmpegLogEntries,
+      rawText: ffmpegLogEntries.map((entry) => `[${entry.timestamp}] ${entry.level}: ${entry.message}`).join("\n"),
+      errorCount: ffmpegLogEntries.filter((entry) => entry.level === "error").length,
+      warnCount: ffmpegLogEntries.filter((entry) => entry.level === "warn").length,
+      hasStdoutLog: false,
+      hasStderrLog: false,
+      hasSecurityEvents: false,
+    });
+  }
+  if (toolchainLogEntries.length > 0) {
+    records.push({
+      runId: "live-toolchain",
+      createdAt: "",
+      displayTime: t("logs.local.live"),
+      kind: "toolchain",
+      status: "running",
+      directory: "",
+      entries: toolchainLogEntries,
+      rawText: toolchainLogEntries.map((entry) => `[${entry.timestamp}] ${entry.level}: ${entry.message}`).join("\n"),
+      errorCount: toolchainLogEntries.filter((entry) => entry.level === "error").length,
+      warnCount: toolchainLogEntries.filter((entry) => entry.level === "warn").length,
+      hasStdoutLog: false,
+      hasStderrLog: false,
+      hasSecurityEvents: false,
+    });
+  }
+  return records;
+}
+
+function LocalLogSelector(props: { records: LocalLogRecord[]; selectedRunId: string; onSelect: (runId: string) => void; onOpenLogsFolder: () => Promise<void>; onOpenRecordFolder: (runId: string) => Promise<void> }) {
+  const selectedRecord = props.records.find((record) => record.runId === props.selectedRunId);
+  const canOpenRecordFolder = Boolean(selectedRecord && !selectedRecord.runId.startsWith("live-") && selectedRecord.directory);
+
+  return (
+    <section className="log-record-selector" aria-label={t("logs.local.selector.ariaLabel")}>
+      <label className="log-record-selector__label" htmlFor="local-log-record-select">{t("logs.local.selector.label")}</label>
+      <select
+        id="local-log-record-select"
+        className="log-record-selector__select"
+        value={props.selectedRunId}
+        onChange={(event) => props.onSelect(event.target.value)}
+      >
+        {props.records.map((record) => (
+          <option value={record.runId} key={record.runId}>
+            {record.displayTime} · {localLogKindLabel(record.kind)} · {localLogStatusLabel(record.status)}
+          </option>
+        ))}
+      </select>
+      <button
+        className="button log-record-selector__open-button"
+        type="button"
+        disabled={!canOpenRecordFolder}
+        onClick={() => selectedRecord && props.onOpenRecordFolder(selectedRecord.runId)}
+      >
+        {t("logs.local.actions.openRecordFolder")}
+      </button>
+      <button
+        className="button log-record-selector__open-button"
+        type="button"
+        onClick={props.onOpenLogsFolder}
+      >
+        {t("logs.local.actions.openLogsFolder")}
+      </button>
+    </section>
+  );
+}
+
+function RawLocalLogViewer(props: { text: string }) {
+  if (!props.text.trim()) return <p className="empty-text">{t("logs.local.empty.raw")}</p>;
+  return <pre className="log-raw-file-viewer">{props.text}</pre>;
+}
+
+function RawLocalLogFiles(props: { record: LocalLogRecord; onOpenFile: (runId: string, fileName: string) => Promise<void> }) {
+  const files: { fileName: string; key: string; available: boolean }[] = [
+    { fileName: "stdout.log", key: "stdout", available: props.record.hasStdoutLog },
+    { fileName: "stderr.log", key: "stderr", available: props.record.hasStderrLog },
+    { fileName: "security-events.jsonl", key: "events", available: props.record.hasSecurityEvents },
+  ];
+  if (!files.some((file) => file.available)) return <p className="empty-text">{t("logs.local.empty.raw")}</p>;
+  return (
+    <div className="log-raw-file-sections">
+      <p className="log-raw-file-sections__intro">{t("logs.local.raw.intro")}</p>
+      {files.map((file) => (
+        <section className="log-raw-file-card" key={file.fileName}>
+          <div className="log-raw-file-card__head">
+            <h3 className="log-raw-file-card__title">{t(`logs.local.raw.${file.key}.title`)}</h3>
+            <code className="log-raw-file-card__name">{file.fileName}</code>
+          </div>
+          <p className="log-raw-file-card__simple">{t(`logs.local.raw.${file.key}.simple`)}</p>
+          <p className="log-raw-file-card__tech">{t(`logs.local.raw.${file.key}.tech`)}</p>
+          <button
+            className="button log-raw-file-card__open"
+            type="button"
+            disabled={!file.available}
+            onClick={() => props.onOpenFile(props.record.runId, file.fileName)}
+          >
+            {file.available ? t("logs.local.raw.open") : t("logs.local.raw.missing")}
+          </button>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function LocalLogDetails(props: { record: LocalLogRecord; onOpenRecordFile: (runId: string, fileName: string) => Promise<void> }) {
+  const [activeTabId, setActiveTabId] = useState<LocalLogViewTabId>("summary");
+  const kind = normalizeLocalRecordKind(props.record.kind);
+  const context = kind === "toolchain" ? "toolchain" : kind === "ffmpeg" ? "ffmpeg" : null;
+  const isLive = props.record.runId.startsWith("live-");
+  const hasDetails = isLive || props.record.entries.length > 0 || props.record.rawText.trim().length > 0;
+  const rawCount = isLive
+    ? (props.record.rawText.trim() ? 1 : 0)
+    : [props.record.hasStdoutLog, props.record.hasStderrLog, props.record.hasSecurityEvents].filter(Boolean).length;
+  const tabs: { id: LocalLogViewTabId; label: string; count: number }[] = kind === "unknown"
+    ? [{ id: "raw", label: t("logs.local.tabs.unknownRaw"), count: rawCount }]
+    : [
+      { id: "summary", label: kind === "toolchain" ? t("logs.local.tabs.environmentSummary") : t("logs.local.tabs.ffmpegSummary"), count: props.record.entries.length },
+      { id: "raw", label: kind === "toolchain" ? t("logs.local.tabs.environmentRaw") : t("logs.local.tabs.ffmpegRaw"), count: rawCount },
+    ];
+
+  const effectiveActiveTabId = tabs.some((tab) => tab.id === activeTabId) ? activeTabId : tabs[0]?.id ?? "raw";
+
+  return (
+    <section className="result-details-card log-details-card">
+      <div className="result-details-tabs" role="tablist" aria-label={t("logs.local.tabs.ariaLabel")}>
+        {tabs.map((tab) => (
+          <button
+            className={`result-details-tab ${effectiveActiveTabId === tab.id ? "result-details-tab--active" : ""}`}
+            type="button"
+            role="tab"
+            aria-selected={effectiveActiveTabId === tab.id}
+            onClick={() => setActiveTabId(tab.id)}
+            key={tab.id}
+          >
+            <span>{tab.label}</span>
+            <span className="result-details-tab__count">{tab.count}</span>
+          </button>
+        ))}
+      </div>
+      <div className="result-details-body log-details-body">
+        <div className="log-record-meta">
+          <span>{props.record.displayTime}</span>
+          <span>{localLogKindLabel(props.record.kind)}</span>
+          <span>{localLogStatusLabel(props.record.status)}</span>
+          {props.record.errorCount > 0 && <span>{t("logs.local.meta.errors", { count: props.record.errorCount })}</span>}
+          {props.record.warnCount > 0 && <span>{t("logs.local.meta.warnings", { count: props.record.warnCount })}</span>}
+        </div>
+        {(() => {
+          const showRaw = effectiveActiveTabId === "raw" || !context;
+          if (showRaw && !isLive) {
+            return <RawLocalLogFiles record={props.record} onOpenFile={props.onOpenRecordFile} />;
+          }
+          if (!hasDetails) {
+            return <p className="empty-text">{t("logs.local.loading")}</p>;
+          }
+          if (showRaw) {
+            return <RawLocalLogViewer text={props.record.rawText} />;
+          }
+          if (context) {
+            return <SmartLogViewer entries={props.record.entries} context={context} viewMode="smart" hideModeToolbar />;
+          }
+          return null;
+        })()}
+      </div>
+    </section>
+  );
+}
+
 export type LogsTabProps = {
   toolchainLogEntries: SecurityLogEntry[];
   ffmpegLogEntries: SecurityLogEntry[];
+  localLogRecords: LocalLogRecord[];
+  localLogRecordsError: string;
+  refreshLocalLogRecords: () => Promise<void>;
+  loadLocalLogRecord: (runId: string) => Promise<void>;
+  openLocalLogsFolder: () => Promise<void>;
+  openLocalLogRecordFolder: (runId: string) => Promise<void>;
+  openLocalLogRecordFile: (runId: string, fileName: string) => Promise<void>;
+  onGoToPrep: () => void;
+  onGoToBuild: () => void;
 };
 
-export function LogsTab({ toolchainLogEntries, ffmpegLogEntries }: LogsTabProps) {
+export function LogsTab({ toolchainLogEntries, ffmpegLogEntries, localLogRecords, localLogRecordsError, refreshLocalLogRecords, loadLocalLogRecord, openLocalLogsFolder, openLocalLogRecordFolder, openLocalLogRecordFile, onGoToPrep, onGoToBuild }: LogsTabProps) {
+  const liveRecords = useMemo(() => makeLiveLocalRecords(toolchainLogEntries, ffmpegLogEntries), [toolchainLogEntries, ffmpegLogEntries]);
+  const records = useMemo(() => [...liveRecords, ...localLogRecords], [liveRecords, localLogRecords]);
+  const [selectedRunId, setSelectedRunId] = useState("");
+  const requestedDetailRunIds = React.useRef(new Set<string>());
+
+  React.useEffect(() => {
+    if (records.length === 0) {
+      setSelectedRunId("");
+      return;
+    }
+    if (!records.some((record) => record.runId === selectedRunId)) {
+      setSelectedRunId(records[0].runId);
+    }
+  }, [records, selectedRunId]);
+
+  const selectedRecord = records.find((record) => record.runId === selectedRunId) ?? records[0];
+
+  React.useEffect(() => {
+    if (!selectedRecord || selectedRecord.runId.startsWith("live-")) return;
+    if (selectedRecord.entries.length > 0 || selectedRecord.rawText.trim()) return;
+    if (requestedDetailRunIds.current.has(selectedRecord.runId)) return;
+    requestedDetailRunIds.current.add(selectedRecord.runId);
+    void loadLocalLogRecord(selectedRecord.runId);
+  }, [selectedRecord?.runId, selectedRecord?.entries.length, selectedRecord?.rawText]);
+
   return (
-    <section className="tab-page">
-      <PageHeader title={t("logs.title")} text={t("logs.intro")} />
-      {toolchainLogEntries.length > 0 && <section className="smart-log__section"><h2 className="smart-log__section-title">{t("logs.sections.toolchain")}</h2><SmartLogViewer entries={toolchainLogEntries} context="toolchain" /></section>}
-      {ffmpegLogEntries.length > 0 && <section className="smart-log__section"><h2 className="smart-log__section-title">{t("logs.sections.ffmpeg")}</h2><SmartLogViewer entries={ffmpegLogEntries} context="ffmpeg" /></section>}
-      {toolchainLogEntries.length === 0 && ffmpegLogEntries.length === 0 && <p className="empty-text">{t("logs.empty")}</p>}
+    <section className="tab-page log-page">
+      <header className="result-page__header">
+        <div>
+          <h1 className="page-header__title">{t("logs.title")}</h1>
+          <p className="page-header__text">{t("logs.intro")}</p>
+        </div>
+        <div className="result-page__actions">
+          <button className="button" type="button" onClick={refreshLocalLogRecords}>{t("logs.actions.refresh")}</button>
+        </div>
+      </header>
+      {localLogRecordsError && <p className="empty-text">{localLogRecordsError}</p>}
+      {!localLogRecordsError && records.length > 0 && selectedRecord && (
+        <>
+          <LocalLogSelector records={records} selectedRunId={selectedRecord.runId} onSelect={setSelectedRunId} onOpenLogsFolder={openLocalLogsFolder} onOpenRecordFolder={openLocalLogRecordFolder} />
+          <LocalLogDetails record={selectedRecord} onOpenRecordFile={openLocalLogRecordFile} />
+        </>
+      )}
+      {!localLogRecordsError && records.length === 0 && <LogsEmptyCard onGoToPrep={onGoToPrep} onGoToBuild={onGoToBuild} />}
     </section>
   );
 }

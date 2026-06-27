@@ -79,6 +79,76 @@ export namespace app {
 		}
 	}
 	
+	export class LibraryVerification {
+	    libraryId: string;
+	    displayName: string;
+	    method: string;
+	    expectedFlags: string[];
+	    missingFlags: string[];
+	    components: string[];
+	    status: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LibraryVerification(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.libraryId = source["libraryId"];
+	        this.displayName = source["displayName"];
+	        this.method = source["method"];
+	        this.expectedFlags = source["expectedFlags"];
+	        this.missingFlags = source["missingFlags"];
+	        this.components = source["components"];
+	        this.status = source["status"];
+	    }
+	}
+	export class BuildVerification {
+	    ffmpegPath: string;
+	    ffmpegVersion: string;
+	    libraries: LibraryVerification[];
+	    unexpectedEnableFlags: string[];
+	    okCount: number;
+	    totalCount: number;
+	    overall: string;
+	    message: string;
+	    verifiedAt: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BuildVerification(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ffmpegPath = source["ffmpegPath"];
+	        this.ffmpegVersion = source["ffmpegVersion"];
+	        this.libraries = this.convertValues(source["libraries"], LibraryVerification);
+	        this.unexpectedEnableFlags = source["unexpectedEnableFlags"];
+	        this.okCount = source["okCount"];
+	        this.totalCount = source["totalCount"];
+	        this.overall = source["overall"];
+	        this.message = source["message"];
+	        this.verifiedAt = source["verifiedAt"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class InitialApplicationState {
 	    hostOs: string;
 	    kindExplanation: string;
@@ -103,6 +173,77 @@ export namespace app {
 	        this.defaultFfmpegBuildSettings = this.convertValues(source["defaultFfmpegBuildSettings"], planning.FfmpegBuildSettings);
 	        this.defaultLibraryCatalog = this.convertValues(source["defaultLibraryCatalog"], planning.LibraryChoice);
 	        this.defaultConfigureOptionCatalog = this.convertValues(source["defaultConfigureOptionCatalog"], planning.ConfigureOptionChoice);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class LocalLogEntry {
+	    level: string;
+	    message: string;
+	    timestamp: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalLogEntry(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.level = source["level"];
+	        this.message = source["message"];
+	        this.timestamp = source["timestamp"];
+	    }
+	}
+	export class LocalLogRecord {
+	    runId: string;
+	    createdAt: string;
+	    displayTime: string;
+	    kind: string;
+	    status: string;
+	    directory: string;
+	    entries: LocalLogEntry[];
+	    rawText: string;
+	    errorCount: number;
+	    warnCount: number;
+	    hasStdoutLog: boolean;
+	    hasStderrLog: boolean;
+	    hasSecurityEvents: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalLogRecord(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.runId = source["runId"];
+	        this.createdAt = source["createdAt"];
+	        this.displayTime = source["displayTime"];
+	        this.kind = source["kind"];
+	        this.status = source["status"];
+	        this.directory = source["directory"];
+	        this.entries = this.convertValues(source["entries"], LocalLogEntry);
+	        this.rawText = source["rawText"];
+	        this.errorCount = source["errorCount"];
+	        this.warnCount = source["warnCount"];
+	        this.hasStdoutLog = source["hasStdoutLog"];
+	        this.hasStderrLog = source["hasStderrLog"];
+	        this.hasSecurityEvents = source["hasSecurityEvents"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

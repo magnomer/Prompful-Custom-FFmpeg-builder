@@ -152,9 +152,11 @@ function BuilderApp() {
               installedToolchainProfiles={s.installedToolchainProfiles}
               toolchainVerification={s.toolchainVerification}
               isVerifyingToolchain={s.isVerifyingToolchain}
+              isApprovedActionRunning={s.isApprovedActionRunning}
               currentShellProfileName={s.buildConfigSettings.windowsShellProfileName}
               configuredMsys2PackageNames={s.configuredMsys2PackageNames}
               approveToolchainPreparationPlan={s.approveToolchainPreparationPlan}
+              cancelToolchainPreparationPlan={s.cancelToolchainPreparationPlan}
               cancelApprovedAction={s.cancelApprovedAction}
               onVerifyToolchain={s.verifyToolchain}
               onReuseToolchain={() => s.setActiveTabId("library")}
@@ -213,15 +215,32 @@ function BuilderApp() {
             <ResultTab
               buildResult={s.buildResult}
               buildResultError={s.buildResultError}
+              isLoadingBuildResult={s.isLoadingBuildResult}
+              buildVerification={s.buildVerification}
+              buildVerificationError={s.buildVerificationError}
+              isVerifyingBuild={s.isVerifyingBuild}
+              verifyBuildResult={s.verifyBuildResult}
+              hasWorkspace={Boolean(s.buildConfigSettings.workspaceDirectory || s.ffmpegBuildSettings.workspaceDirectory)}
               refreshBuildResult={s.refreshBuildResult}
               openResultFolder={s.openResultFolder}
               openResultReport={s.openResultReport}
+              onGoToSource={() => s.setActiveTabId("source")}
+              onGoToBuild={() => s.setActiveTabId("buildFfmpeg")}
             />
           )}
           {s.activeTabId === "logs" && (
             <LogsTab
               toolchainLogEntries={s.toolchainLogEntries}
               ffmpegLogEntries={s.ffmpegLogEntries}
+              localLogRecords={s.localLogRecords}
+              localLogRecordsError={s.localLogRecordsError}
+              refreshLocalLogRecords={s.refreshLocalLogRecords}
+              loadLocalLogRecord={s.loadLocalLogRecord}
+              openLocalLogsFolder={s.openLocalLogsFolder}
+              openLocalLogRecordFolder={s.openLocalLogRecordFolder}
+              openLocalLogRecordFile={s.openLocalLogRecordFile}
+              onGoToPrep={() => s.setActiveTabId("prep")}
+              onGoToBuild={() => s.setActiveTabId("buildFfmpeg")}
             />
           )}
           {s.activeTabId === "about" && (
@@ -247,9 +266,6 @@ function BuilderApp() {
                   <button className="button button--primary" type="button" onClick={s.addBuildConfigPlanAndContinueToPrep}>{t("actions.addBuildPlanAndContinue")}<span className="button__chevron" aria-hidden="true">›</span></button>
                   <button className="button" type="button" onClick={s.restoreRecommendedToolchainPackages}>{t("actions.restoreRecommendedList")}</button>
                 </>
-              )}
-              {s.activeTabId === "prep" && s.toolchainPreparationPlanReview && s.approvedActionPhase !== "toolchain" && (
-                <button className="button button--primary" type="button" disabled={!s.toolchainPreparationPlanReview.plan.isExecutable || s.isApprovedActionRunning} onClick={s.approveToolchainPreparationPlan}>{t("actions.requestBackendConfirmation")}</button>
               )}
               {s.activeTabId === "prep" && s.installedToolchainProfiles.length > 0 && s.approvedActionPhase !== "toolchain" && (
                 <button className="button button--primary" type="button" onClick={() => s.setActiveTabId("library")}>{t("actions.chooseFfmpegLibraries")}<span className="button__chevron" aria-hidden="true">›</span></button>

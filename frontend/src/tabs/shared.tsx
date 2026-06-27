@@ -140,6 +140,7 @@ export type ApprovalPanelProps = {
   warnings: PlanWarning[];
   isExecutable: boolean;
   variant?: string;
+  icon?: string;
   selectedLibraries?: LibraryChoice[];
   libraryPreparations?: LibraryPreparation[];
   requiredMsys2PackageNames?: string[];
@@ -148,7 +149,9 @@ export type ApprovalPanelProps = {
   generatedOptionFlags?: string[];
   extraConfigureFlags?: string[];
   finalConfigureFlags?: string[];
+  onCancelPlan?: () => void;
   onRequestBackendConfirmation: () => void;
+  isConfirmationBusy?: boolean;
 };
 
 function ApprovalPanelBody(props: ApprovalPanelProps) {
@@ -185,13 +188,22 @@ function ApprovalPanelBody(props: ApprovalPanelProps) {
   );
 }
 
+function ApprovalPanelActions(props: ApprovalPanelProps) {
+  return (
+    <div className="approval-card__actions">
+      {props.onCancelPlan && <button className="button" type="button" onClick={props.onCancelPlan}>{t("actions.cancel")}</button>}
+      <button className="button button--primary" type="button" disabled={!props.isExecutable || props.isConfirmationBusy} onClick={props.onRequestBackendConfirmation}>{t("actions.requestBackendConfirmation")}</button>
+    </div>
+  );
+}
+
 export function ApprovalPanel(props: ApprovalPanelProps) {
   // Card variant borrows the Source tab card design (colored accent + badge +
   // card head). The plain variant keeps the original review-panel look.
   if (props.variant) {
     return (
       <section className={`card card--${props.variant} approval-card`}>
-        <span className="card__badge" aria-hidden="true" />
+        <span className="card__badge" aria-hidden="true">{props.icon && <img className="card__badge-icon" src={props.icon} alt="" />}</span>
         <div className="card__head">
           <h2 className="card__title">{props.title}</h2>
           <DescriptionLines text={t("approval.summary")} />
@@ -199,6 +211,7 @@ export function ApprovalPanel(props: ApprovalPanelProps) {
         <div className="approval-card__body">
           <ApprovalPanelBody {...props} />
         </div>
+        <ApprovalPanelActions {...props} />
       </section>
     );
   }
@@ -207,6 +220,7 @@ export function ApprovalPanel(props: ApprovalPanelProps) {
       <h2 className="approval-panel__title">{props.title}</h2>
       <p className="approval-panel__summary">{t("approval.summary")}</p>
       <ApprovalPanelBody {...props} />
+      <ApprovalPanelActions {...props} />
     </section>
   );
 }

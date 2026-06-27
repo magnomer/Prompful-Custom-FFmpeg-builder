@@ -2,6 +2,9 @@ import React from "react";
 import { PageHeader, ApprovalPanel, LiveBuildProgress, ReviewList, DescriptionLines } from "./shared";
 import { getToolchainPipeline } from "./logutils";
 import { t } from "../i18n";
+import notPreparedIcon from "../assets/prep-card-icons/NotPrepared.svg";
+import planToImplementIcon from "../assets/prep-card-icons/PlanToImplement.svg";
+import planReadyIcon from "../assets/prep-card-icons/PlanReady.svg";
 import type { LiveProgress } from "./logs";
 
 export type PrepTabProps = {
@@ -15,9 +18,11 @@ export type PrepTabProps = {
   installedToolchainProfiles: ToolchainStatus[];
   toolchainVerification: ToolchainVerification | null;
   isVerifyingToolchain: boolean;
+  isApprovedActionRunning: boolean;
   currentShellProfileName: string;
   configuredMsys2PackageNames: string[];
   approveToolchainPreparationPlan: () => Promise<void>;
+  cancelToolchainPreparationPlan: () => void;
   cancelApprovedAction: () => Promise<void>;
   onVerifyToolchain: () => void;
   onReuseToolchain: () => void;
@@ -29,7 +34,7 @@ export type PrepTabProps = {
 function ToolchainEmptyCard(props: { onGoToBuildConfig: () => void }) {
   return (
     <section className="card card--blue">
-      <span className="card__badge" aria-hidden="true" />
+      <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={notPreparedIcon} alt="" /></span>
       <div className="card__head">
         <h2 className="card__title">{t("prep.empty.title")}</h2>
         <DescriptionLines text={t("prep.empty.text")} />
@@ -101,7 +106,7 @@ function ToolchainRecoveryCard(props: {
 
   return (
     <section className="card card--green">
-      <span className="card__badge" aria-hidden="true" />
+      <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={planReadyIcon} alt="" /></span>
       <div className="card__head">
         <h2 className="card__title">{t("prep.recovery.title")}</h2>
         {hasManifest ? (
@@ -143,7 +148,7 @@ function ToolchainRecoveryCard(props: {
   );
 }
 
-export function PrepTab({ toolchainPreparationPlanReview, toolchainLogEntries, approvedActionPhase, approvedActionStatus, toolchainProgress, canCancelToolchain, toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain, currentShellProfileName, configuredMsys2PackageNames, approveToolchainPreparationPlan, cancelApprovedAction, onVerifyToolchain, onReuseToolchain, onReinstallToolchain, onGoToBuildConfig, onClearBuildEnvironments }: PrepTabProps) {
+export function PrepTab({ toolchainPreparationPlanReview, toolchainLogEntries, approvedActionPhase, approvedActionStatus, toolchainProgress, canCancelToolchain, toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain, isApprovedActionRunning, currentShellProfileName, configuredMsys2PackageNames, approveToolchainPreparationPlan, cancelToolchainPreparationPlan, cancelApprovedAction, onVerifyToolchain, onReuseToolchain, onReinstallToolchain, onGoToBuildConfig, onClearBuildEnvironments }: PrepTabProps) {
   // A running toolchain action takes priority: show its live progress and hide
   // the approval panel, so a refused/duplicate confirm can never strand the UI on
   // the plan while the install is actually progressing.
@@ -162,6 +167,7 @@ export function PrepTab({ toolchainPreparationPlanReview, toolchainLogEntries, a
       {showApproval && (
         <ApprovalPanel
           variant="blue"
+          icon={planToImplementIcon}
           title={t("prep.plan.title")}
           actionName={toolchainPreparationPlanReview.plan.actionName}
           planHash={toolchainPreparationPlanReview.plan.planHash}
@@ -169,7 +175,9 @@ export function PrepTab({ toolchainPreparationPlanReview, toolchainLogEntries, a
           operations={toolchainPreparationPlanReview.plan.operations}
           warnings={toolchainPreparationPlanReview.plan.warnings}
           isExecutable={toolchainPreparationPlanReview.plan.isExecutable}
+          onCancelPlan={cancelToolchainPreparationPlan}
           onRequestBackendConfirmation={approveToolchainPreparationPlan}
+          isConfirmationBusy={isApprovedActionRunning}
         />
       )}
       {showRecovery && (

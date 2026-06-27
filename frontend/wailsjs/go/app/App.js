@@ -30,8 +30,16 @@ export function GetInstalledToolchainProfiles(arg1) {
   return window['go']['app']['App']['GetInstalledToolchainProfiles'](arg1);
 }
 
+export function GetLocalLogRecord(arg1, arg2) {
+  return window['go']['app']['App']['GetLocalLogRecord'](arg1, arg2);
+}
+
 export function GetToolchainStatus(arg1, arg2) {
   return window['go']['app']['App']['GetToolchainStatus'](arg1, arg2);
+}
+
+export function ListLocalLogRecords(arg1) {
+  return window['go']['app']['App']['ListLocalLogRecords'](arg1);
 }
 
 export function LoadUiState() {
@@ -40,6 +48,18 @@ export function LoadUiState() {
 
 export function OpenExternalUrl(arg1) {
   return window['go']['app']['App']['OpenExternalUrl'](arg1);
+}
+
+export function OpenLocalLogRecordFile(arg1, arg2, arg3) {
+  return window['go']['app']['App']['OpenLocalLogRecordFile'](arg1, arg2, arg3);
+}
+
+export function OpenLocalLogRecordFolder(arg1, arg2) {
+  return window['go']['app']['App']['OpenLocalLogRecordFolder'](arg1, arg2);
+}
+
+export function OpenLocalLogsFolder(arg1) {
+  return window['go']['app']['App']['OpenLocalLogsFolder'](arg1);
 }
 
 export function OpenResultFolder(arg1) {
@@ -68,6 +88,10 @@ export function SelectWorkspace() {
 
 export function SetLocale(arg1) {
   return window['go']['app']['App']['SetLocale'](arg1);
+}
+
+export function VerifyBuildResult(arg1) {
+  return window['go']['app']['App']['VerifyBuildResult'](arg1);
 }
 
 export function VerifyToolchainInstallation(arg1, arg2) {

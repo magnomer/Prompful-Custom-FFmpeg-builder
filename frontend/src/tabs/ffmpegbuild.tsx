@@ -4,6 +4,7 @@ import { getFfmpegPipeline } from "./logutils";
 import { t } from "../i18n";
 import { configureOptionText, libraryLicenseLabel, libraryText } from "../catalogText";
 import type { LiveProgress } from "./logs";
+import emptyStateBlueIcon from "../assets/empty-card-icons/EmptyStateBlue.svg";
 
 export type FFmpegBuildTabProps = {
   ffmpegBuildPlanReview: FfmpegBuildPlanReview | null;
@@ -26,7 +27,7 @@ function listOrEmpty<T>(items: T[] | null | undefined): T[] {
 function FfmpegPlanEmptyCard(props: { onGoToOptions: () => void }) {
   return (
     <section className="card card--blue ffmpeg-build-empty-card">
-      <span className="card__badge" aria-hidden="true" />
+      <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={emptyStateBlueIcon} alt="" /></span>
       <div className="card__head">
         <h2 className="card__title">{t("ffmpegBuild.empty.title")}</h2>
         <DescriptionLines text={t("ffmpegBuild.empty.text")} />
@@ -98,11 +99,17 @@ function BuildPlanWarnings(props: { warnings: PlanWarning[] }) {
     <section className="build-plan-warning-card">
       <h3 className="build-plan-section-title">{t("review.warnings.title")}</h3>
       <div className="build-plan-warning-list">
-        {props.warnings.map((warning, index) => (
-          <article className={`build-plan-warning build-plan-warning--${warning.riskLevelName}`} key={`${warning.riskLevelName}-${index}`}>
-            {planWarningText(warning)}
-          </article>
-        ))}
+        {props.warnings.map((warning, index) => {
+          // A nonfree license boundary makes the build non-redistributable — flag
+          // it red even though it is not build-blocking.
+          const nonRedistributable = warning.messageKey === "plan.warnings.licenseNonfree";
+          return (
+            <article className={`build-plan-warning build-plan-warning--${warning.riskLevelName} ${nonRedistributable ? "build-plan-warning--danger" : ""}`} key={`${warning.riskLevelName}-${index}`}>
+              <span className="build-plan-warning__icon" aria-hidden="true" />
+              <p className="build-plan-warning__text">{planWarningText(warning)}</p>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
@@ -147,10 +154,10 @@ function FfmpegBuildPlanCard(props: { review: FfmpegBuildPlanReview }) {
   ], [selectedConfigureOptions, generatedOptionFlags, extraConfigureFlags]);
   const operations = React.useMemo(() => operationsRaw.map(planOperationText), [operationsRaw]);
   const tabs: { id: BuildPlanTabId; label: string; count: number; code?: boolean }[] = [
-    { id: "libraries", label: t("result.details.tabs.libraries"), count: libraries.length },
-    { id: "packages", label: t("approval.review.requiredLibraryPackages"), count: packages.length },
-    { id: "options", label: t("result.details.tabs.options"), count: options.length },
-    { id: "flags", label: t("result.details.tabs.flags"), count: configureFlags.length, code: true },
+    { id: "libraries", label: t("ffmpegBuild.plan.tabs.libraries"), count: libraries.length },
+    { id: "packages", label: t("ffmpegBuild.plan.tabs.packages"), count: packages.length },
+    { id: "options", label: t("ffmpegBuild.plan.tabs.options"), count: options.length },
+    { id: "flags", label: t("ffmpegBuild.plan.tabs.flags"), count: configureFlags.length, code: true },
     { id: "operations", label: t("approval.review.operations"), count: operations.length },
   ];
 

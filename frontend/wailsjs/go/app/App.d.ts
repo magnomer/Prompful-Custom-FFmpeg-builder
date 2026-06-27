@@ -18,11 +18,21 @@ export function GetInitialApplicationState():Promise<app.InitialApplicationState
 
 export function GetInstalledToolchainProfiles(arg1:string):Promise<Array<app.ToolchainStatus>>;
 
+export function GetLocalLogRecord(arg1:string,arg2:string):Promise<app.LocalLogRecord>;
+
 export function GetToolchainStatus(arg1:string,arg2:string):Promise<app.ToolchainStatus>;
+
+export function ListLocalLogRecords(arg1:string):Promise<Array<app.LocalLogRecord>>;
 
 export function LoadUiState():Promise<string>;
 
 export function OpenExternalUrl(arg1:string):Promise<void>;
+
+export function OpenLocalLogRecordFile(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function OpenLocalLogRecordFolder(arg1:string,arg2:string):Promise<void>;
+
+export function OpenLocalLogsFolder(arg1:string):Promise<void>;
 
 export function OpenResultFolder(arg1:string):Promise<void>;
 
@@ -37,5 +47,7 @@ export function SaveUiState(arg1:string):Promise<void>;
 export function SelectWorkspace():Promise<string>;
 
 export function SetLocale(arg1:string):Promise<void>;
+
+export function VerifyBuildResult(arg1:string):Promise<app.BuildVerification>;
 
 export function VerifyToolchainInstallation(arg1:string,arg2:string):Promise<app.ToolchainVerification>;

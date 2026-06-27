@@ -40,8 +40,8 @@
 }
 
 .options-preset-card {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 9px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
   min-height: 108px;
   padding: 16px 46px 14px 16px;
 }
@@ -199,13 +199,14 @@
 
 .options-toolbar {
   display: grid;
-  grid-template-columns: max-content minmax(240px, 1fr) max-content;
+  grid-template-columns: max-content minmax(240px, 1fr) max-content max-content;
   gap: 10px;
   align-items: center;
   padding-top: 4px;
 }
 
-.options-technical-toggle {
+.options-technical-toggle,
+.options-reset {
   display: inline-flex;
   gap: 8px;
   align-items: center;
@@ -222,6 +223,12 @@
   background: #eef5ff;
   border-color: #8fb3ff;
   color: #2456d6;
+}
+
+/* Flex toolbar handles spacing via gap; drop the icon's inline margin. */
+.options-technical-toggle .card__btn-icon,
+.options-reset .card__btn-icon {
+  margin-right: 0;
 }
 
 .options-search {
@@ -283,7 +290,9 @@
   color: #172033;
   font-size: 0.84rem;
   font-weight: 850;
-  line-height: 1.15;
+  /* Roomy enough that glyph descenders ('g','y') are not clipped by the
+     overflow:hidden the ellipsis needs (was 1.15 → clipped on first paint). */
+  line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -545,6 +554,11 @@
 
   .options-toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .options-technical-toggle,
+  .options-reset {
+    justify-self: start;
   }
 
   .options-category-dropdown {

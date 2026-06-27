@@ -37,8 +37,9 @@
 .preset-card {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
   min-height: 118px;
   padding: 18px 48px 16px 18px;
   border: 1px solid #dbe4f0;
@@ -75,6 +76,17 @@
   display: grid;
   gap: 8px;
   min-width: 0;
+}
+
+.preset-card__icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
+  padding: 5px;
+  box-sizing: content-box;
+  border-radius: 10px;
+  object-fit: contain;
 }
 
 .preset-card__name {
@@ -311,6 +323,12 @@
   color: #2456d6;
 }
 
+/* Flex toolbar handles spacing via gap; drop the icon's inline margin. */
+.libraries-technical-toggle .card__btn-icon,
+.libraries-reset .card__btn-icon {
+  margin-right: 0;
+}
+
 .libraries-search input {
   width: 100%;
   height: 40px;
@@ -364,7 +382,9 @@
   color: #172033;
   font-size: 0.84rem;
   font-weight: 850;
-  line-height: 1.15;
+  /* Roomy enough that glyph descenders ('g','y') are not clipped by the
+     overflow:hidden the ellipsis needs (was 1.15 → clipped on first paint). */
+  line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

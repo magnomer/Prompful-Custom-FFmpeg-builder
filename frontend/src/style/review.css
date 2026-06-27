@@ -12,6 +12,14 @@
 .approval-card__body { grid-column: 2; }
 .approval-card__body > :first-child { margin-top: 0; }
 .approval-card__body .review-list:last-child { margin-bottom: 0; }
+.approval-card__actions {
+  grid-column: 2;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 2px;
+}
+.approval-panel .approval-card__actions { margin-top: 18px; }
 
 .metadata {
   display: grid;

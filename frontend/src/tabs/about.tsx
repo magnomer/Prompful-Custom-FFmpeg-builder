@@ -1,7 +1,10 @@
 import React from "react";
 import { t } from "../i18n";
-import { PageHeader, ExternalLinkButton } from "./shared";
+import { DescriptionLines, ExternalLinkButton, PageHeader } from "./shared";
 import { isDevUnlockEnabled, isSudoDevUnlockEnabled, registerVersionClick, registerDevUnlockIndicatorClick } from "../devUnlock";
+import aboutIcon from "../assets/about-card-icons/AboutInfo.svg";
+import workflowIcon from "../assets/about-card-icons/WhatThisProgramDoes.svg";
+import boundaryIcon from "../assets/about-card-icons/WhatThisProgramDoesNotInclude.svg";
 
 declare const __APP_VERSION__: string;
 
@@ -9,8 +12,13 @@ export type AboutTabProps = {
   openInUserBrowser: (url: string) => Promise<void>;
 };
 
+const officialLinks = {
+  projectRepository: "https://github.com/magnomer/Prompful-Custom-FFmpeg-builder",
+  ffmpegWebsite: "https://ffmpeg.org",
+  msys2Website: "https://www.msys2.org",
+};
+
 export function AboutTab({ openInUserBrowser }: AboutTabProps) {
-  const [showTechnicalDetails, setShowTechnicalDetails] = React.useState(false);
   // Hidden developer feature: twelve clicks on the version number toggle basic dev
   // unlock (UI-unavailable libraries become selectable); with basic on, twelve clicks
   // on the dev indicator below toggle the sudo tier (relaxes pick-one groups). See
@@ -31,109 +39,75 @@ export function AboutTab({ openInUserBrowser }: AboutTabProps) {
     <section className="tab-page about-page">
       <PageHeader title={t("about.title")} text={t("about.intro")} />
 
-      <section className="about-summary">
-        <section className="about-version-card" aria-label={t("about.version.ariaLabel")}>
-          <span className="about-version-card__label">{t("about.version.label")}</span>
-          <strong
-            className="about-version-card__value"
-            onClick={handleVersionClick}
-          >{t("about.version.value", { version: __APP_VERSION__ })}</strong>
-          {devUnlocked && (
-            <span
-              className={`about-version-card__dev-unlock ${sudoDevUnlocked ? "about-version-card__dev-unlock--sudo" : ""}`}
-              onClick={() => setSudoDevUnlocked(registerDevUnlockIndicatorClick())}
-            >{t(sudoDevUnlocked ? "about.version.sudoDevUnlocked" : "about.version.devUnlocked")}</span>
-          )}
-        </section>
-
-        <section className="about-flow" aria-labelledby="about-flow-title">
-          <div className="about-flow__header">
-            <h2 className="about-flow__title" id="about-flow-title">{t("about.does.title")}</h2>
-            <p className="about-flow__text">{t("about.does.p1")}</p>
+      <section className="card card--blue about-card about-identity-card" aria-label={t("about.version.ariaLabel")}>
+        <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={aboutIcon} alt="" /></span>
+        <div className="card__head">
+          <h2 className="card__title">{t("about.identity.title")}</h2>
+          <DescriptionLines text={t("about.identity.text")} />
+          <div className="about-version">
+            <span className="about-version__label">{t("about.version.label")}</span>
+            <strong
+              className="about-version__value"
+              onClick={handleVersionClick}
+            >{t("about.version.value", { version: __APP_VERSION__ })}</strong>
+            {devUnlocked && (
+              <span
+                className={`about-version__dev-unlock ${sudoDevUnlocked ? "about-version__dev-unlock--sudo" : ""}`}
+                onClick={() => setSudoDevUnlocked(registerDevUnlockIndicatorClick())}
+              >{t(sudoDevUnlocked ? "about.version.sudoDevUnlocked" : "about.version.devUnlocked")}</span>
+            )}
           </div>
-          <ol className="about-flow__steps">
-            <li className="about-flow__step">
-              <span className="about-flow__number">1</span>
-              <span className="about-flow__label">{t("about.flow.workspace.label")}</span>
-              <span className="about-flow__caption">{t("about.flow.workspace.caption")}</span>
-            </li>
-            <li className="about-flow__step">
-              <span className="about-flow__number">2</span>
-              <span className="about-flow__label">{t("about.flow.configure.label")}</span>
-              <span className="about-flow__caption">{t("about.flow.configure.caption")}</span>
-            </li>
-            <li className="about-flow__step">
-              <span className="about-flow__number">3</span>
-              <span className="about-flow__label">{t("about.flow.review.label")}</span>
-              <span className="about-flow__caption">{t("about.flow.review.caption")}</span>
-            </li>
-            <li className="about-flow__step">
-              <span className="about-flow__number">4</span>
-              <span className="about-flow__label">{t("about.flow.result.label")}</span>
-              <span className="about-flow__caption">{t("about.flow.result.caption")}</span>
-            </li>
-          </ol>
-        </section>
-
-        <section className="about-boundary" aria-labelledby="about-boundary-title">
-          <div className="about-boundary__header">
-            <h2 className="about-boundary__title" id="about-boundary-title">{t("about.doesNotInclude.title")}</h2>
-            <p className="about-boundary__text">{t("about.doesNotInclude.p2")}</p>
+        </div>
+        <div className="about-link-row">
+          <div className="about-link-row__left">
+            <ExternalLinkButton label={t("about.links.projectRepository")} url={officialLinks.projectRepository} onOpen={openInUserBrowser} />
           </div>
-          <div className="about-boundary__items">
-            <span className="about-boundary__item">{t("about.notIncluded.prebuilt")}</span>
-            <span className="about-boundary__item">{t("about.notIncluded.source")}</span>
-            <span className="about-boundary__item">{t("about.notIncluded.codecs")}</span>
-            <span className="about-boundary__item">{t("about.notIncluded.packages")}</span>
-            <span className="about-boundary__item">{t("about.notIncluded.hidden")}</span>
+          <div className="about-link-row__right">
+            <ExternalLinkButton label={t("about.links.ffmpegWebsite")} url={officialLinks.ffmpegWebsite} onOpen={openInUserBrowser} />
+            <ExternalLinkButton label={t("about.links.msys2Website")} url={officialLinks.msys2Website} onOpen={openInUserBrowser} />
           </div>
-        </section>
+        </div>
       </section>
 
-      <div className="about-technical">
-        <button className="button about-technical-toggle" type="button" aria-expanded={showTechnicalDetails} onClick={() => setShowTechnicalDetails((value) => !value)}>
-          {showTechnicalDetails ? t("about.technical.hide") : t("about.technical.show")}
-        </button>
-        {showTechnicalDetails && (
-          <section className="about-technical-panel">
-            <h2 className="about-technical-panel__title">{t("about.technical.title")}</h2>
-            <div className="about-technical-details">
-              <AboutTechnicalDetail title={t("about.approval.title")}>
-                <p>{t("about.approval.p1")}</p>
-                <p>{t("about.approval.p2")}</p>
-                <p>{t("about.approval.p3.prefix")} <code>logs/</code> {t("about.approval.p3.suffix")}</p>
-              </AboutTechnicalDetail>
+      <section className="card card--teal about-card about-flow-card" aria-labelledby="about-flow-title">
+        <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={workflowIcon} alt="" /></span>
+        <div className="card__head">
+          <h2 className="card__title" id="about-flow-title">{t("about.does.title")}</h2>
+          <DescriptionLines text={t("about.does.p1")} />
+        </div>
+        <ol className="about-flow-steps">
+          <AboutFlowStep number="1" label={t("about.flow.workspace.label")} caption={t("about.flow.workspace.caption")} />
+          <AboutFlowStep number="2" label={t("about.flow.configure.label")} caption={t("about.flow.configure.caption")} />
+          <AboutFlowStep number="3" label={t("about.flow.review.label")} caption={t("about.flow.review.caption")} />
+          <AboutFlowStep number="4" label={t("about.flow.result.label")} caption={t("about.flow.result.caption")} />
+        </ol>
+      </section>
 
-              <AboutTechnicalDetail title={t("about.downloads.title")}>
-                <p>{t("about.downloads.p1")}</p>
-                <p>{t("about.downloads.p2.prefix")} <code>.sig</code>{t("about.downloads.p2.middle")} <code>.asc</code>{t("about.downloads.p2.suffix")}</p>
-                <p>{t("about.downloads.p3")}</p>
-              </AboutTechnicalDetail>
+      <section className="card card--purple about-card about-boundary-card" aria-labelledby="about-boundary-title">
+        <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={boundaryIcon} alt="" /></span>
+        <div className="card__head">
+          <h2 className="card__title" id="about-boundary-title">{t("about.doesNotInclude.title")}</h2>
+          <DescriptionLines text={t("about.doesNotInclude.p2")} />
+        </div>
+        <div className="about-boundary-items">
+          <span className="about-boundary-item">{t("about.notIncluded.prebuilt")}</span>
+          <span className="about-boundary-item">{t("about.notIncluded.source")}</span>
+          <span className="about-boundary-item">{t("about.notIncluded.codecs")}</span>
+          <span className="about-boundary-item">{t("about.notIncluded.packages")}</span>
+          <span className="about-boundary-item">{t("about.notIncluded.hidden")}</span>
+        </div>
+      </section>
 
-              <AboutTechnicalDetail title={t("about.license.title")}>
-                <p>{t("about.license.p1")}</p>
-                <p>{t("about.license.p2")}</p>
-                <p>{t("about.license.p3")}</p>
-              </AboutTechnicalDetail>
-            </div>
-          </section>
-        )}
-      </div>
-
-      <div className="about-links">
-        <ExternalLinkButton label={t("about.links.ffmpegWebsite")} url="https://ffmpeg.org" onOpen={openInUserBrowser} />
-        <ExternalLinkButton label={t("about.links.ffmpegLicense")} url="https://ffmpeg.org/legal.html" onOpen={openInUserBrowser} />
-        <ExternalLinkButton label={t("about.links.msys2Website")} url="https://www.msys2.org" onOpen={openInUserBrowser} />
-      </div>
     </section>
   );
 }
 
-function AboutTechnicalDetail(props: { title: string; children: React.ReactNode }) {
+function AboutFlowStep(props: { number: string; label: string; caption: string }) {
   return (
-    <section className="about-technical-detail">
-      <h3 className="about-technical-detail__title">{props.title}</h3>
-      <div className="about-technical-detail__text">{props.children}</div>
-    </section>
+    <li className="about-flow-step">
+      <span className="about-flow-step__number">{props.number}</span>
+      <span className="about-flow-step__label">{props.label}</span>
+      <span className="about-flow-step__caption">{props.caption}</span>
+    </li>
   );
 }

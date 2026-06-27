@@ -5,9 +5,15 @@ import {
   CancelApprovedAction,
   ClearBuildEnvironments,
   GetBuildResult,
+  VerifyBuildResult,
   GetInitialApplicationState,
   GetToolchainStatus,
   GetInstalledToolchainProfiles,
+  GetLocalLogRecord,
+  ListLocalLogRecords,
+  OpenLocalLogRecordFolder,
+  OpenLocalLogRecordFile,
+  OpenLocalLogsFolder,
   VerifyToolchainInstallation,
   LoadUiState,
   SaveUiState,
@@ -97,8 +103,14 @@ export function useBuilderState() {
   const [approvedActionPhase, setApprovedActionPhase] = useState<"toolchain" | "ffmpeg" | null>(null);
   const [toolchainLogEntries, setToolchainLogEntries] = useState<SecurityLogEntry[]>([]);
   const [ffmpegLogEntries, setFfmpegLogEntries] = useState<SecurityLogEntry[]>([]);
+  const [localLogRecords, setLocalLogRecords] = useState<LocalLogRecord[]>([]);
+  const [localLogRecordsError, setLocalLogRecordsError] = useState("");
   const [buildResult, setBuildResult] = useState<BuildResult | null>(null);
   const [buildResultError, setBuildResultError] = useState("");
+  const [isLoadingBuildResult, setIsLoadingBuildResult] = useState(false);
+  const [buildVerification, setBuildVerification] = useState<BuildVerification | null>(null);
+  const [buildVerificationError, setBuildVerificationError] = useState("");
+  const [isVerifyingBuild, setIsVerifyingBuild] = useState(false);
   const [toolchainStatus, setToolchainStatus] = useState<ToolchainStatus | null>(null);
   const [installedToolchainProfiles, setInstalledToolchainProfiles] = useState<ToolchainStatus[]>([]);
   const [toolchainVerification, setToolchainVerification] = useState<ToolchainVerification | null>(null);
@@ -192,6 +204,7 @@ export function useBuilderState() {
 
   useEffect(() => {
     if (activeTabId === "result") refreshBuildResult();
+    if (activeTabId === "logs") refreshLocalLogRecords();
   }, [activeTabId, buildConfigSettings.workspaceDirectory]);
 
   // Recover the "already prepared" state from disk so Prep remembers a prior
@@ -210,6 +223,7 @@ export function useBuilderState() {
   // stale closure of the once-registered event listener.
   useEffect(() => {
     if (approvedActionStatus === "completed") refreshToolchainStatus();
+    if (activeTabId === "logs" && (approvedActionStatus === "completed" || approvedActionStatus === "failed")) refreshLocalLogRecords();
   }, [approvedActionStatus]);
 
   // Continuously record the scroll position of the active tab so it can be
@@ -232,11 +246,65 @@ export function useBuilderState() {
       : 0;
   }, [activeTabId]);
 
+  async function refreshLocalLogRecords() {
+    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+    if (!dir) { setLocalLogRecords([]); setLocalLogRecordsError(""); return; }
+    try {
+      const records = await ListLocalLogRecords(dir);
+      setLocalLogRecords((previousRecords) => {
+        const previousByRunId = new Map(previousRecords.map((record) => [record.runId, record]));
+        return records.map((record) => {
+          const previous = previousByRunId.get(record.runId);
+          const normalizedRecord = {
+            ...record,
+            entries: (record.entries ?? []).map((entry) => ({ ...entry, level: normalizeLogLevel(entry.level) })),
+          };
+          if (previous && ((previous.entries?.length ?? 0) > 0 || (previous.rawText ?? "").trim())) {
+            return { ...normalizedRecord, entries: previous.entries, rawText: previous.rawText };
+          }
+          return normalizedRecord;
+        });
+      });
+      setLocalLogRecordsError("");
+    }
+    catch (err) { setLocalLogRecords([]); setLocalLogRecordsError(err instanceof Error ? err.message : String(err)); }
+  }
+
+  async function loadLocalLogRecord(runId: string) {
+    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+    if (!dir || !runId || runId.startsWith("live-")) return;
+    const existing = localLogRecords.find((record) => record.runId === runId);
+    if (existing && ((existing.entries?.length ?? 0) > 0 || (existing.rawText ?? "").trim())) return;
+    try {
+      const record = await GetLocalLogRecord(dir, runId);
+      const normalizedRecord = {
+        ...record,
+        entries: (record.entries ?? []).map((entry) => ({ ...entry, level: normalizeLogLevel(entry.level) })),
+      };
+      setLocalLogRecords((records) => records.map((item) => item.runId === runId ? normalizedRecord : item));
+      setLocalLogRecordsError("");
+    }
+    catch (err) { setLocalLogRecordsError(err instanceof Error ? err.message : String(err)); }
+  }
+
   async function refreshBuildResult() {
     const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
     if (!dir) { setBuildResult(null); setBuildResultError(t("result.error.chooseWorkspaceFirst")); return; }
+    setBuildVerification(null); setBuildVerificationError("");
+    setIsLoadingBuildResult(true);
     try { const r = await GetBuildResult(dir); setBuildResult(r); setBuildResultError(""); }
     catch (err) { setBuildResult(null); setBuildResultError(err instanceof Error ? err.message : String(err)); }
+    finally { setIsLoadingBuildResult(false); }
+  }
+
+  async function verifyBuildResult() {
+    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+    if (!dir) { setBuildVerificationError(t("result.error.chooseWorkspaceFirst")); return; }
+    setIsVerifyingBuild(true);
+    setBuildVerificationError("");
+    try { setBuildVerification(await VerifyBuildResult(dir)); }
+    catch (err) { setBuildVerification(null); setBuildVerificationError(err instanceof Error ? err.message : String(err)); }
+    finally { setIsVerifyingBuild(false); }
   }
 
   async function refreshToolchainStatus() {
@@ -279,6 +347,24 @@ export function useBuilderState() {
     const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
     if (!dir) { setBuildResultError(t("result.error.chooseWorkspaceFirst")); return; }
     await OpenResultReport(dir);
+  }
+
+  async function openLocalLogsFolder() {
+    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+    if (!dir) return;
+    await OpenLocalLogsFolder(dir);
+  }
+
+  async function openLocalLogRecordFolder(runId: string) {
+    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+    if (!dir || !runId || runId.startsWith("live-")) return;
+    await OpenLocalLogRecordFolder(dir, runId);
+  }
+
+  async function openLocalLogRecordFile(runId: string, fileName: string) {
+    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+    if (!dir || !runId || runId.startsWith("live-")) return;
+    await OpenLocalLogRecordFile(dir, runId, fileName);
   }
 
   function updateBuildConfigSettings(next: Partial<BuildConfigSettings>) {
@@ -329,6 +415,10 @@ export function useBuilderState() {
     const review = await RequestToolchainPreparationPlan({ ...buildConfigSettings, msys2PackageNames: splitLines(msys2PackageText) });
     setToolchainPreparationPlanReview(review);
     setActiveTabId("prep");
+  }
+
+  function cancelToolchainPreparationPlan() {
+    setToolchainPreparationPlanReview(null);
   }
 
   async function reviewFfmpegPlans() {
@@ -456,7 +546,9 @@ export function useBuilderState() {
     approvedActionPhase,
     toolchainLogEntries,
     ffmpegLogEntries,
-    buildResult, buildResultError,
+    localLogRecords, localLogRecordsError,
+    buildResult, buildResultError, isLoadingBuildResult,
+    buildVerification, buildVerificationError, isVerifyingBuild, verifyBuildResult,
     toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain,
     configuredMsys2PackageNames,
     canCancelToolchain, canCancelFfmpeg,
@@ -466,12 +558,13 @@ export function useBuilderState() {
     updateBuildConfigSettings, updateFfmpegBuildSettings, updateMsys2ArchiveUrl, changeShellProfile,
     chooseWorkspaceDirectory,
     addBuildConfigPlanAndContinueToPrep, reviewFfmpegPlans,
-    approveToolchainPreparationPlan, approveFfmpegBuildPlan, cancelApprovedAction,
+    approveToolchainPreparationPlan, approveFfmpegBuildPlan, cancelToolchainPreparationPlan, cancelApprovedAction,
     openInUserBrowser,
     toggleLibrary, applyLibraryPreset, setExtendedLibraries, toggleConfigureOption, applyOptionPreset,
     restoreRecommendedToolchainPackages, restoreRecommendedExtraFlags,
     handleMsys2PackageTextChange, handleExtraFlagTextChange,
     refreshBuildResult, openResultFolder, openResultReport,
+    refreshLocalLogRecords, loadLocalLogRecord, openLocalLogsFolder, openLocalLogRecordFolder, openLocalLogRecordFile,
     refreshToolchainStatus, verifyToolchain, clearBuildEnvironments,
   };
 }
