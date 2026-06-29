@@ -125,6 +125,7 @@ function BuilderApp() {
             <SourceTab
               buildConfigSettings={s.buildConfigSettings}
               ffmpegBuildSettings={s.ffmpegBuildSettings}
+              supportedFfmpegReleases={s.initialApplicationState.supportedFfmpegReleases}
               updateBuildConfigSettings={s.updateBuildConfigSettings}
               updateFfmpegBuildSettings={s.updateFfmpegBuildSettings}
               updateMsys2ArchiveUrl={s.updateMsys2ArchiveUrl}
@@ -168,6 +169,7 @@ function BuilderApp() {
           {s.activeTabId === "library" && (
             <LibrariesTab
               initialApplicationState={s.initialApplicationState}
+              libraryCatalog={s.libraryCatalog}
               ffmpegBuildSettings={s.ffmpegBuildSettings}
               libraryPresetId={s.libraryPresetId}
               extendedLibraries={s.extendedLibraries}

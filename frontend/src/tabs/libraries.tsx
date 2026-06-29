@@ -48,43 +48,73 @@ export const baseIncludedLibraryIds = [
 ];
 
 export const defaultPresetLibraryIds = [
-  "nvenc", "amf", "qsv",
+  // Hardware encoders: NVIDIA (nvenc), AMD (amf), and Intel Hardware Acceleration (Quick Sync).
+  // Intel ships two version-split backends — libvpl (oneVPL, FFmpeg 6.0+) and libmfx (legacy
+  // Media SDK, the only path before 6.0). Both are listed so the Intel HW accel capability stays
+  // in every preset like the other vendors regardless of FFmpeg version: they are mutually
+  // exclusive, and normalizeLibrarySelection keeps exactly one per version (libvpl on 6.0+,
+  // libmfx — source-built, like vmaf on 4.4 — on older releases where libvpl is version-unsupported).
+  "nvenc", "amf", "libvpl", "libmfx",
   "x264", "x265", "libvpx", "aom", "svt-av1", "dav1d", "theora", "xvid",
   "opus", "vorbis", "mp3lame", "gsm", "speex", "opencore-amr", "vo-amrwbenc", "rubberband",
-  "openjpeg", "webp", "freetype", "fontconfig", "fribidi", "harfbuzz", "ass",
+  "openjpeg", "webp", "freetype", "fontconfig", "fribidi", "harfbuzz", "ass", "cairo",
   "zimg", "vmaf", "vidstab", "srt", "ssh", "zmq", "openal", "sdl2", "gme", "openmpt",
 ];
 
-// Preset tiers are nested for the public broadening presets. Hidden focused
-// presets are intentionally Default + their own focused additions only; they do
-// not inherit Efficiency, Compatibility, Editor, or Full. Prefer shaderc over
-// glslang because FFmpeg configure rejects selecting both together.
-// lensfun, SVT JPEG XS, and VapourSynth are intentionally hidden from the UI and
-// automatic presets for now. Backend support remains for future compatibility: old
-// saved/manual requests are checked before configure, and incompatible flags are
-// skipped with a warning.
-// lensfun is hidden because current MSYS2 lensfun exposes an older API than the
-// FFmpeg lensfun filter source expects.
-// SVT JPEG XS is hidden because current package/repository states may not satisfy
-// FFmpeg's SvtJpegxs requirement.
-// VapourSynth is hidden because the MSYS2 package is older than FFmpeg's required
-// API and, even when it builds, the result needs a Python + VapourSynth runtime
-// (non-portable).
-const efficiencyExtraLibraryIds = ["fdk-aac", "soxr"];
-const compatibilityExtraLibraryIds = [...efficiencyExtraLibraryIds, "rav1e", "openh264", "ilbc", "twolame", "xevd", "shine", "codec2", "lc3", "snappy", "rsvg", "zvbi", "aribb24", "aribcaption", "rtmp"];
+// Preset tiers are independent: each public broadening preset is Default + its own
+// additions and does NOT inherit the others. Full is the union of all three plus
+// its own broadest-only extras, so it stays a true superset. Hidden focused presets
+// (ai/streaming) are likewise Default + their own focused additions only.
+// fdk-aac is nonfree, so it is kept to Efficiency + Full; Compatibility and Editor
+// stay license-free (LGPL/GPL). Prefer shaderc over glslang because FFmpeg configure
+// rejects selecting both together (normalizeLibrarySelection drops glslang if both
+// appear). The EVC pick-one pairs (xevd/xevdb, xeve/xeveb) are similarly pruned, so
+// presets list only the full-profile member (xevd, xeve).
+// lensfun, SVT JPEG XS, and VapourSynth are kept out of the automatic presets. Their
+// run-time eligibility is decided per FFmpeg release, not by a global rule:
+//   - lensfun is marked unavailable on every release line in the support manifest (FFmpeg
+//     gates it by the lf_db_create symbol the available lensfun package lacks), so the
+//     backend annotation hides it for every version.
+//   - SVT JPEG XS stays selectable and is gated by its per-release pkg-config floor at build
+//     time (the package must reach FFmpeg's required SvtJpegxs version for the chosen release).
+//   - VapourSynth is build-capability disabled here (uiDisabledLibraryIds) because its runtime
+//     is non-portable (needs a Python + VapourSynth runtime) regardless of FFmpeg version.
+// Backend support remains in all cases: old saved/manual requests are checked before configure
+// and incompatible flags are skipped with a warning.
+// Efficiency: enhance Default's compression/quality per bit. fdk-aac (best AAC,
+// nonfree), soxr (HQ resampler), rav1e (quality-focused AV1 encoder).
+const efficiencyExtraLibraryIds = ["fdk-aac", "soxr", "rav1e"];
+// Compatibility: read/write a wider range of formats. Free license only (no
+// fdk-aac). Niche encoders/decoders: OpenH264, EVC (xeve/xevd full-profile), APV
+// (oapv), AVS1 (xavs), speech (ilbc, codec2, lc3), MP2 (twolame), Shine MP3,
+// images (snappy, rsvg), broadcast text (zvbi, aribb24, aribcaption), RTMP input.
+const compatibilityExtraLibraryIds = [
+  "openh264", "xeve", "xevd", "oapv", "xavs",
+  "ilbc", "twolame", "shine", "codec2", "lc3",
+  "snappy", "rsvg",
+  "zvbi", "aribb24", "aribcaption",
+  "rtmp",
+];
+// Editor: filters, color management, image formats, plugin hosting, analysis, and
+// transcription useful to audio/video editors. Free license only.
 const editorExtraLibraryIds = [
-  ...compatibilityExtraLibraryIds,
-  "libjxl", "png", "libplacebo", "frei0r", "xml2",
-  "mysofa", "bs2b", "lcms2",
-  "shaderc",
-  "cairo", "opencv", "opencolorio",
+  "png", "libjxl", "lcms2",
+  "libplacebo", "shaderc", "frei0r", "opencv", "opencolorio",
+  "xml2", "mysofa", "bs2b",
   "ladspa", "lv2", "chromaprint", "qrencode", "whisper",
 ];
+// Full: union of the three broadening presets plus the broadest-only extras (discs,
+// devices, networks/messaging, TLS, OCR, GPU/CL, special outputs). One TLS backend
+// (openssl) and one shader compiler (shaderc, from Editor) are picked; conflicting
+// members are pruned by normalizeLibrarySelection.
 const fullExtraLibraryIds = [
+  ...efficiencyExtraLibraryIds,
+  ...compatibilityExtraLibraryIds,
   ...editorExtraLibraryIds,
   "kvazaar",
   "bluray", "dvdread", "dvdnav", "cdio",
   "modplug",
+  "opengl",
   "openssl", "rist", "rabbitmq",
   "tesseract",
   "jack", "pulse",
@@ -122,11 +152,14 @@ export const libraryPresets: LibraryPreset[] = [
 //   - vvenc/uavs3d/lcevc-dec: LGPL-safe
 //   - xavs2/davs2/avisynthplus: flip the build to GPL
 //   - mpeghdec: flips the build to nonfree (Full only, which already pulls openssl)
+// libmfx is NOT listed here: it is part of the Intel Hardware Acceleration capability and lives in
+// defaultPresetLibraryIds next to libvpl (see the note there), so it is in every preset like the
+// other hardware encoders rather than gated behind the Extended toggle.
 const extendedPresetExtraLibraryIds: Partial<Record<LibraryPresetId, string[]>> = {
-  efficiency: ["vvenc", "uavs3d", "lcevc-dec"],
-  compatibility: ["davs2", "uavs3d", "lcevc-dec", "avisynthplus", "xavs2"],
-  editor: ["avisynthplus", "lcevc-dec"],
-  full: ["vvenc", "xavs2", "davs2", "uavs3d", "lcevc-dec", "avisynthplus", "mpeghdec"],
+  efficiency: ["vvenc", "lcevc-dec"],
+  compatibility: ["davs2", "uavs3d", "xavs2", "avisynthplus", "klvanc"],
+  editor: ["avisynthplus", "lcevc-dec", "quirc"],
+  full: ["vvenc", "lcevc-dec", "davs2", "uavs3d", "xavs2", "avisynthplus", "mpeghdec", "quirc", "klvanc"],
 };
 
 // Effective library ids for a preset. With the Extended toggle on, the broadening
@@ -137,15 +170,18 @@ export function presetLibraryIds(preset: LibraryPreset, extendedLibraries: boole
 }
 
 // maximumTestLibraryIds returns every catalog library except those with no implemented
-// build recipe (unimplementedBuildLibraryIds) and the libraries deliberately disabled in
-// the UI (uiDisabledLibraryIds, e.g. lensfun/vapoursynth/onnxruntime). normalizeLibrarySelection
+// build recipe (unimplementedBuildLibraryIds) and the build-capability-disabled UI rows
+// (uiDisabledLibraryIds, e.g. tensorflow/vapoursynth). normalizeLibrarySelection
 // then resolves the mutually-exclusive groups and drops any library unavailable for the
 // active profile, so the result is a buildable superset.
 export function maximumTestLibraryIds(catalog: LibraryChoice[], windowsShellProfileName?: string): string[] {
   const candidateIds = catalog
     .map((library) => library.libraryId)
-    .filter((libraryId) => !unimplementedBuildLibraryIds.has(libraryId) && !uiDisabledLibraryIds.has(libraryId));
-  return normalizeLibrarySelection(candidateIds, windowsShellProfileName);
+    .filter((libraryId) => {
+      const library = catalog.find((item) => item.libraryId === libraryId);
+      return library && !isLibraryUiUnavailable(library, windowsShellProfileName ?? "");
+    });
+  return normalizeLibrarySelection(candidateIds, windowsShellProfileName, catalog);
 }
 
 // ─── Library selection utilities ─────────────────────────────────────────────
@@ -166,7 +202,13 @@ export const shaderCompilerLibraryIds = new Set(["shaderc", "glslang"]);
 export const evcDecoderLibraryIds = new Set(["xevd", "xevdb"]);
 export const evcEncoderLibraryIds = new Set(["xeve", "xeveb"]);
 
-export function normalizeLibrarySelection(selectedLibraryIds: string[], windowsShellProfileName?: string): string[] {
+// libvpl (Intel oneVPL, --enable-libvpl) and libmfx (legacy Intel Media SDK, --enable-libmfx)
+// are the two Intel Hardware Acceleration backends. FFmpeg configure rejects enabling both ("can
+// not use libmfx and libvpl together"), so they are a pick-one radio group with the same divider
+// treatment as the EVC pairs. They are adjacent in the catalog so the two rows read as one block.
+export const intelHwaccelBackendLibraryIds = new Set(["libvpl", "libmfx"]);
+
+export function normalizeLibrarySelection(selectedLibraryIds: string[], windowsShellProfileName?: string, catalog?: LibraryChoice[]): string[] {
   const selectedSet = new Set<string>([...baseIncludedLibraryIds, ...selectedLibraryIds]);
   // Only one TLS backend may be selected. Priority: openssl > gnutls > mbedtls > libtls.
   // Only the sudo dev tier keeps all selected backends so the TLS section can be tested
@@ -204,6 +246,25 @@ export function normalizeLibrarySelection(selectedLibraryIds: string[], windowsS
       }
     }
   }
+  if (catalog) {
+    const catalogById = new Map(catalog.map((library) => [library.libraryId, library]));
+    for (const libraryId of [...selectedSet]) {
+      const library = catalogById.get(libraryId);
+      if (library && isLibraryUiUnavailable(library, windowsShellProfileName ?? "")) {
+        selectedSet.delete(libraryId);
+      }
+    }
+  }
+  // Intel Hardware Acceleration: oneVPL (libvpl / --enable-libvpl) and the legacy Media SDK
+  // (libmfx) are mutually exclusive — FFmpeg configure dies if both are enabled. This runs AFTER
+  // the version/profile pruning above on purpose: a preset can list both backends, and the right
+  // one survives per version. On FFmpeg < 6.0 the libvpl row is version-unsupported and was just
+  // pruned, so libmfx remains and gives those releases their only Intel HW accel path; on FFmpeg
+  // 6.0+ both are available, so libmfx is dropped here in favour of the maintained oneVPL path
+  // (matching FFmpeg's own "libmfx is deprecated, use libvpl" warning).
+  if (selectedSet.has("libvpl") && selectedSet.has("libmfx")) {
+    selectedSet.delete("libmfx");
+  }
   return Array.from(selectedSet);
 }
 
@@ -211,11 +272,19 @@ function sameLibrarySet(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((libraryId, index) => libraryId === b[index]);
 }
 
-export function matchLibraryPresetId(selectedLibraryIds: string[], windowsShellProfileName?: string, catalog?: LibraryChoice[], extendedLibraries = false): LibraryPresetId {
-  const normalizedSelection = normalizeLibrarySelection(selectedLibraryIds, windowsShellProfileName).slice().sort();
+function normalizedPresetIds(preset: LibraryPreset, windowsShellProfileName?: string, catalog?: LibraryChoice[], extendedLibraries = false): string[] {
+  return normalizeLibrarySelection(presetLibraryIds(preset, extendedLibraries), windowsShellProfileName, catalog).slice().sort();
+}
+
+export function matchLibraryPresetId(selectedLibraryIds: string[], windowsShellProfileName?: string, catalog?: LibraryChoice[], extendedLibraries = false, preferredPresetId?: LibraryPresetId): LibraryPresetId {
+  const normalizedSelection = normalizeLibrarySelection(selectedLibraryIds, windowsShellProfileName, catalog).slice().sort();
+  const preferredPreset = libraryPresets.find((preset) => preset.presetId === preferredPresetId && preset.presetId !== "custom");
+  if (preferredPreset && !preferredPreset.hidden && !preferredPreset.dev && sameLibrarySet(normalizedSelection, normalizedPresetIds(preferredPreset, windowsShellProfileName, catalog, extendedLibraries))) {
+    return preferredPreset.presetId;
+  }
   for (const preset of libraryPresets) {
     if (preset.presetId === "custom" || preset.hidden || preset.dev) continue;
-    const normalizedPreset = normalizeLibrarySelection(presetLibraryIds(preset, extendedLibraries), windowsShellProfileName).slice().sort();
+    const normalizedPreset = normalizedPresetIds(preset, windowsShellProfileName, catalog, extendedLibraries);
     if (sameLibrarySet(normalizedSelection, normalizedPreset)) {
       return preset.presetId;
     }
@@ -279,6 +348,10 @@ export function removeMutuallyExclusiveLibraries(selectedLibraryIds: string[], s
     xevdb: ["xevd"],
     xeve: ["xeveb"],
     xeveb: ["xeve"],
+    // Intel Hardware Acceleration backends: oneVPL (libvpl) and the legacy Media SDK (libmfx)
+    // cannot both be enabled.
+    libvpl: ["libmfx"],
+    libmfx: ["libvpl"],
   };
   const conflicts = exclusiveGroups[selectedLibraryId] ?? [];
   if (conflicts.length === 0) return selectedLibraryIds;
@@ -310,7 +383,15 @@ function renderRichNote(text: string): React.ReactNode {
   ));
 }
 
-const uiDisabledLibraryIds = new Set(["lensfun", "svtjpegxs", "vapoursynth", "tensorflow", "onnxruntime"]);
+// Build-capability disabled rows: not an FFmpeg-version question, so they are NOT in the
+// per-release manifest. tensorflow has a recipe but needs a heavy external libtensorflow
+// import that is not auto-provided; vapoursynth's runtime is non-portable (needs a Python +
+// VapourSynth runtime) regardless of FFmpeg version. Everything that IS version-dependent
+// (lensfun, svtjpegxs, onnxruntime) is now decided per FFmpeg release by the backend manifest
+// annotation (versionCompatibility), not by a global list here: lensfun is manifest-unavailable
+// on every line, onnxruntime is absent from every released line (master-only switch), and
+// svtjpegxs is gated by its per-release pkg-config floor at build time.
+const uiDisabledLibraryIds = new Set(["tensorflow", "vapoursynth"]);
 
 // Libraries that are present in the catalog but still have no implemented
 // preparation/build recipe. They remain visible for transparency, but normal users
@@ -320,10 +401,10 @@ const unimplementedBuildLibraryIds = new Set([
   "smbclient",
   "openvino",
   "torch",
-  // No MSYS2 package and no preparation recipe yet, so these block the build. libmfx is
-  // also dead upstream (FFmpeg removed --enable-libmfx in 7.0); the rest need a source/SDK
-  // import path before they can be selected by normal users.
-  "libmfx",
+  // No MSYS2 package and no preparation recipe yet, so these block the build and need a
+  // source/SDK import path before normal users can select them.
+  // (libmfx was here, but it now has an Internal-track source-build recipe — mfx_dispatch —
+  // so it is selectable on every FFmpeg 4.4-8.1 where the --enable-libmfx switch exists.)
   "pocketsphinx",
   "dc1394",
   "decklink",
@@ -344,6 +425,19 @@ function isLibraryAvailableForProfile(libraryId: string, windowsShellProfileName
   return !(libraryUnavailableProfiles[libraryId] ?? []).includes(windowsShellProfileName);
 }
 
+function isLibrarySupportedForFfmpegVersion(library: LibraryChoice): boolean {
+  return library.versionCompatibility?.supported !== false;
+}
+
+// Available means FFmpeg has the switch for the chosen release AND the package this builder
+// can supply can satisfy it on that release. It is false for a manifest-unavailable row
+// (e.g. lensfun, whose package FFmpeg cannot use) even though the switch nominally exists, so
+// it is a stricter gate than isLibrarySupportedForFfmpegVersion. Both are per-FFmpeg-version,
+// driven by the backend manifest annotation, never a global list.
+function isLibraryAvailableForFfmpegVersion(library: LibraryChoice): boolean {
+  return library.versionCompatibility?.available !== false;
+}
+
 function libraryTrackLabel(trackName: string): string {
   return t(`libraries.row.track.${trackName || "native"}`);
 }
@@ -353,22 +447,26 @@ function visibleLibraries(catalog: LibraryChoice[], windowsShellProfileName: str
   return catalog;
 }
 
-function isLibraryUiUnavailable(libraryId: string, windowsShellProfileName: string): boolean {
-  return uiDisabledLibraryIds.has(libraryId) || unimplementedBuildLibraryIds.has(libraryId) || !isLibraryAvailableForProfile(libraryId, windowsShellProfileName);
+function isLibraryUiUnavailable(library: LibraryChoice, windowsShellProfileName: string): boolean {
+  return uiDisabledLibraryIds.has(library.libraryId) || unimplementedBuildLibraryIds.has(library.libraryId) || !isLibraryAvailableForProfile(library.libraryId, windowsShellProfileName) || !isLibrarySupportedForFfmpegVersion(library) || !isLibraryAvailableForFfmpegVersion(library);
 }
 
 // Whether the checkbox is actually locked. Same as UI-unavailable, except the hidden
 // About-tab developer unlock makes otherwise-unavailable libraries checkable for testing.
 // The unavailable styling still shows regardless of unlock.
-function isLibraryCheckboxLocked(libraryId: string, windowsShellProfileName: string): boolean {
-  return isLibraryUiUnavailable(libraryId, windowsShellProfileName) && !isDevUnlockEnabled();
+function isLibraryCheckboxLocked(library: LibraryChoice, windowsShellProfileName: string): boolean {
+  if (!isLibrarySupportedForFfmpegVersion(library)) return true;
+  if (!isLibraryAvailableForFfmpegVersion(library)) return true;
+  return isLibraryUiUnavailable(library, windowsShellProfileName) && !isDevUnlockEnabled();
 }
 
 // Returns the localization key suffix for an unavailable row's note, or "" when no
 // note should be shown. Unimplemented-build rows show no note: the disabled styling
 // already signals they cannot be selected, and a generic "Not selectable." line added
 // nothing.
-function libraryUiUnavailableReasonKey(libraryId: string, windowsShellProfileName: string): string {
+function libraryUiUnavailableReasonKey(library: LibraryChoice, windowsShellProfileName: string): string {
+  const libraryId = library.libraryId;
+  if (!isLibrarySupportedForFfmpegVersion(library)) return "ffmpegVersionUnsupported";
   if (!isLibraryAvailableForProfile(libraryId, windowsShellProfileName)) return "profileUnavailable";
   if (unimplementedBuildLibraryIds.has(libraryId)) return "";
   return libraryId;
@@ -504,7 +602,7 @@ function LibraryPresetSelector(props: { presets: LibraryPreset[]; selectedPreset
 }
 
 function LibrarySelectionSummary(props: { catalog: LibraryChoice[]; selectedLibraryIds: string[]; selectedPresetId: LibraryPresetId; windowsShellProfileName: string; extendedLibraries: boolean }) {
-  const normalizedSelection = normalizeLibrarySelection(props.selectedLibraryIds, props.windowsShellProfileName);
+  const normalizedSelection = normalizeLibrarySelection(props.selectedLibraryIds, props.windowsShellProfileName, props.catalog);
   const visibleCatalog = visibleLibraries(props.catalog, props.windowsShellProfileName);
   const licenseBoundary = deriveLicenseBoundaryFromSelectedLibraries(normalizedSelection, props.catalog, props.windowsShellProfileName);
   const selectedOptionalCount = visibleCatalog.filter((library) => normalizedSelection.includes(library.libraryId) && !library.defaultChecked).length;
@@ -535,6 +633,12 @@ function LibrarySelectionSummary(props: { catalog: LibraryChoice[]; selectedLibr
         </div>
         <div className="library-summary__item">
           <span className="library-summary__text">
+            <span className="library-summary__label">{t("libraries.summary.included")}</span>
+            <strong className="library-summary__value">{includedCount}</strong>
+          </span>
+        </div>
+        <div className="library-summary__item">
+          <span className="library-summary__text">
             <span className="library-summary__label">{t("libraries.summary.optional")}</span>
             <strong className="library-summary__value">{selectedOptionalCount}</strong>
           </span>
@@ -549,12 +653,6 @@ function LibrarySelectionSummary(props: { catalog: LibraryChoice[]; selectedLibr
           <span className="library-summary__text">
             <span className="library-summary__label">{t("libraries.summary.externalTrack")}</span>
             <strong className="library-summary__value">{selectedExternalCount}</strong>
-          </span>
-        </div>
-        <div className="library-summary__item">
-          <span className="library-summary__text">
-            <span className="library-summary__label">{t("libraries.summary.included")}</span>
-            <strong className="library-summary__value">{includedCount}</strong>
           </span>
         </div>
       </div>
@@ -663,9 +761,9 @@ function LibraryList(props: { catalog: LibraryChoice[]; selectedLibraryIds: stri
         <section className="library-group" key={categoryName}>
           <h2 className="library-group__title">{categoryName}</h2>
           {libraries.map((library) => {
-            const isUiUnavailable = isLibraryUiUnavailable(library.libraryId, props.windowsShellProfileName);
-            const unavailableReasonKey = libraryUiUnavailableReasonKey(library.libraryId, props.windowsShellProfileName);
-            const isCheckboxLocked = isLibraryCheckboxLocked(library.libraryId, props.windowsShellProfileName);
+            const isUiUnavailable = isLibraryUiUnavailable(library, props.windowsShellProfileName);
+            const unavailableReasonKey = libraryUiUnavailableReasonKey(library, props.windowsShellProfileName);
+            const isCheckboxLocked = isLibraryCheckboxLocked(library, props.windowsShellProfileName);
             const isChecked = (props.selectedLibraryIds.includes(library.libraryId) || library.defaultChecked) && !isCheckboxLocked;
             // TLS backends, shaderc/glslang, and the EVC binding pairs each render as a
             // radio group (pick one) in normal and basic dev mode; clicking the selected
@@ -682,7 +780,9 @@ function LibraryList(props: { catalog: LibraryChoice[]; selectedLibraryIds: stri
                     ? "evc-decoder"
                     : evcEncoderLibraryIds.has(library.libraryId)
                       ? "evc-encoder"
-                      : undefined;
+                      : intelHwaccelBackendLibraryIds.has(library.libraryId)
+                        ? "intel-hwaccel-backend"
+                        : undefined;
             const isExclusiveRadio = radioGroupName !== undefined;
             const trackName = library.trackName || "native";
             const isNativeTrack = trackName === "native";
@@ -879,6 +979,7 @@ function LibrariesToolbar(props: {
 
 export type LibrariesTabProps = {
   initialApplicationState: InitialApplicationState;
+  libraryCatalog: LibraryChoice[];
   ffmpegBuildSettings: FfmpegBuildSettings;
   libraryPresetId: LibraryPresetId;
   extendedLibraries: boolean;
@@ -894,9 +995,10 @@ export type LibrariesTabProps = {
   openInUserBrowser: (url: string) => Promise<void>;
 };
 
-export function LibrariesTab({ initialApplicationState, ffmpegBuildSettings, libraryPresetId, extendedLibraries, libraryDetailedView, setLibraryDetailedView, showTechnicalDetails, setShowTechnicalDetails, sectionFilters, setSectionFilters, toggleLibrary, applyLibraryPreset, setExtendedLibraries, openInUserBrowser }: LibrariesTabProps) {
+export function LibrariesTab({ initialApplicationState, libraryCatalog, ffmpegBuildSettings, libraryPresetId, extendedLibraries, libraryDetailedView, setLibraryDetailedView, showTechnicalDetails, setShowTechnicalDetails, sectionFilters, setSectionFilters, toggleLibrary, applyLibraryPreset, setExtendedLibraries, openInUserBrowser }: LibrariesTabProps) {
   const [searchQuery, setSearchQuery] = React.useState("");
-  const sectionOptions = librarySectionOptions(initialApplicationState.defaultLibraryCatalog, ffmpegBuildSettings.windowsShellProfileName);
+  const catalog = libraryCatalog.length > 0 ? libraryCatalog : initialApplicationState.defaultLibraryCatalog;
+  const sectionOptions = librarySectionOptions(catalog, ffmpegBuildSettings.windowsShellProfileName);
 
   React.useEffect(() => {
     const prunedSections = sectionFilters.filter((sectionName) => sectionOptions.includes(sectionName));
@@ -918,7 +1020,7 @@ export function LibrariesTab({ initialApplicationState, ffmpegBuildSettings, lib
         <div className="libraries-simple-layout">
           <SimpleLibraryPresetCard selectedPresetId={libraryPresetId} onApplyPreset={applyLibraryPreset} extendedLibraries={extendedLibraries} />
           <SimpleLibraryCard
-            catalog={initialApplicationState.defaultLibraryCatalog}
+            catalog={catalog}
             selectedLibraryIds={ffmpegBuildSettings.selectedLibraryIds}
             onToggleLibrary={toggleLibrary}
             windowsShellProfileName={ffmpegBuildSettings.windowsShellProfileName}
@@ -939,7 +1041,7 @@ export function LibrariesTab({ initialApplicationState, ffmpegBuildSettings, lib
             <input type="checkbox" checked={extendedLibraries} onChange={(event) => setExtendedLibraries(event.target.checked)} />
             <span className="library-extended-toggle__label">{t("libraries.extended.label")}</span>
           </label>
-          <LibrarySelectionSummary catalog={initialApplicationState.defaultLibraryCatalog} selectedLibraryIds={ffmpegBuildSettings.selectedLibraryIds} selectedPresetId={libraryPresetId} windowsShellProfileName={ffmpegBuildSettings.windowsShellProfileName} extendedLibraries={extendedLibraries} />
+          <LibrarySelectionSummary catalog={catalog} selectedLibraryIds={ffmpegBuildSettings.selectedLibraryIds} selectedPresetId={libraryPresetId} windowsShellProfileName={ffmpegBuildSettings.windowsShellProfileName} extendedLibraries={extendedLibraries} />
           <LibrariesToolbar
             showTechnicalDetails={showTechnicalDetails}
             onToggleTechnicalDetails={() => setShowTechnicalDetails(!showTechnicalDetails)}
@@ -976,7 +1078,7 @@ export function LibrariesTab({ initialApplicationState, ffmpegBuildSettings, lib
               </div>
             </section>
           )}
-          <LibraryList catalog={initialApplicationState.defaultLibraryCatalog} selectedLibraryIds={ffmpegBuildSettings.selectedLibraryIds} onToggleLibrary={toggleLibrary} showTechnicalDetails={showTechnicalDetails} windowsShellProfileName={ffmpegBuildSettings.windowsShellProfileName} searchQuery={searchQuery} sectionFilters={sectionFilters} onOpenOfficialWebpage={openInUserBrowser} />
+          <LibraryList catalog={catalog} selectedLibraryIds={ffmpegBuildSettings.selectedLibraryIds} onToggleLibrary={toggleLibrary} showTechnicalDetails={showTechnicalDetails} windowsShellProfileName={ffmpegBuildSettings.windowsShellProfileName} searchQuery={searchQuery} sectionFilters={sectionFilters} onOpenOfficialWebpage={openInUserBrowser} />
         </>
       )}
     </section>

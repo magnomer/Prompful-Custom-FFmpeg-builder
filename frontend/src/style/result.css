@@ -38,7 +38,13 @@
 
 .result-summary {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns:
+    minmax(82px, 0.75fr)
+    minmax(74px, 0.65fr)
+    minmax(104px, 0.85fr)
+    minmax(116px, 0.95fr)
+    minmax(88px, 0.75fr)
+    minmax(190px, 1.65fr);
   overflow: hidden;
   border: 1px solid #d8e1ee;
   border-radius: 14px;

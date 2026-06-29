@@ -49,6 +49,15 @@ type LibrarySourcePatch struct {
 	Replace string `json:"replace"`
 }
 
+// GeneratedSourceFile is a file written into the extracted source tree before the build,
+// for a file a release tarball omits because upstream generates it from a .git checkout
+// (e.g. libvmaf's vcs_version.h). Path is relative to the source root; Lines are the file's
+// lines, written verbatim.
+type GeneratedSourceFile struct {
+	Path  string   `json:"path"`
+	Lines []string `json:"lines"`
+}
+
 // LibraryBuildSystem names the build system of an Internal-track source recipe. The
 // generic source-build generator dispatches on this, so adding an autotools/make
 // library is implemented in one place without disturbing existing cmake recipes.
@@ -60,6 +69,10 @@ const (
 	// autotools or x264/davs2-style custom configure) followed by make + make install.
 	BuildSystemConfigureMake LibraryBuildSystem = "configure-make"
 	BuildSystemMake          LibraryBuildSystem = "make"
+	// BuildSystemMeson covers projects configured with `meson setup` and built with ninja
+	// (e.g. libvmaf). The meson `-Dname=value` options reuse the CMakeOptions field, since
+	// both build systems share that option syntax and the same safe-option validation.
+	BuildSystemMeson LibraryBuildSystem = "meson"
 )
 
 // libraryItemSpec is layer (2): version-independent, item-specific.
@@ -82,6 +95,12 @@ type libraryItemSpec struct {
 	// recipe needs (autoconf-wrapper, automake-wrapper, libtool); modern base-devel no longer
 	// pulls them. Most recipes need none.
 	msysBuildDependencyPackages []string
+
+	// cFlags are extra C compiler flags exported as CFLAGS for the build. Used to demote a
+	// GCC-14 hard error back to a warning for an older C library that predates it (e.g. libvmaf
+	// 1.5.2's implicit function declarations). Honored by the meson generator. Most recipes
+	// need none.
+	cFlags []string
 
 	// internal source build (cmake)
 	buildSystem       LibraryBuildSystem
@@ -145,6 +164,11 @@ type libraryItemSpec struct {
 	// build runs, for upstream portability bugs no build flag can fix. Most recipes need none.
 	sourcePatches []LibrarySourcePatch
 
+	// generatedSourceFiles are files written into the extracted source before the build, for a
+	// file a release tarball omits because upstream generates it from a .git checkout (e.g.
+	// libvmaf's vcs_version.h). Most recipes need none.
+	generatedSourceFiles []GeneratedSourceFile
+
 	// verification (both methods)
 	verifyHeaderRelativePath string
 	verifyLibStem            string
@@ -160,6 +184,10 @@ type LibraryPreparation struct {
 	Method      LibraryPreparationMethod `json:"method"`
 
 	BuildSystem LibraryBuildSystem `json:"buildSystem"`
+
+	// CFlags are extra C compiler flags exported as CFLAGS for the build (e.g. demoting a
+	// GCC-14 hard error to a warning for an older C library). Honored by the meson generator.
+	CFlags []string `json:"cFlags,omitempty"`
 
 	// Version is the resolved release of the library (from library-sources.json), used to
 	// validate against FFmpeg's required minimum and to surface what will be built.
@@ -205,6 +233,8 @@ type LibraryPreparation struct {
 	VerifyLibStem            string `json:"verifyLibStem"`
 
 	SourcePatches []LibrarySourcePatch `json:"sourcePatches,omitempty"`
+
+	GeneratedSourceFiles []GeneratedSourceFile `json:"generatedSourceFiles,omitempty"`
 }
 
 // buildPreparation projects an item plus its resolved version source into a plan-facing
@@ -220,6 +250,7 @@ func buildPreparation(item libraryItemSpec, source librarysources.LibrarySource)
 		TrackName:                   item.trackName,
 		Method:                      item.method,
 		BuildSystem:                 item.buildSystem,
+		CFlags:                      append([]string{}, item.cFlags...),
 		Version:                     source.Version,
 		BuildDependencyPackages:     append([]string{}, item.buildDependencyPackages...),
 		MsysBuildDependencyPackages: append([]string{}, item.msysBuildDependencyPackages...),
@@ -246,6 +277,7 @@ func buildPreparation(item libraryItemSpec, source librarysources.LibrarySource)
 		VerifyHeaderRelativePath:    item.verifyHeaderRelativePath,
 		VerifyLibStem:               item.verifyLibStem,
 		SourcePatches:               append([]LibrarySourcePatch{}, item.sourcePatches...),
+		GeneratedSourceFiles:        append([]GeneratedSourceFile{}, item.generatedSourceFiles...),
 	}
 }
 
@@ -533,6 +565,204 @@ var libraryItemSpecs = map[string]libraryItemSpec{
 		privatePrefixInstall:     true,
 		verifyHeaderRelativePath: "tls.h",
 		verifyLibStem:            "tls",
+	},
+	// libvmaf is normally the MSYS2 native package (Native track), which is correct for
+	// FFmpeg >= 5.1 (those probe the libvmaf 2.x `vmaf_init` API the current 3.x package
+	// provides). FFmpeg 4.4/5.0 instead probe the libvmaf 1.x `compute_vmaf` API, removed at
+	// libvmaf 2.0, so the native package cannot satisfy them and MSYS2 ships no 1.x package.
+	// For those release lines the manifest marks vmaf sourceBuild and the planner flips it to
+	// this Internal recipe, which builds the pinned libvmaf 1.5.2 (resolved per FFmpeg release
+	// from library-sources.json) with meson. The meson source lives in the libvmaf/ subdir of
+	// the repo; -Denable_tests/-Denable_docs=false skip the test/doc targets (the only options
+	// 1.5.2 exposes). libvmaf is C++, and its static libvmaf.pc lists only -lvmaf, so the C++/
+	// math runtime is appended after the archive for correct GNU static link order. FFmpeg
+	// detects it with require_pkg_config libvmaf (header libvmaf/libvmaf.h, symbol compute_vmaf).
+	"vmaf": {
+		libraryId:               "vmaf",
+		displayName:             "libvmaf",
+		trackName:               LibraryTrackInternal,
+		method:                  PreparationMethodInternalSource,
+		buildSystem:             BuildSystemMeson,
+		buildDependencyPackages: []string{"meson", "ninja"},
+		configureSubdir:         "libvmaf",
+		cmakeOptions:            []string{"-Denable_tests=false", "-Denable_docs=false"},
+		// libvmaf.rc.c (in the WIP vmaf_rc targets, which ninja still compiles as part of `all`)
+		// #includes vcs_version.h, which upstream generates with meson vcs_tag from a .git checkout
+		// absent in the release tarball — so the build aborts with "vcs_version.h: No such file".
+		// FFmpeg 4.4/5.0 only need the legacy libvmaf (compute_vmaf), which never includes it, but
+		// the target compiles regardless; supply a static header so every target builds. The
+		// VMAF_VERSION value is cosmetic (a reported version string), not part of the linked API.
+		generatedSourceFiles: []GeneratedSourceFile{
+			{
+				Path:  "libvmaf/include/vcs_version.h",
+				Lines: []string{"/* auto-generated, do not edit */", "#define VMAF_VERSION \"v1.5.2\""},
+			},
+		},
+		// libvmaf 1.5.2 (2020) predates GCC 14, which promoted several lax-C constructs from
+		// warning to hard error: it calls memset without <string.h> (implicit-function-declaration)
+		// and uses vmaf_ceiln/vmaf_floorn without including their alignment.h declaration. The
+		// functions are defined and their int returns match the use sites, so demote the GCC-14 C
+		// hard errors back to warnings (the same workaround distros ship for old C on GCC 14).
+		cFlags: []string{
+			"-Wno-error=implicit-function-declaration",
+			"-Wno-error=implicit-int",
+			"-Wno-error=int-conversion",
+			"-Wno-error=incompatible-pointer-types",
+		},
+		pkgConfigName:            "libvmaf",
+		pkgConfigAppendLibs:      []string{"stdc++", "m"},
+		verifyHeaderRelativePath: "libvmaf/libvmaf.h",
+		verifyLibStem:            "vmaf",
+	},
+	// libmfx is Intel's open Media SDK dispatcher (lu-zero/mfx_dispatch), source-built because
+	// MSYS2 ships no package for it. CMake builds the static libmfx.a (target "mfx") and installs
+	// mfx/mfxvideo.h, libmfx.a, and libmfx.pc. FFmpeg finds it via pkg-config (module libmfx,
+	// header mfx/mfxvideo.h, symbol MFXInit). Two fixes to the upstream CMake .pc:
+	//   - Its template hardcodes "Version: 2013", which fails FFmpeg 6.1+'s "libmfx < 2.0" bound;
+	//     a source patch rewrites it to 1.35 (in the required [1.28, 2.0) window, and the API
+	//     version this 1.35.1 dispatcher implements).
+	//   - Its Libs line lists the C++ runtime BEFORE the static archive and omits the Windows COM
+	//     libraries the dispatcher needs; pkgConfigLibsLine replaces it with the archive first then
+	//     -lstdc++ and the Win32 libs (ole32/uuid for DXVA COM, advapi32 for the registry probe),
+	//     matching the project's own autotools .pc DLLIB. This fixes the GNU static link order.
+	"libmfx": {
+		libraryId:                "libmfx",
+		displayName:              "libmfx",
+		trackName:                LibraryTrackInternal,
+		method:                   PreparationMethodInternalSource,
+		buildSystem:              BuildSystemCMake,
+		pkgConfigName:            "libmfx",
+		pkgConfigLibsLine:        "-L${libdir} -lmfx -lstdc++ -lole32 -luuid -ladvapi32",
+		verifyHeaderRelativePath: "mfx/mfxvideo.h",
+		verifyLibStem:            "mfx",
+		// A second patch adds src/mfx_driver_store_loader.cpp to the CMake Windows SOURCES list: the
+		// upstream CMakeLists omits it, but mfx_library_iterator.cpp references MFX::DriverStoreLoader,
+		// so libmfx.a is built without those symbols and FFmpeg's link test fails with undefined
+		// references. The file is appended on the same line as mfx_win_reg_key.cpp (CMake splits the
+		// list on whitespace) so the patch replaces a single line, which the source-patch step requires.
+		sourcePatches: []LibrarySourcePatch{
+			{File: "libmfx.pc.cmake", Find: "Version: 2013", Replace: "Version: 1.35"},
+			{File: "CMakeLists.txt", Find: "    src/mfx_win_reg_key.cpp", Replace: "    src/mfx_win_reg_key.cpp src/mfx_driver_store_loader.cpp"},
+		},
+	},
+	// SVT-AV1's encoder API dropped svt_av1_enc_init_handle's middle p_app_data argument at
+	// v3.0.0, but FFmpeg 4.4 through 7.1 call the 3-argument form, so the MSYS2 native SVT-AV1
+	// (now 3.x) makes those release lines fail to compile libavcodec/libsvtav1.c ("too many
+	// arguments to svt_av1_enc_init_handle"). Those lines mark svt-av1 sourceBuild and the planner
+	// flips it to this Internal recipe, which builds the pinned SVT-AV1 2.3.0 (the last 2.x,
+	// 3-argument release, resolved per FFmpeg release from library-sources.json) with CMake.
+	// BUILD_SHARED_LIBS=OFF yields the static libSvtAv1Enc.a; BUILD_APPS/BUILD_TESTING=OFF skip the
+	// encoder app and the gtest unit tests. The bundled cpuinfo is an OBJECT library compiled into
+	// libSvtAv1Enc.a, so no separate cpuinfo install is needed; the installed .pc's Libs.private
+	// (-lpthread -lm) covers the rest of the static link. nasm assembles the x86 SIMD. FFmpeg finds
+	// it via pkg-config (module SvtAv1Enc, header EbSvtAv1Enc.h under include/svt-av1, symbol
+	// svt_av1_enc_init_handle).
+	"svt-av1": {
+		libraryId:                "svt-av1",
+		displayName:              "SVT-AV1",
+		trackName:                LibraryTrackInternal,
+		method:                   PreparationMethodInternalSource,
+		buildSystem:              BuildSystemCMake,
+		buildDependencyPackages:  []string{"nasm"},
+		cmakeOptions:             []string{"-DBUILD_SHARED_LIBS=OFF", "-DBUILD_APPS=OFF", "-DBUILD_TESTING=OFF"},
+		pkgConfigName:            "SvtAv1Enc",
+		verifyHeaderRelativePath: "svt-av1/EbSvtAv1Enc.h",
+		verifyLibStem:            "SvtAv1Enc",
+	},
+	// XEVE (MPEG-5 EVC encoder) is normally the MSYS2 native package (Native track), correct
+	// for FFmpeg >= 7.1: those adapted libavcodec/libxeve.c to XEVE 0.5's API, where param->fps
+	// is an XEVE_RATIONAL struct (FFmpeg 7.1+ configure pins xeve >= 0.5.1). FFmpeg 7.0's
+	// libxeve.c instead assigns a scalar to param->fps, so the current native package (0.5.x)
+	// makes 7.0 fail to compile libavcodec/libxeve.c ("incompatible types when assigning to type
+	// 'XEVE_RATIONAL' from type 'long int'"). FFmpeg's pkg-config floor (xeve >= 0.4.3) is a
+	// minimum not a maximum, so configure passes and the break only surfaces at make. The 7.0
+	// line marks xeve sourceBuild and the planner flips it to this Internal recipe, building the
+	// pinned XEVE 0.4.3 (the last 0.4.x, scalar-fps API, resolved per FFmpeg release from
+	// library-sources.json) with CMake.
+	//
+	// version.txt: the CMakeLists derives the project version from `git describe`, absent in a
+	// release tarball, then falls back to a version.txt it FATAL_ERRORs without; supply one (the
+	// same fix MSYS2 ships) so configure proceeds and the installed xeve.pc reports 0.4.3, which
+	// satisfies FFmpeg's xeve >= 0.4.3 check. Keep its value in lockstep with the source pin.
+	// The sourcePatch drops -Werror from the project's CMAKE_C_FLAGS (also mirroring MSYS2):
+	// XEVE 0.4.3 predates GCC 14, which promoted several lax-C constructs to hard errors, and an
+	// env CFLAGS -Wno-error cannot win because the project appends -Werror after it.
+	//
+	// The CMakeLists always builds the static libxeve.a (target "xeve") alongside a shared
+	// xeve_dynamic, and installs the static archive into lib/xeve/ (a subdir), the shared import
+	// library libxeve.dll.a into lib/, and headers into include/xeve/. A bare -lxeve would pick
+	// the shared import library, so pkgConfigLibsLine forces the static archive. It must use the
+	// -L<dir> -l:<file> form, NOT a bare absolute archive path: FFmpeg's configure link test
+	// (test_ld) splits pkg-config --libs into libs (args matching -l*|*.so, placed AFTER the test
+	// object) and flags (everything else, placed BEFORE it). A bare ".../libxeve.a" matches
+	// neither, so it lands before the object and GNU ld discards the archive before xeve_encode is
+	// referenced ("undefined reference to xeve_encode"). -l:libxeve.a matches -l*, so it is placed
+	// after the object and resolves; the -l: prefix pins the exact static archive over the .dll.a,
+	// and -L${libdir}/xeve points at its subdir. XEVE is pure C; -lm and -lpthread cover its math
+	// and threading. FFmpeg finds it via pkg-config (module xeve, header xeve.h under include/xeve,
+	// symbol xeve_encode).
+	"xeve": {
+		libraryId:   "xeve",
+		displayName: "XEVE",
+		trackName:   LibraryTrackInternal,
+		method:      PreparationMethodInternalSource,
+		buildSystem: BuildSystemCMake,
+		generatedSourceFiles: []GeneratedSourceFile{
+			{Path: "version.txt", Lines: []string{"v0.4.3"}},
+		},
+		sourcePatches: []LibrarySourcePatch{
+			{
+				File:    "CMakeLists.txt",
+				Find:    `    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OPT_DBG} -${OPT_LV} -fomit-frame-pointer -Wall -Wno-unused-function -Wno-unused-but-set-variable -Wno-unused-variable -Wno-attributes -Werror -Wno-strict-overflow -Wno-unknown-pragmas -Wno-stringop-overflow -std=c99")`,
+				Replace: `    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OPT_DBG} -${OPT_LV} -fomit-frame-pointer -Wall -Wno-unused-function -Wno-unused-but-set-variable -Wno-unused-variable -Wno-attributes -Wno-strict-overflow -Wno-unknown-pragmas -Wno-stringop-overflow -std=c99")`,
+			},
+		},
+		pkgConfigName:            "xeve",
+		pkgConfigLibsLine:        "-L${libdir}/xeve -l:libxeve.a -lm -lpthread",
+		verifyHeaderRelativePath: "xeve/xeve.h",
+		verifyLibStem:            "xeve",
+	},
+	// libplacebo is normally the MSYS2 native package (Native track), correct for FFmpeg >= 6.1:
+	// those guard the pl_peak_detect_params.overshoot_margin and pl_render_params.force_icc_lut
+	// references in vf_libplacebo.c behind PL_API_VER, so they compile against the current
+	// libplacebo (API 7.x). FFmpeg 5.1's vf_libplacebo.c uses both fields unconditionally, but
+	// libplacebo removed overshoot_margin at PL_API_VER 256 and force_icc_lut later, so the
+	// current package fails to compile libavfilter/vf_libplacebo.c ("no member named
+	// overshoot_margin"/"force_icc_lut"). FFmpeg's pkg-config floor (libplacebo >= 4.192.0) is a
+	// minimum not a maximum, so configure passes and the break only surfaces at make. The 5.1 line
+	// marks libplacebo sourceBuild and the planner flips it to this Internal recipe, building the
+	// pinned libplacebo 4.192.0 (the 5.1 floor, API 192: both fields present) with meson.
+	//
+	// The native libplacebo catalog row also carries vulkan-loader/vulkan-headers (FFmpeg's
+	// --enable-vulkan and libplacebo both need them); the Native->Internal flip drops the row's
+	// packages, so they are reinstated here as buildDependencyPackages alongside the shader
+	// compiler (shaderc) and colour-management (lcms2) libplacebo links — they install into the
+	// prefix before the build and remain installed for FFmpeg configure. demos=false avoids the
+	// only git submodule (demos/3rdparty/nuklear, absent from the archive); d3d11/opengl/glslang
+	// are disabled to keep the dependency surface to vulkan+shaderc+lcms2. libplacebo is C but
+	// shaderc is C++, so the C++ runtime is appended after the archive for correct GNU static link
+	// order. FFmpeg finds it via pkg-config (module libplacebo, header libplacebo/renderer.h).
+	"libplacebo": {
+		libraryId:               "libplacebo",
+		displayName:             "libplacebo",
+		trackName:               LibraryTrackInternal,
+		method:                  PreparationMethodInternalSource,
+		buildSystem:             BuildSystemMeson,
+		buildDependencyPackages: []string{"meson", "ninja", "vulkan-headers", "vulkan-loader", "shaderc", "lcms2"},
+		cmakeOptions: []string{
+			"-Ddemos=false",
+			"-Dtests=false",
+			"-Dopengl=disabled",
+			"-Dd3d11=disabled",
+			"-Dglslang=disabled",
+			"-Dshaderc=enabled",
+			"-Dvulkan=enabled",
+			"-Dlcms=enabled",
+		},
+		pkgConfigName:            "libplacebo",
+		pkgConfigAppendLibs:      []string{"stdc++"},
+		verifyHeaderRelativePath: "libplacebo/renderer.h",
+		verifyLibStem:            "placebo",
 	},
 	"tensorflow": {
 		libraryId:                "tensorflow",

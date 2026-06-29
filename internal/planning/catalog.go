@@ -39,14 +39,29 @@ func LibraryCatalogForShellProfile(windowsShellProfileName string) []LibraryChoi
 
 		// Hardware encoders — ordered by common Windows adoption and stability.
 		libraryChoice("nvenc", "NVIDIA NVENC", "Hardware encoders", []string{"--enable-ffnvcodec"}, []string{packagePrefix + "-ffnvcodec-headers"}, "lgpl"),
-		libraryChoice("qsv", "Intel QSV (oneVPL)", "Hardware encoders", []string{"--enable-libvpl"}, []string{packagePrefix + "-libvpl"}, "lgpl"),
+		// Intel Hardware Acceleration (Quick Sync) has two backends, MUTUALLY EXCLUSIVE: oneVPL
+		// (libvpl, --enable-libvpl) and the legacy Media SDK (libmfx, --enable-libmfx). FFmpeg
+		// configure dies with "can not use libmfx and libvpl together" when both are enabled. They
+		// are kept adjacent here so the UI renders them as one pick-one radio block (see
+		// intelHwaccelBackendLibraryIds in the frontend), matching the EVC xeve/xeveb pair. The
+		// planner blocks the both-enabled combination and the selection logic keeps oneVPL (the
+		// maintained path) over the deprecated libmfx.
+		//
+		// libvpl/oneVPL is the modern backend. Per FFmpeg's Changelog it was added in 6.0
+		// ("oneVPL support for QSV"); the release-support manifest therefore lists libvpl only on
+		// the 6.x+ lines, so on 4.4/5.x it is version-unsupported and pruned, leaving libmfx as the
+		// only Intel HW accel path there. minVersion is the libvpl PACKAGE pkg-config floor, not an
+		// FFmpeg version.
+		libraryChoice("libvpl", "Intel HW accel (oneVPL)", "Hardware encoders", []string{"--enable-libvpl"}, []string{packagePrefix + "-libvpl"}, "lgpl"),
+		// libmfx is the legacy Intel Media SDK dispatcher. FFmpeg's --enable-libmfx switch exists in
+		// every supported release (4.4 through 8.1 — per the Changelog it has not been removed), so
+		// it is the only Intel HW accel path before 6.0 and a deprecated-but-valid alternative after.
+		// MSYS2 ships no libmfx/mfx_dispatch package, so it is built from source on the Internal
+		// track from Intel's open dispatcher (lu-zero/mfx_dispatch), the same as the other
+		// source-built libraries; the version pin and build/verify live in library-sources.json +
+		// libraryItemSpecs.
+		trackedLibraryChoice(LibraryTrackInternal, "libmfx", "libmfx (legacy Intel Media SDK)", "Hardware encoders", []string{"--enable-libmfx"}, []string{}, "lgpl"),
 		libraryChoice("amf", "AMD AMF", "Hardware encoders", []string{"--enable-amf"}, []string{packagePrefix + "-amf-headers"}, "lgpl"),
-		// libmfx is the legacy Intel Media SDK dispatcher. FFmpeg removed --enable-libmfx in
-		// 7.0 in favor of libvpl (the qsv row), so the flag does not exist in the 8.x source
-		// this builder targets and would fail configure. It is kept as a visible External-track
-		// row with no preparation recipe, so selecting it blocks the build instead of producing
-		// a broken configure; the catalog text points users to Intel QSV (oneVPL) instead.
-		trackedLibraryChoice(LibraryTrackExternal, "libmfx", "libmfx (legacy Intel Media SDK)", "Hardware encoders", []string{"--enable-libmfx"}, []string{}, "lgpl"),
 
 		// Video decoders — broadly used and stable decoders first.
 		libraryChoice("dav1d", "dav1d", "Video decoders", []string{"--enable-libdav1d"}, []string{packagePrefix + "-dav1d"}, "lgpl"),
@@ -377,7 +392,7 @@ func officialWebpageUrlForLibrary(libraryId string) string {
 		"pocketsphinx": "https://github.com/cmusphinx/pocketsphinx",
 		"pulse":        "https://www.freedesktop.org/wiki/Software/PulseAudio/",
 		"qrencode":     "https://fukuchi.org/works/qrencode/",
-		"qsv":          "https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html",
+		"libvpl":       "https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html",
 		"quirc":        "https://github.com/dlbeer/quirc",
 		"rabbitmq":     "https://github.com/alanxz/rabbitmq-c",
 		"rav1e":        "https://github.com/xiph/rav1e",

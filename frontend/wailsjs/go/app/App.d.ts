@@ -18,6 +18,8 @@ export function GetInitialApplicationState():Promise<app.InitialApplicationState
 
 export function GetInstalledToolchainProfiles(arg1:string):Promise<Array<app.ToolchainStatus>>;
 
+export function GetLibraryCatalogForFfmpegSource(arg1:string,arg2:string):Promise<Array<planning.LibraryChoice>>;
+
 export function GetLocalLogRecord(arg1:string,arg2:string):Promise<app.LocalLogRecord>;
 
 export function GetToolchainStatus(arg1:string,arg2:string):Promise<app.ToolchainStatus>;
@@ -44,7 +46,7 @@ export function RequestToolchainPreparationPlan(arg1:planning.BuildConfigSetting
 
 export function SaveUiState(arg1:string):Promise<void>;
 
-export function SelectWorkspace():Promise<string>;
+export function SelectWorkspace(arg1:string):Promise<string>;
 
 export function SetLocale(arg1:string):Promise<void>;
 

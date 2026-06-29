@@ -77,6 +77,21 @@ function InstalledProfilesPanel(props: { profiles: ToolchainStatus[]; currentShe
   );
 }
 
+function ExistingToolchainNotice(props: { onShowExisting: () => void }) {
+  return (
+    <section className="prep-existing" aria-label={t("prep.existingNotice.title")}>
+      <span className="prep-existing__mark" aria-hidden="true"><img className="prep-existing__icon" src={planReadyIcon} alt="" /></span>
+      <div className="prep-existing__body">
+        <h2 className="prep-existing__title">{t("prep.existingNotice.title")}</h2>
+        <p className="prep-existing__text">{t("prep.existingNotice.detail")}</p>
+      </div>
+      <button className="button prep-existing__action" type="button" onClick={props.onShowExisting}>
+        {t("prep.existingNotice.action")}
+      </button>
+    </section>
+  );
+}
+
 // Set difference of package lists: what the current config adds vs what the
 // prepared toolchain has but the config no longer lists.
 function computePackageDrift(configured: string[], prepared: string[]): { added: string[]; removed: string[] } {
@@ -163,6 +178,9 @@ export function PrepTab({ toolchainPreparationPlanReview, toolchainLogEntries, a
       <PageHeader title={t("prep.title")} text={t("prep.intro")} />
       {isIdle && installedToolchainProfiles.length > 0 && (
         <InstalledProfilesPanel profiles={installedToolchainProfiles} currentShellProfileName={currentShellProfileName} onClearBuildEnvironments={onClearBuildEnvironments} />
+      )}
+      {showApproval && toolchainStatus?.installed && (
+        <ExistingToolchainNotice onShowExisting={cancelToolchainPreparationPlan} />
       )}
       {showApproval && (
         <ApprovalPanel

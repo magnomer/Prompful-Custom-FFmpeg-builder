@@ -79,6 +79,67 @@
   letter-spacing: 0.03em;
 }
 
+/* Existing environment notice — compact context shown above a new setup plan. */
+.prep-existing {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 18px 22px 18px 24px;
+  border: 1px solid #d7eee4;
+  border-radius: 14px;
+  background: #f5fbf8;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  overflow: hidden;
+}
+.prep-existing::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: #00a36a;
+}
+.prep-existing__mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e6f7f0;
+  display: grid;
+  place-items: center;
+}
+.prep-existing__icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+.prep-existing__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.prep-existing__title {
+  margin: 0;
+  color: #103526;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.prep-existing__text {
+  margin: 0;
+  color: #4f6359;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+.prep-existing__action {
+  justify-self: end;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
 /* Toolchain recovery card — shown when a prior build environment is found on disk. */
 .card--green::before { background: #00a36a; }
 .card--green .card__badge { background: #e6f7f0; }
@@ -104,3 +165,14 @@
 
 .empty-text--ok { color: #0f7a4d; }
 .empty-text--warn { color: #b25408; }
+
+@media (max-width: 760px) {
+  .prep-existing {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+  .prep-existing__action {
+    grid-column: 2;
+    justify-self: start;
+    white-space: normal;
+  }
+}

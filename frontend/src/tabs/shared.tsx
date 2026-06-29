@@ -158,7 +158,8 @@ function ApprovalPanelBody(props: ApprovalPanelProps) {
   return (
     <>
       <dl className="metadata">
-        <dt>{t("approval.metadata.action")}</dt><dd>{actionNameLabel(props.actionName)}</dd>
+        <dt className="metadata__label--plain">{t("approval.metadata.action")}</dt>
+        <dd className="metadata__value metadata__value--plain">{actionNameLabel(props.actionName)}</dd>
         <dt>{t("approval.metadata.planHash")}</dt>
         <dd><CopyableField value={props.planHash} ariaLabel={t("approval.metadata.planHash")} /></dd>
         <dt>{t("approval.metadata.backendPhrase")}</dt>

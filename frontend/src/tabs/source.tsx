@@ -15,9 +15,28 @@ const officialLinks = {
   ffmpegSigningKey: "https://ffmpeg.org/ffmpeg-devel.asc",
 };
 
+// The source-version dropdown carries no release data of its own: the supported releases (and
+// their archive/.asc URLs) come from the backend via supportedFfmpegReleases. This sentinel marks
+// the "no supported release matches the current archive URL" case.
+const ffmpegCustomReleaseValue = "custom";
+
+// ffmpegReleaseValueForArchiveUrl returns the version of the supported release whose archive URL
+// matches the current value, or the custom sentinel when none does.
+function ffmpegReleaseValueForArchiveUrl(supportedFfmpegReleases: FfmpegReleaseChoice[], archiveUrl: string): string {
+  const normalized = archiveUrl.trim();
+  const match = supportedFfmpegReleases.find((release) => release.archiveUrl === normalized);
+  return match ? match.version : ffmpegCustomReleaseValue;
+}
+
+function ffmpegReleaseOptionLabel(release: FfmpegReleaseChoice, newestReleaseVersion: string): string {
+  const baseLabel = `${release.version} ${release.codename}`;
+  return release.version === newestReleaseVersion ? baseLabel : `${baseLabel} (Legacy Support)`;
+}
+
 export type SourceTabProps = {
   buildConfigSettings: BuildConfigSettings;
   ffmpegBuildSettings: FfmpegBuildSettings;
+  supportedFfmpegReleases: FfmpegReleaseChoice[];
   updateBuildConfigSettings: (partial: Partial<BuildConfigSettings>) => void;
   updateFfmpegBuildSettings: (partial: Partial<FfmpegBuildSettings>) => void;
   updateMsys2ArchiveUrl: (url: string) => void;
@@ -25,7 +44,7 @@ export type SourceTabProps = {
   openInUserBrowser: (url: string) => Promise<void>;
 };
 
-export function SourceTab({ buildConfigSettings, ffmpegBuildSettings, updateBuildConfigSettings, updateFfmpegBuildSettings, updateMsys2ArchiveUrl, chooseWorkspaceDirectory, openInUserBrowser }: SourceTabProps) {
+export function SourceTab({ buildConfigSettings, ffmpegBuildSettings, supportedFfmpegReleases, updateBuildConfigSettings, updateFfmpegBuildSettings, updateMsys2ArchiveUrl, chooseWorkspaceDirectory, openInUserBrowser }: SourceTabProps) {
   const [isMsys2TechnicalOpen, setIsMsys2TechnicalOpen] = React.useState(false);
   const [isFfmpegTechnicalOpen, setIsFfmpegTechnicalOpen] = React.useState(false);
 
@@ -85,7 +104,33 @@ export function SourceTab({ buildConfigSettings, ffmpegBuildSettings, updateBuil
         archivePlaceholder={t("source.ffmpegArchive.placeholder")}
         isTechnicalOpen={isFfmpegTechnicalOpen}
         onToggleTechnical={() => setIsFfmpegTechnicalOpen((value) => !value)}
-        onArchiveChange={(value) => updateFfmpegBuildSettings({ ffmpegSourceArchiveUrl: value, ffmpegSourceSignatureUrl: value ? `${value}.asc` : "" })}
+        onArchiveChange={(value) => {
+          const matched = supportedFfmpegReleases.find((release) => release.archiveUrl === value.trim());
+          updateFfmpegBuildSettings({ ffmpegSourceArchiveUrl: value, ffmpegSourceSignatureUrl: matched ? matched.signatureUrl : "" });
+        }}
+        versionSelect={(
+          <label className="card__control">
+            <span className="card__label-hidden">{t("source.ffmpegVersion.label")}</span>
+            <select
+              className="card__input"
+              value={ffmpegReleaseValueForArchiveUrl(supportedFfmpegReleases, ffmpegBuildSettings.ffmpegSourceArchiveUrl)}
+              onChange={(event) => {
+                const selected = event.target.value;
+                const release = supportedFfmpegReleases.find((candidate) => candidate.version === selected);
+                if (!release) {
+                  updateFfmpegBuildSettings({ ffmpegSourceArchiveUrl: "", ffmpegSourceSignatureUrl: "" });
+                  return;
+                }
+                updateFfmpegBuildSettings({ ffmpegSourceArchiveUrl: release.archiveUrl, ffmpegSourceSignatureUrl: release.signatureUrl });
+              }}
+            >
+              {supportedFfmpegReleases.map((release) => (
+                <option key={release.version} value={release.version}>{ffmpegReleaseOptionLabel(release, supportedFfmpegReleases[0]?.version ?? "")}</option>
+              ))}
+              <option value={ffmpegCustomReleaseValue}>{t("source.ffmpegVersion.custom")}</option>
+            </select>
+          </label>
+        )}
         links={[
           { label: t("source.links.ffmpegDownload"), url: officialLinks.ffmpegDownload },
           { label: t("source.links.ffmpegReleaseArchive"), url: officialLinks.ffmpegReleaseIndex },
@@ -120,6 +165,7 @@ function SourceArchiveSection(props: {
   onToggleTechnical: () => void;
   onArchiveChange: (value: string) => void;
   intro?: string;
+  versionSelect?: React.ReactNode;
   links: { label: string; url: string }[];
   technicalSections: { title: string; text: string }[];
   openInUserBrowser: (url: string) => Promise<void>;
@@ -132,6 +178,7 @@ function SourceArchiveSection(props: {
         <h2 className="card__title">{props.title}</h2>
         <DescriptionLines text={props.explanation} />
       </div>
+      {props.versionSelect}
       <label className="card__control">
         <span className="card__label-hidden">{props.archiveLabel}</span>
         <input className="card__input" value={props.archiveValue} onChange={(event) => props.onArchiveChange(event.target.value)} placeholder={props.archivePlaceholder} />

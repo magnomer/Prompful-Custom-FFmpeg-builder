@@ -221,6 +221,7 @@ func preparationScriptLines(preparation planning.LibraryPreparation) ([]string, 
 		LibraryId:                preparation.LibraryId,
 		DisplayName:              preparation.DisplayName,
 		BuildSystem:              string(preparation.BuildSystem),
+		CFlags:                   preparation.CFlags,
 		CMakeOptions:             preparation.CMakeOptions,
 		CMakeBuildTargets:        preparation.CMakeBuildTargets,
 		ConfigureSubdir:          preparation.ConfigureSubdir,
@@ -240,6 +241,7 @@ func preparationScriptLines(preparation planning.LibraryPreparation) ([]string, 
 		VerifyHeaderRelativePath: preparation.VerifyHeaderRelativePath,
 		VerifyLibStem:            preparation.VerifyLibStem,
 		SourcePatches:            preparationSourcePatches(preparation.SourcePatches),
+		GeneratedSourceFiles:     preparationGeneratedSourceFiles(preparation.GeneratedSourceFiles),
 	}
 	switch preparation.Method {
 	case planning.PreparationMethodInternalSource:
@@ -260,6 +262,19 @@ func preparationSourcePatches(patches []planning.LibrarySourcePatch) []scripting
 	mapped := make([]scripting.LibrarySourcePatch, 0, len(patches))
 	for _, patch := range patches {
 		mapped = append(mapped, scripting.LibrarySourcePatch{File: patch.File, Find: patch.Find, Replace: patch.Replace})
+	}
+	return mapped
+}
+
+// preparationGeneratedSourceFiles maps planning-layer generated source files to the
+// scripting-layer type (scripting cannot import planning without an import cycle).
+func preparationGeneratedSourceFiles(files []planning.GeneratedSourceFile) []scripting.GeneratedSourceFile {
+	if len(files) == 0 {
+		return nil
+	}
+	mapped := make([]scripting.GeneratedSourceFile, 0, len(files))
+	for _, file := range files {
+		mapped = append(mapped, scripting.GeneratedSourceFile{Path: file.Path, Lines: file.Lines})
 	}
 	return mapped
 }

@@ -13,7 +13,7 @@ import (
 
 func DefaultBuildConfigSettings() BuildConfigSettings {
 	return BuildConfigSettings{
-		WorkspaceDirectory:       filepath.Join(defaultUserDataDirectory(), "CustomFFmpegBuilder", "workspace"),
+		WorkspaceDirectory:       "",
 		Msys2ArchiveUrl:          "https://repo.msys2.org/distrib/msys2-x86_64-latest.tar.zst",
 		Msys2ArchiveSha256Hash:   "",
 		Msys2ArchiveSignatureUrl: "https://repo.msys2.org/distrib/msys2-x86_64-latest.tar.zst.sig",
@@ -24,7 +24,7 @@ func DefaultBuildConfigSettings() BuildConfigSettings {
 
 func DefaultFfmpegBuildSettings() FfmpegBuildSettings {
 	return FfmpegBuildSettings{
-		WorkspaceDirectory:         filepath.Join(defaultUserDataDirectory(), "CustomFFmpegBuilder", "workspace"),
+		WorkspaceDirectory:         "",
 		FfmpegSourceArchiveUrl:     "",
 		FfmpegSourceSignatureUrl:   "",
 		FfmpegSourceSha256Hash:     "",
@@ -185,7 +185,19 @@ func PlanFfmpegBuild(ffmpegBuildSettings FfmpegBuildSettings) (FfmpegBuildPlan, 
 	// explicitly selected) so a flag like --enable-libdavs2 typed in the extra-flags box
 	// is subject to the same track gating, operations, and license effects as a checkbox.
 	extraLibraries := librariesForConfigureFlags(ffmpegBuildSettings.WindowsShellProfileName, ffmpegBuildSettings.ExtraConfigureFlags, selectedLibraries)
+	ffmpegVersion := ffmpegVersionFromArchiveUrl(ffmpegBuildSettings.FfmpegSourceArchiveUrl)
+	// Apply version-dependent track before any track slice, package list, or prep partition is
+	// derived: a library the chosen release marks sourceBuild (its MSYS2 native package cannot
+	// satisfy that FFmpeg's required API) is flipped Native -> Internal here so it is source-built
+	// from a compatible pinned version instead, and its native package is dropped. Both the
+	// selected and the extra-flag libraries are flipped so a raw --enable flag is treated the same.
+	applyVersionDependentTrack(selectedLibraries, ffmpegVersion)
+	applyVersionDependentTrack(extraLibraries, ffmpegVersion)
 	allEffectiveLibraries := append(append([]LibraryChoice{}, selectedLibraries...), extraLibraries...)
+	// Annotate the resolved libraries with their release-support compatibility before the
+	// track slices are derived, so every plan-facing copy (SelectedLibraries and the by-track
+	// groupings) carries the same VersionCompatibility for the UI to read later.
+	annotateLibraryVersionCompatibility(selectedLibraries, ffmpegVersion)
 	selectedNativeLibraries := librariesForTrack(selectedLibraries, LibraryTrackNative)
 	selectedInternalLibraries := librariesForTrack(selectedLibraries, LibraryTrackInternal)
 	selectedExternalLibraries := librariesForTrack(selectedLibraries, LibraryTrackExternal)
@@ -197,11 +209,14 @@ func PlanFfmpegBuild(ffmpegBuildSettings FfmpegBuildSettings) (FfmpegBuildPlan, 
 	gatedInternalLibraries := librariesForTrack(allEffectiveLibraries, LibraryTrackInternal)
 	gatedExternalLibraries := librariesForTrack(allEffectiveLibraries, LibraryTrackExternal)
 	gatedNonNativeLibraries := append(append([]LibraryChoice{}, gatedInternalLibraries...), gatedExternalLibraries...)
-	ffmpegVersion := ffmpegVersionFromArchiveUrl(ffmpegBuildSettings.FfmpegSourceArchiveUrl)
 	libraryPreparations, blockedNonNativeLibraries := partitionNonNativeLibraries(gatedNonNativeLibraries, ffmpegVersion)
 	prefixPreparationBuildDependencyPackages(libraryPreparations, ffmpegBuildSettings.WindowsShellProfileName)
 	warnings, hasNonNativeBlockedWarning := appendUnpreparedTrackWarnings(warnings, blockedNonNativeLibraries)
 	if hasNonNativeBlockedWarning {
+		isExecutable = false
+	}
+	warnings, hasFfmpegVersionBlock := appendFfmpegVersionWarnings(warnings, ffmpegVersion, allEffectiveLibraries, ffmpegBuildSettings.SelectedConfigureOptionIds)
+	if hasFfmpegVersionBlock {
 		isExecutable = false
 	}
 	for _, unknownLibraryId := range unknownLibraryIds {
@@ -221,6 +236,10 @@ func PlanFfmpegBuild(ffmpegBuildSettings FfmpegBuildSettings) (FfmpegBuildPlan, 
 	libraryPackages = mergeUniqueStrings(libraryPackages, uniquePackagesFromLibraries(extraLibraries))
 	derivedLicenseProfileName := deriveLicenseProfileName(allEffectiveLibraries, finalConfigureFlags)
 	finalConfigureFlags = addLicenseFlags(finalConfigureFlags, derivedLicenseProfileName, allEffectiveLibraries)
+	// Force the Windows-only base flags on (e.g. --disable-vaapi) regardless of selection, but
+	// judge "did the user select anything" before adding them so the no-flags hint still fires.
+	userSelectedAnyConfigureFlags := len(finalConfigureFlags) > 0
+	finalConfigureFlags = mergeUniqueStrings(windowsHardwareBaseConfigureFlags(), finalConfigureFlags)
 
 	if runtime.GOOS != "windows" {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.windowsOnly", "This project profile is Windows-only.", nil))
@@ -243,7 +262,7 @@ func PlanFfmpegBuild(ffmpegBuildSettings FfmpegBuildSettings) (FfmpegBuildPlan, 
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.ffmpegShaBad", "FFmpeg SHA-256 must be exactly 64 hexadecimal characters. If you have a .asc or .sig file, do not paste it into this field; it is a signature file, not a hash.", nil))
 		isExecutable = false
 	}
-	if len(finalConfigureFlags) == 0 {
+	if !userSelectedAnyConfigureFlags {
 		warnings = append(warnings, localizedWarning(RiskLevelWarning, "plan.warnings.noConfigureFlags", "No configure flags were selected.", nil))
 	}
 	for _, configureFlag := range finalConfigureFlags {
@@ -450,6 +469,14 @@ func validateConfigureFlagConflicts(finalConfigureFlags []string) ([]PlanWarning
 	}
 	if flagSet["--enable-libxeve"] && flagSet["--enable-libxeveb"] {
 		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.evcEncoderConflict", "Choose one EVC encoder binding: libxeve (full profile) or libxeveb (baseline profile). FFmpeg configure rejects enabling both; if in doubt, keep libxeve and disable libxeveb.", nil))
+		blocked = true
+	}
+	// Intel Hardware Acceleration has two mutually exclusive backends: oneVPL (--enable-libvpl, the
+	// libvpl row) and the legacy Media SDK (--enable-libmfx). FFmpeg configure dies with "can not use
+	// libmfx and libvpl together" when both are enabled, so block the combination early. Prefer oneVPL,
+	// the maintained path (FFmpeg itself deprecates libmfx in favor of libvpl).
+	if flagSet["--enable-libvpl"] && flagSet["--enable-libmfx"] {
+		warnings = append(warnings, localizedWarning(RiskLevelBlocked, "plan.warnings.intelHwaccelBackendConflict", "Choose one Intel Hardware Acceleration backend: oneVPL (--enable-libvpl) or the legacy libmfx (--enable-libmfx). FFmpeg configure rejects enabling both; if in doubt, keep oneVPL and disable libmfx.", nil))
 		blocked = true
 	}
 	if flagSet["--disable-network"] {

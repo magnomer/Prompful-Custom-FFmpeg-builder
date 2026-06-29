@@ -459,7 +459,7 @@ func writeArtifactReport(workspaceLayout workspace.WorkspaceLayout, runId string
 	reportPath := filepath.Join(workspaceLayout.ArtifactsDirectory, "build-report-"+runId+".json")
 	ffmpegExecutablePath := filepath.Join(workspaceLayout.ArtifactsDirectory, "ffmpeg.exe")
 	ffprobeExecutablePath := filepath.Join(workspaceLayout.ArtifactsDirectory, "ffprobe.exe")
-	report := map[string]interface{}{"runId": runId, "createdAt": time.Now().UTC().Format(time.RFC3339), "approvedPlanHash": plan.PlanHash, "ffmpegSourceArchiveUrl": plan.FfmpegSourceArchiveUrl, "ffmpegSourceSignatureUrl": plan.FfmpegSourceSignatureUrl, "ffmpegSourceSha256Hash": plan.FfmpegSourceSha256Hash, "selectedLibraries": plan.SelectedLibraries, "selectedConfigureOptions": plan.SelectedConfigureOptions, "requiredMsys2PackageNames": plan.RequiredMsys2PackageNames, "generatedConfigureFlags": plan.GeneratedConfigureFlags, "generatedOptionFlags": plan.GeneratedOptionFlags, "extraConfigureFlags": plan.ExtraConfigureFlags, "configureFlags": plan.ConfigureFlags, "licenseProfileName": plan.LicenseProfileName, "ffmpegExecutablePath": ffmpegExecutablePath, "ffmpegExecutableSha256Hash": createFileHashOrEmpty(ffmpegExecutablePath), "ffmpegExecutableSizeBytes": fileSizeOrZero(ffmpegExecutablePath), "ffprobeExecutablePath": ffprobeExecutablePath, "ffprobeExecutableSha256Hash": createFileHashOrEmpty(ffprobeExecutablePath), "ffprobeExecutableSizeBytes": fileSizeOrZero(ffprobeExecutablePath), "artifactFiles": artifactFilesForReport(workspaceLayout)}
+	report := map[string]interface{}{"runId": runId, "createdAt": time.Now().UTC().Format(time.RFC3339), "approvedPlanHash": plan.PlanHash, "ffmpegVersion": planning.FfmpegVersionFromArchiveUrl(plan.FfmpegSourceArchiveUrl), "ffmpegSourceArchiveUrl": plan.FfmpegSourceArchiveUrl, "ffmpegSourceSignatureUrl": plan.FfmpegSourceSignatureUrl, "ffmpegSourceSha256Hash": plan.FfmpegSourceSha256Hash, "selectedLibraries": plan.SelectedLibraries, "selectedConfigureOptions": plan.SelectedConfigureOptions, "requiredMsys2PackageNames": plan.RequiredMsys2PackageNames, "generatedConfigureFlags": plan.GeneratedConfigureFlags, "generatedOptionFlags": plan.GeneratedOptionFlags, "extraConfigureFlags": plan.ExtraConfigureFlags, "configureFlags": plan.ConfigureFlags, "licenseProfileName": plan.LicenseProfileName, "ffmpegExecutablePath": ffmpegExecutablePath, "ffmpegExecutableSha256Hash": createFileHashOrEmpty(ffmpegExecutablePath), "ffmpegExecutableSizeBytes": fileSizeOrZero(ffmpegExecutablePath), "ffprobeExecutablePath": ffprobeExecutablePath, "ffprobeExecutableSha256Hash": createFileHashOrEmpty(ffprobeExecutablePath), "ffprobeExecutableSizeBytes": fileSizeOrZero(ffprobeExecutablePath), "artifactFiles": artifactFilesForReport(workspaceLayout)}
 	reportBytes, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
 		return err
@@ -474,6 +474,18 @@ func writeArtifactReport(workspaceLayout workspace.WorkspaceLayout, runId string
 		return err
 	}
 	return os.WriteFile(reportPath, reportBytes, 0o600)
+}
+
+func ffmpegVersionFromBuiltArtifact(workspaceLayout workspace.WorkspaceLayout) string {
+	ffmpegExecutablePath := filepath.Join(workspaceLayout.ArtifactsDirectory, "ffmpeg.exe")
+	if err := workspace.CheckRealPathInsideWorkspace(workspaceLayout.WorkspaceDirectory, ffmpegExecutablePath); err != nil {
+		return ""
+	}
+	versionOutput, err := runFfmpegVersion(ffmpegExecutablePath)
+	if err != nil {
+		return ""
+	}
+	return parseFfmpegVersion(versionOutput)
 }
 
 func readLatestArtifactReport(workspaceLayout workspace.WorkspaceLayout) (string, artifactReport, error) {

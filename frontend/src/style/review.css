@@ -29,6 +29,18 @@
 }
 .metadata dt { font-weight: 850; color: #33415c; align-self: start; padding-top: 7px; }
 .metadata dd { margin: 0; overflow-wrap: anywhere; }
+.metadata .metadata__label--plain {
+  align-self: center;
+  padding-top: 0;
+}
+.metadata__value--plain {
+  align-self: center;
+  color: #172033;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
 
 /* Read-only, selectable value fields so users can copy the hash / phrase. */
 .copy-field {

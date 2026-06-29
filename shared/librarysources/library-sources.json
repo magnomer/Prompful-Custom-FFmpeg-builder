@@ -80,6 +80,53 @@
           "sha256": "78c2b8caa2fafe11b2b7507dc4a2122e61e9c25fab30f92b1713f365c7ecaf76",
           "format": "zip",
           "host": "storage.googleapis.com"
+        },
+        "libmfx": {
+          "version": "1.35.1",
+          "url": "https://github.com/lu-zero/mfx_dispatch/archive/refs/tags/1.35.1.tar.gz",
+          "sha256": "673636da98a4fd5c3e3dc5267da5429e986f53089ed6c33cdca5751f56d9416b",
+          "format": "tar.gz",
+          "host": "github.com"
+        },
+        "svt-av1": {
+          "version": "2.3.0",
+          "url": "https://gitlab.com/AOMediaCodec/SVT-AV1/-/archive/v2.3.0/SVT-AV1-v2.3.0.tar.gz",
+          "sha256": "ebb0b484ef4a0dc281e94342a9f73ad458496f5d3457eca7465bec943910c6c3",
+          "format": "tar.gz",
+          "host": "gitlab.com"
+        }
+      }
+    },
+    "5.1.9": {
+      "libraries": {
+        "libplacebo": {
+          "version": "4.192.0",
+          "url": "https://code.videolan.org/videolan/libplacebo/-/archive/v4.192.0/libplacebo-v4.192.0.tar.gz",
+          "sha256": "eea8989693e5632e7bb716998b00aebdaa75354369048de52b6da1f1407bb847",
+          "format": "tar.gz",
+          "host": "code.videolan.org"
+        }
+      }
+    },
+    "4.4.8": {
+      "libraries": {
+        "vmaf": {
+          "version": "1.5.2",
+          "url": "https://github.com/Netflix/vmaf/archive/refs/tags/v1.5.2.tar.gz",
+          "sha256": "5f7785da0b0d66b2513ce11d3f81d0a9b3f79d49483c4652fde3a31c13f644da",
+          "format": "tar.gz",
+          "host": "github.com"
+        }
+      }
+    },
+    "7.0.3": {
+      "libraries": {
+        "xeve": {
+          "version": "0.4.3",
+          "url": "https://github.com/mpeg5/xeve/archive/refs/tags/v0.4.3.tar.gz",
+          "sha256": "2c8ac465618fb66d0d13df6efcf6ca0d55c2ac1695dd0e9092aeb366a74b9179",
+          "format": "tar.gz",
+          "host": "github.com"
         }
       }
     }

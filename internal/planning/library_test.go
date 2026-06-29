@@ -272,7 +272,7 @@ func TestMissingLibrariesAppearWithNonNativeTracks(t *testing.T) {
 		"libtls":       LibraryTrackInternal,
 		"vvenc":        LibraryTrackInternal,
 		"xavs2":        LibraryTrackInternal,
-		"libmfx":       LibraryTrackExternal,
+		"libmfx":       LibraryTrackInternal,
 		"pocketsphinx": LibraryTrackInternal,
 		"dc1394":       LibraryTrackInternal,
 		"decklink":     LibraryTrackExternal,
@@ -341,6 +341,25 @@ func TestEvcProfileBindingsAreMutuallyExclusive(t *testing.T) {
 	// Either binding alone must not block.
 	if _, blocked := validateConfigureFlagConflicts([]string{"--enable-libxevd", "--enable-libxeve"}); blocked {
 		t.Fatal("expected full-profile-only EVC bindings to be allowed")
+	}
+}
+
+func TestIntelHwaccelBackendsAreMutuallyExclusive(t *testing.T) {
+	// FFmpeg configure dies with "can not use libmfx and libvpl together" when both Intel Hardware
+	// Acceleration backends are enabled, so the planner must block the combination.
+	warnings, blocked := validateConfigureFlagConflicts([]string{"--enable-libvpl", "--enable-libmfx"})
+	if !blocked {
+		t.Fatal("expected libvpl + libmfx to block the plan")
+	}
+	if !hasWarningKey(warnings, "plan.warnings.intelHwaccelBackendConflict") {
+		t.Fatalf("expected intelHwaccelBackendConflict warning, got %#v", warnings)
+	}
+	// Either backend alone must not block.
+	if _, blocked := validateConfigureFlagConflicts([]string{"--enable-libvpl"}); blocked {
+		t.Fatal("expected oneVPL-only to be allowed")
+	}
+	if _, blocked := validateConfigureFlagConflicts([]string{"--enable-libmfx"}); blocked {
+		t.Fatal("expected libmfx-only to be allowed")
 	}
 }
 

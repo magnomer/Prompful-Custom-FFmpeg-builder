@@ -7,6 +7,7 @@
   column-gap: 22px;
   row-gap: 18px;
   align-items: start;
+  align-content: start;
   min-height: 230px;
   padding: 40px 30px 40px 28px;
   border: 1px solid #e6ecf4;
@@ -32,8 +33,7 @@
 .card__badge {
   position: absolute;
   left: 28px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 65px;
   width: 100px;
   height: 100px;
   border-radius: 50%;
@@ -88,7 +88,7 @@
 .card__control {
   grid-column: 2;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) var(--card-control-action-width, auto);
   gap: 10px;
   align-items: center;
   margin-top: 2px;
@@ -137,7 +137,8 @@
 }
 
 .card__toggle {
-  min-width: 150px;
+  --card-control-action-width: 174px;
+  width: 174px;
   height: 48px;
   padding: 0 14px;
   font-size: 0.88rem;

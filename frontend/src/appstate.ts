@@ -66,6 +66,7 @@ export const defaultInitialApplicationState: InitialApplicationState = {
   defaultFfmpegBuildSettings: emptyFfmpegBuildSettings,
   defaultLibraryCatalog: [],
   defaultConfigureOptionCatalog: [],
+  supportedFfmpegReleases: [],
 };
 
 // ─── Utilities ───────────────────────────────────────────────────────────────

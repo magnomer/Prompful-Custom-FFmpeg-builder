@@ -237,7 +237,7 @@ func privatePkgConfigDirsFor(plan planning.FfmpegBuildPlan) []string {
 
 func (app *App) executeFfmpegConfigure(ctx context.Context, plan planning.FfmpegBuildPlan, ffmpegSourceDirectory string, userExternalCommandExecutionConsent consent.CommandExecutionConsent, auditWriter *audit.Writer, emitProgress func(string, string)) error {
 	workspaceLayout := workspace.WorkspaceLayoutFor(plan.WorkspaceDirectory)
-	scriptLines, err := scripting.ConfigureScriptLines(plan.ConfigureFlags, privatePkgConfigDirsFor(plan))
+	scriptLines, err := scripting.ConfigureScriptLines(plan.ConfigureFlags, privatePkgConfigDirsFor(plan), planning.FfmpegVersionFromArchiveUrl(plan.FfmpegSourceArchiveUrl))
 	if err != nil {
 		return err
 	}

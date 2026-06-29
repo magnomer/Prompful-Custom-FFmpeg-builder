@@ -57,7 +57,7 @@ func TestPrivateLibraryPkgConfigDir(t *testing.T) {
 }
 
 func TestConfigureScriptLinesPrependsPrivatePkgConfigDirs(t *testing.T) {
-	lines, err := ConfigureScriptLines([]string{"--enable-libtls"}, []string{"/ucrt64/opt/customffmpeg/libtls/lib/pkgconfig"})
+	lines, err := ConfigureScriptLines([]string{"--enable-libtls"}, []string{"/ucrt64/opt/customffmpeg/libtls/lib/pkgconfig"}, "8.1.2")
 	if err != nil {
 		t.Fatalf("ConfigureScriptLines: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestConfigureScriptLinesPrependsPrivatePkgConfigDirs(t *testing.T) {
 	if !strings.Contains(joined, `export PKG_CONFIG_PATH="/ucrt64/opt/customffmpeg/libtls/lib/pkgconfig:${profile_prefix}/lib/pkgconfig`) {
 		t.Fatalf("expected private pkgconfig dir prepended to PKG_CONFIG_PATH, got:\n%s", joined)
 	}
-	if _, err := ConfigureScriptLines([]string{"--enable-libtls"}, []string{"/ucrt64/bad dir/pkgconfig"}); err == nil {
+	if _, err := ConfigureScriptLines([]string{"--enable-libtls"}, []string{"/ucrt64/bad dir/pkgconfig"}, "8.1.2"); err == nil {
 		t.Fatal("expected an unsafe private pkgconfig dir to be rejected")
 	}
 }
@@ -105,19 +105,55 @@ func TestPreparationScriptsAreValidBash(t *testing.T) {
 
 func TestInternalBuildSystemDispatch(t *testing.T) {
 	base := LibraryBuildSpec{LibraryId: "x", DisplayName: "X", VerifyHeaderRelativePath: "x.h", VerifyLibStem: "x"}
-	for _, buildSystem := range []string{"", "cmake"} {
+	for _, buildSystem := range []string{"", "cmake", "meson"} {
 		spec := base
 		spec.BuildSystem = buildSystem
 		if _, err := InternalLibrarySourceBuildScriptLines(spec); err != nil {
-			t.Fatalf("cmake build system %q should generate, got %v", buildSystem, err)
+			t.Fatalf("build system %q should generate, got %v", buildSystem, err)
 		}
 	}
-	for _, buildSystem := range []string{"autotools", "meson"} {
+	for _, buildSystem := range []string{"autotools"} {
 		spec := base
 		spec.BuildSystem = buildSystem
 		if _, err := InternalLibrarySourceBuildScriptLines(spec); err == nil {
 			t.Fatalf("build system %q should not yet generate a script", buildSystem)
 		}
+	}
+}
+
+func TestInternalMesonBuildGeneratesSetupCompileInstall(t *testing.T) {
+	lines, err := InternalLibrarySourceBuildScriptLines(LibraryBuildSpec{
+		LibraryId:                "vmaf",
+		DisplayName:              "libvmaf",
+		BuildSystem:              "meson",
+		ConfigureSubdir:          "libvmaf",
+		CMakeOptions:             []string{"-Denable_tests=false", "-Denable_docs=false"},
+		CFlags:                   []string{"-Wno-error=implicit-function-declaration", "-Wno-error=implicit-int"},
+		PkgConfigName:            "libvmaf",
+		PkgConfigAppendLibs:      []string{"stdc++", "m"},
+		VerifyHeaderRelativePath: "libvmaf/libvmaf.h",
+		VerifyLibStem:            "vmaf",
+	})
+	if err != nil {
+		t.Fatalf("meson build system should generate, got %v", err)
+	}
+	joined := strings.Join(lines, "\n")
+	for _, expected := range []string{
+		`for required_tool in meson ninja; do`,
+		`meson_options=('-Denable_tests=false' '-Denable_docs=false')`,
+		`install_prefix_win="$(cygpath -m "${install_prefix}")"`,
+		`CFLAGS='-Wno-error=implicit-function-declaration -Wno-error=implicit-int' MSYS2_ARG_CONV_EXCL="--prefix=" meson setup "${build_dir}" "${src_dir}/libvmaf" --prefix="${install_prefix_win}" --buildtype=release --default-library=static "${meson_options[@]}" 2>&1`,
+		`ninja -C "${build_dir}" install 2>&1`,
+		`installed_header="${install_prefix}/include/libvmaf/libvmaf.h"`,
+	} {
+		if !strings.Contains(joined, expected) {
+			t.Fatalf("expected generated meson script to contain %q, got:\n%s", expected, joined)
+		}
+	}
+	// Only the install closure is built, never the whole `all` target, so a project's unneeded
+	// install:false targets (e.g. libvmaf's vmaf_rc, which needs a git-only vcs_version.h) are skipped.
+	if strings.Contains(joined, "ninja -C \"${build_dir}\" 2>&1") {
+		t.Fatalf("meson generator must not run a bare ninja build, only ninja install:\n%s", joined)
 	}
 }
 
@@ -223,7 +259,7 @@ func TestWriteScriptFileRejectsSymlinkPath(t *testing.T) {
 }
 
 func TestConfigureScriptLinesSkipsLensfunWhenFfmpegApiIsIncompatible(t *testing.T) {
-	lines, err := ConfigureScriptLines([]string{"--enable-liblensfun"}, nil)
+	lines, err := ConfigureScriptLines([]string{"--enable-liblensfun"}, nil, "8.1.2")
 	if err != nil {
 		t.Fatalf("ConfigureScriptLines: %v", err)
 	}
@@ -246,7 +282,7 @@ func TestConfigureScriptLinesSkipsLensfunWhenFfmpegApiIsIncompatible(t *testing.
 }
 
 func TestConfigureScriptLinesTriesAndSkipsSvtJpegxsWhenIncompatible(t *testing.T) {
-	lines, err := ConfigureScriptLines([]string{"--enable-libsvtjpegxs"}, nil)
+	lines, err := ConfigureScriptLines([]string{"--enable-libsvtjpegxs"}, nil, "8.1.2")
 	if err != nil {
 		t.Fatalf("ConfigureScriptLines: %v", err)
 	}
@@ -266,6 +302,80 @@ func TestConfigureScriptLinesTriesAndSkipsSvtJpegxsWhenIncompatible(t *testing.T
 	}
 	if strings.Contains(joined, "Patching SvtJpegxs.pc Version") {
 		t.Fatalf("SVT JPEG XS fallback must not fake the pkg-config version, got:\n%s", joined)
+	}
+}
+
+// The pre-configure pkg-config version floor must come from the selected release's manifest,
+// not a single hardcoded set: dav1d's floor is 1.0.0 on the 8.1 line but only 0.5.0 on 7.1,
+// so an older package that satisfies 0.5.0 is no longer falsely rejected on an older FFmpeg.
+func TestConfigureScriptLinesUsesPerReleasePkgConfigFloor(t *testing.T) {
+	on81, err := ConfigureScriptLines([]string{"--enable-libdav1d"}, nil, "8.1.2")
+	if err != nil {
+		t.Fatalf("ConfigureScriptLines: %v", err)
+	}
+	if !strings.Contains(strings.Join(on81, "\n"), "diagnose_pkg_config_module 'dav1d' '1.0.0'") {
+		t.Fatalf("expected dav1d floor 1.0.0 on FFmpeg 8.1, got:\n%s", strings.Join(on81, "\n"))
+	}
+	on71, err := ConfigureScriptLines([]string{"--enable-libdav1d"}, nil, "7.1.5")
+	if err != nil {
+		t.Fatalf("ConfigureScriptLines: %v", err)
+	}
+	if !strings.Contains(strings.Join(on71, "\n"), "diagnose_pkg_config_module 'dav1d' '0.5.0'") {
+		t.Fatalf("expected dav1d floor 0.5.0 on FFmpeg 7.1, got:\n%s", strings.Join(on71, "\n"))
+	}
+	// A snapshot/unknown version resolves no floor: existence-only check, no hardcoded floor.
+	snapshot, err := ConfigureScriptLines([]string{"--enable-libdav1d"}, nil, "")
+	if err != nil {
+		t.Fatalf("ConfigureScriptLines: %v", err)
+	}
+	if !strings.Contains(strings.Join(snapshot, "\n"), "diagnose_pkg_config_module 'dav1d' ''") {
+		t.Fatalf("expected no dav1d floor for a snapshot version, got:\n%s", strings.Join(snapshot, "\n"))
+	}
+	// A future FFmpeg the program does not record falls back to the latest recorded line (8.1),
+	// so its floors apply instead of none.
+	future, err := ConfigureScriptLines([]string{"--enable-libdav1d"}, nil, "9.0.0")
+	if err != nil {
+		t.Fatalf("ConfigureScriptLines: %v", err)
+	}
+	if !strings.Contains(strings.Join(future, "\n"), "diagnose_pkg_config_module 'dav1d' '1.0.0'") {
+		t.Fatalf("expected future FFmpeg to inherit latest line's dav1d floor 1.0.0, got:\n%s", strings.Join(future, "\n"))
+	}
+}
+
+func TestConfigureScriptLinesEnablesLegacyOpencvDetectionWhenSelected(t *testing.T) {
+	lines, err := ConfigureScriptLines([]string{"--enable-libopencv"}, nil, "8.1.2")
+	if err != nil {
+		t.Fatalf("ConfigureScriptLines: %v", err)
+	}
+	joined := strings.Join(lines, "\n")
+	for _, expected := range []string{
+		// Step 1: pc-name alias so the legacy "opencv" pkg-config branch resolves.
+		`opencv4_pc="${MSYSTEM_PREFIX:-/ucrt64}/lib/pkgconfig/opencv4.pc"`,
+		`cp "${opencv4_pc}" "${opencv_pc}"`,
+		// Step 2: include path so the bare check_headers opencv2/core/core_c.h passes
+		// (OpenCV 4 installs headers under include/opencv4, off the default search path).
+		`opencv_incdir="${MSYSTEM_PREFIX:-/ucrt64}/include/opencv4"`,
+		`configure_flags+=("--extra-cflags=-I${opencv_incdir}")`,
+	} {
+		if !strings.Contains(joined, expected) {
+			t.Fatalf("expected generated script to contain %q, got:\n%s", expected, joined)
+		}
+	}
+	// Both steps must precede configure, and the include path must be appended to the flag
+	// array before ./configure expands it.
+	configureIndex := strings.Index(joined, `./configure "${configure_flags[@]}"`)
+	if strings.Index(joined, "opencv4_pc=") > configureIndex {
+		t.Fatalf("opencv pc alias must run before ./configure")
+	}
+	if strings.Index(joined, `configure_flags+=("--extra-cflags=-I${opencv_incdir}")`) > configureIndex {
+		t.Fatalf("opencv extra-cflags must be appended before ./configure")
+	}
+	without, err := ConfigureScriptLines([]string{"--enable-libx264"}, nil, "8.1.2")
+	if err != nil {
+		t.Fatalf("ConfigureScriptLines: %v", err)
+	}
+	if strings.Contains(strings.Join(without, "\n"), "opencv4_pc=") {
+		t.Fatalf("opencv legacy detection must not appear when --enable-libopencv is not selected")
 	}
 }
 

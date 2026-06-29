@@ -1,0 +1,1380 @@
+{
+  "schemaVersion": 1,
+  "_comment": "Explicit per-FFmpeg-release-line support manifest. Each release line (major.minor key) carries its OWN full list of supported builder catalog library ids (with FFmpeg's pkg-config minimum where configure pins one) and supported builder configure-option ids. NOT derived as a diff: both the supported-library set AND each minVersion are extracted by parsing that release tag's configure script (the FFmpeg Changelog/comparison docs are unreliable for both presence and minimums). Adding or auditing a release is a self-contained data edit. A library id absent from a release's 'libraries' map is unsupported by FFmpeg in that release (its --enable switch does not exist) and the planner blocks selecting it. A release line with no entry is not yet manifested; the planner skips gating and FFmpeg configure is the backstop. minVersion is set only for libraries FFmpeg version-checks via pkg-config; libraries checked by header macro (mp3lame, twolame, zvbi, x264/x265 BUILD) or with no floor carry none. Library ids match internal/planning catalog ids. Note: onnxruntime's --enable-libonnxruntime is master-only (no released version), so it is absent from every release. A library present with 'unavailable: true' has the --enable switch in that release but cannot be built because the package this builder can supply does not satisfy it (e.g. lensfun, which FFmpeg gates by the lf_db_create symbol the available lensfun package lacks); it is blocked with a 'package too old' message, distinct from an absent (FFmpeg-lacks-the-feature) library.",
+  "ffmpegReleases": {
+    "8.1": {
+      "libraries": {
+        "amf": {},
+        "aom": {
+          "minVersion": "2.0.0"
+        },
+        "aribb24": {},
+        "aribcaption": {
+          "minVersion": "1.1.1"
+        },
+        "ass": {
+          "minVersion": "0.11.0"
+        },
+        "avisynthplus": {
+          "minVersion": "3.7.3"
+        },
+        "bluray": {},
+        "bs2b": {},
+        "caca": {},
+        "cairo": {},
+        "cdio": {},
+        "chromaprint": {},
+        "codec2": {},
+        "cuda-nvcc": {},
+        "dav1d": {
+          "minVersion": "1.0.0"
+        },
+        "davs2": {
+          "minVersion": "1.6.0"
+        },
+        "dc1394": {},
+        "decklink": {},
+        "dvdnav": {
+          "minVersion": "6.1.0"
+        },
+        "dvdread": {
+          "minVersion": "6.1.1"
+        },
+        "fdk-aac": {},
+        "fontconfig": {},
+        "freetype": {},
+        "frei0r": {},
+        "fribidi": {},
+        "glslang": {},
+        "gme": {},
+        "gnutls": {},
+        "gsm": {},
+        "harfbuzz": {},
+        "ilbc": {},
+        "jack": {},
+        "klvanc": {},
+        "kvazaar": {
+          "minVersion": "2.0.0"
+        },
+        "ladspa": {},
+        "lc3": {
+          "minVersion": "1.1.0"
+        },
+        "lcevc-dec": {
+          "minVersion": "4.0.0"
+        },
+        "lcms2": {
+          "minVersion": "2.13"
+        },
+        "lensfun": {
+          "unavailable": true
+        },
+        "libjxl": {
+          "minVersion": "0.7.0"
+        },
+        "libmfx": {
+          "minVersion": "1.28"
+        },
+        "libplacebo": {
+          "minVersion": "5.229.0"
+        },
+        "libtls": {},
+        "libvpx": {
+          "minVersion": "1.4.0"
+        },
+        "lv2": {},
+        "mbedtls": {},
+        "modplug": {},
+        "mp3lame": {},
+        "mpeghdec": {
+          "minVersion": "3.0.0"
+        },
+        "mysofa": {},
+        "nvenc": {},
+        "oapv": {
+          "minVersion": "0.2.0.0"
+        },
+        "openal": {
+          "minVersion": "1.1"
+        },
+        "opencl": {},
+        "opencolorio": {},
+        "opencore-amr": {},
+        "opencv": {},
+        "opengl": {},
+        "openh264": {
+          "minVersion": "1.3.0"
+        },
+        "openjpeg": {
+          "minVersion": "2.1.0"
+        },
+        "openmpt": {
+          "minVersion": "0.2.6557"
+        },
+        "openssl": {},
+        "openvino": {},
+        "opus": {},
+        "png": {},
+        "pocketsphinx": {},
+        "pulse": {},
+        "qrencode": {},
+        "libvpl": {
+          "minVersion": "2.6"
+        },
+        "quirc": {},
+        "rabbitmq": {
+          "minVersion": "0.7.1"
+        },
+        "rav1e": {
+          "minVersion": "0.5.0"
+        },
+        "rist": {
+          "minVersion": "0.2.7"
+        },
+        "rsvg": {},
+        "rtmp": {},
+        "rubberband": {
+          "minVersion": "1.8.1"
+        },
+        "sdl2": {
+          "minVersion": "2.0.1"
+        },
+        "shaderc": {
+          "minVersion": "2019.1"
+        },
+        "shine": {},
+        "smbclient": {},
+        "snappy": {},
+        "soxr": {},
+        "speex": {},
+        "srt": {
+          "minVersion": "1.3.0"
+        },
+        "ssh": {},
+        "svt-av1": {
+          "minVersion": "0.9.0"
+        },
+        "svtjpegxs": {
+          "minVersion": "0.10.0"
+        },
+        "tensorflow": {},
+        "tesseract": {},
+        "theora": {},
+        "torch": {},
+        "twolame": {},
+        "uavs3d": {
+          "minVersion": "1.1.41"
+        },
+        "vapoursynth": {},
+        "vidstab": {
+          "minVersion": "0.98"
+        },
+        "vmaf": {
+          "minVersion": "2.0.0"
+        },
+        "vo-amrwbenc": {},
+        "vorbis": {},
+        "vvenc": {
+          "minVersion": "1.6.1"
+        },
+        "webp": {
+          "minVersion": "0.2.0"
+        },
+        "whisper": {
+          "minVersion": "1.7.5"
+        },
+        "x264": {},
+        "x265": {},
+        "xavs": {},
+        "xavs2": {
+          "minVersion": "1.3.0"
+        },
+        "xevd": {
+          "minVersion": "0.4.1"
+        },
+        "xevdb": {
+          "minVersion": "0.4.1"
+        },
+        "xeve": {
+          "minVersion": "0.5.1"
+        },
+        "xeveb": {
+          "minVersion": "0.5.1"
+        },
+        "xml2": {},
+        "xvid": {},
+        "zimg": {
+          "minVersion": "2.7.0"
+        },
+        "zmq": {
+          "minVersion": "4.2.1"
+        },
+        "zvbi": {}
+      },
+      "options": [
+        "default-static",
+        "default-programs",
+        "default-ffmpeg",
+        "default-ffprobe",
+        "enable-shared",
+        "disable-ffplay",
+        "disable-autodetect",
+        "disable-network",
+        "disable-asm",
+        "disable-x86asm",
+        "pkg-config-static",
+        "enable-runtime-cpudetect",
+        "disable-doc",
+        "enable-small",
+        "enable-lto",
+        "disable-debug",
+        "disable-stripping"
+      ]
+    },
+    "8.0": {
+      "libraries": {
+        "amf": {},
+        "aom": {
+          "minVersion": "2.0.0"
+        },
+        "aribb24": {},
+        "aribcaption": {
+          "minVersion": "1.1.1"
+        },
+        "ass": {
+          "minVersion": "0.11.0"
+        },
+        "avisynthplus": {
+          "minVersion": "3.7.3"
+        },
+        "bluray": {},
+        "bs2b": {},
+        "caca": {},
+        "cdio": {},
+        "chromaprint": {},
+        "codec2": {},
+        "cuda-nvcc": {},
+        "dav1d": {
+          "minVersion": "0.5.0"
+        },
+        "davs2": {
+          "minVersion": "1.6.0"
+        },
+        "dc1394": {},
+        "decklink": {},
+        "dvdnav": {
+          "minVersion": "6.1.1"
+        },
+        "dvdread": {
+          "minVersion": "6.1.2"
+        },
+        "fdk-aac": {},
+        "fontconfig": {},
+        "freetype": {},
+        "frei0r": {},
+        "fribidi": {},
+        "glslang": {},
+        "gme": {},
+        "gnutls": {},
+        "gsm": {},
+        "harfbuzz": {},
+        "ilbc": {},
+        "jack": {},
+        "klvanc": {},
+        "kvazaar": {
+          "minVersion": "2.0.0"
+        },
+        "ladspa": {},
+        "lc3": {
+          "minVersion": "1.1.0"
+        },
+        "lcevc-dec": {
+          "minVersion": "2.0.0"
+        },
+        "lcms2": {
+          "minVersion": "2.13"
+        },
+        "lensfun": {
+          "unavailable": true
+        },
+        "libjxl": {
+          "minVersion": "0.7.0"
+        },
+        "libmfx": {
+          "minVersion": "1.28"
+        },
+        "libplacebo": {
+          "minVersion": "5.229.0"
+        },
+        "libtls": {},
+        "libvpx": {
+          "minVersion": "1.4.0"
+        },
+        "lv2": {},
+        "mbedtls": {},
+        "modplug": {},
+        "mp3lame": {},
+        "mysofa": {},
+        "nvenc": {},
+        "oapv": {
+          "minVersion": "0.2.0.0"
+        },
+        "openal": {
+          "minVersion": "1.1"
+        },
+        "opencl": {},
+        "opencore-amr": {},
+        "opencv": {},
+        "opengl": {},
+        "openh264": {
+          "minVersion": "1.3.0"
+        },
+        "openjpeg": {
+          "minVersion": "2.1.0"
+        },
+        "openmpt": {
+          "minVersion": "0.2.6557"
+        },
+        "openssl": {},
+        "openvino": {},
+        "opus": {},
+        "png": {},
+        "pocketsphinx": {},
+        "pulse": {},
+        "qrencode": {},
+        "libvpl": {
+          "minVersion": "2.6"
+        },
+        "quirc": {},
+        "rabbitmq": {
+          "minVersion": "0.7.1"
+        },
+        "rav1e": {
+          "minVersion": "0.5.0"
+        },
+        "rist": {
+          "minVersion": "0.2.7"
+        },
+        "rsvg": {},
+        "rtmp": {},
+        "rubberband": {
+          "minVersion": "1.8.1"
+        },
+        "sdl2": {
+          "minVersion": "2.0.1"
+        },
+        "shaderc": {
+          "minVersion": "2019.1"
+        },
+        "shine": {},
+        "smbclient": {},
+        "snappy": {},
+        "soxr": {},
+        "speex": {},
+        "srt": {
+          "minVersion": "1.3.0"
+        },
+        "ssh": {},
+        "svt-av1": {
+          "minVersion": "0.9.0"
+        },
+        "tensorflow": {},
+        "tesseract": {},
+        "theora": {},
+        "torch": {},
+        "twolame": {},
+        "uavs3d": {
+          "minVersion": "1.1.41"
+        },
+        "vapoursynth": {},
+        "vidstab": {
+          "minVersion": "0.98"
+        },
+        "vmaf": {
+          "minVersion": "2.0.0"
+        },
+        "vo-amrwbenc": {},
+        "vorbis": {},
+        "vvenc": {
+          "minVersion": "1.6.1"
+        },
+        "webp": {
+          "minVersion": "0.2.0"
+        },
+        "whisper": {
+          "minVersion": "1.7.5"
+        },
+        "x264": {},
+        "x265": {},
+        "xavs": {},
+        "xavs2": {
+          "minVersion": "1.3.0"
+        },
+        "xevd": {
+          "minVersion": "0.4.1"
+        },
+        "xeve": {
+          "minVersion": "0.5.1"
+        },
+        "xml2": {},
+        "xvid": {},
+        "zimg": {
+          "minVersion": "2.7.0"
+        },
+        "zmq": {
+          "minVersion": "4.2.1"
+        },
+        "zvbi": {}
+      },
+      "options": [
+        "default-static",
+        "default-programs",
+        "default-ffmpeg",
+        "default-ffprobe",
+        "enable-shared",
+        "disable-ffplay",
+        "disable-autodetect",
+        "disable-network",
+        "disable-asm",
+        "disable-x86asm",
+        "pkg-config-static",
+        "enable-runtime-cpudetect",
+        "disable-doc",
+        "enable-small",
+        "enable-lto",
+        "disable-debug",
+        "disable-stripping"
+      ]
+    },
+    "7.1": {
+      "libraries": {
+        "amf": {},
+        "aom": {
+          "minVersion": "2.0.0"
+        },
+        "aribb24": {},
+        "aribcaption": {
+          "minVersion": "1.1.1"
+        },
+        "ass": {
+          "minVersion": "0.11.0"
+        },
+        "avisynthplus": {
+          "minVersion": "3.7.3"
+        },
+        "bluray": {},
+        "bs2b": {},
+        "caca": {},
+        "cdio": {},
+        "chromaprint": {},
+        "codec2": {},
+        "cuda-nvcc": {},
+        "dav1d": {
+          "minVersion": "0.5.0"
+        },
+        "davs2": {
+          "minVersion": "1.6.0"
+        },
+        "dc1394": {},
+        "decklink": {},
+        "dvdnav": {
+          "minVersion": "6.1.1"
+        },
+        "dvdread": {
+          "minVersion": "6.1.2"
+        },
+        "fdk-aac": {},
+        "fontconfig": {},
+        "freetype": {},
+        "frei0r": {},
+        "fribidi": {},
+        "glslang": {},
+        "gme": {},
+        "gnutls": {},
+        "gsm": {},
+        "harfbuzz": {},
+        "ilbc": {},
+        "jack": {},
+        "klvanc": {},
+        "kvazaar": {
+          "minVersion": "2.0.0"
+        },
+        "ladspa": {},
+        "lc3": {
+          "minVersion": "1.1.0"
+        },
+        "lcevc-dec": {
+          "minVersion": "2.0.0"
+        },
+        "lcms2": {
+          "minVersion": "2.13"
+        },
+        "lensfun": {
+          "unavailable": true
+        },
+        "libjxl": {
+          "minVersion": "0.7.0"
+        },
+        "libmfx": {
+          "minVersion": "1.28"
+        },
+        "libplacebo": {
+          "minVersion": "4.192.0"
+        },
+        "libtls": {},
+        "libvpx": {
+          "minVersion": "1.4.0"
+        },
+        "lv2": {},
+        "mbedtls": {},
+        "modplug": {},
+        "mp3lame": {},
+        "mysofa": {},
+        "nvenc": {},
+        "openal": {
+          "minVersion": "1.1"
+        },
+        "opencl": {},
+        "opencore-amr": {},
+        "opencv": {},
+        "opengl": {},
+        "openh264": {
+          "minVersion": "1.3.0"
+        },
+        "openjpeg": {
+          "minVersion": "2.1.0"
+        },
+        "openmpt": {
+          "minVersion": "0.2.6557"
+        },
+        "openssl": {},
+        "openvino": {},
+        "opus": {},
+        "png": {},
+        "pocketsphinx": {},
+        "pulse": {},
+        "qrencode": {},
+        "libvpl": {
+          "minVersion": "2.6"
+        },
+        "quirc": {},
+        "rabbitmq": {
+          "minVersion": "0.7.1"
+        },
+        "rav1e": {
+          "minVersion": "0.5.0"
+        },
+        "rist": {
+          "minVersion": "0.2.7"
+        },
+        "rsvg": {},
+        "rtmp": {},
+        "rubberband": {
+          "minVersion": "1.8.1"
+        },
+        "sdl2": {
+          "minVersion": "2.0.1"
+        },
+        "shaderc": {
+          "minVersion": "2019.1"
+        },
+        "shine": {},
+        "smbclient": {},
+        "snappy": {},
+        "soxr": {},
+        "speex": {},
+        "srt": {
+          "minVersion": "1.3.0"
+        },
+        "ssh": {},
+        "svt-av1": {
+          "minVersion": "0.9.0",
+          "sourceBuild": true
+        },
+        "tensorflow": {},
+        "tesseract": {},
+        "theora": {},
+        "torch": {},
+        "twolame": {},
+        "uavs3d": {
+          "minVersion": "1.1.41"
+        },
+        "vapoursynth": {},
+        "vidstab": {
+          "minVersion": "0.98"
+        },
+        "vmaf": {
+          "minVersion": "2.0.0"
+        },
+        "vo-amrwbenc": {},
+        "vorbis": {},
+        "vvenc": {
+          "minVersion": "1.6.1"
+        },
+        "webp": {
+          "minVersion": "0.2.0"
+        },
+        "x264": {},
+        "x265": {},
+        "xavs": {},
+        "xavs2": {
+          "minVersion": "1.3.0"
+        },
+        "xevd": {
+          "minVersion": "0.4.1"
+        },
+        "xeve": {
+          "minVersion": "0.5.1"
+        },
+        "xml2": {},
+        "xvid": {},
+        "zimg": {
+          "minVersion": "2.7.0"
+        },
+        "zmq": {
+          "minVersion": "4.2.1"
+        },
+        "zvbi": {}
+      },
+      "options": [
+        "default-static",
+        "default-programs",
+        "default-ffmpeg",
+        "default-ffprobe",
+        "enable-shared",
+        "disable-ffplay",
+        "disable-autodetect",
+        "disable-network",
+        "disable-asm",
+        "disable-x86asm",
+        "pkg-config-static",
+        "enable-runtime-cpudetect",
+        "disable-doc",
+        "enable-small",
+        "enable-lto",
+        "disable-debug",
+        "disable-stripping"
+      ]
+    },
+    "7.0": {
+      "libraries": {
+        "amf": {},
+        "aom": {
+          "minVersion": "1.0.0"
+        },
+        "aribb24": {},
+        "aribcaption": {
+          "minVersion": "1.1.1"
+        },
+        "ass": {
+          "minVersion": "0.11.0"
+        },
+        "avisynthplus": {
+          "minVersion": "3.7.3"
+        },
+        "bluray": {},
+        "bs2b": {},
+        "caca": {},
+        "cdio": {},
+        "chromaprint": {},
+        "codec2": {},
+        "cuda-nvcc": {},
+        "dav1d": {
+          "minVersion": "0.5.0"
+        },
+        "davs2": {
+          "minVersion": "1.6.0"
+        },
+        "dc1394": {},
+        "decklink": {},
+        "dvdnav": {
+          "minVersion": "6.1.1"
+        },
+        "dvdread": {
+          "minVersion": "6.1.2"
+        },
+        "fdk-aac": {},
+        "fontconfig": {},
+        "freetype": {},
+        "frei0r": {},
+        "fribidi": {},
+        "glslang": {},
+        "gme": {},
+        "gnutls": {},
+        "gsm": {},
+        "harfbuzz": {},
+        "ilbc": {},
+        "jack": {},
+        "klvanc": {},
+        "kvazaar": {
+          "minVersion": "2.0.0"
+        },
+        "ladspa": {},
+        "lcms2": {
+          "minVersion": "2.13"
+        },
+        "lensfun": {
+          "unavailable": true
+        },
+        "libjxl": {
+          "minVersion": "0.7.0"
+        },
+        "libmfx": {
+          "minVersion": "1.28"
+        },
+        "libplacebo": {
+          "minVersion": "4.192.0"
+        },
+        "libtls": {},
+        "libvpx": {
+          "minVersion": "1.4.0"
+        },
+        "lv2": {},
+        "mbedtls": {},
+        "modplug": {},
+        "mp3lame": {},
+        "mysofa": {},
+        "nvenc": {},
+        "openal": {
+          "minVersion": "1.1"
+        },
+        "opencl": {},
+        "opencore-amr": {},
+        "opencv": {},
+        "opengl": {},
+        "openh264": {
+          "minVersion": "1.3.0"
+        },
+        "openjpeg": {
+          "minVersion": "2.1.0"
+        },
+        "openmpt": {
+          "minVersion": "0.2.6557"
+        },
+        "openssl": {},
+        "openvino": {},
+        "opus": {},
+        "png": {},
+        "pocketsphinx": {},
+        "pulse": {},
+        "qrencode": {},
+        "libvpl": {
+          "minVersion": "2.6"
+        },
+        "quirc": {},
+        "rabbitmq": {
+          "minVersion": "0.7.1"
+        },
+        "rav1e": {
+          "minVersion": "0.5.0"
+        },
+        "rist": {
+          "minVersion": "0.2.7"
+        },
+        "rsvg": {},
+        "rtmp": {},
+        "rubberband": {
+          "minVersion": "1.8.1"
+        },
+        "sdl2": {
+          "minVersion": "2.0.1"
+        },
+        "shaderc": {
+          "minVersion": "2019.1"
+        },
+        "shine": {},
+        "smbclient": {},
+        "snappy": {},
+        "soxr": {},
+        "speex": {},
+        "srt": {
+          "minVersion": "1.3.0"
+        },
+        "ssh": {},
+        "svt-av1": {
+          "minVersion": "0.9.0",
+          "sourceBuild": true
+        },
+        "tensorflow": {},
+        "tesseract": {},
+        "theora": {},
+        "torch": {},
+        "twolame": {},
+        "uavs3d": {
+          "minVersion": "1.1.41"
+        },
+        "vapoursynth": {},
+        "vidstab": {
+          "minVersion": "0.98"
+        },
+        "vmaf": {
+          "minVersion": "2.0.0"
+        },
+        "vo-amrwbenc": {},
+        "vorbis": {},
+        "webp": {
+          "minVersion": "0.2.0"
+        },
+        "x264": {},
+        "x265": {},
+        "xavs": {},
+        "xavs2": {
+          "minVersion": "1.3.0"
+        },
+        "xevd": {
+          "minVersion": "0.4.1"
+        },
+        "xeve": {
+          "minVersion": "0.4.3",
+          "sourceBuild": true
+        },
+        "xml2": {},
+        "xvid": {},
+        "zimg": {
+          "minVersion": "2.7.0"
+        },
+        "zmq": {
+          "minVersion": "4.2.1"
+        },
+        "zvbi": {}
+      },
+      "options": [
+        "default-static",
+        "default-programs",
+        "default-ffmpeg",
+        "default-ffprobe",
+        "enable-shared",
+        "disable-ffplay",
+        "disable-autodetect",
+        "disable-network",
+        "disable-asm",
+        "disable-x86asm",
+        "pkg-config-static",
+        "enable-runtime-cpudetect",
+        "disable-doc",
+        "enable-small",
+        "enable-lto",
+        "disable-debug",
+        "disable-stripping"
+      ]
+    },
+    "6.1": {
+      "libraries": {
+        "amf": {},
+        "aom": {
+          "minVersion": "1.0.0"
+        },
+        "aribb24": {},
+        "aribcaption": {
+          "minVersion": "1.1.1"
+        },
+        "ass": {
+          "minVersion": "0.11.0"
+        },
+        "avisynthplus": {
+          "minVersion": "3.7.3"
+        },
+        "bluray": {},
+        "bs2b": {},
+        "caca": {},
+        "cdio": {},
+        "chromaprint": {},
+        "codec2": {},
+        "cuda-nvcc": {},
+        "dav1d": {
+          "minVersion": "0.5.0"
+        },
+        "davs2": {
+          "minVersion": "1.6.0"
+        },
+        "dc1394": {},
+        "decklink": {},
+        "fdk-aac": {},
+        "fontconfig": {},
+        "freetype": {},
+        "frei0r": {},
+        "fribidi": {},
+        "glslang": {},
+        "gme": {},
+        "gnutls": {},
+        "gsm": {},
+        "harfbuzz": {},
+        "ilbc": {},
+        "jack": {},
+        "klvanc": {},
+        "kvazaar": {
+          "minVersion": "2.0.0"
+        },
+        "ladspa": {},
+        "lcms2": {
+          "minVersion": "2.13"
+        },
+        "lensfun": {
+          "unavailable": true
+        },
+        "libjxl": {
+          "minVersion": "0.7.0"
+        },
+        "libmfx": {
+          "minVersion": "1.28"
+        },
+        "libplacebo": {
+          "minVersion": "4.192.0"
+        },
+        "libtls": {},
+        "libvpx": {
+          "minVersion": "1.4.0"
+        },
+        "lv2": {},
+        "mbedtls": {},
+        "modplug": {},
+        "mp3lame": {},
+        "mysofa": {},
+        "nvenc": {},
+        "openal": {
+          "minVersion": "1.1"
+        },
+        "opencl": {},
+        "opencore-amr": {},
+        "opencv": {},
+        "opengl": {},
+        "openh264": {},
+        "openjpeg": {
+          "minVersion": "2.1.0"
+        },
+        "openmpt": {
+          "minVersion": "0.2.6557"
+        },
+        "openssl": {},
+        "openvino": {},
+        "opus": {},
+        "png": {},
+        "pocketsphinx": {},
+        "pulse": {},
+        "libvpl": {
+          "minVersion": "2.6"
+        },
+        "rabbitmq": {
+          "minVersion": "0.7.1"
+        },
+        "rav1e": {
+          "minVersion": "0.5.0"
+        },
+        "rist": {
+          "minVersion": "0.2.7"
+        },
+        "rsvg": {},
+        "rtmp": {},
+        "rubberband": {
+          "minVersion": "1.8.1"
+        },
+        "sdl2": {
+          "minVersion": "2.0.1"
+        },
+        "shaderc": {
+          "minVersion": "2019.1"
+        },
+        "shine": {},
+        "smbclient": {},
+        "snappy": {},
+        "soxr": {},
+        "speex": {},
+        "srt": {
+          "minVersion": "1.3.0"
+        },
+        "ssh": {},
+        "svt-av1": {
+          "minVersion": "0.9.0",
+          "sourceBuild": true
+        },
+        "tensorflow": {},
+        "tesseract": {},
+        "theora": {},
+        "twolame": {},
+        "uavs3d": {
+          "minVersion": "1.1.41"
+        },
+        "vapoursynth": {},
+        "vidstab": {
+          "minVersion": "0.98"
+        },
+        "vmaf": {
+          "minVersion": "2.0.0"
+        },
+        "vo-amrwbenc": {},
+        "vorbis": {},
+        "webp": {
+          "minVersion": "0.2.0"
+        },
+        "x264": {},
+        "x265": {},
+        "xavs": {},
+        "xavs2": {
+          "minVersion": "1.3.0"
+        },
+        "xml2": {},
+        "xvid": {},
+        "zimg": {
+          "minVersion": "2.7.0"
+        },
+        "zmq": {
+          "minVersion": "4.2.1"
+        },
+        "zvbi": {}
+      },
+      "options": [
+        "default-static",
+        "default-programs",
+        "default-ffmpeg",
+        "default-ffprobe",
+        "enable-shared",
+        "disable-ffplay",
+        "disable-autodetect",
+        "disable-network",
+        "disable-asm",
+        "disable-x86asm",
+        "pkg-config-static",
+        "enable-runtime-cpudetect",
+        "disable-doc",
+        "enable-small",
+        "enable-lto",
+        "disable-debug",
+        "disable-stripping"
+      ]
+    },
+    "5.1": {
+      "libraries": {
+        "amf": {},
+        "aom": {
+          "minVersion": "1.0.0"
+        },
+        "aribb24": {},
+        "ass": {
+          "minVersion": "0.11.0"
+        },
+        "avisynthplus": {
+          "minVersion": "3.7.1"
+        },
+        "bluray": {},
+        "bs2b": {},
+        "caca": {},
+        "cdio": {},
+        "chromaprint": {},
+        "codec2": {},
+        "cuda-nvcc": {},
+        "dav1d": {
+          "minVersion": "0.5.0"
+        },
+        "davs2": {
+          "minVersion": "1.6.0"
+        },
+        "dc1394": {},
+        "decklink": {},
+        "fdk-aac": {},
+        "fontconfig": {},
+        "freetype": {},
+        "frei0r": {},
+        "fribidi": {},
+        "glslang": {},
+        "gme": {},
+        "gnutls": {},
+        "gsm": {},
+        "ilbc": {},
+        "jack": {},
+        "klvanc": {},
+        "kvazaar": {
+          "minVersion": "0.8.1"
+        },
+        "ladspa": {},
+        "lcms2": {
+          "minVersion": "2.13"
+        },
+        "lensfun": {
+          "unavailable": true
+        },
+        "libjxl": {
+          "minVersion": "0.7.0"
+        },
+        "libmfx": {
+          "minVersion": "1.28"
+        },
+        "libplacebo": {
+          "minVersion": "4.192.0",
+          "sourceBuild": true
+        },
+        "libtls": {},
+        "libvpx": {
+          "minVersion": "1.4.0"
+        },
+        "lv2": {},
+        "mbedtls": {},
+        "modplug": {},
+        "mp3lame": {},
+        "mysofa": {},
+        "nvenc": {},
+        "openal": {},
+        "opencl": {},
+        "opencore-amr": {},
+        "opencv": {},
+        "opengl": {},
+        "openh264": {},
+        "openjpeg": {
+          "minVersion": "2.1.0"
+        },
+        "openmpt": {
+          "minVersion": "0.2.6557"
+        },
+        "openssl": {},
+        "openvino": {},
+        "opus": {},
+        "png": {},
+        "pocketsphinx": {},
+        "pulse": {},
+        "rabbitmq": {
+          "minVersion": "0.7.1"
+        },
+        "rav1e": {
+          "minVersion": "0.4.0"
+        },
+        "rist": {
+          "minVersion": "0.2.7"
+        },
+        "rsvg": {},
+        "rtmp": {},
+        "rubberband": {
+          "minVersion": "1.8.1"
+        },
+        "sdl2": {
+          "minVersion": "2.0.1"
+        },
+        "shaderc": {
+          "minVersion": "2019.1"
+        },
+        "shine": {},
+        "smbclient": {},
+        "snappy": {},
+        "soxr": {},
+        "speex": {},
+        "srt": {
+          "minVersion": "1.3.0"
+        },
+        "ssh": {},
+        "svt-av1": {
+          "minVersion": "0.9.0",
+          "sourceBuild": true
+        },
+        "tensorflow": {},
+        "tesseract": {},
+        "theora": {},
+        "twolame": {},
+        "uavs3d": {
+          "minVersion": "1.1.41"
+        },
+        "vapoursynth": {},
+        "vidstab": {
+          "minVersion": "0.98"
+        },
+        "vmaf": {
+          "minVersion": "2.0.0"
+        },
+        "vo-amrwbenc": {},
+        "vorbis": {},
+        "webp": {
+          "minVersion": "0.2.0"
+        },
+        "x264": {},
+        "x265": {},
+        "xavs": {},
+        "xavs2": {
+          "minVersion": "1.3.0"
+        },
+        "xml2": {},
+        "xvid": {},
+        "zimg": {
+          "minVersion": "2.7.0"
+        },
+        "zmq": {
+          "minVersion": "4.2.1"
+        },
+        "zvbi": {}
+      },
+      "options": [
+        "default-static",
+        "default-programs",
+        "default-ffmpeg",
+        "default-ffprobe",
+        "enable-shared",
+        "disable-ffplay",
+        "disable-autodetect",
+        "disable-network",
+        "disable-asm",
+        "disable-x86asm",
+        "pkg-config-static",
+        "enable-runtime-cpudetect",
+        "disable-doc",
+        "enable-small",
+        "enable-lto",
+        "disable-debug",
+        "disable-stripping"
+      ]
+    },
+    "4.4": {
+      "libraries": {
+        "amf": {},
+        "aom": {
+          "minVersion": "1.0.0"
+        },
+        "aribb24": {},
+        "ass": {},
+        "avisynthplus": {},
+        "bluray": {},
+        "bs2b": {},
+        "caca": {},
+        "cdio": {},
+        "chromaprint": {},
+        "codec2": {},
+        "cuda-nvcc": {},
+        "dav1d": {
+          "minVersion": "0.5.0"
+        },
+        "davs2": {
+          "minVersion": "1.6.0"
+        },
+        "dc1394": {},
+        "decklink": {},
+        "fdk-aac": {},
+        "fontconfig": {},
+        "freetype": {},
+        "frei0r": {},
+        "fribidi": {},
+        "glslang": {},
+        "gme": {},
+        "gnutls": {},
+        "gsm": {},
+        "ilbc": {},
+        "jack": {},
+        "klvanc": {},
+        "kvazaar": {
+          "minVersion": "0.8.1"
+        },
+        "ladspa": {},
+        "lensfun": {
+          "unavailable": true
+        },
+        "libmfx": {},
+        "libtls": {},
+        "libvpx": {
+          "minVersion": "1.4.0"
+        },
+        "lv2": {},
+        "mbedtls": {},
+        "modplug": {},
+        "mp3lame": {},
+        "mysofa": {},
+        "nvenc": {},
+        "openal": {},
+        "opencl": {},
+        "opencore-amr": {},
+        "opencv": {},
+        "opengl": {},
+        "openh264": {},
+        "openjpeg": {
+          "minVersion": "2.1.0"
+        },
+        "openmpt": {
+          "minVersion": "0.2.6557"
+        },
+        "openssl": {},
+        "openvino": {},
+        "opus": {},
+        "png": {},
+        "pocketsphinx": {},
+        "pulse": {},
+        "rabbitmq": {
+          "minVersion": "0.7.1"
+        },
+        "rav1e": {
+          "minVersion": "0.4.0"
+        },
+        "rist": {
+          "minVersion": "0.2"
+        },
+        "rsvg": {},
+        "rtmp": {},
+        "rubberband": {
+          "minVersion": "1.8.1"
+        },
+        "sdl2": {
+          "minVersion": "2.0.1"
+        },
+        "shine": {},
+        "smbclient": {},
+        "snappy": {},
+        "soxr": {},
+        "speex": {},
+        "srt": {
+          "minVersion": "1.3.0"
+        },
+        "ssh": {},
+        "svt-av1": {
+          "minVersion": "0.8.4",
+          "sourceBuild": true
+        },
+        "tensorflow": {},
+        "tesseract": {},
+        "theora": {},
+        "twolame": {},
+        "uavs3d": {
+          "minVersion": "1.1.41"
+        },
+        "vapoursynth": {},
+        "vidstab": {
+          "minVersion": "0.98"
+        },
+        "vmaf": {
+          "minVersion": "1.5.2",
+          "sourceBuild": true
+        },
+        "vo-amrwbenc": {},
+        "vorbis": {},
+        "webp": {
+          "minVersion": "0.2.0"
+        },
+        "x264": {},
+        "x265": {},
+        "xavs": {},
+        "xavs2": {
+          "minVersion": "1.3.0"
+        },
+        "xml2": {},
+        "xvid": {},
+        "zimg": {
+          "minVersion": "2.7.0"
+        },
+        "zmq": {
+          "minVersion": "4.2.1"
+        },
+        "zvbi": {}
+      },
+      "options": [
+        "default-static",
+        "default-programs",
+        "default-ffmpeg",
+        "default-ffprobe",
+        "enable-shared",
+        "disable-ffplay",
+        "disable-autodetect",
+        "disable-network",
+        "disable-asm",
+        "disable-x86asm",
+        "pkg-config-static",
+        "enable-runtime-cpudetect",
+        "disable-doc",
+        "enable-small",
+        "enable-lto",
+        "disable-debug",
+        "disable-stripping"
+      ]
+    }
+  }
+}

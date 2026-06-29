@@ -35,6 +35,7 @@ export namespace app {
 	export class BuildResult {
 	    artifactsDirectory: string;
 	    reportPath: string;
+	    ffmpegVersion: string;
 	    files: BuildResultFile[];
 	    selectedLibraries: string[];
 	    selectedConfigureOptions: string[];
@@ -51,6 +52,7 @@ export namespace app {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.artifactsDirectory = source["artifactsDirectory"];
 	        this.reportPath = source["reportPath"];
+	        this.ffmpegVersion = source["ffmpegVersion"];
 	        this.files = this.convertValues(source["files"], BuildResultFile);
 	        this.selectedLibraries = source["selectedLibraries"];
 	        this.selectedConfigureOptions = source["selectedConfigureOptions"];
@@ -158,6 +160,7 @@ export namespace app {
 	    defaultFfmpegBuildSettings: planning.FfmpegBuildSettings;
 	    defaultLibraryCatalog: planning.LibraryChoice[];
 	    defaultConfigureOptionCatalog: planning.ConfigureOptionChoice[];
+	    supportedFfmpegReleases: planning.FfmpegReleaseChoice[];
 	
 	    static createFrom(source: any = {}) {
 	        return new InitialApplicationState(source);
@@ -173,6 +176,7 @@ export namespace app {
 	        this.defaultFfmpegBuildSettings = this.convertValues(source["defaultFfmpegBuildSettings"], planning.FfmpegBuildSettings);
 	        this.defaultLibraryCatalog = this.convertValues(source["defaultLibraryCatalog"], planning.LibraryChoice);
 	        this.defaultConfigureOptionCatalog = this.convertValues(source["defaultConfigureOptionCatalog"], planning.ConfigureOptionChoice);
+	        this.supportedFfmpegReleases = this.convertValues(source["supportedFfmpegReleases"], planning.FfmpegReleaseChoice);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -422,6 +426,20 @@ export namespace planning {
 	        this.summaryValues = source["summaryValues"];
 	    }
 	}
+	export class GeneratedSourceFile {
+	    path: string;
+	    lines: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new GeneratedSourceFile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.lines = source["lines"];
+	    }
+	}
 	export class LibrarySourcePatch {
 	    file: string;
 	    find: string;
@@ -444,6 +462,7 @@ export namespace planning {
 	    trackName: string;
 	    method: string;
 	    buildSystem: string;
+	    cFlags?: string[];
 	    version: string;
 	    buildDependencyPackages?: string[];
 	    msysBuildDependencyPackages?: string[];
@@ -470,6 +489,7 @@ export namespace planning {
 	    verifyHeaderRelativePath: string;
 	    verifyLibStem: string;
 	    sourcePatches?: LibrarySourcePatch[];
+	    generatedSourceFiles?: GeneratedSourceFile[];
 	
 	    static createFrom(source: any = {}) {
 	        return new LibraryPreparation(source);
@@ -482,6 +502,7 @@ export namespace planning {
 	        this.trackName = source["trackName"];
 	        this.method = source["method"];
 	        this.buildSystem = source["buildSystem"];
+	        this.cFlags = source["cFlags"];
 	        this.version = source["version"];
 	        this.buildDependencyPackages = source["buildDependencyPackages"];
 	        this.msysBuildDependencyPackages = source["msysBuildDependencyPackages"];
@@ -508,6 +529,7 @@ export namespace planning {
 	        this.verifyHeaderRelativePath = source["verifyHeaderRelativePath"];
 	        this.verifyLibStem = source["verifyLibStem"];
 	        this.sourcePatches = this.convertValues(source["sourcePatches"], LibrarySourcePatch);
+	        this.generatedSourceFiles = this.convertValues(source["generatedSourceFiles"], GeneratedSourceFile);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -560,6 +582,22 @@ export namespace planning {
 		    return a;
 		}
 	}
+	export class LibraryVersionCompatibility {
+	    supported: boolean;
+	    available: boolean;
+	    minVersion?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LibraryVersionCompatibility(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.supported = source["supported"];
+	        this.available = source["available"];
+	        this.minVersion = source["minVersion"];
+	    }
+	}
 	export class LibraryChoice {
 	    libraryId: string;
 	    trackName: string;
@@ -573,6 +611,7 @@ export namespace planning {
 	    technicalExplanation: string;
 	    defaultChecked: boolean;
 	    locked: boolean;
+	    versionCompatibility?: LibraryVersionCompatibility;
 	
 	    static createFrom(source: any = {}) {
 	        return new LibraryChoice(source);
@@ -592,7 +631,26 @@ export namespace planning {
 	        this.technicalExplanation = source["technicalExplanation"];
 	        this.defaultChecked = source["defaultChecked"];
 	        this.locked = source["locked"];
+	        this.versionCompatibility = this.convertValues(source["versionCompatibility"], LibraryVersionCompatibility);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class FfmpegBuildPlan {
 	    actionName: string;
@@ -756,6 +814,26 @@ export namespace planning {
 	        this.licenseProfileName = source["licenseProfileName"];
 	    }
 	}
+	export class FfmpegReleaseChoice {
+	    version: string;
+	    codename: string;
+	    archiveUrl: string;
+	    signatureUrl: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FfmpegReleaseChoice(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = source["version"];
+	        this.codename = source["codename"];
+	        this.archiveUrl = source["archiveUrl"];
+	        this.signatureUrl = source["signatureUrl"];
+	    }
+	}
+	
+	
 	
 	
 	

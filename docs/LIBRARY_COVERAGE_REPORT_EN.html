@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -12,2483 +11,1935 @@
 <main class="main">
 <section class="hero">
 <h1>Library coverage report <span class="lang-pill">EN</span></h1>
-<p class="hero-desc">A detailed report on the FFmpeg library rows currently tracked by the program.</p>
+<p class="hero-desc">Which registered library entries are selectable, restricted, or conditionally available.</p>
 </section>
-<section aria-label="Document section highlights" class="section-cards"><a class="section-card" href="#executive-summary"><span class="card-icon">1</span><span><strong>Executive summary</strong></span></a><a class="section-card" href="#what-the-coverage-model-means"><span class="card-icon">2</span><span><strong>What the coverage model
-means</strong></span></a><a class="section-card" href="#coverage-by-category"><span class="card-icon">3</span><span><strong>Coverage by category</strong></span></a><a class="section-card" href="#preset-coverage"><span class="card-icon">4</span><span><strong>Preset coverage</strong></span></a><a class="section-card" href="#mutual-exclusion-and-normalization-rules"><span class="card-icon">5</span><span><strong>Mutual-exclusion and
-normalization rules</strong></span></a><a class="section-card" href="#source-prepared-and-imported-libraries"><span class="card-icon">6</span><span><strong>Source-prepared and
-imported libraries</strong></span></a></section>
-<article class="doc-content"><h1 id="library-coverage-report">Library coverage report</h1>
-<p>This report describes the FFmpeg library coverage of this program as
-represented by the current source tree. It is based on the backend
-catalog, frontend preset logic, source-preparation recipes,
-profile-availability filters, and localization descriptions.</p>
-<p>The word “covers” is used carefully here. A library may be listed in
-the catalog, selectable through the normal UI, source-prepared by the
-builder, intentionally hidden, or blocked because the current program
-does not yet have a safe build/import path.</p>
-<h2 id="executive-summary">Executive summary</h2>
+<section aria-label="Document section highlights" class="section-cards">
+<a class="section-card" href="#summary"><span class="card-icon">1</span><span><strong>Summary</strong></span></a>
+<a class="section-card" href="#how-to-read-this-report"><span class="card-icon">2</span><span><strong>How to read this report</strong></span></a>
+<a class="section-card" href="#coverage-by-category"><span class="card-icon">3</span><span><strong>Coverage by category</strong></span></a>
+<a class="section-card" href="#public-preset-coverage"><span class="card-icon">4</span><span><strong>Public preset coverage</strong></span></a>
+<a class="section-card" href="#extended-library-mode"><span class="card-icon">5</span><span><strong>Extended library mode</strong></span></a>
+<a class="section-card" href="#mutual-exclusion-and-normalization"><span class="card-icon">6</span><span><strong>Mutual exclusion and normalization</strong></span></a>
+</section>
+<article class="doc-content">
+<h1 id="library-coverage-report">Library coverage report</h1>
+<p>This report describes which FFmpeg library entries are registered in this version of Promptful Custom FFmpeg Builder, which entries can be selected, and which entries are restricted by FFmpeg version, MSYS2 shell profile, package availability, or missing preparation support.</p>
+<p>A catalog entry is not necessarily a selectable option. Some entries are registered for tracking, comparison, warning, or future preparation support, and some selectable entries may still be excluded from the final build plan for a particular FFmpeg release or MSYS2 profile.</p>
+<h2 id="summary">Summary</h2>
 <ul>
-<li><p>Total catalog rows: <strong>125</strong>.</p></li>
-<li><p>Locked official FFmpeg-source rows: <strong>10</strong>.</p></li>
-<li><p>Native MSYS2 package-track rows: <strong>96</strong>.</p></li>
-<li><p>Internal source-prepared rows: <strong>12</strong>.</p></li>
-<li><p>External SDK/import-track rows: <strong>7</strong>.</p></li>
-<li><p>Normal UI-selectable rows, including locked built-ins:
-<strong>112</strong>.</p></li>
-<li><p>Normal UI-selectable external/additional rows, excluding locked
-built-ins: <strong>102</strong>.</p></li>
-<li><p>UI-disabled rows: <strong>5</strong> — <code>lensfun</code>,
-<code>svtjpegxs</code>, <code>vapoursynth</code>,
-<code>tensorflow</code>, <code>onnxruntime</code>.</p></li>
-<li><p>Blocked rows with no normal build/import recipe:
-<strong>8</strong> — <code>smbclient</code>, <code>openvino</code>,
-<code>torch</code>, <code>libmfx</code>, <code>pocketsphinx</code>,
-<code>dc1394</code>, <code>decklink</code>,
-<code>cuda-nvcc</code>.</p></li>
+<li>Total catalog entries: <strong>125</strong>.</li>
+<li>Official FFmpeg-source entries: <strong>10</strong>.</li>
+<li>Native MSYS2 package entries: <strong>96</strong>.</li>
+<li>Internal source-prepared entries: <strong>13</strong>.</li>
+<li>External SDK/import entries: <strong>6</strong>.</li>
+<li>Globally UI-disabled entries: <strong>2</strong> — <code>tensorflow</code>, <code>vapoursynth</code>.</li>
+<li>Blocked entries without a supported build/import path: <strong>7</strong> — <code>smbclient</code>, <code>openvino</code>, <code>torch</code>, <code>pocketsphinx</code>, <code>dc1394</code>, <code>decklink</code>, <code>cuda-nvcc</code>.</li>
 </ul>
-<h2 id="what-the-coverage-model-means">What the coverage model
-means</h2>
-<p>The program does not treat every FFmpeg <code>--enable-*</code>
-option as equally supported. It separates the library catalog into
-several practical tracks:</p>
+<p>Selection availability depends on the selected FFmpeg release and MSYS2 shell profile. The program checks the selected entries before configure so unsupported release/profile combinations are not included in the final build plan.</p>
+<p>Version/profile-restricted entries are not counted as globally disabled. For example, <code>lensfun</code> depends on whether the available package satisfies the API required by the selected FFmpeg release; <code>onnxruntime</code> is not available for the covered official FFmpeg release lines and is also unavailable for <code>mingw64</code>; <code>svtjpegxs</code> depends on FFmpeg release requirements and pkg-config results.</p>
+<h2 id="how-to-read-this-report">How to read this report</h2>
 <table>
-<colgroup>
-<col style="width: 33%"/>
-<col style="width: 33%"/>
-<col style="width: 33%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>Track</th>
-<th>Meaning in this program</th>
-<th>Normal implication</th>
+<tr>
+  <th>Term</th>
+  <th>Meaning</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>Included</td>
-<td>Official FFmpeg components that are part of a normal source
-build.</td>
-<td>Locked on; no external package or <code>--enable-lib...</code> flag
-is added.</td>
+<tr>
+  <td>Included in FFmpeg source</td>
+  <td>Built from the official FFmpeg source tree and always included</td>
 </tr>
-<tr class="even">
-<td>Native</td>
-<td>A named external row that maps to MSYS2 package names and FFmpeg
-configure flags.</td>
-<td>The planner installs the profile-matching MSYS2 packages before
-configure.</td>
+<tr>
+  <td>Native MSYS2 package</td>
+  <td>Uses an MSYS2 package and a standard FFmpeg configure flag</td>
 </tr>
-<tr class="odd">
-<td>Internal</td>
-<td>No suitable prebuilt package is assumed; the program prepares a
-pinned source archive itself.</td>
-<td>The planner downloads/verifies/builds/imports the library before
-FFmpeg configure.</td>
+<tr>
+  <td>Internal source-prepared</td>
+  <td>The program prepares source or import files inside the private build environment</td>
 </tr>
-<tr class="even">
-<td>External</td>
-<td>The library depends on an external SDK/import path or a currently
-unsafe/unsupported path.</td>
-<td>Not normally selectable unless a recipe exists and the UI allows
-it.</td>
+<tr>
+  <td>External SDK/import</td>
+  <td>Needs an outside SDK, import library, or preparation path that is not package-based selection</td>
+</tr>
+<tr>
+  <td>UI-disabled</td>
+  <td>Registered in the catalog, but not selectable in the standard UI</td>
+</tr>
+<tr>
+  <td>Blocked</td>
+  <td>Registered in the catalog, but no supported build/import path exists yet</td>
+</tr>
+<tr>
+  <td>Version/profile-restricted</td>
+  <td>Available only for certain FFmpeg releases or MSYS2 shell profiles</td>
 </tr>
 </tbody>
 </table>
-<p>This distinction is important. The catalog is intentionally
-transparent: it shows not only what can be selected today, but also rows
-that are known, tracked, and blocked because enabling them without a
-safe preparation path would produce misleading or broken builds.</p>
+<p>This distinction prevents the report from overstating support. A configure flag alone is not enough; the program must also define how the library is obtained, prepared, reviewed, and passed to FFmpeg.</p>
 <h2 id="coverage-by-category">Coverage by category</h2>
 <table>
-<colgroup>
-<col style="width: 30%"/>
-<col style="width: 40%"/>
-<col style="width: 30%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>Category</th>
-<th style="text-align: right;">Catalog rows</th>
-<th>Notes</th>
+<tr>
+  <th>Category</th>
+  <th style="text-align:right">Entries</th>
+  <th>Notes</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>Included by default (official FFmpeg source)</td>
-<td style="text-align: right;">10</td>
-<td>Locked FFmpeg program/library/native rows.</td>
+<tr>
+  <td>Included in FFmpeg source</td>
+  <td style="text-align:right">10</td>
+  <td>Baseline programs and core FFmpeg libraries that are always included.</td>
 </tr>
-<tr class="even">
-<td>Video encoders</td>
-<td style="text-align: right;">16</td>
-<td>Software encoders plus newer regional/next-generation codec
-bindings.</td>
+<tr>
+  <td>Video encoders</td>
+  <td style="text-align:right">19</td>
+  <td>Software encoders, codec libraries, and special encoder integrations.</td>
 </tr>
-<tr class="odd">
-<td>Hardware encoders</td>
-<td style="text-align: right;">4</td>
-<td>Header/API enablement for GPU encoder families; not a guarantee that
-local hardware/driver supports the encoder.</td>
+<tr>
+  <td>Hardware encoders</td>
+  <td style="text-align:right">5</td>
+  <td>Header/API integrations for common Windows hardware encoder paths.</td>
 </tr>
-<tr class="even">
-<td>Video decoders</td>
-<td style="text-align: right;">7</td>
-<td>Modern and regional decoder libraries, including source-prepared
-AVS/LCEVC/AviSynth paths.</td>
+<tr>
+  <td>Video decoders</td>
+  <td style="text-align:right">8</td>
+  <td>External decoder libraries and wrapper decoders.</td>
 </tr>
-<tr class="odd">
-<td>Image codecs</td>
-<td style="text-align: right;">8</td>
-<td>Image and still-picture codec/helper libraries; libpng is
-package-only because FFmpeg has no separate <code>--enable-libpng</code>
-flag row here.</td>
+<tr>
+  <td>Image codecs</td>
+  <td style="text-align:right">11</td>
+  <td>Still-image and image-sequence helpers.</td>
 </tr>
-<tr class="even">
-<td>Filters and processing</td>
-<td style="text-align: right;">17</td>
-<td>Scaling, quality metrics, GPU/shader, color, plugin, QR and
-scripted-processing support.</td>
+<tr>
+  <td>Filters and processing</td>
+  <td style="text-align:right">17</td>
+  <td>Scaling, filtering, color, analysis, GPU/filter helpers, and plugin paths.</td>
 </tr>
-<tr class="odd">
-<td>Audio</td>
-<td style="text-align: right;">22</td>
-<td>Audio codecs, resamplers, speech/transcription-related rows and
-spatial/audio-processing helpers.</td>
+<tr>
+  <td>Audio</td>
+  <td style="text-align:right">25</td>
+  <td>Audio codecs, analysis, effects, and device/server integrations.</td>
 </tr>
-<tr class="even">
-<td>Subtitles and text</td>
-<td style="text-align: right;">8</td>
-<td>Subtitle rendering, font shaping and broadcast caption
-handling.</td>
+<tr>
+  <td>Subtitles and text</td>
+  <td style="text-align:right">11</td>
+  <td>Font shaping, subtitle rendering, captions, teletext, OCR-related text support.</td>
 </tr>
-<tr class="odd">
-<td>Disc and device input</td>
-<td style="text-align: right;">14</td>
-<td>Disc formats, device/display/input integrations and capture SDK
-rows.</td>
+<tr>
+  <td>Disc and device input</td>
+  <td style="text-align:right">8</td>
+  <td>Optical media, capture, and platform input integrations.</td>
 </tr>
-<tr class="even">
-<td>Network</td>
-<td style="text-align: right;">7</td>
-<td>Transport/protocol libraries excluding TLS backend choice.</td>
+<tr>
+  <td>Network</td>
+  <td style="text-align:right">7</td>
+  <td>Transport/protocol libraries excluding TLS backend choice.</td>
 </tr>
-<tr class="odd">
-<td>Secure network (TLS)</td>
-<td style="text-align: right;">4</td>
-<td>Mutually exclusive TLS backend options.</td>
-</tr>
-<tr class="even">
-<td>OCR</td>
-<td style="text-align: right;">1</td>
-<td>OCR support through Tesseract.</td>
-</tr>
-<tr class="odd">
-<td>AI support</td>
-<td style="text-align: right;">4</td>
-<td>AI/model-inference related FFmpeg hooks; currently
-conservative/mostly disabled or blocked.</td>
-</tr>
-<tr class="even">
-<td>Support libraries</td>
-<td style="text-align: right;">3</td>
-<td>General support libraries and metadata/QR helper libraries.</td>
+<tr>
+  <td>Secure network (TLS)</td>
+  <td style="text-align:right">4</td>
+  <td>Mutually exclusive TLS backend options.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="preset-coverage">Preset coverage</h2>
-<p>Public library presets are cumulative broadening tiers: each higher
-tier includes the locked FFmpeg rows and the rows from the earlier
-practical tier, then adds a focused set of additional libraries.</p>
+<h2 id="public-preset-coverage">Public preset coverage</h2>
+<p>Public library presets are selection templates. They are not all cumulative tiers.</p>
 <table>
-<colgroup>
-<col style="width: 33%"/>
-<col style="width: 33%"/>
-<col style="width: 33%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>Preset</th>
-<th>Meaning</th>
-<th>Libraries added beyond previous tier</th>
+<tr>
+  <th>Preset</th>
+  <th>Purpose</th>
+  <th>Main additions</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>Minimal</td>
-<td>Only the locked official FFmpeg components.</td>
-<td>none</td>
+<tr>
+  <td>Minimal</td>
+  <td>Official FFmpeg-source baseline only</td>
+  <td>FFmpeg programs and core libraries included by default</td>
 </tr>
-<tr class="even">
-<td>Default</td>
-<td>First-run practical build: common software encoders/decoders,
-hardware encoder headers, major audio libraries, subtitle stack, common
-processing and network helpers.</td>
-<td><code>nvenc</code>, <code>amf</code>, <code>qsv</code>,
-<code>x264</code>, <code>x265</code>, <code>libvpx</code>,
-<code>aom</code>, <code>svt-av1</code>, <code>dav1d</code>,
-<code>theora</code>, <code>xvid</code>, <code>opus</code>,
-<code>vorbis</code>, <code>mp3lame</code>, <code>gsm</code>,
-<code>speex</code>, <code>opencore-amr</code>, <code>vo-amrwbenc</code>,
-<code>rubberband</code>, <code>openjpeg</code>, <code>webp</code>,
-<code>freetype</code>, <code>fontconfig</code>, <code>fribidi</code>,
-<code>harfbuzz</code>, <code>ass</code>, <code>zimg</code>,
-<code>vmaf</code>, <code>vidstab</code>, <code>srt</code>,
-<code>ssh</code>, <code>zmq</code>, <code>openal</code>,
-<code>sdl2</code>, <code>gme</code>, <code>openmpt</code></td>
+<tr>
+  <td>Default</td>
+  <td>Practical first build for common encoding, decoding, subtitles, audio, processing, and network helpers</td>
+  <td><code>nvenc</code>, <code>amf</code>, <code>libvpl</code>, <code>libmfx</code>, <code>x264</code>, <code>x265</code>, <code>libvpx</code>, <code>aom</code>, <code>svt-av1</code>, <code>dav1d</code>, <code>theora</code>, <code>xvid</code>, <code>opus</code>, <code>vorbis</code>, <code>mp3lame</code>, <code>gsm</code>, <code>speex</code>, <code>opencore-amr</code>, <code>vo-amrwbenc</code>, <code>rubberband</code>, <code>openjpeg</code>, <code>webp</code>, <code>freetype</code>, <code>fontconfig</code>, <code>fribidi</code>, <code>harfbuzz</code>, <code>ass</code>, <code>cairo</code>, <code>zimg</code>, <code>vmaf</code>, <code>vidstab</code>, <code>srt</code>, <code>ssh</code>, <code>zmq</code>, <code>openal</code>, <code>sdl2</code>, <code>gme</code>, <code>openmpt</code></td>
 </tr>
-<tr class="odd">
-<td>Maximum Efficiency</td>
-<td>Default plus quality/efficiency audio helpers.</td>
-<td><code>fdk-aac</code>, <code>soxr</code></td>
+<tr>
+  <td>Maximum Efficiency</td>
+  <td><code>default</code> plus compression/quality-per-bit helpers</td>
+  <td><code>fdk-aac</code>, <code>soxr</code>, <code>rav1e</code></td>
 </tr>
-<tr class="even">
-<td>Maximum Compatibility</td>
-<td>Efficiency plus broader codecs, caption formats, protocols, and
-image helpers.</td>
-<td><code>rav1e</code>, <code>openh264</code>, <code>ilbc</code>,
-<code>twolame</code>, <code>xevd</code>, <code>shine</code>,
-<code>codec2</code>, <code>lc3</code>, <code>snappy</code>,
-<code>rsvg</code>, <code>zvbi</code>, <code>aribb24</code>,
-<code>aribcaption</code>, <code>rtmp</code></td>
+<tr>
+  <td>Maximum Compatibility</td>
+  <td><code>default</code> plus broader codec, subtitle, caption, image, speech, and protocol coverage</td>
+  <td><code>openh264</code>, <code>xeve</code>, <code>xevd</code>, <code>oapv</code>, <code>xavs</code>, <code>ilbc</code>, <code>twolame</code>, <code>shine</code>, <code>codec2</code>, <code>lc3</code>, <code>snappy</code>, <code>rsvg</code>, <code>zvbi</code>, <code>aribb24</code>, <code>aribcaption</code>, <code>rtmp</code></td>
 </tr>
-<tr class="odd">
-<td>Maximum Audio/Video Editor</td>
-<td>Compatibility plus editing, filtering, color, plugin, QR, subtitle,
-OCR/transcription-adjacent and image workflow libraries.</td>
-<td><code>libjxl</code>, <code>png</code>, <code>libplacebo</code>,
-<code>frei0r</code>, <code>xml2</code>, <code>mysofa</code>,
-<code>bs2b</code>, <code>lcms2</code>, <code>shaderc</code>,
-<code>cairo</code>, <code>opencv</code>, <code>opencolorio</code>,
-<code>ladspa</code>, <code>lv2</code>, <code>chromaprint</code>,
-<code>qrencode</code>, <code>whisper</code></td>
+<tr>
+  <td>Audio/Video Editor</td>
+  <td><code>default</code> plus editing, filtering, color, analysis, subtitle, transcription, and image-workflow helpers</td>
+  <td><code>png</code>, <code>libjxl</code>, <code>lcms2</code>, <code>libplacebo</code>, <code>shaderc</code>, <code>frei0r</code>, <code>opencv</code>, <code>opencolorio</code>, <code>xml2</code>, <code>mysofa</code>, <code>bs2b</code>, <code>ladspa</code>, <code>lv2</code>, <code>chromaprint</code>, <code>qrencode</code>, <code>whisper</code></td>
 </tr>
-<tr class="even">
-<td>Maximum Full</td>
-<td>Editor plus advanced packaged features, disc/device libraries,
-additional network/TLS choice, OCR, and display/compute helpers.</td>
-<td><code>kvazaar</code>, <code>bluray</code>, <code>dvdread</code>,
-<code>dvdnav</code>, <code>cdio</code>, <code>modplug</code>,
-<code>openssl</code>, <code>rist</code>, <code>rabbitmq</code>,
-<code>tesseract</code>, <code>jack</code>, <code>pulse</code>,
-<code>caca</code>, <code>opencl</code></td>
+<tr>
+  <td>Full</td>
+  <td>Broadest public selection after mutually exclusive choices are normalized</td>
+  <td>all efficiency, compatibility, and editor additions, plus <code>kvazaar</code>, <code>bluray</code>, <code>dvdread</code>, <code>dvdnav</code>, <code>cdio</code>, <code>modplug</code>, <code>opengl</code>, <code>openssl</code>, <code>rist</code>, <code>rabbitmq</code>, <code>tesseract</code>, <code>jack</code>, <code>pulse</code>, <code>caca</code>, <code>opencl</code></td>
 </tr>
 </tbody>
 </table>
-<h3 id="extended-library-toggle">Extended library toggle</h3>
-<p>The Extended toggle adds source-prepared internal libraries to
-selected broadening presets. Minimal and Default are intentionally
-unaffected.</p>
+<p><code>Maximum Efficiency</code>, <code>Maximum Compatibility</code>, and <code>Audio/Video Editor</code> each start from <code>Default</code> and add their own purpose-specific entries. They do not inherit from one another. <code>Full</code> is the broad public union.</p>
+<p>After a preset is applied, the program normalizes the selection for the active FFmpeg release and MSYS2 shell profile. For example, the Intel hardware-acceleration capability may list both <code>libvpl</code> and <code>libmfx</code> as possible preset entries, but the final plan keeps the valid backend for the selected release/profile and never enables both together.</p>
+<h2 id="extended-library-mode">Extended library mode</h2>
+<p>The Extended toggle adds selected source-prepared entries to the broader public presets. Minimal and Default are intentionally unaffected.</p>
 <table>
-<colgroup>
-<col style="width: 50%"/>
-<col style="width: 50%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>Base preset with Extended enabled</th>
-<th>Added source-prepared libraries</th>
+<tr>
+  <th>Preset</th>
+  <th>Extended additions</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>Maximum Efficiency</td>
-<td><code>vvenc</code>, <code>uavs3d</code>, <code>lcevc-dec</code></td>
+<tr>
+  <td>Maximum Efficiency</td>
+  <td><code>vvenc</code>, <code>lcevc-dec</code></td>
 </tr>
-<tr class="even">
-<td>Maximum Compatibility</td>
-<td><code>davs2</code>, <code>uavs3d</code>, <code>lcevc-dec</code>,
-<code>avisynthplus</code>, <code>xavs2</code></td>
+<tr>
+  <td>Maximum Compatibility</td>
+  <td><code>davs2</code>, <code>uavs3d</code>, <code>xavs2</code>, <code>avisynthplus</code>, <code>klvanc</code></td>
 </tr>
-<tr class="odd">
-<td>Maximum Audio/Video Editor</td>
-<td><code>avisynthplus</code>, <code>lcevc-dec</code></td>
+<tr>
+  <td>Audio/Video Editor</td>
+  <td><code>avisynthplus</code>, <code>lcevc-dec</code>, <code>quirc</code></td>
 </tr>
-<tr class="even">
-<td>Maximum Full</td>
-<td><code>vvenc</code>, <code>xavs2</code>, <code>davs2</code>,
-<code>uavs3d</code>, <code>lcevc-dec</code>, <code>avisynthplus</code>,
-<code>mpeghdec</code></td>
+<tr>
+  <td>Full</td>
+  <td><code>vvenc</code>, <code>lcevc-dec</code>, <code>davs2</code>, <code>uavs3d</code>, <code>xavs2</code>, <code>avisynthplus</code>, <code>mpeghdec</code>, <code>quirc</code>, <code>klvanc</code></td>
 </tr>
 </tbody>
 </table>
-<h2 id="mutual-exclusion-and-normalization-rules">Mutual-exclusion and
-normalization rules</h2>
-<p>Some rows are cataloged separately because FFmpeg exposes separate
-bindings, but the final selection must still be normalized before
-configure. The UI and planner enforce these relationships:</p>
-<ul>
-<li><p>TLS backend: <code>openssl</code>, <code>gnutls</code>,
-<code>mbedtls</code>, and <code>libtls</code> are pick-one choices.
-Priority normalization keeps OpenSSL first, then GnuTLS, then mbedTLS,
-then libtls.</p></li>
-<li><p>Shader compiler: <code>shaderc</code> and <code>glslang</code>
-are pick-one choices; if both appear, <code>shaderc</code> is
-kept.</p></li>
-<li><p>EVC decoder binding: <code>xevd</code> and <code>xevdb</code>
-cannot be enabled together; full-profile <code>xevd</code> is kept by
-normalization.</p></li>
-<li><p>EVC encoder binding: <code>xeve</code> and <code>xeveb</code>
-cannot be enabled together; full-profile <code>xeve</code> is kept by
-normalization.</p></li>
-</ul>
-<h2 id="source-prepared-and-imported-libraries">Source-prepared and
-imported libraries</h2>
-<p>These rows have implemented preparation entries in
-<code>libraryItemSpecs</code> and pinned source/import metadata in
-<code>library-sources.json</code> for FFmpeg 8.1.2. Source-prepared rows
-are not casual configure flags: the program downloads a specific
-archive, verifies its SHA-256 hash, builds or imports it, verifies
-headers/libraries, and only then lets FFmpeg configure consume it.</p>
-<table style="width:100%;">
-<colgroup>
-<col style="width: 14%"/>
-<col style="width: 14%"/>
-<col style="width: 14%"/>
-<col style="width: 14%"/>
-<col style="width: 14%"/>
-<col style="width: 14%"/>
-<col style="width: 14%"/>
-</colgroup>
-<thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Version pin</th>
-<th>Method</th>
-<th>Build system / import style</th>
-<th>Normal UI state</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>avisynthplus</code></td>
-<td>AviSynth+ / Scripted video processing</td>
-<td>internal source-prepared</td>
-<td>3.7.5</td>
-<td>internal source build</td>
-<td>CMake</td>
-<td>Normal selectable: prepared source/import track</td>
-</tr>
-<tr class="even">
-<td><code>davs2</code></td>
-<td>libdavs2 / AVS2 decoding</td>
-<td>internal source-prepared</td>
-<td>1.7</td>
-<td>internal source build</td>
-<td>configure + make</td>
-<td>Normal selectable: prepared source/import track</td>
-</tr>
-<tr class="odd">
-<td><code>xavs2</code></td>
-<td>xavs2</td>
-<td>internal source-prepared</td>
-<td>1.4</td>
-<td>internal source build</td>
-<td>configure + make</td>
-<td>Normal selectable: prepared source/import track</td>
-</tr>
-<tr class="even">
-<td><code>uavs3d</code></td>
-<td>libuavs3d / AVS3 decoding</td>
-<td>internal source-prepared</td>
-<td>master</td>
-<td>internal source build</td>
-<td>CMake</td>
-<td>Normal selectable: prepared source/import track</td>
-</tr>
-<tr class="odd">
-<td><code>lcevc-dec</code></td>
-<td>liblcevc-dec / LCEVC decoding</td>
-<td>internal source-prepared</td>
-<td>4.2.0</td>
-<td>internal source build</td>
-<td>CMake</td>
-<td>Normal selectable: prepared source/import track</td>
-</tr>
-<tr class="even">
-<td><code>vvenc</code></td>
-<td>vvenc (VVC/H.266)</td>
-<td>internal source-prepared</td>
-<td>1.14.0</td>
-<td>internal source build</td>
-<td>CMake</td>
-<td>Normal selectable: prepared source/import track</td>
-</tr>
-<tr class="odd">
-<td><code>mpeghdec</code></td>
-<td>libmpeghdec / MPEG-H audio decoding</td>
-<td>internal source-prepared</td>
-<td>r3.0.3</td>
-<td>internal source build</td>
-<td>CMake</td>
-<td>Normal selectable: prepared source/import track</td>
-</tr>
-<tr class="even">
-<td><code>quirc</code></td>
-<td>libquirc / QR code decoding</td>
-<td>internal source-prepared</td>
-<td>1.2</td>
-<td>internal source build</td>
-<td>make</td>
-<td>Normal selectable: prepared source/import track</td>
-</tr>
-<tr class="odd">
-<td><code>klvanc</code></td>
-<td>libklvanc / Broadcast metadata</td>
-<td>internal source-prepared</td>
-<td>vid.obe.1.6.0</td>
-<td>internal source build</td>
-<td>configure + make</td>
-<td>Normal selectable: prepared source/import track</td>
-</tr>
-<tr class="even">
-<td><code>libtls</code></td>
-<td>libtls / Secure network access</td>
-<td>internal source-prepared</td>
-<td>4.3.2</td>
-<td>internal source build</td>
-<td>CMake</td>
-<td>Normal selectable: prepared source/import track</td>
-</tr>
-<tr class="odd">
-<td><code>tensorflow</code></td>
-<td>TensorFlow / AI model inference</td>
-<td>external SDK/import</td>
-<td>2.16.1</td>
-<td>external import</td>
-<td>archive import</td>
-<td>UI-disabled</td>
-</tr>
-</tbody>
-</table>
-<h2 id="intentionally-disabled-or-blocked-rows">Intentionally disabled
-or blocked rows</h2>
-<p>A blocked or hidden row is not a failure of cataloging. In this
-project it usually means the program knows the FFmpeg option exists but
-refuses to present it as normally buildable until the path is compatible
-with the program principle: <strong>do not patch or replace FFmpeg
-source merely to force compatibility, and do not ask the user to rely on
-an unsafe or non-portable SDK path without a dedicated preparation
-model.</strong></p>
+<p>Extended entries may change the derived license profile. For example, <code>xavs2</code>, <code>davs2</code>, and <code>avisynthplus</code> add GPL license effects, while <code>mpeghdec</code> adds a nonfree license effect.</p>
+<h2 id="mutual-exclusion-and-normalization">Mutual exclusion and normalization</h2>
+<p>Some entries are alternatives and must not be enabled together.</p>
 <table>
-<colgroup>
-<col style="width: 25%"/>
-<col style="width: 25%"/>
-<col style="width: 25%"/>
-<col style="width: 25%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Reason in current program</th>
+<tr>
+  <th>Group</th>
+  <th>Members</th>
+  <th>Selection rule</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>cuda-nvcc</code></td>
-<td>CUDA NVCC (NVIDIA GPU filters)</td>
-<td>external SDK/import</td>
-<td>blocked because no normal build/import recipe is implemented;
-Compiles FFmpeg’s CUDA-accelerated filters with NVIDIA’s nvcc compiler.
-nvcc ships only in the proprietary CUDA Toolkit, which is not available
-as an MSYS2 package.</td>
+<tr>
+  <td>Intel hardware acceleration</td>
+  <td><code>libvpl</code>, <code>libmfx</code></td>
+  <td>choose the backend valid for the selected FFmpeg release/profile</td>
 </tr>
-<tr class="even">
-<td><code>dc1394</code></td>
-<td>libdc1394 (IEEE 1394 camera)</td>
-<td>internal source-prepared</td>
-<td>blocked because no normal build/import recipe is implemented;
-Captures video from IEEE 1394 (FireWire) cameras. Blocked on Windows: no
-MSYS2 package, and the only Windows build needs a proprietary FireWire
-kernel driver plus FireWire hardware, so the result would not be
-portable.</td>
+<tr>
+  <td>TLS backend</td>
+  <td><code>openssl</code>, <code>gnutls</code>, <code>mbedtls</code>, <code>libtls</code></td>
+  <td>choose one TLS backend</td>
 </tr>
-<tr class="odd">
-<td><code>decklink</code></td>
-<td>DeckLink (Blackmagic capture/playback)</td>
-<td>external SDK/import</td>
-<td>blocked because no normal build/import recipe is implemented; Adds
-Blackmagic DeckLink capture and playback support. It builds against the
-proprietary DeckLink SDK headers, which cannot be redistributed as an
-MSYS2 package.</td>
+<tr>
+  <td>Runtime shader compiler</td>
+  <td><code>shaderc</code>, <code>glslang</code></td>
+  <td>choose at most one</td>
 </tr>
-<tr class="even">
-<td><code>lensfun</code></td>
-<td>lensfun</td>
-<td>native MSYS2 package</td>
-<td>UI-disabled for normal users; Corrects lens distortion, vignetting,
-and other camera-lens artifacts. Useful for cleanup of footage from
-known lenses.</td>
+<tr>
+  <td>EVC decoder binding</td>
+  <td><code>xevd</code>, <code>xevdb</code></td>
+  <td>choose one profile binding</td>
 </tr>
-<tr class="odd">
-<td><code>libmfx</code></td>
-<td>libmfx (legacy Intel Media SDK)</td>
-<td>external SDK/import</td>
-<td>blocked because no normal build/import recipe is implemented; Legacy
-Intel hardware encode/decode through the old Media SDK dispatcher.
-FFmpeg removed support for this in 7.0, so it does not work in the later
-source this builder targets. Use Intel QSV (oneVPL) instead.</td>
-</tr>
-<tr class="even">
-<td><code>onnxruntime</code></td>
-<td>ONNX Runtime / AI model inference</td>
-<td>native MSYS2 package</td>
-<td>UI-disabled for normal users; also unavailable for mingw64; Runs
-supported deep-learning filters through ONNX Runtime. Useful for
-model-based analysis or enhancement workflows.</td>
-</tr>
-<tr class="odd">
-<td><code>openvino</code></td>
-<td>OpenVINO / AI model inference</td>
-<td>external SDK/import</td>
-<td>blocked because no normal build/import recipe is implemented; Runs
-supported AI inference filters with Intel-oriented acceleration. Useful
-for model-based video or image processing.</td>
-</tr>
-<tr class="even">
-<td><code>pocketsphinx</code></td>
-<td>PocketSphinx (speech recognition)</td>
-<td>internal source-prepared</td>
-<td>blocked because no normal build/import recipe is implemented; Adds
-the asr speech-recognition audio filter using CMU PocketSphinx. It
-cannot currently be built: FFmpeg’s asr filter is incompatible with
-present-day PocketSphinx releases, so selecting it blocks the
-build.</td>
-</tr>
-<tr class="odd">
-<td><code>smbclient</code></td>
-<td>libsmbclient / SMB network file access</td>
-<td>external SDK/import</td>
-<td>blocked because no normal build/import recipe is implemented; Reads
-from and writes to SMB/CIFS network shares. Useful for media stored on
-Windows-style network folders. It cannot be built on Windows yet, so it
-is listed last in this section and stays unavailable until a Windows
-version of libsmbclient exists.</td>
-</tr>
-<tr class="even">
-<td><code>svtjpegxs</code></td>
-<td>SVT JPEG XS</td>
-<td>native MSYS2 package</td>
-<td>UI-disabled for normal users; Produces JPEG XS video for low-latency
-professional media workflows.</td>
-</tr>
-<tr class="odd">
-<td><code>tensorflow</code></td>
-<td>TensorFlow / AI model inference</td>
-<td>external SDK/import</td>
-<td>UI-disabled for normal users; Runs supported deep-learning filters
-through the TensorFlow C API. Useful for model-based image or video
-analysis.</td>
-</tr>
-<tr class="even">
-<td><code>torch</code></td>
-<td>Torch / libtorch</td>
-<td>external SDK/import</td>
-<td>blocked because no normal build/import recipe is implemented; Runs
-supported deep-learning filters through Torch-based model execution.
-Useful for PyTorch-style inference workflows.</td>
-</tr>
-<tr class="odd">
-<td><code>vapoursynth</code></td>
-<td>VapourSynth / Scripted video processing</td>
-<td>native MSYS2 package</td>
-<td>UI-disabled for normal users; Opens VapourSynth script-based video
-processing chains. Useful when advanced scripted filtering must feed
-frames into a media workflow.</td>
+<tr>
+  <td>EVC encoder binding</td>
+  <td><code>xeve</code>, <code>xeveb</code></td>
+  <td>choose one profile binding</td>
 </tr>
 </tbody>
 </table>
+<h2 id="source-prepared-and-imported-libraries">Source-prepared and imported libraries</h2>
+<p>These entries need more than MSYS2 package selection. For supported source-prepared entries, the program downloads or imports the required files, verifies the expected SHA-256 hash where available, builds or prepares the dependency, checks the expected headers and libraries, and only then passes the matching configure flag to FFmpeg.</p>
+<table>
+<thead>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Version pin</th>
+  <th>Method</th>
+  <th>Build system / import style</th>
+  <th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>avisynthplus</code></td>
+  <td>AviSynth+ / Scripted video processing</td>
+  <td>internal source-prepared</td>
+  <td>3.7.5</td>
+  <td>internal source build</td>
+  <td>CMake</td>
+  <td>Selectable when supported by the selected release/profile</td>
+</tr>
+<tr>
+  <td><code>davs2</code></td>
+  <td>libdavs2 / AVS2 decoding</td>
+  <td>internal source-prepared</td>
+  <td>1.7</td>
+  <td>internal source build</td>
+  <td>configure + make</td>
+  <td>Selectable when supported by the selected release/profile</td>
+</tr>
+<tr>
+  <td><code>xavs2</code></td>
+  <td>xavs2</td>
+  <td>internal source-prepared</td>
+  <td>1.4</td>
+  <td>internal source build</td>
+  <td>configure + make</td>
+  <td>Selectable when supported by the selected release/profile</td>
+</tr>
+<tr>
+  <td><code>uavs3d</code></td>
+  <td>libuavs3d / AVS3 decoding</td>
+  <td>internal source-prepared</td>
+  <td>master</td>
+  <td>internal source build</td>
+  <td>CMake</td>
+  <td>Selectable when supported by the selected release/profile</td>
+</tr>
+<tr>
+  <td><code>lcevc-dec</code></td>
+  <td>liblcevc-dec / LCEVC decoding</td>
+  <td>internal source-prepared</td>
+  <td>4.2.0</td>
+  <td>internal source build</td>
+  <td>CMake</td>
+  <td>Selectable when supported by the selected release/profile</td>
+</tr>
+<tr>
+  <td><code>vvenc</code></td>
+  <td>vvenc (VVC/H.266)</td>
+  <td>internal source-prepared</td>
+  <td>1.14.0</td>
+  <td>internal source build</td>
+  <td>CMake</td>
+  <td>Selectable when supported by the selected release/profile</td>
+</tr>
+<tr>
+  <td><code>mpeghdec</code></td>
+  <td>libmpeghdec / MPEG-H audio decoding</td>
+  <td>internal source-prepared</td>
+  <td>r3.0.3</td>
+  <td>internal source build</td>
+  <td>CMake</td>
+  <td>Selectable when supported by the selected release/profile</td>
+</tr>
+<tr>
+  <td><code>quirc</code></td>
+  <td>libquirc / QR code decoding</td>
+  <td>internal source-prepared</td>
+  <td>1.2</td>
+  <td>internal source build</td>
+  <td>make</td>
+  <td>Selectable when supported by the selected release/profile</td>
+</tr>
+<tr>
+  <td><code>klvanc</code></td>
+  <td>libklvanc / Broadcast metadata</td>
+  <td>internal source-prepared</td>
+  <td>vid.obe.1.6.0</td>
+  <td>internal source build</td>
+  <td>configure + make</td>
+  <td>Selectable when supported by the selected release/profile</td>
+</tr>
+<tr>
+  <td><code>libtls</code></td>
+  <td>libtls / Secure network access</td>
+  <td>internal source-prepared</td>
+  <td>4.3.2</td>
+  <td>internal source build</td>
+  <td>CMake</td>
+  <td>Selectable when supported by the selected release/profile</td>
+</tr>
+<tr>
+  <td><code>libmfx</code></td>
+  <td>libmfx / Legacy Intel Media SDK</td>
+  <td>internal source-prepared</td>
+  <td>1.35.1</td>
+  <td>internal source build</td>
+  <td>CMake</td>
+  <td>Selectable when supported by the selected release/profile; mutually exclusive with <code>libvpl</code></td>
+</tr>
+<tr>
+  <td><code>tensorflow</code></td>
+  <td>TensorFlow / AI model inference</td>
+  <td>external SDK/import</td>
+  <td>2.16.1</td>
+  <td>external import</td>
+  <td>archive import</td>
+  <td>UI-disabled</td>
+</tr>
+</tbody>
+</table>
+<h2 id="disabled-blocked-and-restricted-entries">Disabled, blocked, and restricted entries</h2>
+<p>The program keeps these states separate:</p>
+<table>
+<thead>
+<tr>
+  <th>State</th>
+  <th>Entries</th>
+  <th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Globally UI-disabled</td>
+  <td><code>tensorflow</code>, <code>vapoursynth</code></td>
+  <td>registered but not selectable in the standard UI</td>
+</tr>
+<tr>
+  <td>Blocked without preparation path</td>
+  <td><code>smbclient</code>, <code>openvino</code>, <code>torch</code>, <code>pocketsphinx</code>, <code>dc1394</code>, <code>decklink</code>, <code>cuda-nvcc</code></td>
+  <td>no supported build/import path is implemented</td>
+</tr>
+<tr>
+  <td>Version/profile-restricted</td>
+  <td>examples include <code>lensfun</code>, <code>onnxruntime</code>, <code>svtjpegxs</code>, <code>libvpl</code>, <code>libmfx</code></td>
+  <td>availability depends on FFmpeg release, MSYS2 shell profile, package/API requirement, or pkg-config result</td>
+</tr>
+</tbody>
+</table>
+<p><code>libmfx</code> is not a blocked entry. It is an implemented internal source-prepared legacy Intel backend and is normalized against <code>libvpl</code>.</p>
 <h2 id="full-library-catalog">Full library catalog</h2>
-<p>The following table is the complete catalog as represented in the
-current backend after excluding only profile-specific runtime filtering.
-Package names use <code>&lt;profile&gt;</code> to mean the active MSYS2
-shell profile prefix, for example <code>mingw-w64-ucrt-x86_64</code>,
-<code>mingw-w64-x86_64</code>, or
-<code>mingw-w64-clang-x86_64</code>.</p>
-<h3 id="included-by-default-official-ffmpeg-source">Included by default
-(official FFmpeg source)</h3>
+<p>The following table lists the complete library catalog before profile-specific runtime filtering. Package names use <code>&lt;profile&gt;</code> to mean the active MSYS2 shell profile prefix, for example <code>mingw-w64-ucrt-x86_64</code>, <code>mingw-w64-x86_64</code>, or <code>mingw-w64-clang-x86_64</code>.</p>
+<h3>Included by default (official FFmpeg source)</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>ffmpeg-program</code></td>
-<td>ffmpeg.exe</td>
-<td>included FFmpeg component</td>
-<td>Built in / locked</td>
-<td>included</td>
-<td>none</td>
-<td>included in FFmpeg source</td>
-<td>The main command-line media processor for conversion, filtering,
-recording, streaming, and packaging.</td>
+<tr>
+  <td><code>ffmpeg-program</code></td>
+  <td>ffmpeg.exe</td>
+  <td>included FFmpeg component</td>
+  <td>Built in</td>
+  <td>included</td>
+  <td>none</td>
+  <td>included in FFmpeg source</td>
+  <td>The main command-line media processor for conversion, filtering, recording, streaming, and packaging.</td>
 </tr>
-<tr class="even">
-<td><code>ffprobe-program</code></td>
-<td>ffprobe.exe</td>
-<td>included FFmpeg component</td>
-<td>Built in / locked</td>
-<td>included</td>
-<td>none</td>
-<td>included in FFmpeg source</td>
-<td>Inspects media files and reports streams, codecs, metadata,
-chapters, durations, and technical structure.</td>
+<tr>
+  <td><code>ffprobe-program</code></td>
+  <td>ffprobe.exe</td>
+  <td>included FFmpeg component</td>
+  <td>Built in</td>
+  <td>included</td>
+  <td>none</td>
+  <td>included in FFmpeg source</td>
+  <td>Inspects media files and reports streams, codecs, metadata, chapters, durations, and technical structure.</td>
 </tr>
-<tr class="odd">
-<td><code>libavutil</code></td>
-<td>libavutil</td>
-<td>included FFmpeg component</td>
-<td>Built in / locked</td>
-<td>included</td>
-<td>none</td>
-<td>included in FFmpeg source</td>
-<td>Shared FFmpeg utility code used across codecs, filters, formats, and
-tools.</td>
+<tr>
+  <td><code>libavutil</code></td>
+  <td>libavutil</td>
+  <td>included FFmpeg component</td>
+  <td>Built in</td>
+  <td>included</td>
+  <td>none</td>
+  <td>included in FFmpeg source</td>
+  <td>Shared FFmpeg utility code used across codecs, filters, formats, and tools.</td>
 </tr>
-<tr class="even">
-<td><code>libavcodec</code></td>
-<td>libavcodec</td>
-<td>included FFmpeg component</td>
-<td>Built in / locked</td>
-<td>included</td>
-<td>none</td>
-<td>included in FFmpeg source</td>
-<td>FFmpeg’s built-in codec library for decoding and encoding many media
-formats.</td>
+<tr>
+  <td><code>libavcodec</code></td>
+  <td>libavcodec</td>
+  <td>included FFmpeg component</td>
+  <td>Built in</td>
+  <td>included</td>
+  <td>none</td>
+  <td>included in FFmpeg source</td>
+  <td>FFmpeg’s built-in codec library for decoding and encoding many media formats.</td>
 </tr>
-<tr class="odd">
-<td><code>libavformat</code></td>
-<td>libavformat</td>
-<td>included FFmpeg component</td>
-<td>Built in / locked</td>
-<td>included</td>
-<td>none</td>
-<td>included in FFmpeg source</td>
-<td>FFmpeg’s built-in container library for reading and writing formats
-such as MP4, MOV, MKV, WAV, and MPEG-TS.</td>
+<tr>
+  <td><code>libavformat</code></td>
+  <td>libavformat</td>
+  <td>included FFmpeg component</td>
+  <td>Built in</td>
+  <td>included</td>
+  <td>none</td>
+  <td>included in FFmpeg source</td>
+  <td>FFmpeg’s built-in container library for reading and writing formats such as MP4, MOV, MKV, WAV, and MPEG-TS.</td>
 </tr>
-<tr class="even">
-<td><code>libavfilter</code></td>
-<td>libavfilter</td>
-<td>included FFmpeg component</td>
-<td>Built in / locked</td>
-<td>included</td>
-<td>none</td>
-<td>included in FFmpeg source</td>
-<td>FFmpeg’s built-in filtering library for video, audio, subtitles,
-scaling, overlays, and effects.</td>
+<tr>
+  <td><code>libavfilter</code></td>
+  <td>libavfilter</td>
+  <td>included FFmpeg component</td>
+  <td>Built in</td>
+  <td>included</td>
+  <td>none</td>
+  <td>included in FFmpeg source</td>
+  <td>FFmpeg’s built-in filtering library for video, audio, subtitles, scaling, overlays, and effects.</td>
 </tr>
-<tr class="odd">
-<td><code>libswscale</code></td>
-<td>libswscale</td>
-<td>included FFmpeg component</td>
-<td>Built in / locked</td>
-<td>included</td>
-<td>none</td>
-<td>included in FFmpeg source</td>
-<td>Converts image sizes and pixel formats.</td>
+<tr>
+  <td><code>libswscale</code></td>
+  <td>libswscale</td>
+  <td>included FFmpeg component</td>
+  <td>Built in</td>
+  <td>included</td>
+  <td>none</td>
+  <td>included in FFmpeg source</td>
+  <td>Converts image sizes and pixel formats.</td>
 </tr>
-<tr class="even">
-<td><code>libswresample</code></td>
-<td>libswresample</td>
-<td>included FFmpeg component</td>
-<td>Built in / locked</td>
-<td>included</td>
-<td>none</td>
-<td>included in FFmpeg source</td>
-<td>Converts audio sample rates, sample formats, and channel
-layouts.</td>
+<tr>
+  <td><code>libswresample</code></td>
+  <td>libswresample</td>
+  <td>included FFmpeg component</td>
+  <td>Built in</td>
+  <td>included</td>
+  <td>none</td>
+  <td>included in FFmpeg source</td>
+  <td>Converts audio sample rates, sample formats, and channel layouts.</td>
 </tr>
-<tr class="odd">
-<td><code>native-codecs</code></td>
-<td>Native FFmpeg codecs</td>
-<td>included FFmpeg component</td>
-<td>Built in / locked</td>
-<td>included</td>
-<td>none</td>
-<td>included in FFmpeg source</td>
-<td>Uses FFmpeg’s built-in codec support before adding external codec
-libraries.</td>
+<tr>
+  <td><code>native-codecs</code></td>
+  <td>Native FFmpeg codecs</td>
+  <td>included FFmpeg component</td>
+  <td>Built in</td>
+  <td>included</td>
+  <td>none</td>
+  <td>included in FFmpeg source</td>
+  <td>Uses FFmpeg’s built-in codec support before adding external codec libraries.</td>
 </tr>
-<tr class="even">
-<td><code>native-formats</code></td>
-<td>Native formats and muxers</td>
-<td>included FFmpeg component</td>
-<td>Built in / locked</td>
-<td>included</td>
-<td>none</td>
-<td>included in FFmpeg source</td>
-<td>Uses FFmpeg’s built-in readers and writers for many media
-containers.</td>
+<tr>
+  <td><code>native-formats</code></td>
+  <td>Native formats and muxers</td>
+  <td>included FFmpeg component</td>
+  <td>Built in</td>
+  <td>included</td>
+  <td>none</td>
+  <td>included in FFmpeg source</td>
+  <td>Uses FFmpeg’s built-in readers and writers for many media containers.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="video-encoders">Video encoders</h3>
+<h3>Video encoders</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>x264</code></td>
-<td>x264</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>GPL boundary</td>
-<td><code>--enable-libx264</code></td>
-<td><code>&lt;profile&gt;-libx264</code></td>
-<td>Supports H.264 software encoding. A leading H.264/AVC encoder with
-strong quality, performance, and broad compatibility.</td>
+<tr>
+  <td><code>x264</code></td>
+  <td>x264</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>GPL</td>
+  <td><code>--enable-libx264</code></td>
+  <td><code>&lt;profile&gt;-libx264</code></td>
+  <td>Supports H.264 software encoding. A leading H.264/AVC encoder with strong quality, performance, and broad compatibility.</td>
 </tr>
-<tr class="even">
-<td><code>x265</code></td>
-<td>x265</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>GPL boundary</td>
-<td><code>--enable-libx265</code></td>
-<td><code>&lt;profile&gt;-x265</code></td>
-<td>Supports HEVC/H.265 software encoding for smaller files than H.264
-at similar visual quality. Useful when compression efficiency matters
-more than playback universality.</td>
+<tr>
+  <td><code>x265</code></td>
+  <td>x265</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>GPL</td>
+  <td><code>--enable-libx265</code></td>
+  <td><code>&lt;profile&gt;-x265</code></td>
+  <td>Supports HEVC/H.265 software encoding for smaller files than H.264 at similar visual quality. Useful when compression efficiency matters more than playback universality.</td>
 </tr>
-<tr class="odd">
-<td><code>svt-av1</code></td>
-<td>SVT-AV1</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libsvtav1</code></td>
-<td><code>&lt;profile&gt;-svt-av1</code></td>
-<td>Produces AV1 video with practical software encoding speed. Commonly
-chosen for modern compression at usable throughput.</td>
+<tr>
+  <td><code>svt-av1</code></td>
+  <td>SVT-AV1</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libsvtav1</code></td>
+  <td><code>&lt;profile&gt;-svt-av1</code></td>
+  <td>Produces AV1 video with practical software encoding speed. Commonly chosen for modern compression at usable throughput.</td>
 </tr>
-<tr class="even">
-<td><code>libvpx</code></td>
-<td>libvpx</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libvpx</code></td>
-<td><code>&lt;profile&gt;-libvpx</code></td>
-<td>Produces VP8 and VP9 video, commonly used for WebM and web-oriented
-delivery.</td>
+<tr>
+  <td><code>libvpx</code></td>
+  <td>libvpx</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvpx</code></td>
+  <td><code>&lt;profile&gt;-libvpx</code></td>
+  <td>Produces VP8 and VP9 video, commonly used for WebM and web-oriented delivery.</td>
 </tr>
-<tr class="odd">
-<td><code>aom</code></td>
-<td>AOM AV1</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libaom</code></td>
-<td><code>&lt;profile&gt;-aom</code></td>
-<td>Supports AV1 encoding through the reference AV1 codec family. Strong
-quality and standards-oriented behavior, usually chosen when output
-quality matters more than encoding speed.</td>
+<tr>
+  <td><code>aom</code></td>
+  <td>AOM AV1</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libaom</code></td>
+  <td><code>&lt;profile&gt;-aom</code></td>
+  <td>Supports AV1 encoding through the reference AV1 codec family. Strong quality and standards-oriented behavior, usually chosen when output quality matters more than encoding speed.</td>
 </tr>
-<tr class="even">
-<td><code>openh264</code></td>
-<td>OpenH264</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libopenh264</code></td>
-<td><code>&lt;profile&gt;-openh264</code></td>
-<td>Provides H.264 software encoding with a simpler encoder profile.
-Useful when basic H.264 output is needed without x264’s full decision
-depth.</td>
+<tr>
+  <td><code>openh264</code></td>
+  <td>OpenH264</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopenh264</code></td>
+  <td><code>&lt;profile&gt;-openh264</code></td>
+  <td>Provides H.264 software encoding with a simpler encoder profile. Useful when basic H.264 output is needed without x264’s full decision depth.</td>
 </tr>
-<tr class="odd">
-<td><code>rav1e</code></td>
-<td>rav1e</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-librav1e</code></td>
-<td><code>&lt;profile&gt;-rav1e</code></td>
-<td>Provides AV1 software encoding with a Rust-based encoder. Useful for
-comparing AV1 speed, quality, and encoder behavior.</td>
+<tr>
+  <td><code>rav1e</code></td>
+  <td>rav1e</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-librav1e</code></td>
+  <td><code>&lt;profile&gt;-rav1e</code></td>
+  <td>Provides AV1 software encoding with a Rust-based encoder. Useful for comparing AV1 speed, quality, and encoder behavior.</td>
 </tr>
-<tr class="even">
-<td><code>xvid</code></td>
-<td>Xvid</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>GPL boundary</td>
-<td><code>--enable-libxvid</code></td>
-<td><code>&lt;profile&gt;-xvidcore</code></td>
-<td>Produces older MPEG-4 Part 2 video for legacy players and
-devices.</td>
+<tr>
+  <td><code>xvid</code></td>
+  <td>Xvid</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>GPL</td>
+  <td><code>--enable-libxvid</code></td>
+  <td><code>&lt;profile&gt;-xvidcore</code></td>
+  <td>Produces older MPEG-4 Part 2 video for legacy players and devices.</td>
 </tr>
-<tr class="odd">
-<td><code>theora</code></td>
-<td>libtheora</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libtheora</code></td>
-<td><code>&lt;profile&gt;-libtheora</code></td>
-<td>Produces Ogg Theora video for older open-video compatibility.</td>
+<tr>
+  <td><code>theora</code></td>
+  <td>libtheora</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libtheora</code></td>
+  <td><code>&lt;profile&gt;-libtheora</code></td>
+  <td>Produces Ogg Theora video for older open-video compatibility.</td>
 </tr>
-<tr class="even">
-<td><code>kvazaar</code></td>
-<td>Kvazaar (HEVC)</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libkvazaar</code></td>
-<td><code>&lt;profile&gt;-kvazaar</code></td>
-<td>Provides HEVC/H.265 software encoding with an open research-oriented
-encoder. Useful when HEVC output is needed through a non-x265 path.</td>
+<tr>
+  <td><code>kvazaar</code></td>
+  <td>Kvazaar (HEVC)</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libkvazaar</code></td>
+  <td><code>&lt;profile&gt;-kvazaar</code></td>
+  <td>Provides HEVC/H.265 software encoding with an open research-oriented encoder. Useful when HEVC output is needed through a non-x265 path.</td>
 </tr>
-<tr class="odd">
-<td><code>xeve</code></td>
-<td>XEVE (EVC)</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libxeve</code></td>
-<td><code>&lt;profile&gt;-xeve</code></td>
-<td>Produces EVC video for testing and newer codec workflows.</td>
+<tr>
+  <td><code>xeve</code></td>
+  <td>XEVE (EVC)</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libxeve</code></td>
+  <td><code>&lt;profile&gt;-xeve</code></td>
+  <td>Produces EVC video for testing and newer codec workflows.</td>
 </tr>
-<tr class="even">
-<td><code>xeveb</code></td>
-<td>XEVE base profile (EVC)</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libxeveb</code></td>
-<td><code>&lt;profile&gt;-xeve</code></td>
-<td>Enables MPEG-5 EVC encoding through the EVC base profile, the
-royalty-free subset of EVC. Uses the same XEVE package as the main xeve
-row.</td>
+<tr>
+  <td><code>xeveb</code></td>
+  <td>XEVE base profile (EVC)</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libxeveb</code></td>
+  <td><code>&lt;profile&gt;-xeve</code></td>
+  <td>Enables MPEG-5 EVC encoding through the EVC base profile, the royalty-free subset of EVC. Uses the same XEVE package as the main <code>xeve</code> entry.</td>
 </tr>
-<tr class="odd">
-<td><code>oapv</code></td>
-<td>liboapv (APV)</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-liboapv</code></td>
-<td><code>&lt;profile&gt;-openapv</code></td>
-<td>Supports APV video encoding for specialized professional video
-workflows.</td>
+<tr>
+  <td><code>oapv</code></td>
+  <td>liboapv (APV)</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-liboapv</code></td>
+  <td><code>&lt;profile&gt;-openapv</code></td>
+  <td>Supports APV video encoding for specialized professional video workflows.</td>
 </tr>
-<tr class="even">
-<td><code>xavs</code></td>
-<td>libxavs (AVS1)</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>GPL boundary</td>
-<td><code>--enable-libxavs</code></td>
-<td><code>&lt;profile&gt;-xavs</code></td>
-<td>Encodes video in the AVS1 (Chinese AVS) format. Useful for
-interoperating with AVS1 broadcast or archival material. This is GPL, so
-the build moves to a GPL license boundary.</td>
+<tr>
+  <td><code>xavs</code></td>
+  <td>libxavs (AVS1)</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>GPL</td>
+  <td><code>--enable-libxavs</code></td>
+  <td><code>&lt;profile&gt;-xavs</code></td>
+  <td>Encodes video in the AVS1 (Chinese AVS) format. Useful for interoperating with AVS1 broadcast or archival material. This is GPL, so the build moves to a GPL license profile.</td>
 </tr>
-<tr class="odd">
-<td><code>vvenc</code></td>
-<td>vvenc (VVC/H.266)</td>
-<td>internal source-prepared</td>
-<td>Normal selectable: prepared source/import track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libvvenc</code></td>
-<td>prepared from pinned source/import recipe</td>
-<td>Produces VVC/H.266 video for very high compression efficiency
-experiments and next-generation codec testing.</td>
+<tr>
+  <td><code>vvenc</code></td>
+  <td>vvenc (VVC/H.266)</td>
+  <td>internal source-prepared</td>
+  <td>Selectable: source/import preparation</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvvenc</code></td>
+  <td>prepared from pinned source/import procedure</td>
+  <td>Produces VVC/H.266 video for very high compression efficiency experiments and next-generation codec testing.</td>
 </tr>
-<tr class="even">
-<td><code>xavs2</code></td>
-<td>xavs2</td>
-<td>internal source-prepared</td>
-<td>Normal selectable: prepared source/import track</td>
-<td>GPL boundary</td>
-<td><code>--enable-libxavs2</code></td>
-<td>prepared from pinned source/import recipe</td>
-<td>Produces AVS2 video for workflows that need this regional video
-standard. Useful for compatibility, testing, and specialized
-distribution.</td>
+<tr>
+  <td><code>xavs2</code></td>
+  <td>xavs2</td>
+  <td>internal source-prepared</td>
+  <td>Selectable: source/import preparation</td>
+  <td>GPL</td>
+  <td><code>--enable-libxavs2</code></td>
+  <td>prepared from pinned source/import procedure</td>
+  <td>Produces AVS2 video for workflows that need this regional video standard. Useful for compatibility, testing, and specialized distribution.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="hardware-encoders">Hardware encoders</h3>
+<h3>Hardware encoders</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>nvenc</code></td>
-<td>NVIDIA NVENC</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-ffnvcodec</code></td>
-<td><code>&lt;profile&gt;-ffnvcodec-headers</code></td>
-<td>Provides NVIDIA GPU video encoding for fast H.264, HEVC, and AV1
-output on supported NVIDIA systems.</td>
+<tr>
+  <td><code>nvenc</code></td>
+  <td>NVIDIA NVENC</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-ffnvcodec</code></td>
+  <td><code>&lt;profile&gt;-ffnvcodec-headers</code></td>
+  <td>Provides NVIDIA GPU video encoding for fast H.264, HEVC, and AV1 output on supported NVIDIA systems.</td>
 </tr>
-<tr class="even">
-<td><code>qsv</code></td>
-<td>Intel QSV (oneVPL)</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libvpl</code></td>
-<td><code>&lt;profile&gt;-libvpl</code></td>
-<td>Provides Intel Quick Sync hardware encoding for fast video output
-with low CPU use.</td>
+<tr>
+  <td><code>libvpl</code></td>
+  <td>Intel oneVPL / Quick Sync</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable when supported by the selected FFmpeg release; mutually exclusive with <code>libmfx</code></td>
+  <td>LGPL</td>
+  <td><code>--enable-libvpl</code></td>
+  <td><code>&lt;profile&gt;-libvpl</code></td>
+  <td>Provides Intel Quick Sync hardware acceleration through oneVPL. It is the preferred Intel backend on FFmpeg 6.0 and newer.</td>
 </tr>
-<tr class="odd">
-<td><code>amf</code></td>
-<td>AMD AMF</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-amf</code></td>
-<td><code>&lt;profile&gt;-amf-headers</code></td>
-<td>Provides AMD GPU video encoding for faster H.264, HEVC, and AV1
-output on supported Radeon systems. Useful when speed and low CPU use
-matter.</td>
+<tr>
+  <td><code>libmfx</code></td>
+  <td>libmfx / Legacy Intel Media SDK</td>
+  <td>internal source-prepared</td>
+  <td>Selectable when supported by the selected FFmpeg release; mutually exclusive with <code>libvpl</code></td>
+  <td>LGPL</td>
+  <td><code>--enable-libmfx</code></td>
+  <td>prepared from pinned <code>mfx_dispatch</code> source procedure</td>
+  <td>Provides the legacy Intel Media SDK dispatcher. It is mainly useful for older FFmpeg release lines where oneVPL is not available, and it must not be enabled together with <code>libvpl</code>.</td>
 </tr>
-<tr class="even">
-<td><code>libmfx</code></td>
-<td>libmfx (legacy Intel Media SDK)</td>
-<td>external SDK/import</td>
-<td>Blocked: no normal recipe</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libmfx</code></td>
-<td>no normal preparation recipe</td>
-<td>Legacy Intel hardware encode/decode through the old Media SDK
-dispatcher. FFmpeg removed support for this in 7.0, so it does not work
-in the later source this builder targets. Use Intel QSV (oneVPL)
-instead.</td>
+<tr>
+  <td><code>amf</code></td>
+  <td>AMD AMF</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-amf</code></td>
+  <td><code>&lt;profile&gt;-amf-headers</code></td>
+  <td>Provides AMD GPU video encoding for faster H.264, HEVC, and AV1 output on supported Radeon systems. Useful when speed and low CPU use matter.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="video-decoders">Video decoders</h3>
+<h3>Video decoders</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>dav1d</code></td>
-<td>dav1d</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libdav1d</code></td>
-<td><code>&lt;profile&gt;-dav1d</code></td>
-<td>Provides fast AV1 video decoding. Useful for smooth playback,
-inspection, and conversion of AV1 files.</td>
+<tr>
+  <td><code>dav1d</code></td>
+  <td>dav1d</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libdav1d</code></td>
+  <td><code>&lt;profile&gt;-dav1d</code></td>
+  <td>Provides fast AV1 video decoding. Useful for smooth playback, inspection, and conversion of AV1 files.</td>
 </tr>
-<tr class="even">
-<td><code>xevd</code></td>
-<td>XEVD (EVC dec)</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libxevd</code></td>
-<td><code>&lt;profile&gt;-xevd</code></td>
-<td>Decodes EVC video streams. Useful for reading newer Essential Video
-Coding material.</td>
+<tr>
+  <td><code>xevd</code></td>
+  <td>XEVD (EVC dec)</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libxevd</code></td>
+  <td><code>&lt;profile&gt;-xevd</code></td>
+  <td>Decodes EVC video streams. Useful for reading newer Essential Video Coding material.</td>
 </tr>
-<tr class="odd">
-<td><code>xevdb</code></td>
-<td>XEVD base profile (EVC dec)</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libxevdb</code></td>
-<td><code>&lt;profile&gt;-xevd</code></td>
-<td>Enables MPEG-5 EVC decoding through the EVC base profile. Uses the
-same XEVD package as the main xevd row.</td>
+<tr>
+  <td><code>xevdb</code></td>
+  <td>XEVD base profile (EVC dec)</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libxevdb</code></td>
+  <td><code>&lt;profile&gt;-xevd</code></td>
+  <td>Enables MPEG-5 EVC decoding through the EVC base profile. Uses the same XEVD package as the main <code>xevd</code> entry.</td>
 </tr>
-<tr class="even">
-<td><code>davs2</code></td>
-<td>libdavs2 / AVS2 decoding</td>
-<td>internal source-prepared</td>
-<td>Normal selectable: prepared source/import track</td>
-<td>GPL boundary</td>
-<td><code>--enable-libdavs2</code></td>
-<td>prepared from pinned source/import recipe</td>
-<td>Decodes AVS2 video streams. Useful for regional, broadcast, or
-compatibility workflows involving AVS2 material.</td>
+<tr>
+  <td><code>davs2</code></td>
+  <td>libdavs2 / AVS2 decoding</td>
+  <td>internal source-prepared</td>
+  <td>Selectable: source/import preparation</td>
+  <td>GPL</td>
+  <td><code>--enable-libdavs2</code></td>
+  <td>prepared from pinned source/import procedure</td>
+  <td>Decodes AVS2 video streams. Useful for regional, broadcast, or compatibility workflows involving AVS2 material.</td>
 </tr>
-<tr class="odd">
-<td><code>uavs3d</code></td>
-<td>libuavs3d / AVS3 decoding</td>
-<td>internal source-prepared</td>
-<td>Normal selectable: prepared source/import track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libuavs3d</code></td>
-<td>prepared from pinned source/import recipe</td>
-<td>Decodes AVS3 video streams. Useful for AVS3 test material, regional
-standards, and compatibility workflows.</td>
+<tr>
+  <td><code>uavs3d</code></td>
+  <td>libuavs3d / AVS3 decoding</td>
+  <td>internal source-prepared</td>
+  <td>Selectable: source/import preparation</td>
+  <td>LGPL</td>
+  <td><code>--enable-libuavs3d</code></td>
+  <td>prepared from pinned source/import procedure</td>
+  <td>Decodes AVS3 video streams. Useful for AVS3 test material, regional standards, and compatibility workflows.</td>
 </tr>
-<tr class="even">
-<td><code>lcevc-dec</code></td>
-<td>liblcevc-dec / LCEVC decoding</td>
-<td>internal source-prepared</td>
-<td>Normal selectable: prepared source/import track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-liblcevc-dec</code></td>
-<td>prepared from pinned source/import recipe</td>
-<td>Decodes LCEVC enhancement layers that improve a base video stream.
-Useful when content uses layered video enhancement.</td>
+<tr>
+  <td><code>lcevc-dec</code></td>
+  <td>liblcevc-dec / LCEVC decoding</td>
+  <td>internal source-prepared</td>
+  <td>Selectable: source/import preparation</td>
+  <td>LGPL</td>
+  <td><code>--enable-liblcevc-dec</code></td>
+  <td>prepared from pinned source/import procedure</td>
+  <td>Decodes LCEVC enhancement layers that improve a base video stream. Useful when content uses layered video enhancement.</td>
 </tr>
-<tr class="odd">
-<td><code>avisynthplus</code></td>
-<td>AviSynth+ / Scripted video processing</td>
-<td>internal source-prepared</td>
-<td>Normal selectable: prepared source/import track</td>
-<td>GPL boundary</td>
-<td><code>--enable-avisynth</code></td>
-<td>prepared from pinned source/import recipe</td>
-<td>Opens AviSynth script-based video processing chains directly. Useful
-when a workflow already depends on AviSynth filters or scripted frame
-processing.</td>
+<tr>
+  <td><code>avisynthplus</code></td>
+  <td>AviSynth+ / Scripted video processing</td>
+  <td>internal source-prepared</td>
+  <td>Selectable: source/import preparation</td>
+  <td>GPL</td>
+  <td><code>--enable-avisynth</code></td>
+  <td>prepared from pinned source/import procedure</td>
+  <td>Opens AviSynth script-based video processing chains directly. Useful when a workflow already depends on AviSynth filters or scripted frame processing.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="image-codecs">Image codecs</h3>
+<h3>Image codecs</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>png</code></td>
-<td>libpng</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td>none</td>
-<td><code>&lt;profile&gt;-libpng</code></td>
-<td>Handles PNG image input and output for lossless still images and
-image sequences.</td>
+<tr>
+  <td><code>png</code></td>
+  <td>libpng</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td>none</td>
+  <td><code>&lt;profile&gt;-libpng</code></td>
+  <td>Handles PNG image input and output for lossless still images and image sequences.</td>
 </tr>
-<tr class="even">
-<td><code>webp</code></td>
-<td>WebP</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libwebp</code></td>
-<td><code>&lt;profile&gt;-libwebp</code></td>
-<td>Reads and writes WebP images used widely on websites. Useful for
-still images, thumbnails, and image sequences.</td>
+<tr>
+  <td><code>webp</code></td>
+  <td>WebP</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libwebp</code></td>
+  <td><code>&lt;profile&gt;-libwebp</code></td>
+  <td>Reads and writes WebP images used widely on websites. Useful for still images, thumbnails, and image sequences.</td>
 </tr>
-<tr class="odd">
-<td><code>openjpeg</code></td>
-<td>OpenJPEG</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libopenjpeg</code></td>
-<td><code>&lt;profile&gt;-openjpeg2</code></td>
-<td>Reads and writes JPEG 2000 images used in archival, cinema, and
-professional imaging workflows.</td>
+<tr>
+  <td><code>openjpeg</code></td>
+  <td>OpenJPEG</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopenjpeg</code></td>
+  <td><code>&lt;profile&gt;-openjpeg2</code></td>
+  <td>Reads and writes JPEG 2000 images used in archival, cinema, and professional imaging workflows.</td>
 </tr>
-<tr class="even">
-<td><code>libjxl</code></td>
-<td>JPEG XL</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libjxl</code></td>
-<td><code>&lt;profile&gt;-libjxl</code></td>
-<td>Reads and writes JPEG XL images for modern high-quality still-image
-compression. Useful for image sequences and advanced image
-workflows.</td>
+<tr>
+  <td><code>libjxl</code></td>
+  <td>JPEG XL</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libjxl</code></td>
+  <td><code>&lt;profile&gt;-libjxl</code></td>
+  <td>Reads and writes JPEG XL images for modern high-quality still-image compression. Useful for image sequences and advanced image workflows.</td>
 </tr>
-<tr class="odd">
-<td><code>rsvg</code></td>
-<td>librsvg</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-librsvg</code></td>
-<td><code>&lt;profile&gt;-librsvg</code></td>
-<td>Renders SVG vector graphics into normal image frames. Useful for
-scalable logos, overlays, and graphic assets.</td>
+<tr>
+  <td><code>rsvg</code></td>
+  <td>librsvg</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-librsvg</code></td>
+  <td><code>&lt;profile&gt;-librsvg</code></td>
+  <td>Renders SVG vector graphics into normal image frames. Useful for scalable logos, overlays, and graphic assets.</td>
 </tr>
-<tr class="even">
-<td><code>snappy</code></td>
-<td>Snappy</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libsnappy</code></td>
-<td><code>&lt;profile&gt;-snappy</code></td>
-<td>Provides fast Snappy data compression for formats that use it
-internally.</td>
+<tr>
+  <td><code>snappy</code></td>
+  <td>Snappy</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libsnappy</code></td>
+  <td><code>&lt;profile&gt;-snappy</code></td>
+  <td>Provides fast Snappy data compression for formats that use it internally.</td>
 </tr>
-<tr class="odd">
-<td><code>lcms2</code></td>
-<td>Little CMS 2</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-lcms2</code></td>
-<td><code>&lt;profile&gt;-lcms2</code></td>
-<td>Applies color profile management for more accurate color conversion.
-Useful when preserving color appearance matters.</td>
+<tr>
+  <td><code>lcms2</code></td>
+  <td>Little CMS 2</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-lcms2</code></td>
+  <td><code>&lt;profile&gt;-lcms2</code></td>
+  <td>Applies color profile management for more accurate color conversion. Useful when preserving color appearance matters.</td>
 </tr>
-<tr class="even">
-<td><code>svtjpegxs</code></td>
-<td>SVT JPEG XS</td>
-<td>native MSYS2 package</td>
-<td>UI-disabled</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libsvtjpegxs</code></td>
-<td><code>&lt;profile&gt;-svt-jpeg-xs</code>, <code>git</code>,
-<code>&lt;profile&gt;-cmake</code>, <code>&lt;profile&gt;-ninja</code>,
-<code>&lt;profile&gt;-yasm</code></td>
-<td>Produces JPEG XS video for low-latency professional media
-workflows.</td>
+<tr>
+  <td><code>svtjpegxs</code></td>
+  <td>SVT JPEG XS</td>
+  <td>native MSYS2 package</td>
+  <td>Version/profile-restricted</td>
+  <td>LGPL</td>
+  <td><code>--enable-libsvtjpegxs</code></td>
+  <td><code>&lt;profile&gt;-svt-jpeg-xs</code>, <code>git</code>, <code>&lt;profile&gt;-cmake</code>, <code>&lt;profile&gt;-ninja</code>, <code>&lt;profile&gt;-yasm</code></td>
+  <td>Produces JPEG XS video for low-latency professional media workflows.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="filters-and-processing">Filters and processing</h3>
+<h3>Filters and processing</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>zimg</code></td>
-<td>zimg</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libzimg</code></td>
-<td><code>&lt;profile&gt;-zimg</code></td>
-<td>Improves image resizing, pixel-format conversion, and color
-handling. Useful for clean scaling and careful video conversion.</td>
+<tr>
+  <td><code>zimg</code></td>
+  <td>zimg</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libzimg</code></td>
+  <td><code>&lt;profile&gt;-zimg</code></td>
+  <td>Improves image resizing, pixel-format conversion, and color handling. Useful for clean scaling and careful video conversion.</td>
 </tr>
-<tr class="even">
-<td><code>libplacebo</code></td>
-<td>libplacebo</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libplacebo</code>, <code>--enable-vulkan</code></td>
-<td><code>&lt;profile&gt;-libplacebo</code>,
-<code>&lt;profile&gt;-vulkan-loader</code>,
-<code>&lt;profile&gt;-vulkan-headers</code></td>
-<td>Provides high-quality GPU video processing for scaling, color
-conversion, tone mapping, and rendering paths.</td>
+<tr>
+  <td><code>libplacebo</code></td>
+  <td>libplacebo</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libplacebo</code>, <code>--enable-vulkan</code></td>
+  <td><code>&lt;profile&gt;-libplacebo</code>, <code>&lt;profile&gt;-vulkan-loader</code>, <code>&lt;profile&gt;-vulkan-headers</code></td>
+  <td>Provides high-quality GPU video processing for scaling, color conversion, tone mapping, and rendering paths.</td>
 </tr>
-<tr class="odd">
-<td><code>vmaf</code></td>
-<td>libvmaf</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libvmaf</code></td>
-<td><code>&lt;profile&gt;-vmaf</code></td>
-<td>Measures perceived video quality by comparing an encoded result with
-a reference. Useful for evaluating compression choices.</td>
+<tr>
+  <td><code>vmaf</code></td>
+  <td>libvmaf</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvmaf</code></td>
+  <td><code>&lt;profile&gt;-vmaf</code></td>
+  <td>Measures perceived video quality by comparing an encoded result with a reference. Useful for evaluating compression choices.</td>
 </tr>
-<tr class="even">
-<td><code>vidstab</code></td>
-<td>libvidstab</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libvidstab</code></td>
-<td><code>&lt;profile&gt;-vid.stab</code></td>
-<td>Reduces camera shake and makes handheld footage look smoother.</td>
+<tr>
+  <td><code>vidstab</code></td>
+  <td>libvidstab</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvidstab</code></td>
+  <td><code>&lt;profile&gt;-vid.stab</code></td>
+  <td>Reduces camera shake and makes handheld footage look smoother.</td>
 </tr>
-<tr class="odd">
-<td><code>opencolorio</code></td>
-<td>OpenColorIO</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libopencolorio</code></td>
-<td><code>&lt;profile&gt;-opencolorio</code></td>
-<td>Applies studio-grade color management for film, animation, and
-post-production workflows.</td>
+<tr>
+  <td><code>opencolorio</code></td>
+  <td>OpenColorIO</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopencolorio</code></td>
+  <td><code>&lt;profile&gt;-opencolorio</code></td>
+  <td>Applies studio-grade color management for film, animation, and post-production workflows.</td>
 </tr>
-<tr class="even">
-<td><code>cairo</code></td>
-<td>Cairo</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-cairo</code></td>
-<td><code>&lt;profile&gt;-cairo</code></td>
-<td>Provides 2D vector drawing support for generated graphics, overlays,
-and filter visuals. Useful when media processing needs drawn shapes or
-rendered graphic elements.</td>
+<tr>
+  <td><code>cairo</code></td>
+  <td>Cairo</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-cairo</code></td>
+  <td><code>&lt;profile&gt;-cairo</code></td>
+  <td>Provides 2D vector drawing support for generated graphics, overlays, and filter visuals. Useful when media processing needs drawn shapes or rendered graphic elements.</td>
 </tr>
-<tr class="odd">
-<td><code>opencl</code></td>
-<td>OpenCL</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-opencl</code></td>
-<td><code>&lt;profile&gt;-opencl-icd</code>,
-<code>&lt;profile&gt;-opencl-headers</code></td>
-<td>Runs supported compute filters on OpenCL-capable GPUs or
-accelerators. Useful for offloading heavy image processing.</td>
+<tr>
+  <td><code>opencl</code></td>
+  <td>OpenCL</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-opencl</code></td>
+  <td><code>&lt;profile&gt;-opencl-icd</code>, <code>&lt;profile&gt;-opencl-headers</code></td>
+  <td>Runs supported compute filters on OpenCL-capable GPUs or accelerators. Useful for offloading heavy image processing.</td>
 </tr>
-<tr class="even">
-<td><code>shaderc</code></td>
-<td>libshaderc</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libshaderc</code></td>
-<td><code>&lt;profile&gt;-shaderc</code></td>
-<td>Compiles shader programs used by GPU-based video filters. Useful for
-advanced rendering and GPU processing paths.</td>
+<tr>
+  <td><code>shaderc</code></td>
+  <td>libshaderc</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libshaderc</code></td>
+  <td><code>&lt;profile&gt;-shaderc</code></td>
+  <td>Compiles shader programs used by GPU-based video filters. Useful for advanced rendering and GPU processing paths.</td>
 </tr>
-<tr class="odd">
-<td><code>glslang</code></td>
-<td>glslang</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libglslang</code></td>
-<td><code>&lt;profile&gt;-glslang</code></td>
-<td>Compiles GLSL shader code for GPU-based video processing. Useful for
-advanced graphics and compute-style filter paths.</td>
+<tr>
+  <td><code>glslang</code></td>
+  <td>glslang</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libglslang</code></td>
+  <td><code>&lt;profile&gt;-glslang</code></td>
+  <td>Compiles GLSL shader code for GPU-based video processing. Useful for advanced graphics and compute-style filter paths.</td>
 </tr>
-<tr class="even">
-<td><code>frei0r</code></td>
-<td>frei0r</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>GPL boundary</td>
-<td><code>--enable-frei0r</code></td>
-<td><code>&lt;profile&gt;-frei0r-plugins</code></td>
-<td>Provides extra creative video effects and filter plugins. Useful for
-stylized processing beyond the standard filter set.</td>
+<tr>
+  <td><code>frei0r</code></td>
+  <td>frei0r</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>GPL</td>
+  <td><code>--enable-frei0r</code></td>
+  <td><code>&lt;profile&gt;-frei0r-plugins</code></td>
+  <td>Provides extra creative video effects and filter plugins. Useful for stylized processing beyond the standard filter set.</td>
 </tr>
-<tr class="odd">
-<td><code>opencv</code></td>
-<td>OpenCV</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libopencv</code></td>
-<td><code>&lt;profile&gt;-opencv</code></td>
-<td>Provides computer-vision processing for image analysis and
-experimental visual filters.</td>
+<tr>
+  <td><code>opencv</code></td>
+  <td>OpenCV</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopencv</code></td>
+  <td><code>&lt;profile&gt;-opencv</code></td>
+  <td>Provides computer-vision processing for image analysis and experimental visual filters.</td>
 </tr>
-<tr class="even">
-<td><code>ladspa</code></td>
-<td>LADSPA</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-ladspa</code></td>
-<td><code>&lt;profile&gt;-ladspa-sdk</code>,
-<code>&lt;profile&gt;-dlfcn</code></td>
-<td>Loads LADSPA audio effect plugins for extra audio processing. Useful
-when existing plugin chains need to be used in media conversion.</td>
+<tr>
+  <td><code>ladspa</code></td>
+  <td>LADSPA</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-ladspa</code></td>
+  <td><code>&lt;profile&gt;-ladspa-sdk</code>, <code>&lt;profile&gt;-dlfcn</code></td>
+  <td>Loads LADSPA audio effect plugins for extra audio processing. Useful when existing plugin chains need to be used in media conversion.</td>
 </tr>
-<tr class="odd">
-<td><code>lv2</code></td>
-<td>LV2</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-lv2</code></td>
-<td><code>&lt;profile&gt;-lilv</code></td>
-<td>Loads LV2 audio plugins for more advanced audio effects and
-processing chains.</td>
+<tr>
+  <td><code>lv2</code></td>
+  <td>LV2</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-lv2</code></td>
+  <td><code>&lt;profile&gt;-lilv</code></td>
+  <td>Loads LV2 audio plugins for more advanced audio effects and processing chains.</td>
 </tr>
-<tr class="even">
-<td><code>qrencode</code></td>
-<td>libqrencode</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libqrencode</code></td>
-<td><code>&lt;profile&gt;-qrencode</code></td>
-<td>Generates QR codes that can be placed into images or video
-frames.</td>
+<tr>
+  <td><code>qrencode</code></td>
+  <td>libqrencode</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libqrencode</code></td>
+  <td><code>&lt;profile&gt;-qrencode</code></td>
+  <td>Generates QR codes that can be placed into images or video frames.</td>
 </tr>
-<tr class="odd">
-<td><code>cuda-nvcc</code></td>
-<td>CUDA NVCC (NVIDIA GPU filters)</td>
-<td>external SDK/import</td>
-<td>Blocked: no normal recipe</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-cuda-nvcc</code></td>
-<td>no normal preparation recipe</td>
-<td>Compiles FFmpeg’s CUDA-accelerated filters with NVIDIA’s nvcc
-compiler. nvcc ships only in the proprietary CUDA Toolkit, which is not
-available as an MSYS2 package.</td>
+<tr>
+  <td><code>cuda-nvcc</code></td>
+  <td>CUDA NVCC (NVIDIA GPU filters)</td>
+  <td>external SDK/import</td>
+  <td>Blocked: no preparation path</td>
+  <td>LGPL</td>
+  <td><code>--enable-cuda-nvcc</code></td>
+  <td>no supported preparation path</td>
+  <td>Compiles FFmpeg's CUDA-accelerated filters with NVIDIA's nvcc compiler. nvcc ships only in the proprietary CUDA Toolkit, which is not available as an MSYS2 package.</td>
 </tr>
-<tr class="even">
-<td><code>lensfun</code></td>
-<td>lensfun</td>
-<td>native MSYS2 package</td>
-<td>UI-disabled</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-liblensfun</code></td>
-<td><code>&lt;profile&gt;-lensfun</code></td>
-<td>Corrects lens distortion, vignetting, and other camera-lens
-artifacts. Useful for cleanup of footage from known lenses.</td>
+<tr>
+  <td><code>lensfun</code></td>
+  <td>lensfun</td>
+  <td>native MSYS2 package</td>
+  <td>Version/profile-restricted</td>
+  <td>LGPL</td>
+  <td><code>--enable-liblensfun</code></td>
+  <td><code>&lt;profile&gt;-lensfun</code></td>
+  <td>Corrects lens distortion, vignetting, and other camera-lens artifacts. Useful for cleanup of footage from known lenses.</td>
 </tr>
-<tr class="odd">
-<td><code>vapoursynth</code></td>
-<td>VapourSynth / Scripted video processing</td>
-<td>native MSYS2 package</td>
-<td>UI-disabled</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-vapoursynth</code></td>
-<td><code>&lt;profile&gt;-vapoursynth</code></td>
-<td>Opens VapourSynth script-based video processing chains. Useful when
-advanced scripted filtering must feed frames into a media workflow.</td>
+<tr>
+  <td><code>vapoursynth</code></td>
+  <td>VapourSynth / Scripted video processing</td>
+  <td>native MSYS2 package</td>
+  <td>UI-disabled</td>
+  <td>LGPL</td>
+  <td><code>--enable-vapoursynth</code></td>
+  <td><code>&lt;profile&gt;-vapoursynth</code></td>
+  <td>Opens VapourSynth script-based video processing chains. Useful when advanced scripted filtering must feed frames into a media workflow.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="audio">Audio</h3>
+<h3>Audio</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>opus</code></td>
-<td>Opus</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libopus</code></td>
-<td><code>&lt;profile&gt;-opus</code></td>
-<td>Produces modern Opus audio for speech, music, streaming, and
-low-latency communication.</td>
+<tr>
+  <td><code>opus</code></td>
+  <td>Opus</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopus</code></td>
+  <td><code>&lt;profile&gt;-opus</code></td>
+  <td>Produces modern Opus audio for speech, music, streaming, and low-latency communication.</td>
 </tr>
-<tr class="even">
-<td><code>fdk-aac</code></td>
-<td>Fraunhofer FDK AAC</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>nonfree boundary</td>
-<td><code>--enable-libfdk-aac</code>, <code>--enable-nonfree</code></td>
-<td><code>&lt;profile&gt;-fdk-aac</code></td>
-<td>Produces high-quality AAC audio for MP4, mobile devices, streaming,
-and web playback. Often chosen when AAC quality is important.</td>
+<tr>
+  <td><code>fdk-aac</code></td>
+  <td>Fraunhofer FDK AAC</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>nonfree</td>
+  <td><code>--enable-libfdk-aac</code>, <code>--enable-nonfree</code></td>
+  <td><code>&lt;profile&gt;-fdk-aac</code></td>
+  <td>Produces high-quality AAC audio for MP4, mobile devices, streaming, and web playback. Often chosen when AAC quality is important.</td>
 </tr>
-<tr class="odd">
-<td><code>mp3lame</code></td>
-<td>LAME MP3</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libmp3lame</code></td>
-<td><code>&lt;profile&gt;-lame</code></td>
-<td>Produces MP3 audio with broad playback compatibility. Useful when
-the output must work on almost any device or player.</td>
+<tr>
+  <td><code>mp3lame</code></td>
+  <td>LAME MP3</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libmp3lame</code></td>
+  <td><code>&lt;profile&gt;-lame</code></td>
+  <td>Produces MP3 audio with broad playback compatibility. Useful when the output must work on almost any device or player.</td>
 </tr>
-<tr class="even">
-<td><code>vorbis</code></td>
-<td>Vorbis</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libvorbis</code></td>
-<td><code>&lt;profile&gt;-libvorbis</code></td>
-<td>Produces Ogg Vorbis audio with good open-format compatibility.
-Useful for music and general audio in Ogg workflows.</td>
+<tr>
+  <td><code>vorbis</code></td>
+  <td>Vorbis</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvorbis</code></td>
+  <td><code>&lt;profile&gt;-libvorbis</code></td>
+  <td>Produces Ogg Vorbis audio with good open-format compatibility. Useful for music and general audio in Ogg workflows.</td>
 </tr>
-<tr class="odd">
-<td><code>soxr</code></td>
-<td>SoX Resampler</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libsoxr</code></td>
-<td><code>&lt;profile&gt;-libsoxr</code></td>
-<td>Provides high-quality audio sample-rate conversion. Useful when
-changing audio rates while preserving clarity.</td>
+<tr>
+  <td><code>soxr</code></td>
+  <td>SoX Resampler</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libsoxr</code></td>
+  <td><code>&lt;profile&gt;-libsoxr</code></td>
+  <td>Provides high-quality audio sample-rate conversion. Useful when changing audio rates while preserving clarity.</td>
 </tr>
-<tr class="even">
-<td><code>rubberband</code></td>
-<td>Rubber Band</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>GPL boundary</td>
-<td><code>--enable-librubberband</code></td>
-<td><code>&lt;profile&gt;-rubberband</code></td>
-<td>Changes audio speed and pitch with higher-quality time-stretching.
-Useful for music, dialogue timing, and pitch adjustment.</td>
+<tr>
+  <td><code>rubberband</code></td>
+  <td>Rubber Band</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>GPL</td>
+  <td><code>--enable-librubberband</code></td>
+  <td><code>&lt;profile&gt;-rubberband</code></td>
+  <td>Changes audio speed and pitch with higher-quality time-stretching. Useful for music, dialogue timing, and pitch adjustment.</td>
 </tr>
-<tr class="odd">
-<td><code>chromaprint</code></td>
-<td>Chromaprint</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-chromaprint</code></td>
-<td><code>&lt;profile&gt;-chromaprint</code></td>
-<td>Generates compact audio fingerprints for track matching and
-identification. Useful for recognizing audio even when filenames or
-metadata are missing.</td>
+<tr>
+  <td><code>chromaprint</code></td>
+  <td>Chromaprint</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-chromaprint</code></td>
+  <td><code>&lt;profile&gt;-chromaprint</code></td>
+  <td>Generates compact audio fingerprints for track matching and identification. Useful for recognizing audio even when filenames or metadata are missing.</td>
 </tr>
-<tr class="even">
-<td><code>twolame</code></td>
-<td>TwoLAME</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libtwolame</code></td>
-<td><code>&lt;profile&gt;-twolame</code></td>
-<td>Produces MP2 audio for broadcast, DVD, and older media
-workflows.</td>
+<tr>
+  <td><code>twolame</code></td>
+  <td>TwoLAME</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libtwolame</code></td>
+  <td><code>&lt;profile&gt;-twolame</code></td>
+  <td>Produces MP2 audio for broadcast, DVD, and older media workflows.</td>
 </tr>
-<tr class="odd">
-<td><code>speex</code></td>
-<td>Speex</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libspeex</code></td>
-<td><code>&lt;profile&gt;-speex</code></td>
-<td>Handles older Speex speech audio. Useful for legacy voice recordings
-and communication archives.</td>
+<tr>
+  <td><code>speex</code></td>
+  <td>Speex</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libspeex</code></td>
+  <td><code>&lt;profile&gt;-speex</code></td>
+  <td>Handles older Speex speech audio. Useful for legacy voice recordings and communication archives.</td>
 </tr>
-<tr class="even">
-<td><code>opencore-amr</code></td>
-<td>OpenCORE AMR</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libopencore-amrnb</code>,
-<code>--enable-libopencore-amrwb</code></td>
-<td><code>&lt;profile&gt;-opencore-amr</code></td>
-<td>Reads and writes AMR speech audio used by older mobile and voice
-systems.</td>
+<tr>
+  <td><code>opencore-amr</code></td>
+  <td>OpenCORE AMR</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopencore-amrnb</code>, <code>--enable-libopencore-amrwb</code></td>
+  <td><code>&lt;profile&gt;-opencore-amr</code></td>
+  <td>Reads and writes AMR speech audio used by older mobile and voice systems.</td>
 </tr>
-<tr class="odd">
-<td><code>vo-amrwbenc</code></td>
-<td>VisualOn AMR-WB encoder</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libvo-amrwbenc</code></td>
-<td><code>&lt;profile&gt;-vo-amrwbenc</code></td>
-<td>Produces AMR-WB wideband speech audio for mobile-style voice
-compatibility.</td>
+<tr>
+  <td><code>vo-amrwbenc</code></td>
+  <td>VisualOn AMR-WB encoder</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvo-amrwbenc</code></td>
+  <td><code>&lt;profile&gt;-vo-amrwbenc</code></td>
+  <td>Produces AMR-WB wideband speech audio for mobile-style voice compatibility.</td>
 </tr>
-<tr class="even">
-<td><code>gsm</code></td>
-<td>GSM</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libgsm</code></td>
-<td><code>&lt;profile&gt;-gsm</code></td>
-<td>Handles legacy GSM speech audio. Useful for old voice recordings,
-telephony archives, and compatibility cases.</td>
+<tr>
+  <td><code>gsm</code></td>
+  <td>GSM</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libgsm</code></td>
+  <td><code>&lt;profile&gt;-gsm</code></td>
+  <td>Handles legacy GSM speech audio. Useful for old voice recordings, telephony archives, and compatibility cases.</td>
 </tr>
-<tr class="odd">
-<td><code>lc3</code></td>
-<td>LC3</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-liblc3</code></td>
-<td><code>&lt;profile&gt;-liblc3</code></td>
-<td>Handles LC3 audio used in modern low-complexity communication audio.
-Useful for Bluetooth- and voice-oriented compatibility.</td>
+<tr>
+  <td><code>lc3</code></td>
+  <td>LC3</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-liblc3</code></td>
+  <td><code>&lt;profile&gt;-liblc3</code></td>
+  <td>Handles LC3 audio used in modern low-complexity communication audio. Useful for Bluetooth- and voice-oriented compatibility.</td>
 </tr>
-<tr class="even">
-<td><code>ilbc</code></td>
-<td>iLBC</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libilbc</code></td>
-<td><code>&lt;profile&gt;-libilbc</code></td>
-<td>Supports iLBC speech audio used in older internet voice
-communication. Useful for voice-call recordings and compatibility
-workflows.</td>
+<tr>
+  <td><code>ilbc</code></td>
+  <td>iLBC</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libilbc</code></td>
+  <td><code>&lt;profile&gt;-libilbc</code></td>
+  <td>Supports iLBC speech audio used in older internet voice communication. Useful for voice-call recordings and compatibility workflows.</td>
 </tr>
-<tr class="odd">
-<td><code>whisper</code></td>
-<td>whisper.cpp</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-whisper</code></td>
-<td><code>&lt;profile&gt;-whisper.cpp</code>,
-<code>&lt;profile&gt;-ggml</code></td>
-<td>Converts spoken audio into text using whisper.cpp speech
-recognition. Useful for transcription and subtitle generation.</td>
+<tr>
+  <td><code>whisper</code></td>
+  <td>whisper.cpp</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-whisper</code></td>
+  <td><code>&lt;profile&gt;-whisper.cpp</code>, <code>&lt;profile&gt;-ggml</code></td>
+  <td>Converts spoken audio into text using whisper.cpp speech recognition. Useful for transcription and subtitle generation.</td>
 </tr>
-<tr class="even">
-<td><code>mysofa</code></td>
-<td>libmysofa</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libmysofa</code></td>
-<td><code>&lt;profile&gt;-libmysofa</code></td>
-<td>Provides spatial audio filter data for headphone-based 3D audio
-rendering.</td>
+<tr>
+  <td><code>mysofa</code></td>
+  <td>libmysofa</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libmysofa</code></td>
+  <td><code>&lt;profile&gt;-libmysofa</code></td>
+  <td>Provides spatial audio filter data for headphone-based 3D audio rendering.</td>
 </tr>
-<tr class="odd">
-<td><code>bs2b</code></td>
-<td>libbs2b</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libbs2b</code></td>
-<td><code>&lt;profile&gt;-libbs2b</code></td>
-<td>Applies headphone crossfeed to make stereo listening feel less
-hard-panned and more speaker-like. Useful for headphone-focused audio
-processing.</td>
+<tr>
+  <td><code>bs2b</code></td>
+  <td>libbs2b</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libbs2b</code></td>
+  <td><code>&lt;profile&gt;-libbs2b</code></td>
+  <td>Applies headphone crossfeed to make stereo listening feel less hard-panned and more speaker-like. Useful for headphone-focused audio processing.</td>
 </tr>
-<tr class="even">
-<td><code>gme</code></td>
-<td>Game Music Emu</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libgme</code></td>
-<td><code>&lt;profile&gt;-libgme</code></td>
-<td>Reads classic game music formats from older consoles and systems.
-Useful for playback or conversion of chiptune-style sources.</td>
+<tr>
+  <td><code>gme</code></td>
+  <td>Game Music Emu</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libgme</code></td>
+  <td><code>&lt;profile&gt;-libgme</code></td>
+  <td>Reads classic game music formats from older consoles and systems. Useful for playback or conversion of chiptune-style sources.</td>
 </tr>
-<tr class="odd">
-<td><code>shine</code></td>
-<td>Shine MP3</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libshine</code></td>
-<td><code>&lt;profile&gt;-shine</code></td>
-<td>Produces MP3 audio using a simple fixed-point encoder. Useful for
-constrained or compatibility-focused cases.</td>
+<tr>
+  <td><code>shine</code></td>
+  <td>Shine MP3</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libshine</code></td>
+  <td><code>&lt;profile&gt;-shine</code></td>
+  <td>Produces MP3 audio using a simple fixed-point encoder. Useful for constrained or compatibility-focused cases.</td>
 </tr>
-<tr class="even">
-<td><code>codec2</code></td>
-<td>Codec 2</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libcodec2</code></td>
-<td><code>&lt;profile&gt;-codec2</code></td>
-<td>Supports very low-bitrate speech coding for radio, voice, and
-communication experiments. Useful when intelligible speech must fit into
-extremely small bitrates.</td>
+<tr>
+  <td><code>codec2</code></td>
+  <td>Codec 2</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libcodec2</code></td>
+  <td><code>&lt;profile&gt;-codec2</code></td>
+  <td>Supports very low-bitrate speech coding for radio, voice, and communication experiments. Useful when intelligible speech must fit into extremely small bitrates.</td>
 </tr>
-<tr class="odd">
-<td><code>mpeghdec</code></td>
-<td>libmpeghdec / MPEG-H audio decoding</td>
-<td>internal source-prepared</td>
-<td>Normal selectable: prepared source/import track</td>
-<td>nonfree boundary</td>
-<td><code>--enable-libmpeghdec</code>,
-<code>--enable-nonfree</code></td>
-<td>prepared from pinned source/import recipe</td>
-<td>Decodes MPEG-H 3D Audio for immersive and object-based audio
-content.</td>
+<tr>
+  <td><code>mpeghdec</code></td>
+  <td>libmpeghdec / MPEG-H audio decoding</td>
+  <td>internal source-prepared</td>
+  <td>Selectable: source/import preparation</td>
+  <td>nonfree</td>
+  <td><code>--enable-libmpeghdec</code>, <code>--enable-nonfree</code></td>
+  <td>prepared from pinned source/import procedure</td>
+  <td>Decodes MPEG-H 3D Audio for immersive and object-based audio content.</td>
 </tr>
-<tr class="even">
-<td><code>pocketsphinx</code></td>
-<td>PocketSphinx (speech recognition)</td>
-<td>internal source-prepared</td>
-<td>Blocked: no normal recipe</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-pocketsphinx</code></td>
-<td>no normal preparation recipe</td>
-<td>Adds the asr speech-recognition audio filter using CMU PocketSphinx.
-It cannot currently be built: FFmpeg’s asr filter is incompatible with
-present-day PocketSphinx releases, so selecting it blocks the
-build.</td>
+<tr>
+  <td><code>pocketsphinx</code></td>
+  <td>PocketSphinx (speech recognition)</td>
+  <td>internal source-prepared</td>
+  <td>Blocked: no preparation path</td>
+  <td>LGPL</td>
+  <td><code>--enable-pocketsphinx</code></td>
+  <td>no supported preparation path</td>
+  <td>Adds the asr speech-recognition audio filter using CMU PocketSphinx. It cannot currently be built: FFmpeg's asr filter is incompatible with present-day PocketSphinx releases, so selecting it blocks the build.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="subtitles-and-text">Subtitles and text</h3>
+<h3>Subtitles and text</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>ass</code></td>
-<td>libass</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libass</code></td>
-<td><code>&lt;profile&gt;-libass</code></td>
-<td>Renders advanced ASS/SSA subtitles with fonts, colors, placement,
-outlines, and animation-like effects. Commonly used for complex subtitle
-presentation.</td>
+<tr>
+  <td><code>ass</code></td>
+  <td>libass</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libass</code></td>
+  <td><code>&lt;profile&gt;-libass</code></td>
+  <td>Renders advanced ASS/SSA subtitles with fonts, colors, placement, outlines, and animation-like effects. Commonly used for complex subtitle presentation.</td>
 </tr>
-<tr class="even">
-<td><code>freetype</code></td>
-<td>FreeType</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libfreetype</code></td>
-<td><code>&lt;profile&gt;-freetype</code></td>
-<td>Renders font glyphs for subtitles, overlays, and text-based filters.
-Essential when text must appear as real shaped graphics.</td>
+<tr>
+  <td><code>freetype</code></td>
+  <td>FreeType</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libfreetype</code></td>
+  <td><code>&lt;profile&gt;-freetype</code></td>
+  <td>Renders font glyphs for subtitles, overlays, and text-based filters. Essential when text must appear as real shaped graphics.</td>
 </tr>
-<tr class="odd">
-<td><code>fontconfig</code></td>
-<td>Fontconfig</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libfontconfig</code></td>
-<td><code>&lt;profile&gt;-fontconfig</code></td>
-<td>Finds installed fonts so subtitle and text rendering can use the
-right typefaces. Useful for reliable text appearance.</td>
+<tr>
+  <td><code>fontconfig</code></td>
+  <td>Fontconfig</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libfontconfig</code></td>
+  <td><code>&lt;profile&gt;-fontconfig</code></td>
+  <td>Finds installed fonts so subtitle and text rendering can use the right typefaces. Useful for reliable text appearance.</td>
 </tr>
-<tr class="even">
-<td><code>harfbuzz</code></td>
-<td>HarfBuzz</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libharfbuzz</code></td>
-<td><code>&lt;profile&gt;-harfbuzz</code></td>
-<td>Shapes complex text so letters combine, reorder, and position
-correctly. Important for subtitles in many non-Latin scripts.</td>
+<tr>
+  <td><code>harfbuzz</code></td>
+  <td>HarfBuzz</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libharfbuzz</code></td>
+  <td><code>&lt;profile&gt;-harfbuzz</code></td>
+  <td>Shapes complex text so letters combine, reorder, and position correctly. Important for subtitles in many non-Latin scripts.</td>
 </tr>
-<tr class="odd">
-<td><code>fribidi</code></td>
-<td>FriBidi</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libfribidi</code></td>
-<td><code>&lt;profile&gt;-fribidi</code></td>
-<td>Handles right-to-left text direction for languages such as Arabic
-and Hebrew. Useful when subtitles or overlays contain bidirectional
-text.</td>
+<tr>
+  <td><code>fribidi</code></td>
+  <td>FriBidi</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libfribidi</code></td>
+  <td><code>&lt;profile&gt;-fribidi</code></td>
+  <td>Handles right-to-left text direction for languages such as Arabic and Hebrew. Useful when subtitles or overlays contain bidirectional text.</td>
 </tr>
-<tr class="even">
-<td><code>aribcaption</code></td>
-<td>libaribcaption</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libaribcaption</code></td>
-<td><code>&lt;profile&gt;-libaribcaption</code></td>
-<td>Reads Japanese broadcast captions with better modern ARIB caption
-handling. Useful for TV recordings and broadcast transport streams.</td>
+<tr>
+  <td><code>aribcaption</code></td>
+  <td>libaribcaption</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libaribcaption</code></td>
+  <td><code>&lt;profile&gt;-libaribcaption</code></td>
+  <td>Reads Japanese broadcast captions with better modern ARIB caption handling. Useful for TV recordings and broadcast transport streams.</td>
 </tr>
-<tr class="odd">
-<td><code>aribb24</code></td>
-<td>libaribb24</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libaribb24</code></td>
-<td><code>&lt;profile&gt;-aribb24</code></td>
-<td>Handles ARIB B24 captions used in Japanese broadcast material.
-Useful for preserving or processing older broadcast subtitle data.</td>
+<tr>
+  <td><code>aribb24</code></td>
+  <td>libaribb24</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libaribb24</code></td>
+  <td><code>&lt;profile&gt;-aribb24</code></td>
+  <td>Handles ARIB B24 captions used in Japanese broadcast material. Useful for preserving or processing older broadcast subtitle data.</td>
 </tr>
-<tr class="even">
-<td><code>zvbi</code></td>
-<td>libzvbi</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>GPL boundary</td>
-<td><code>--enable-libzvbi</code></td>
-<td><code>&lt;profile&gt;-zvbi</code></td>
-<td>Extracts teletext and VBI data from older broadcast sources. Useful
-for hidden captions, pages, and broadcast text information.</td>
+<tr>
+  <td><code>zvbi</code></td>
+  <td>libzvbi</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>GPL</td>
+  <td><code>--enable-libzvbi</code></td>
+  <td><code>&lt;profile&gt;-zvbi</code></td>
+  <td>Extracts teletext and VBI data from older broadcast sources. Useful for hidden captions, pages, and broadcast text information.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="disc-and-device-input">Disc and device input</h3>
+<h3>Disc and device input</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>bluray</code></td>
-<td>libbluray</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libbluray</code></td>
-<td><code>&lt;profile&gt;-libbluray</code></td>
-<td>Reads Blu-ray disc structures for inspection, conversion, or
-extraction workflows. Useful when the source is organized as Blu-ray
-folders rather than a single media file.</td>
+<tr>
+  <td><code>bluray</code></td>
+  <td>libbluray</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libbluray</code></td>
+  <td><code>&lt;profile&gt;-libbluray</code></td>
+  <td>Reads Blu-ray disc structures for inspection, conversion, or extraction workflows. Useful when the source is organized as Blu-ray folders rather than a single media file.</td>
 </tr>
-<tr class="even">
-<td><code>dvdread</code></td>
-<td>libdvdread</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>GPL boundary</td>
-<td><code>--enable-libdvdread</code></td>
-<td><code>&lt;profile&gt;-libdvdread</code></td>
-<td>Reads DVD media structures for extraction, inspection, or
-conversion. Useful when the source is a DVD folder or disc layout.</td>
+<tr>
+  <td><code>dvdread</code></td>
+  <td>libdvdread</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>GPL</td>
+  <td><code>--enable-libdvdread</code></td>
+  <td><code>&lt;profile&gt;-libdvdread</code></td>
+  <td>Reads DVD media structures for extraction, inspection, or conversion. Useful when the source is a DVD folder or disc layout.</td>
 </tr>
-<tr class="odd">
-<td><code>dvdnav</code></td>
-<td>libdvdnav</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>GPL boundary</td>
-<td><code>--enable-libdvdnav</code></td>
-<td><code>&lt;profile&gt;-libdvdnav</code>,
-<code>&lt;profile&gt;-libdvdread</code></td>
-<td>Reads DVD-Video navigation structures such as menus, titles,
-chapters, and program chains. Useful for disc-style DVD workflows.</td>
+<tr>
+  <td><code>dvdnav</code></td>
+  <td>libdvdnav</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>GPL</td>
+  <td><code>--enable-libdvdnav</code></td>
+  <td><code>&lt;profile&gt;-libdvdnav</code>, <code>&lt;profile&gt;-libdvdread</code></td>
+  <td>Reads DVD-Video navigation structures such as menus, titles, chapters, and program chains. Useful for disc-style DVD workflows.</td>
 </tr>
-<tr class="even">
-<td><code>openmpt</code></td>
-<td>libopenmpt</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libopenmpt</code></td>
-<td><code>&lt;profile&gt;-libopenmpt</code></td>
-<td>Reads tracker module music with accurate playback behavior. Useful
-for old game, demo-scene, and tracker music formats.</td>
+<tr>
+  <td><code>openmpt</code></td>
+  <td>libopenmpt</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopenmpt</code></td>
+  <td><code>&lt;profile&gt;-libopenmpt</code></td>
+  <td>Reads tracker module music with accurate playback behavior. Useful for old game, demo-scene, and tracker music formats.</td>
 </tr>
-<tr class="odd">
-<td><code>sdl2</code></td>
-<td>SDL2</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-sdl2</code></td>
-<td><code>&lt;profile&gt;-SDL2</code></td>
-<td>Provides simple media output and preview support through SDL2.
-Useful for playback-style testing and display workflows.</td>
+<tr>
+  <td><code>sdl2</code></td>
+  <td>SDL2</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-sdl2</code></td>
+  <td><code>&lt;profile&gt;-SDL2</code></td>
+  <td>Provides simple media output and preview support through SDL2. Useful for playback-style testing and display workflows.</td>
 </tr>
-<tr class="even">
-<td><code>openal</code></td>
-<td>OpenAL</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-openal</code></td>
-<td><code>&lt;profile&gt;-openal</code></td>
-<td>Provides additional audio device input and output paths. Useful for
-workflows involving live audio devices.</td>
+<tr>
+  <td><code>openal</code></td>
+  <td>OpenAL</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-openal</code></td>
+  <td><code>&lt;profile&gt;-openal</code></td>
+  <td>Provides additional audio device input and output paths. Useful for workflows involving live audio devices.</td>
 </tr>
-<tr class="odd">
-<td><code>cdio</code></td>
-<td>libcdio</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>GPL boundary</td>
-<td><code>--enable-libcdio</code></td>
-<td><code>&lt;profile&gt;-libcdio</code>,
-<code>&lt;profile&gt;-libcdio-paranoia</code></td>
-<td>Reads disc-based CD input for audio extraction and media inspection
-workflows. Useful when the source is an actual CD rather than copied
-audio files.</td>
+<tr>
+  <td><code>cdio</code></td>
+  <td>libcdio</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>GPL</td>
+  <td><code>--enable-libcdio</code></td>
+  <td><code>&lt;profile&gt;-libcdio</code>, <code>&lt;profile&gt;-libcdio-paranoia</code></td>
+  <td>Reads disc-based CD input for audio extraction and media inspection workflows. Useful when the source is an actual CD rather than copied audio files.</td>
 </tr>
-<tr class="even">
-<td><code>modplug</code></td>
-<td>libmodplug</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libmodplug</code></td>
-<td><code>&lt;profile&gt;-libmodplug</code></td>
-<td>Reads old tracker module music formats. Useful for converting or
-playing legacy scene and game-style music files.</td>
+<tr>
+  <td><code>modplug</code></td>
+  <td>libmodplug</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libmodplug</code></td>
+  <td><code>&lt;profile&gt;-libmodplug</code></td>
+  <td>Reads old tracker module music formats. Useful for converting or playing legacy scene and game-style music files.</td>
 </tr>
-<tr class="odd">
-<td><code>jack</code></td>
-<td>JACK</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libjack</code></td>
-<td><code>&lt;profile&gt;-jack2</code></td>
-<td>Connects to JACK audio routing for studio-style capture and playback
-workflows. Useful in professional Linux audio environments.</td>
+<tr>
+  <td><code>jack</code></td>
+  <td>JACK</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libjack</code></td>
+  <td><code>&lt;profile&gt;-jack2</code></td>
+  <td>Connects to JACK audio routing for studio-style capture and playback workflows. Useful in professional Linux audio environments.</td>
 </tr>
-<tr class="even">
-<td><code>pulse</code></td>
-<td>PulseAudio</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libpulse</code></td>
-<td><code>&lt;profile&gt;-pulseaudio</code></td>
-<td>Connects to PulseAudio for Linux desktop audio capture or playback
-workflows.</td>
+<tr>
+  <td><code>pulse</code></td>
+  <td>PulseAudio</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libpulse</code></td>
+  <td><code>&lt;profile&gt;-pulseaudio</code></td>
+  <td>Connects to PulseAudio for Linux desktop audio capture or playback workflows.</td>
 </tr>
-<tr class="odd">
-<td><code>caca</code></td>
-<td>libcaca</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libcaca</code></td>
-<td><code>&lt;profile&gt;-libcaca</code></td>
-<td>Converts video into colored text-mode visuals. Mostly useful for
-experiments, terminal display, and unusual preview effects.</td>
+<tr>
+  <td><code>caca</code></td>
+  <td>libcaca</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libcaca</code></td>
+  <td><code>&lt;profile&gt;-libcaca</code></td>
+  <td>Converts video into colored text-mode visuals. Mostly useful for experiments, terminal display, and unusual preview effects.</td>
 </tr>
-<tr class="even">
-<td><code>opengl</code></td>
-<td>OpenGL</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-opengl</code></td>
-<td><code>&lt;profile&gt;-mesa</code></td>
-<td>Adds the OpenGL output device for hardware-accelerated video display
-through OpenGL. Provided by the Mesa package.</td>
+<tr>
+  <td><code>opengl</code></td>
+  <td>OpenGL</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-opengl</code></td>
+  <td><code>&lt;profile&gt;-mesa</code></td>
+  <td>Adds the OpenGL output device for hardware-accelerated video display through OpenGL. Provided by the Mesa package.</td>
 </tr>
-<tr class="odd">
-<td><code>dc1394</code></td>
-<td>libdc1394 (IEEE 1394 camera)</td>
-<td>internal source-prepared</td>
-<td>Blocked: no normal recipe</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libdc1394</code></td>
-<td>no normal preparation recipe</td>
-<td>Captures video from IEEE 1394 (FireWire) cameras. Blocked on
-Windows: no MSYS2 package, and the only Windows build needs a
-proprietary FireWire kernel driver plus FireWire hardware, so the result
-would not be portable.</td>
+<tr>
+  <td><code>dc1394</code></td>
+  <td>libdc1394 (IEEE 1394 camera)</td>
+  <td>internal source-prepared</td>
+  <td>Blocked: no preparation path</td>
+  <td>LGPL</td>
+  <td><code>--enable-libdc1394</code></td>
+  <td>no supported preparation path</td>
+  <td>Captures video from IEEE 1394 (FireWire) cameras. Blocked on Windows: no MSYS2 package, and the only Windows build needs a proprietary FireWire kernel driver plus FireWire hardware, so the result would not be portable.</td>
 </tr>
-<tr class="even">
-<td><code>decklink</code></td>
-<td>DeckLink (Blackmagic capture/playback)</td>
-<td>external SDK/import</td>
-<td>Blocked: no normal recipe</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-decklink</code></td>
-<td>no normal preparation recipe</td>
-<td>Adds Blackmagic DeckLink capture and playback support. It builds
-against the proprietary DeckLink SDK headers, which cannot be
-redistributed as an MSYS2 package.</td>
+<tr>
+  <td><code>decklink</code></td>
+  <td>DeckLink (Blackmagic capture/playback)</td>
+  <td>external SDK/import</td>
+  <td>Blocked: no preparation path</td>
+  <td>LGPL</td>
+  <td><code>--enable-decklink</code></td>
+  <td>no supported preparation path</td>
+  <td>Adds Blackmagic DeckLink capture and playback support. It builds against the proprietary DeckLink SDK headers, which cannot be redistributed as an MSYS2 package.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="network">Network</h3>
+<h3>Network</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>srt</code></td>
-<td>SRT</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libsrt</code></td>
-<td><code>&lt;profile&gt;-srt</code></td>
-<td>Provides SRT streaming for stable live transport over unreliable
-networks.</td>
+<tr>
+  <td><code>srt</code></td>
+  <td>SRT</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libsrt</code></td>
+  <td><code>&lt;profile&gt;-srt</code></td>
+  <td>Provides SRT streaming for stable live transport over unreliable networks.</td>
 </tr>
-<tr class="even">
-<td><code>rtmp</code></td>
-<td>librtmp</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-librtmp</code></td>
-<td><code>&lt;profile&gt;-rtmpdump</code></td>
-<td>Provides RTMP streaming compatibility for older live-streaming
-servers and workflows.</td>
+<tr>
+  <td><code>rtmp</code></td>
+  <td>librtmp</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-librtmp</code></td>
+  <td><code>&lt;profile&gt;-rtmpdump</code></td>
+  <td>Provides RTMP streaming compatibility for older live-streaming servers and workflows.</td>
 </tr>
-<tr class="odd">
-<td><code>rist</code></td>
-<td>librist</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-librist</code></td>
-<td><code>&lt;profile&gt;-librist</code></td>
-<td>Provides Reliable Internet Stream Transport for professional live
-streaming over unstable networks.</td>
+<tr>
+  <td><code>rist</code></td>
+  <td>librist</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-librist</code></td>
+  <td><code>&lt;profile&gt;-librist</code></td>
+  <td>Provides Reliable Internet Stream Transport for professional live streaming over unstable networks.</td>
 </tr>
-<tr class="even">
-<td><code>ssh</code></td>
-<td>libssh</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libssh</code></td>
-<td><code>&lt;profile&gt;-libssh</code></td>
-<td>Reads and writes media through SSH and SFTP-style remote
-access.</td>
+<tr>
+  <td><code>ssh</code></td>
+  <td>libssh</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libssh</code></td>
+  <td><code>&lt;profile&gt;-libssh</code></td>
+  <td>Reads and writes media through SSH and SFTP-style remote access.</td>
 </tr>
-<tr class="odd">
-<td><code>zmq</code></td>
-<td>ZeroMQ</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libzmq</code></td>
-<td><code>&lt;profile&gt;-zeromq</code></td>
-<td>Enables message-based runtime control for supported processing
-workflows. Useful for automation and interactive control.</td>
+<tr>
+  <td><code>zmq</code></td>
+  <td>ZeroMQ</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libzmq</code></td>
+  <td><code>&lt;profile&gt;-zeromq</code></td>
+  <td>Enables message-based runtime control for supported processing workflows. Useful for automation and interactive control.</td>
 </tr>
-<tr class="even">
-<td><code>rabbitmq</code></td>
-<td>RabbitMQ-C</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-librabbitmq</code></td>
-<td><code>&lt;profile&gt;-rabbitmq-c</code></td>
-<td>Connects media workflows to RabbitMQ message queues. Useful for
-automated processing systems.</td>
+<tr>
+  <td><code>rabbitmq</code></td>
+  <td>RabbitMQ-C</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-librabbitmq</code></td>
+  <td><code>&lt;profile&gt;-rabbitmq-c</code></td>
+  <td>Connects media workflows to RabbitMQ message queues. Useful for automated processing systems.</td>
 </tr>
-<tr class="odd">
-<td><code>smbclient</code></td>
-<td>libsmbclient / SMB network file access</td>
-<td>external SDK/import</td>
-<td>Blocked: no normal recipe</td>
-<td>GPL boundary</td>
-<td><code>--enable-libsmbclient</code></td>
-<td>no normal preparation recipe</td>
-<td>Reads from and writes to SMB/CIFS network shares. Useful for media
-stored on Windows-style network folders. It cannot be built on Windows
-yet, so it is listed last in this section and stays unavailable until a
-Windows version of libsmbclient exists.</td>
+<tr>
+  <td><code>smbclient</code></td>
+  <td>libsmbclient / SMB network file access</td>
+  <td>external SDK/import</td>
+  <td>Blocked: no preparation path</td>
+  <td>GPL</td>
+  <td><code>--enable-libsmbclient</code></td>
+  <td>no supported preparation path</td>
+  <td>Reads from and writes to SMB/CIFS network shares. Useful for media stored on Windows-style network folders. It cannot be built on Windows yet, so it is listed last in this section and stays unavailable until a Windows version of libsmbclient exists.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="secure-network-tls">Secure network (TLS)</h3>
+<h3>Secure network (TLS)</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>openssl</code></td>
-<td>OpenSSL</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>nonfree boundary</td>
-<td><code>--enable-openssl</code></td>
-<td><code>&lt;profile&gt;-openssl</code></td>
-<td>Provides encrypted network connections for HTTPS and other secure
-media protocols.</td>
+<tr>
+  <td><code>openssl</code></td>
+  <td>OpenSSL</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>nonfree</td>
+  <td><code>--enable-openssl</code></td>
+  <td><code>&lt;profile&gt;-openssl</code></td>
+  <td>Provides encrypted network connections for HTTPS and other secure media protocols.</td>
 </tr>
-<tr class="even">
-<td><code>gnutls</code></td>
-<td>GnuTLS</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-gnutls</code></td>
-<td><code>&lt;profile&gt;-gnutls</code></td>
-<td>Provides encrypted network connections for HTTPS and other TLS-based
-media access. Useful for secure streaming and remote sources.</td>
+<tr>
+  <td><code>gnutls</code></td>
+  <td>GnuTLS</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-gnutls</code></td>
+  <td><code>&lt;profile&gt;-gnutls</code></td>
+  <td>Provides encrypted network connections for HTTPS and other TLS-based media access. Useful for secure streaming and remote sources.</td>
 </tr>
-<tr class="odd">
-<td><code>mbedtls</code></td>
-<td>mbedTLS / Secure network access</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-mbedtls</code></td>
-<td><code>&lt;profile&gt;-mbedtls</code></td>
-<td>Provides lightweight TLS support for encrypted network media access.
-Useful when a smaller security backend is preferred.</td>
+<tr>
+  <td><code>mbedtls</code></td>
+  <td>mbedTLS / Secure network access</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-mbedtls</code></td>
+  <td><code>&lt;profile&gt;-mbedtls</code></td>
+  <td>Provides lightweight TLS support for encrypted network media access. Useful when a smaller security backend is preferred.</td>
 </tr>
-<tr class="even">
-<td><code>libtls</code></td>
-<td>libtls / Secure network access</td>
-<td>internal source-prepared</td>
-<td>Normal selectable: prepared source/import track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libtls</code></td>
-<td>prepared from pinned source/import recipe</td>
-<td>Provides TLS-encrypted network communication through a compact TLS
-interface. Useful for secure network media access.</td>
+<tr>
+  <td><code>libtls</code></td>
+  <td>libtls / Secure network access</td>
+  <td>internal source-prepared</td>
+  <td>Selectable: source/import preparation</td>
+  <td>LGPL</td>
+  <td><code>--enable-libtls</code></td>
+  <td>prepared from pinned source/import procedure</td>
+  <td>Provides TLS-encrypted network communication through a compact TLS interface. Useful for secure network media access.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="ocr">OCR</h3>
+<h3>OCR</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>tesseract</code></td>
-<td>Tesseract OCR</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libtesseract</code></td>
-<td><code>&lt;profile&gt;-tesseract-ocr</code></td>
-<td>Reads visible text from images or video frames. Useful for
-extracting burned-in titles, signs, captions, or document text.</td>
+<tr>
+  <td><code>tesseract</code></td>
+  <td>Tesseract OCR</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libtesseract</code></td>
+  <td><code>&lt;profile&gt;-tesseract-ocr</code></td>
+  <td>Reads visible text from images or video frames. Useful for extracting burned-in titles, signs, captions, or document text.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="ai-support">AI support</h3>
+<h3>AI support</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>onnxruntime</code></td>
-<td>ONNX Runtime / AI model inference</td>
-<td>native MSYS2 package</td>
-<td>UI-disabled; profile-limited: not in mingw64</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libonnxruntime</code></td>
-<td><code>&lt;profile&gt;-onnxruntime</code></td>
-<td>Runs supported deep-learning filters through ONNX Runtime. Useful
-for model-based analysis or enhancement workflows.</td>
+<tr>
+  <td><code>onnxruntime</code></td>
+  <td>ONNX Runtime / AI model inference</td>
+  <td>native MSYS2 package</td>
+  <td>UI-disabled; profile-limited: not in mingw64</td>
+  <td>LGPL</td>
+  <td><code>--enable-libonnxruntime</code></td>
+  <td><code>&lt;profile&gt;-onnxruntime</code></td>
+  <td>Runs supported deep-learning filters through ONNX Runtime. Useful for model-based analysis or enhancement workflows.</td>
 </tr>
-<tr class="even">
-<td><code>openvino</code></td>
-<td>OpenVINO / AI model inference</td>
-<td>external SDK/import</td>
-<td>Blocked: no normal recipe</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libopenvino</code></td>
-<td>no normal preparation recipe</td>
-<td>Runs supported AI inference filters with Intel-oriented
-acceleration. Useful for model-based video or image processing.</td>
+<tr>
+  <td><code>openvino</code></td>
+  <td>OpenVINO / AI model inference</td>
+  <td>external SDK/import</td>
+  <td>Blocked: no preparation path</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopenvino</code></td>
+  <td>no supported preparation path</td>
+  <td>Runs supported AI inference filters with Intel-oriented acceleration. Useful for model-based video or image processing.</td>
 </tr>
-<tr class="odd">
-<td><code>torch</code></td>
-<td>Torch / libtorch</td>
-<td>external SDK/import</td>
-<td>Blocked: no normal recipe</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libtorch</code></td>
-<td>no normal preparation recipe</td>
-<td>Runs supported deep-learning filters through Torch-based model
-execution. Useful for PyTorch-style inference workflows.</td>
+<tr>
+  <td><code>torch</code></td>
+  <td>Torch / libtorch</td>
+  <td>external SDK/import</td>
+  <td>Blocked: no preparation path</td>
+  <td>LGPL</td>
+  <td><code>--enable-libtorch</code></td>
+  <td>no supported preparation path</td>
+  <td>Runs supported deep-learning filters through Torch-based model execution. Useful for PyTorch-style inference workflows.</td>
 </tr>
-<tr class="even">
-<td><code>tensorflow</code></td>
-<td>TensorFlow / AI model inference</td>
-<td>external SDK/import</td>
-<td>UI-disabled</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libtensorflow</code></td>
-<td>prepared from pinned source/import recipe</td>
-<td>Runs supported deep-learning filters through the TensorFlow C API.
-Useful for model-based image or video analysis.</td>
+<tr>
+  <td><code>tensorflow</code></td>
+  <td>TensorFlow / AI model inference</td>
+  <td>external SDK/import</td>
+  <td>UI-disabled</td>
+  <td>LGPL</td>
+  <td><code>--enable-libtensorflow</code></td>
+  <td>prepared from pinned source/import procedure</td>
+  <td>Runs supported deep-learning filters through the TensorFlow C API. Useful for model-based image or video analysis.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="support-libraries">Support libraries</h3>
+<h3>Support libraries</h3>
 <table>
-<colgroup>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-<col style="width: 12%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>Display name</th>
-<th>Track</th>
-<th>Normal state</th>
-<th>License effect</th>
-<th>Configure flags</th>
-<th>Packages / preparation</th>
-<th>Purpose</th>
+<tr>
+  <th>ID</th>
+  <th>Display name</th>
+  <th>Track</th>
+  <th>Status</th>
+  <th>License</th>
+  <th>Configure flags</th>
+  <th>Packages / preparation</th>
+  <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>xml2</code></td>
-<td>libxml2</td>
-<td>native MSYS2 package</td>
-<td>Normal selectable: MSYS2 package track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libxml2</code></td>
-<td><code>&lt;profile&gt;-libxml2</code></td>
-<td>Reads structured XML data used by some media formats, subtitles,
-manifests, and metadata workflows.</td>
+<tr>
+  <td><code>xml2</code></td>
+  <td>libxml2</td>
+  <td>native MSYS2 package</td>
+  <td>Selectable: MSYS2 package</td>
+  <td>LGPL</td>
+  <td><code>--enable-libxml2</code></td>
+  <td><code>&lt;profile&gt;-libxml2</code></td>
+  <td>Reads structured XML data used by some media formats, subtitles, manifests, and metadata workflows.</td>
 </tr>
-<tr class="even">
-<td><code>quirc</code></td>
-<td>libquirc / QR code decoding</td>
-<td>internal source-prepared</td>
-<td>Normal selectable: prepared source/import track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libquirc</code></td>
-<td>prepared from pinned source/import recipe</td>
-<td>Decodes QR codes from video frames or images. Useful for automation,
-scanning, and visual metadata workflows.</td>
+<tr>
+  <td><code>quirc</code></td>
+  <td>libquirc / QR code decoding</td>
+  <td>internal source-prepared</td>
+  <td>Selectable: source/import preparation</td>
+  <td>LGPL</td>
+  <td><code>--enable-libquirc</code></td>
+  <td>prepared from pinned source/import procedure</td>
+  <td>Decodes QR codes from video frames or images. Useful for automation, scanning, and visual metadata workflows.</td>
 </tr>
-<tr class="odd">
-<td><code>klvanc</code></td>
-<td>libklvanc / Broadcast metadata</td>
-<td>internal source-prepared</td>
-<td>Normal selectable: prepared source/import track</td>
-<td>LGPL-safe boundary</td>
-<td><code>--enable-libklvanc</code></td>
-<td>prepared from pinned source/import recipe</td>
-<td>Processes vertical ancillary data used in broadcast video. Useful
-for metadata carried alongside video lines.</td>
+<tr>
+  <td><code>klvanc</code></td>
+  <td>libklvanc / Broadcast metadata</td>
+  <td>internal source-prepared</td>
+  <td>Selectable: source/import preparation</td>
+  <td>LGPL</td>
+  <td><code>--enable-libklvanc</code></td>
+  <td>prepared from pinned source/import procedure</td>
+  <td>Processes vertical ancillary data used in broadcast video. Useful for metadata carried alongside video lines.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="license-boundary-summary">License-boundary summary</h2>
-<p>The program derives the final license profile from selected libraries
-and final configure flags instead of asking the user to manually choose
-<code>--enable-gpl</code>, <code>--enable-nonfree</code>, or
-<code>--enable-version3</code>. GPL rows move the plan to the GPL-local
-boundary. Nonfree rows move it to the nonfree-local boundary and trigger
-redistribution warnings. Version-3-sensitive rows add
-<code>--enable-version3</code> automatically where required.</p>
+<h2 id="license-summary">License summary</h2>
+<p>The program derives the final license profile from selected libraries and final configure flags instead of asking the user to manually choose <code>--enable-gpl</code>, <code>--enable-nonfree</code>, or <code>--enable-version3</code>. GPL entries change the local license profile to <code>gpl-local</code>. Nonfree entries change the local license profile to <code>nonfree-local</code> and trigger redistribution warnings. Version-3-sensitive entries add <code>--enable-version3</code> automatically where required.</p>
 <table>
-<colgroup>
-<col style="width: 30%"/>
-<col style="width: 40%"/>
-<col style="width: 30%"/>
-</colgroup>
 <thead>
-<tr class="header">
-<th>License effect</th>
-<th style="text-align: right;">Count</th>
-<th>Representative rows</th>
+<tr>
+  <th>License</th>
+  <th style="text-align:right">Count</th>
+  <th>Representative entries</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>included</td>
-<td style="text-align: right;">10</td>
-<td><code>ffmpeg-program</code>, <code>ffprobe-program</code>,
-<code>libavutil</code>, <code>libavcodec</code>,
-<code>libavformat</code>, <code>libavfilter</code>,
-<code>libswscale</code>, <code>libswresample</code>,
-<code>native-codecs</code>, <code>native-formats</code></td>
+<tr>
+  <td>included</td>
+  <td style="text-align:right">10</td>
+  <td><code>ffmpeg-program</code>, <code>ffprobe-program</code>, <code>libavutil</code>, <code>libavcodec</code>, <code>libavformat</code>, <code>libavfilter</code>, <code>libswscale</code>, <code>libswresample</code>, <code>native-codecs</code>, <code>native-formats</code></td>
 </tr>
-<tr class="even">
-<td>LGPL-safe boundary</td>
-<td style="text-align: right;">98</td>
-<td><code>svt-av1</code>, <code>libvpx</code>, <code>aom</code>,
-<code>openh264</code>, <code>rav1e</code>, <code>theora</code>,
-<code>kvazaar</code>, <code>xeve</code>, <code>xeveb</code>,
-<code>oapv</code>, <code>vvenc</code>, <code>nvenc</code></td>
+<tr>
+  <td>LGPL</td>
+  <td style="text-align:right">98</td>
+  <td><code>svt-av1</code>, <code>libvpx</code>, <code>aom</code>, <code>openh264</code>, <code>rav1e</code>, <code>theora</code>, <code>kvazaar</code>, <code>xeve</code>, <code>xeveb</code>, <code>oapv</code>, <code>vvenc</code>, <code>nvenc</code></td>
 </tr>
-<tr class="odd">
-<td>GPL boundary</td>
-<td style="text-align: right;">14</td>
-<td><code>x264</code>, <code>x265</code>, <code>xvid</code>,
-<code>xavs</code>, <code>xavs2</code>, <code>davs2</code>,
-<code>avisynthplus</code>, <code>frei0r</code>, <code>rubberband</code>,
-<code>zvbi</code>, <code>dvdread</code>, <code>dvdnav</code></td>
+<tr>
+  <td>GPL</td>
+  <td style="text-align:right">14</td>
+  <td><code>x264</code>, <code>x265</code>, <code>xvid</code>, <code>xavs</code>, <code>xavs2</code>, <code>davs2</code>, <code>avisynthplus</code>, <code>frei0r</code>, <code>rubberband</code>, <code>zvbi</code>, <code>dvdread</code>, <code>dvdnav</code></td>
 </tr>
-<tr class="even">
-<td>nonfree boundary</td>
-<td style="text-align: right;">3</td>
-<td><code>fdk-aac</code>, <code>mpeghdec</code>,
-<code>openssl</code></td>
+<tr>
+  <td>nonfree</td>
+  <td style="text-align:right">3</td>
+  <td><code>fdk-aac</code>, <code>mpeghdec</code>, <code>openssl</code></td>
 </tr>
 </tbody>
 </table>
 <h2 id="practical-interpretation">Practical interpretation</h2>
-<p>For ordinary Windows users, the real supported surface is the normal
-selectable set: locked FFmpeg rows, native MSYS2-package rows, and
-implemented internal source-prepared rows. The catalog deliberately
-avoids pretending that every upstream FFmpeg library can be turned on
-just because a configure flag exists. Rows such as legacy
-<code>libmfx</code>, <code>cuda-nvcc</code>, DeckLink, OpenVINO, Torch,
-TensorFlow, VapourSynth, SVT JPEG XS and ONNX Runtime are treated
-conservatively because the current program either lacks a safe
-preparation path, lacks stable compatibility with the targeted FFmpeg
-source, or would require external SDK/runtime assumptions that violate
-the program’s local, reviewable build model.</p>
+<p>For ordinary Windows users, the meaningful supported surface is the set that the program can select, prepare, review, and pass to FFmpeg for the chosen release/profile. That includes official FFmpeg-source entries, native MSYS2-package entries, and implemented internal source-prepared entries.</p>
+<p>The catalog deliberately avoids claiming that every upstream FFmpeg library can be enabled just because a configure flag exists. Entries such as <code>cuda-nvcc</code>, DeckLink, OpenVINO, Torch, TensorFlow, VapourSynth, SVT JPEG XS, ONNX Runtime, PocketSphinx, lensfun, and SMB are treated conservatively because they are blocked, disabled, version/profile-restricted, or dependent on external SDK/runtime assumptions.</p>
+<p><code>libmfx</code> is different from that blocked group. It is an implemented legacy Intel backend and is normalized against <code>libvpl</code>.</p>
+
 </article>
 </main>
-<aside aria-label="Table of contents" class="rightbar"><div class="rightbar-language"><p class="toc-title">Language</p><div aria-label="Language switch" class="lang-switch">
-<a class="active" href="LIBRARY_COVERAGE_REPORT_EN.html">EN</a>
-<a class="" href="LIBRARY_COVERAGE_REPORT_KO.html">KO</a>
-</div></div>
-<p class="toc-title">On this page</p>
-<nav class="toc"><a href="#executive-summary">Executive summary</a>
-<a href="#what-the-coverage-model-means">What the coverage model
-means</a>
-<a href="#coverage-by-category">Coverage by category</a>
-<a href="#preset-coverage">Preset coverage</a>
-<a href="#mutual-exclusion-and-normalization-rules">Mutual-exclusion and
-normalization rules</a>
-<a href="#source-prepared-and-imported-libraries">Source-prepared and
-imported libraries</a>
-<a href="#intentionally-disabled-or-blocked-rows">Intentionally disabled
-or blocked rows</a>
-<a href="#full-library-catalog">Full library catalog</a>
-<a href="#license-boundary-summary">License-boundary summary</a>
-<a href="#practical-interpretation">Practical interpretation</a>
-</nav>
-</aside>
 </div>
 </body>
 </html>

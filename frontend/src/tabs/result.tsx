@@ -76,6 +76,7 @@ function buildTypeLabel(_result: BuildResult): string {
 function ResultSummary(props: { result: BuildResult }) {
   const totalSizeBytes = props.result.files.reduce((sum, file) => sum + file.sizeBytes, 0);
   const stats: { label: string; value: string; unit: string; danger?: boolean }[] = [
+    { label: t("result.summary.version"), value: props.result.ffmpegVersion || t("result.summary.latestBuild.unknown"), unit: "" },
     { label: t("result.summary.totalFiles"), value: String(props.result.files.length), unit: t("result.summary.filesUnit") },
     { label: t("result.summary.totalSize"), value: formatBytes(totalSizeBytes), unit: "" },
     { label: t("result.summary.buildType"), value: buildTypeLabel(props.result), unit: "" },

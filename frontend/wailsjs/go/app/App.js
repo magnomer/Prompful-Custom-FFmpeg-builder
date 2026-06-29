@@ -30,6 +30,10 @@ export function GetInstalledToolchainProfiles(arg1) {
   return window['go']['app']['App']['GetInstalledToolchainProfiles'](arg1);
 }
 
+export function GetLibraryCatalogForFfmpegSource(arg1, arg2) {
+  return window['go']['app']['App']['GetLibraryCatalogForFfmpegSource'](arg1, arg2);
+}
+
 export function GetLocalLogRecord(arg1, arg2) {
   return window['go']['app']['App']['GetLocalLogRecord'](arg1, arg2);
 }
@@ -82,8 +86,8 @@ export function SaveUiState(arg1) {
   return window['go']['app']['App']['SaveUiState'](arg1);
 }
 
-export function SelectWorkspace() {
-  return window['go']['app']['App']['SelectWorkspace']();
+export function SelectWorkspace(arg1) {
+  return window['go']['app']['App']['SelectWorkspace'](arg1);
 }
 
 export function SetLocale(arg1) {

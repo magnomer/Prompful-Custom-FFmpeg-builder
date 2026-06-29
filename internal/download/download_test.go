@@ -22,11 +22,33 @@ func TestIsRetryableStatusCode(t *testing.T) {
 		{http.StatusRequestTimeout, true},      // 408
 		{http.StatusNotFound, false},           // 404 - permanent
 		{http.StatusForbidden, false},          // 403 - permanent
+		{http.StatusBadRequest, false},         // 400 - permanent (host-agnostic)
 		{http.StatusOK, false},
 	}
 	for _, c := range cases {
 		if got := isRetryableStatusCode(c.statusCode); got != c.want {
 			t.Errorf("isRetryableStatusCode(%d) = %v, want %v", c.statusCode, got, c.want)
+		}
+	}
+}
+
+func TestIsTransientGithubArchive400(t *testing.T) {
+	cases := []struct {
+		statusCode int
+		host       string
+		want       bool
+	}{
+		{http.StatusBadRequest, "github.com", true},
+		{http.StatusBadRequest, "codeload.github.com", true},
+		{http.StatusBadRequest, "GitHub.com", true},  // case-insensitive
+		{http.StatusBadRequest, "gitlab.com", false}, // 400 stays permanent elsewhere
+		{http.StatusBadRequest, "", false},
+		{http.StatusNotFound, "github.com", false}, // only 400 is treated as transient
+		{http.StatusOK, "github.com", false},
+	}
+	for _, c := range cases {
+		if got := isTransientGithubArchive400(c.statusCode, c.host); got != c.want {
+			t.Errorf("isTransientGithubArchive400(%d, %q) = %v, want %v", c.statusCode, c.host, got, c.want)
 		}
 	}
 }

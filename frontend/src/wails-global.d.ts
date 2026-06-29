@@ -26,6 +26,11 @@ type LibraryChoice = {
   technicalExplanation: string;
   defaultChecked: boolean;
   locked: boolean;
+  versionCompatibility?: {
+    supported: boolean;
+    available: boolean;
+    minVersion?: string;
+  };
 };
 
 
@@ -172,6 +177,14 @@ type InitialApplicationState = {
   defaultFfmpegBuildSettings: FfmpegBuildSettings;
   defaultLibraryCatalog: LibraryChoice[];
   defaultConfigureOptionCatalog: ConfigureOptionChoice[];
+  supportedFfmpegReleases: FfmpegReleaseChoice[];
+};
+
+type FfmpegReleaseChoice = {
+  version: string;
+  codename: string;
+  archiveUrl: string;
+  signatureUrl: string;
 };
 
 type ApprovalRequest = {
@@ -195,6 +208,7 @@ type BuildResultFile = {
 type BuildResult = {
   artifactsDirectory: string;
   reportPath: string;
+  ffmpegVersion: string;
   files: BuildResultFile[];
   selectedLibraries: string[];
   selectedConfigureOptions: string[];

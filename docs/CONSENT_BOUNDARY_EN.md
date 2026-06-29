@@ -1,191 +1,83 @@
-# Consent boundary
+# Pre-execution approval and confirmation procedure
 
-This program treats the frontend as a presentation layer, not as the final authority for approving work.
+Promptful Custom FFmpeg Builder creates an execution plan before running a task, displays the information that requires user review, checks that the plan is still valid, and then asks for final approval through a Windows native confirmation dialog. Pressing a button in the UI alone does not start downloads, archive extraction, package installation, or build command execution.
 
-The backend creates executable plans, stores in-memory review sessions, validates approval requests, opens the backend-owned native confirmation dialog, and only then creates the action-specific consent values used by the approved backend operation.
+This document explains that approval procedure.
 
-Consent is one boundary layer. It is paired with plan-hash verification, generated-script hash verification, workspace containment checks, symlink checks, archive limits, fixed command allowlists, and audit/log records.
+## Summary
 
-## Where consent fits in the program
+Before toolchain preparation or an FFmpeg build begins, the program checks the following four conditions:
 
-The program's mutating build flow is plan-first:
+1. the operation the user intends to approve matches the operation in the approval request;
+2. the plan hash shown on the review screen matches the plan stored by the backend;
+3. the approval wording reviewed by the user matches the approval wording in the approval request;
+4. the user selected `Yes` in the Windows native confirmation dialog opened by the backend.
 
-1. The backend creates an executable plan.
-2. The backend stores that plan in an in-memory review session.
-3. The frontend displays the plan, warnings, final configure flags, package list, license effects, and consent text.
-4. The frontend sends an approval request containing:
-   - review session id,
-   - approved action name,
-   - approved plan hash,
-   - exact consent text.
-5. The backend retrieves the stored plan from the review session.
-6. The backend checks that the approval request still matches the stored review session:
-   - session exists,
-   - action name matches,
-   - plan hash matches,
-   - consent text hash matches,
-   - session has not expired,
-   - session has not already been consumed.
-7. The backend recomputes the stored plan hash from the stored plan content.
-8. The backend checks that the stored plan is executable.
-9. The backend opens a native OS confirmation dialog.
-10. The backend creates action-specific consent values only after the native dialog returns `Yes`.
-11. The backend starts the approved action using the stored plan and matching consent values.
+Only when all four conditions are satisfied does the program create the operation-specific approval token that permits the approved operation to proceed.
 
-## Backend-owned native confirmation
+## What the user reviews
 
-Approval RPC calls are treated as requests to approve, not as final approval.
+The review screen may show the selected source archives, packages to be installed, configure flags, generated scripts, warnings, license effects, and expected file operations. The UI displays this information, but it does not independently execute the build.
 
-The backend starts mutating work only after the stored review session is valid, the stored plan is executable, the recomputed plan hash still matches, the native confirmation dialog returns `Yes`, and the target function receives its matching action-specific consent type.
+The backend stores a separate review session in memory and compares the approval request received from the UI against that session. This prevents errors such as a stale UI state, a modified WebView call, a reused approval request, or a local RPC call being applied to a different build.
 
-The native dialog is intentionally owned by the backend rather than by the WebView frontend. This keeps a forged frontend message, injected JavaScript call, replayed local state value, WebView devtool call, or direct RPC call from becoming final proof of user intent.
+## Approval process
 
-## Rejected confirmation results
+The approval process proceeds in the following order:
 
-The native dialog is configured so the safe result is `No`.
+1. the backend creates an executable plan;
+2. the backend stores the plan in an in-memory review session;
+3. the UI displays the plan, warnings, final configure flags, package list, license effects, and approval wording;
+4. the UI sends an approval request containing the review session ID, operation name, plan hash, and approval wording;
+5. the backend checks that the session exists, has not expired, has not already been used, and matches the request;
+6. the backend recalculates the plan hash from the stored plan;
+7. the backend checks that the stored plan is executable;
+8. the backend opens a Windows native confirmation dialog;
+9. if the user selects `Yes`, the backend creates the operation-specific approval token and starts the approved operation.
 
-The backend treats every result other than `Yes` as rejection, including `No`, `Cancel`, Escape, window close, dialog errors, empty results, and unexpected button strings.
+## Rejection, cancellation, and approval expiry
 
-A rejected or cancelled native dialog does not consume the review session. The same review session can be retried until it expires. The review session is consumed only after the backend native confirmation succeeds.
+For every plan, the default approval result is `No`. The backend treats every result other than `Yes` as rejection. This includes `No`, `Cancel`, Escape, closing the dialog, dialog errors, empty responses, and unexpected button strings.
 
-## Review session lifetime and storage
+If the user rejects or cancels the Windows native confirmation dialog, the review session is not removed immediately. While the plan session is still valid, the same plan may be submitted again for Windows native confirmation. A plan session is treated as used only after confirmation through the Windows native dialog succeeds. Review sessions remain valid for 30 minutes, and unapproved sessions are discarded when the program is closed or restarted.
 
-Review sessions are single-use after successful native confirmation. Reusing the same review session id after it has been consumed fails.
+## Operations covered by approval
 
-Current review sessions have a 30-minute lifetime. Expired sessions are rejected even when the action name, plan hash, and consent text still match.
+The current approval procedure applies to operations that can change the local environment or build environment.
 
-Review sessions are stored in memory. Closing or restarting the app invalidates outstanding review sessions.
+| Covered operation | Operation after `Yes` |
+|---|---|
+| Private MSYS2 tool preparation | MSYS2 download, archive extraction, package installation |
+| FFmpeg build | FFmpeg/source download, archive extraction, package installation, command execution |
 
-## Approved action flows
+During private MSYS2 tool preparation, the approval procedure also covers downloads of the MSYS2 signature file and signing key. During an FFmpeg build, the same approval procedure applies to the FFmpeg source download, FFmpeg signature file, signing key, and required library source downloads.
 
-The approval request is converted into narrow consent values inside backend approval methods. A single approved plan can create several consent values that share the same approved action name, approved plan hash, and consent text.
+## Execution-time safeguards
 
-| Approved action | Consent values created after native `Yes` |
-| --- | --- |
-| Private MSYS2 toolchain preparation | `Msys2DownloadConsent`, `ArchiveExtractionConsent`, `PacmanInstallConsent` |
-| FFmpeg build | `FfmpegSourceDownloadConsent`, `ArchiveExtractionConsent`, `PacmanInstallConsent`, `CommandExecutionConsent` |
+Approval is only one of several safeguards. Operations that may affect the build environment are checked again during execution.
 
-The MSYS2 download consent also covers approved MSYS2 signature and signing-key downloads that belong to the same toolchain preparation plan.
+### Downloads
 
-The FFmpeg source download consent also covers approved FFmpeg signature and signing-key downloads, and approved source downloads for prepared libraries that belong to the same FFmpeg build plan.
+Approved downloads are still checked for HTTPS use, valid destination paths inside the workspace, temporary-file placement, unexpected file size, reuse rules, and SHA-256 validation when a hash is required. The program may also warn when a download is attempted from a host that is not on the expected download-host list, but the download is not judged by the host name alone.
 
-## Current consent types
+### Archive extraction
 
-Current active consent types are:
+Archive extraction checks that the archive and extraction destination are inside the selected workspace. It also limits the number of extracted files and the total extracted size. Attempts to extract to invalid paths or to create unsafe symbolic links are blocked before completion. As a result, the actual locations and contents written during extraction are controlled by extraction-time validation.
 
-- `Msys2DownloadConsent`
-- `FfmpegSourceDownloadConsent`
-- `ArchiveExtractionConsent`
-- `PacmanInstallConsent`
-- `CommandExecutionConsent`
+### Package installation and build commands
 
-The code also defines `WorkspaceDeletionConsent`, but the current cleanup and removal paths do not use it as an active approval boundary. It is reserved/defined code, not part of the current approval flow.
+Package installation and build execution are performed through separate plans. During execution, the program checks the executable path, working directory, MSYS2 root, log-file location, executable name, shell metacharacters in executable paths, and null bytes in command arguments. These checks prevent an approved build step from running a build command outside the selected workspace.
 
-The code uses typed values instead of plain booleans so each guarded operation can check the exact consent kind, action name, and plan hash it was approved for.
+### Scripts
 
-## Operations guarded by consent
+When FFmpeg builds require shell scripts for package installation, configure, make, or selected library preparation work, the program records the script path and SHA-256 hash when the script is created. Immediately before execution, the script is checked again. If its content no longer matches the approved hash, execution is stopped.
 
-The current active consent boundary guards the mutating build/install operations below:
+## Cleanup and auxiliary actions
 
-- MSYS2 archive, signature, and signing-key downloads through `DownloadMsys2WithConsent`.
-- FFmpeg source archive, signature, signing-key, and prepared-library source downloads through `DownloadFfmpegSourceWithConsent`.
-- Approved archive extraction through `ExtractArchiveWithConsent`.
-- Approved package installation through `RunPacmanWithConsent`.
-- Approved configure, make, and prepared-library script execution through `RunCommandWithConsent`.
+Some auxiliary actions are not treated as build-plan operations and therefore do not use the same approval token. Examples include opening the result folder, opening a report, opening the log folder, reading package state, inspecting the generated FFmpeg binary, and cleaning up private MSYS2 tools.
 
-These functions check the supplied consent kind, approved action name, and approved plan hash before performing the operation.
+Cleanup or removal operations are still limited to the selected workspace. Cleaning failed preparation work, cleaning failed builds, removing invalid artifacts, replacing a tool with a new one, and explicitly removing private tools must remain inside the selected workspace. These operations also use path validation, drive-root refusal, symbolic-link checks, and program-constructed target paths.
 
-## Operations outside the active consent boundary
+## Summary
 
-Not every backend command or file operation is routed through a typed consent value.
-
-Non-mutating or support operations are outside the current consent boundary and are constrained by fixed arguments and path checks instead. Examples include:
-
-- opening result folders, reports, log folders, or local log files;
-- reading package state from the private MSYS2 environment;
-- verifying built `ffmpeg.exe` and `ffprobe.exe` with fixed inspection commands;
-- stopping private MSYS2 background agents during cleanup.
-
-Cleanup/removal paths are also outside `WorkspaceDeletionConsent` in the current code. They run as consequences of an already approved operation or an explicit backend action, and they rely on workspace containment, real-path checks, root-refusal checks, symlink checks, and narrowly constructed target paths.
-
-## Cleanup and removal boundary
-
-Current cleanup is action-scoped and workspace-contained, not separately consent-gated.
-
-Examples include:
-
-- failed toolchain preparation cleanup;
-- failed FFmpeg build cleanup;
-- removal of stale FFmpeg artifact files before copying the new build result;
-- removal of a previous private MSYS2 toolchain directory when preparing a fresh one;
-- explicit removal of the private toolchain installation directory.
-
-These paths must not delete arbitrary user paths. They check that targets are inside the selected workspace, reject dangerous roots where applicable, avoid following unsafe symlinks where applicable, and construct deletion targets from the workspace layout rather than from free-form frontend input.
-
-## Download boundary
-
-Approved downloads are still checked at execution time. The download layer verifies that:
-
-- the URL uses HTTPS;
-- the destination path is inside the selected workspace;
-- the real destination path stays inside the selected workspace;
-- partial download paths stay inside the selected workspace;
-- expected file size minimum and maximum limits are respected;
-- an existing destination file is reused only when the plan allows reuse and the expected SHA-256 hash matches;
-- an expected SHA-256 hash is checked when the plan provides one.
-
-Host allowlists are warning-oriented in some download paths. A non-allowlisted host is reported as a warning, but it is not by itself always a hard block. The stronger enforcement comes from HTTPS, destination containment, size limits, and the hash/signature checks defined by the plan.
-
-## Archive extraction boundary
-
-Approved extraction is still checked at execution time. The extraction layer verifies that:
-
-- the archive file is inside the selected workspace;
-- the real archive file path is inside the selected workspace;
-- the extraction destination is inside the selected workspace;
-- the destination policy is satisfied;
-- archive file count, total extracted bytes, and single-file bytes stay under limits;
-- extracted paths do not escape the destination;
-- unsafe symlink behavior is rejected.
-
-Extraction is therefore not controlled by consent alone. Consent authorizes the operation class for the approved plan; extraction validation constrains what the archive can write.
-
-## Command execution boundary
-
-Mutating build commands are consent-gated through `RunPacmanWithConsent` and `RunCommandWithConsent`.
-
-Command execution is additionally constrained by command-plan validation:
-
-- executable path must be inside the workspace;
-- real executable path must be inside the workspace;
-- working directory must be inside the workspace;
-- real working directory must be inside the workspace;
-- MSYS2 root directory, when present, must be inside the workspace;
-- run-log directory, when present, must be inside the workspace;
-- executable basename must be in the command plan's allowlist;
-- executable path must not contain shell metacharacters;
-- arguments must not contain null bytes.
-
-These checks are meant to prevent an approved build step from silently turning into an arbitrary command outside the private workspace.
-
-## Generated script boundary
-
-Generated scripts are part of the executable boundary.
-
-When the backend prepares a command that runs a generated script, the command plan records:
-
-- the script kind;
-- the approved script file path;
-- the approved script SHA-256 hash.
-
-Before execution, the command layer verifies that the script file is inside the workspace, verifies that the real script path is inside the workspace, checks that the script path appears in the command arguments, reads the script content, recomputes the SHA-256 hash, and rejects execution if the content no longer matches the approved hash.
-
-After that check, the command layer replaces the script-file argument with stdin execution. This prevents the command from silently running a different script path after the approved script content has been checked.
-
-## Reason for this design
-
-This design separates presentation from authority.
-
-The frontend can display the plan and request approval, but the backend owns the stored plan, plan hash, expected consent text, native confirmation, consent creation, and final execution checks.
-
-This also blocks approval replay: the backend stores review sessions, checks expiry, and removes a session after successful native confirmation.
+The program separates “displaying a plan and requesting approval” from “authorizing execution.” The UI can display the plan and request approval, but the backend stores the plan, verifies the plan hash, calls the Windows native confirmation dialog, creates the approval token, and performs the final execution checks.

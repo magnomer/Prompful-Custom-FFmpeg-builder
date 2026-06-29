@@ -119,6 +119,77 @@ func TestExtractArchivesAllowSafeNestedEntries(t *testing.T) {
 	}
 }
 
+func TestExtractTarSkipsBenignLinkButKeepsRealFiles(t *testing.T) {
+	// A source tarball's relative helper symlink (target stays inside the tree) is skipped, not
+	// created, and the rest of the archive extracts normally — mirrors libvmaf 1.5.2's
+	// ptools/Makefile.Linux64 -> Makefile.Linux.
+	workspaceDirectory := t.TempDir()
+	archivePath := filepath.Join(workspaceDirectory, "archive.tar")
+	destinationDirectory := filepath.Join(workspaceDirectory, "extract")
+	writeTarArchiveWithSymlinks(t, archivePath,
+		map[string]string{"project/ptools/Makefile.Linux": "real"},
+		map[string]string{"project/ptools/Makefile.Linux64": "Makefile.Linux"},
+	)
+	err := ExtractArchiveWithConsent(context.Background(), extractionConsent(t), ExtractPlan{
+		ActionName: "extract", PlanHash: "plan", ArchiveFilePath: archivePath,
+		DestinationDirectory: destinationDirectory, WorkspaceDirectory: workspaceDirectory,
+		ArchiveFormat: ArchiveFormatTar, ExtractDestinationPolicy: RequireNewDirectory,
+	}, nil)
+	if err != nil {
+		t.Fatalf("extract failed: %v", err)
+	}
+	if content, readErr := os.ReadFile(filepath.Join(destinationDirectory, "project", "ptools", "Makefile.Linux")); readErr != nil || string(content) != "real" {
+		t.Fatalf("expected real file extracted, got %q err=%v", content, readErr)
+	}
+	if _, statErr := os.Lstat(filepath.Join(destinationDirectory, "project", "ptools", "Makefile.Linux64")); !os.IsNotExist(statErr) {
+		t.Fatalf("benign symlink must be skipped, not created: %v", statErr)
+	}
+}
+
+func TestExtractTarRejectsEscapingLink(t *testing.T) {
+	for _, linkTarget := range []string{"../../../outside", "/etc/passwd"} {
+		t.Run(linkTarget, func(t *testing.T) {
+			workspaceDirectory := t.TempDir()
+			archivePath := filepath.Join(workspaceDirectory, "archive.tar")
+			destinationDirectory := filepath.Join(workspaceDirectory, "extract")
+			writeTarArchiveWithSymlinks(t, archivePath, nil, map[string]string{"project/evil": linkTarget})
+			err := ExtractArchiveWithConsent(context.Background(), extractionConsent(t), ExtractPlan{
+				ActionName: "extract", PlanHash: "plan", ArchiveFilePath: archivePath,
+				DestinationDirectory: destinationDirectory, WorkspaceDirectory: workspaceDirectory,
+				ArchiveFormat: ArchiveFormatTar, ExtractDestinationPolicy: RequireNewDirectory,
+			}, nil)
+			if err == nil || !strings.Contains(err.Error(), "escapes extraction root") {
+				t.Fatalf("expected escaping-link rejection, got %v", err)
+			}
+		})
+	}
+}
+
+func writeTarArchiveWithSymlinks(t *testing.T, archivePath string, files map[string]string, symlinks map[string]string) {
+	t.Helper()
+	var buffer bytes.Buffer
+	tarWriter := tar.NewWriter(&buffer)
+	for name, content := range files {
+		if err := tarWriter.WriteHeader(&tar.Header{Typeflag: tar.TypeReg, Name: name, Mode: 0o644, Size: int64(len(content))}); err != nil {
+			t.Fatalf("write tar header: %v", err)
+		}
+		if _, err := tarWriter.Write([]byte(content)); err != nil {
+			t.Fatalf("write tar content: %v", err)
+		}
+	}
+	for name, target := range symlinks {
+		if err := tarWriter.WriteHeader(&tar.Header{Typeflag: tar.TypeSymlink, Name: name, Linkname: target, Mode: 0o777}); err != nil {
+			t.Fatalf("write tar symlink header: %v", err)
+		}
+	}
+	if err := tarWriter.Close(); err != nil {
+		t.Fatalf("close tar writer: %v", err)
+	}
+	if err := os.WriteFile(archivePath, buffer.Bytes(), 0o644); err != nil {
+		t.Fatalf("write tar archive: %v", err)
+	}
+}
+
 func extractionConsent(t *testing.T) consent.ArchiveExtractionConsent {
 	t.Helper()
 	approval, err := consent.ArchiveExtractionApproval(consent.ApprovalRequest{

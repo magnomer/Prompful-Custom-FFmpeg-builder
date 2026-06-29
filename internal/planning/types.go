@@ -43,6 +43,27 @@ type LibraryChoice struct {
 	TechnicalExplanation string           `json:"technicalExplanation"`
 	DefaultChecked       bool             `json:"defaultChecked"`
 	Locked               bool             `json:"locked"`
+	// VersionCompatibility, when set, reports whether this library is supported by the
+	// FFmpeg release being built, per that release's support manifest. It is populated only
+	// on a plan's resolved SelectedLibraries (where the FFmpeg version is known) and only
+	// when the chosen release line is manifested; the version-free catalog-fetch path and
+	// un-manifested release lines leave it nil. omitempty keeps it additive: the existing UI
+	// ignores it.
+	VersionCompatibility *LibraryVersionCompatibility `json:"versionCompatibility,omitempty"`
+}
+
+// LibraryVersionCompatibility describes how a selected library relates to the chosen FFmpeg
+// release's support manifest. Supported is false when the release is manifested but does not
+// support the library (its --enable switch does not exist in that release). Available is false
+// when the switch exists but the package this builder can supply cannot satisfy it for this
+// release (manifest Unavailable, e.g. lensfun); Available is therefore Supported AND not
+// package-unavailable. MinVersion echoes FFmpeg's pkg-config minimum for that library in that
+// release ("" when none). The UI uses Available to show/hide rows; the backend blocks the plan
+// when a selected library is Supported-but-unavailable or unsupported.
+type LibraryVersionCompatibility struct {
+	Supported  bool   `json:"supported"`
+	Available  bool   `json:"available"`
+	MinVersion string `json:"minVersion,omitempty"`
 }
 
 type TrackedLibrarySelection struct {

@@ -270,7 +270,17 @@ func extractTarArchive(ctx context.Context, extractPlan ExtractPlan) error {
 				return closeErr
 			}
 		case tar.TypeSymlink, tar.TypeLink:
-			return fmt.Errorf("archive links are blocked for safety: %s", header.Name)
+			// Archive links are never materialized. Creating a symlink could redirect a later
+			// entry's write outside the destination (symlink traversal), so the link is skipped
+			// entirely; every real-file write above is still containment-checked, so not creating
+			// the link removes the traversal vector completely. A link whose target stays inside
+			// the destination — e.g. a source tarball's relative helper symlink like libvmaf's
+			// ptools/Makefile.Linux64 -> Makefile.Linux — is skipped silently and the build, which
+			// does not use it, proceeds. A link whose target escapes the destination is the classic
+			// hostile setup and is rejected so a malicious archive still fails loudly.
+			if !linkTargetWithinDestination(extractPlan.DestinationDirectory, header.Name, header.Linkname, header.Typeflag == tar.TypeLink) {
+				return fmt.Errorf("archive link target escapes extraction root: %s -> %s", header.Name, header.Linkname)
+			}
 		default:
 			// Ignore metadata-only entries such as pax headers.
 		}
@@ -424,6 +434,25 @@ func openArchiveReader(archiveFile *os.File, archiveFormatName ArchiveFormat) (i
 	default:
 		return nil, nil, fmt.Errorf("unsupported archive format: %s", archiveFormatName)
 	}
+}
+
+// linkTargetWithinDestination reports whether an archive link entry resolves to a path inside the
+// extraction destination. The link is never created either way; this only decides whether to skip
+// it silently (benign, in-tree target) or reject the whole archive as hostile (the target escapes
+// the destination — the classic symlink-traversal setup). Hardlink targets are archive-root
+// relative; symlink targets are relative to the entry's own directory, and an absolute symlink
+// target is treated as root-relative so it fails the containment check below. Names use forward
+// slashes (tar), so path (not filepath) is used to resolve them before the OS-path containment check.
+func linkTargetWithinDestination(destinationDirectory string, entryName string, linkName string, isHardlink bool) bool {
+	if linkName == "" {
+		return false
+	}
+	archiveRelativeTarget := linkName
+	if !isHardlink && !path.IsAbs(linkName) {
+		archiveRelativeTarget = path.Join(path.Dir(entryName), linkName)
+	}
+	_, err := safeExtractTargetPath(destinationDirectory, archiveRelativeTarget)
+	return err == nil
 }
 
 func safeExtractTargetPath(destinationDirectory string, headerName string) (string, error) {

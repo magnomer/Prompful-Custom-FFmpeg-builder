@@ -257,7 +257,8 @@ func downloadAttempt(ctx context.Context, downloadPlan DownloadPlan, temporaryPa
 	}
 	defer response.Body.Close()
 	if response.StatusCode < 200 || response.StatusCode > 299 {
-		return isRetryableStatusCode(response.StatusCode), fmt.Errorf("unexpected download status: %s", response.Status)
+		retryable := isRetryableStatusCode(response.StatusCode) || isTransientGithubArchive400(response.StatusCode, request.URL.Hostname())
+		return retryable, fmt.Errorf("unexpected download status: %s", response.Status)
 	}
 	if response.ContentLength > downloadPlan.ExpectedFileSizeMaximum && downloadPlan.ExpectedFileSizeMaximum > 0 {
 		return false, errors.New("download is larger than allowed maximum")
@@ -339,6 +340,19 @@ func isRetryableStatusCode(statusCode int) bool {
 		return true
 	}
 	return statusCode == http.StatusTooManyRequests || statusCode == http.StatusRequestTimeout
+}
+
+// isTransientGithubArchive400 reports whether a 400 from GitHub's archive endpoints
+// should be retried. GitHub's codeload tag-archive service intermittently returns
+// 400 Bad Request for a perfectly valid tag URL under load or on a flaky connection;
+// a retry of the identical request then succeeds. A 400 is permanent for every other
+// host, so this stays scoped to github.com and codeload.github.com.
+func isTransientGithubArchive400(statusCode int, host string) bool {
+	if statusCode != http.StatusBadRequest {
+		return false
+	}
+	host = strings.ToLower(strings.TrimSpace(host))
+	return host == "github.com" || host == "codeload.github.com"
 }
 
 func reuseMatchingFile(downloadPlan DownloadPlan, emitProgress ProgressFunc) bool {

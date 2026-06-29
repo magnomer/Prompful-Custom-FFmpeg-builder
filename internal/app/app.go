@@ -54,6 +54,7 @@ type InitialApplicationState struct {
 	DefaultFfmpegBuildSettings    planning.FfmpegBuildSettings     `json:"defaultFfmpegBuildSettings"`
 	DefaultLibraryCatalog         []planning.LibraryChoice         `json:"defaultLibraryCatalog"`
 	DefaultConfigureOptionCatalog []planning.ConfigureOptionChoice `json:"defaultConfigureOptionCatalog"`
+	SupportedFfmpegReleases       []planning.FfmpegReleaseChoice   `json:"supportedFfmpegReleases"`
 }
 
 type ApprovedActionResult struct {
@@ -71,6 +72,7 @@ type BuildResultFile struct {
 type BuildResult struct {
 	ArtifactsDirectory        string            `json:"artifactsDirectory"`
 	ReportPath                string            `json:"reportPath"`
+	FfmpegVersion             string            `json:"ffmpegVersion"`
 	Files                     []BuildResultFile `json:"files"`
 	SelectedLibraries         []string          `json:"selectedLibraries"`
 	SelectedConfigureOptions  []string          `json:"selectedConfigureOptions"`
@@ -82,6 +84,8 @@ type BuildResult struct {
 
 type artifactReport struct {
 	CreatedAt                 string                           `json:"createdAt"`
+	FfmpegVersion             string                           `json:"ffmpegVersion"`
+	FfmpegSourceArchiveUrl    string                           `json:"ffmpegSourceArchiveUrl"`
 	SelectedLibraries         []planning.LibraryChoice         `json:"selectedLibraries"`
 	SelectedConfigureOptions  []planning.ConfigureOptionChoice `json:"selectedConfigureOptions"`
 	RequiredMsys2PackageNames []string                         `json:"requiredMsys2PackageNames"`
@@ -149,7 +153,12 @@ func (app *App) GetInitialApplicationState() InitialApplicationState {
 		DefaultFfmpegBuildSettings:    planning.DefaultFfmpegBuildSettings(),
 		DefaultLibraryCatalog:         planning.LibraryCatalogForShellProfile(planning.DefaultFfmpegBuildSettings().WindowsShellProfileName),
 		DefaultConfigureOptionCatalog: planning.ConfigureOptionCatalog(),
+		SupportedFfmpegReleases:       planning.SupportedFfmpegReleaseChoices(),
 	}
+}
+
+func (app *App) GetLibraryCatalogForFfmpegSource(ffmpegSourceArchiveUrl string, windowsShellProfileName string) []planning.LibraryChoice {
+	return planning.LibraryCatalogForFfmpegSource(ffmpegSourceArchiveUrl, windowsShellProfileName)
 }
 
 func (app *App) GetBuildResult(workspaceDirectory string) (BuildResult, error) {
@@ -192,10 +201,18 @@ func (app *App) GetBuildResult(workspaceDirectory string) (BuildResult, error) {
 	})
 	reportPath, report, err := readLatestArtifactReport(workspaceLayout)
 	if err != nil {
+		result.FfmpegVersion = ffmpegVersionFromBuiltArtifact(workspaceLayout)
 		return result, nil
 	}
 	result.ReportPath = reportPath
 	result.CreatedAt = report.CreatedAt
+	result.FfmpegVersion = report.FfmpegVersion
+	if result.FfmpegVersion == "" {
+		result.FfmpegVersion = planning.FfmpegVersionFromArchiveUrl(report.FfmpegSourceArchiveUrl)
+	}
+	if result.FfmpegVersion == "" {
+		result.FfmpegVersion = ffmpegVersionFromBuiltArtifact(workspaceLayout)
+	}
 	result.RequiredMsys2PackageNames = report.RequiredMsys2PackageNames
 	result.ConfigureFlags = report.ConfigureFlags
 	result.LicenseProfileName = report.LicenseProfileName
@@ -259,12 +276,31 @@ func (app *App) OpenExternalUrl(urlToOpen string) error {
 	return nil
 }
 
-func (app *App) SelectWorkspace() (string, error) {
-	selection, err := wailsRuntime.OpenDirectoryDialog(app.ctx, wailsRuntime.OpenDialogOptions{Title: localize("native.selectWorkspace.title", nil)})
+func (app *App) SelectWorkspace(currentDirectory string) (string, error) {
+	selection, err := wailsRuntime.OpenDirectoryDialog(app.ctx, wailsRuntime.OpenDialogOptions{
+		Title:            localize("native.selectWorkspace.title", nil),
+		DefaultDirectory: workspaceDialogStartDirectory(currentDirectory),
+	})
 	if err != nil {
 		return "", err
 	}
 	return selection, nil
+}
+
+// workspaceDialogStartDirectory chooses where the Browse dialog opens. It never
+// defaults into the user profile (%USERPROFILE%/%USERS%): an already-selected
+// absolute workspace is reused, otherwise the system drive root is used. Returning
+// an explicit start directory keeps the native dialog from auto-opening home.
+func workspaceDialogStartDirectory(currentDirectory string) string {
+	if currentDirectory != "" && filepath.IsAbs(currentDirectory) {
+		if info, err := os.Stat(currentDirectory); err == nil && info.IsDir() {
+			return currentDirectory
+		}
+	}
+	if systemDrive := os.Getenv("SystemDrive"); systemDrive != "" {
+		return systemDrive + string(os.PathSeparator)
+	}
+	return ""
 }
 
 func (app *App) RequestToolchainPreparationPlan(buildConfigSettings planning.BuildConfigSettings) (planning.ToolchainPreparationPlanReview, error) {
