@@ -6,7 +6,7 @@
 
 <br>
 
-**KO** · 비공개 MSYS2 툴체인으로 FFmpeg 소스를 로컬에서 직접 빌드하는 Windows 데스크톱 프로그램(Go + Wails)입니다. 빌드의 모든 단계는 사용자의 검토/승인을 받은 후에 이루어집니다.
+**KO** · 로컬 MSYS2를 사용하 FFmpeg 소스를 로컬에서 직접 빌드하는 Windows 데스크톱 프로그램(Go + Wails)입니다. 빌드의 모든 단계는 사용자의 검토/승인을 받은 후에 이루어집니다.
 
 <br>
 
@@ -14,10 +14,22 @@
 
 <br><br>
 
-<a href="#english"><img alt="English" src="https://img.shields.io/badge/English-Read-555555?style=for-the-badge"></a>
+<div align="center">
+<a href="#english"><img alt="English" src="https://img.shields.io/badge/English-Read-blue?style=for-the-badge"></a>
 &nbsp;&nbsp;
-<a href="#korean"><img alt="한국어" src="https://img.shields.io/badge/한국어-읽기-555555?style=for-the-badge"></a>
+<a href="#korean"><img alt="한국어" src="https://img.shields.io/badge/한국어-읽기-brightgreen?style=for-the-badge"></a>
 
+<br><br>
+
+<img alt="Supporting FFmpeg 8.1.2" src="https://img.shields.io/badge/Supporting-FFmpeg_8.1.2-7692a7?style=for-the-badge"><br>
+<img alt="Supporting FFmpeg 8.0.3" src="https://img.shields.io/badge/Supporting-FFmpeg_8.0.3-7692a7?style=for-the-badge"><br>
+<img alt="Supporting FFmpeg 7.1.5" src="https://img.shields.io/badge/Supporting-FFmpeg_7.1.5-7692a7?style=for-the-badge"><br>
+<img alt="Supporting FFmpeg 7.0.3" src="https://img.shields.io/badge/Supporting-FFmpeg_7.0.3-7692a7?style=for-the-badge"><br>
+<img alt="Supporting FFmpeg 6.1.6" src="https://img.shields.io/badge/Supporting-FFmpeg_6.1.6-7692a7?style=for-the-badge"><br>
+<img alt="Supporting FFmpeg 5.1.9" src="https://img.shields.io/badge/Supporting-FFmpeg_5.1.9-7692a7?style=for-the-badge"><br>
+<img alt="Supporting FFmpeg 4.4.8" src="https://img.shields.io/badge/Supporting-FFmpeg_4.4.8-7692a7?style=for-the-badge"><br>
+
+</div>
 </div>
 
 ---
@@ -84,7 +96,6 @@ The finished FFmpeg files and build report are saved inside your workspace.
 
 The program currently tracks 125 FFmpeg library choices, including always-included FFmpeg parts, selectable add-on libraries, and entries kept only to explain current limits.
 
-- [Library model](docs/LIBRARY_MODEL_EN.md)
 - [Library coverage report](docs/LIBRARY_COVERAGE_REPORT_EN.md)
 
 ### Options
@@ -99,7 +110,7 @@ Users only need to prepare a normal Windows environment, internet access, and en
 
 - Windows 10 or later.
 - Internet access.
-- Several GB of free disk space.
+- Approximately 20 GB of free disk space.
 
 ### Build from source
 
@@ -152,15 +163,15 @@ Promptful Custom FFmpeg Builder는 윈도우에서 FFmpeg를 소스부터 직접
 
 ### 작동 방식
 
-먼저 빌드 계획을 만듭니다. 빌드 실행 전에 빌드 진행 내용을 검토할 수 있습니다.
+다음과 같이 빌드 계획을 만들고 내용을 검토한 후 최종적으로 빌드를 진행합니다.
 
-- 작업 폴더, FFmpeg 소스, 라이브러리, 옵션을 선택합니다.
-- 전용 MSYS2 빌드 프로필을 선택합니다.
-- 빌드 계획을 생성합니다.
-- 패키지, configure 플래그, 스크립트, 경고, 라이선스 영향을 확인합니다.
-- 빌드 계획을 승인합니다.
-- 윈도우 기본 확인 창에서 한 번 더 확인합니다.
-- 실시간 빌드 로그를 보며 진행 상태를 확인합니다.
+- 작업 폴더, FFmpeg 소스, 라이브러리, 옵션을 선택
+- 전용 MSYS2 빌드 프로필을 선택
+- 빌드 계획을 생성
+- 패키지, configure 플래그, 스크립트, 경고, 라이선스 확인
+- 빌드 계획을 승인
+- 윈도우 네이티브 확인 창으로 최종 승인
+- 실시간 빌드 로그를 제공
 
 ### 빌드 환경
 
@@ -185,22 +196,20 @@ Promptful Custom FFmpeg Builder는 윈도우에서 FFmpeg를 소스부터 직접
 
 이 프로그램은 FFmpeg 빌드에서 확인하거나 선택할 수 있는 라이브러리 항목 125개를 관리합니다. 기본으로 포함되는 항목, 사용자가 선택할 수 있는 추가 라이브러리, 현재 한계를 설명하기 위해 남겨 둔 항목 등이 포함됩니다.
 
-- [라이브러리 모델](docs/LIBRARY_MODEL_KO.md)
 - [라이브러리 지원 범위 보고서](docs/LIBRARY_COVERAGE_REPORT_KO.md)
 
 ### 옵션
 
-FFmpeg 빌드 옵션은 숨겨진 명령줄이 아니라, 빌드 계획의 일부로 정리됩니다.
+FFmpeg 빌드 옵션은 빌드 계획의 일부로 제공되고 관리됩니다.
 
-자주 쓰는 configure 선택지는 이름이 붙은 옵션으로 제공됩니다. 특수한 상황을 위한 수동 플래그도 사용할 수 있으며, 실제 빌드 전에 최종 configure 플래그가 다시 표시됩니다.
+자주 사용되는 configure 선택지는 별도 옵션으로 제공됩니다. 직접 플래그를 입력할 수도 있습니다.
+설정된 configure 플래그는 그리고 최종적으로 빌드 전에 다시 표시됩니다.
 
 ### 요구 사항
 
-사용자가 미리 준비해야 하는 것은 일반적인 윈도우 환경, 인터넷 연결, 충분한 저장 공간입니다.
-
-- Windows 10 이상.
-- 인터넷 연결.
-- 몇 GB 이상의 여유 디스크 공간.
+- Windows 10 이상
+- 인터넷 연결
+- 20 GB 정도의 여유 디스크 공간
 
 ### 소스에서 실행하기
 
