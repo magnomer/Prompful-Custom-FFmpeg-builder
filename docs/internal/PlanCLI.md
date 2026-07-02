@@ -388,14 +388,15 @@ Resolved v1 gaps:
   message with the exact `promptfulx setup --workspace ... --yes` command
   (exit 6), instead of the GUI-oriented "Go to Build configuration" text.
 
+End-to-end verified (2026-07-02): `scripts/promptfulx-e2e.ps1` ran
+setup -> plan -> build on a cold workspace and produced a working FFmpeg 8.1.2
+(preset minimal), exit 0. This also caught and confirmed the fix for the gcc
+shim `spawn.h` bug (see the make-script note in `internal/scripting`).
+
 Remaining v1 caveats:
 
 - `cmd/promptfulx` imports `internal/program`, so `promptfulx.exe` links the
   Wails library as dead weight until Step 7 (`buildflow`) removes it.
-- A real end-to-end `setup` + `build` has not been run here (needs MSYS2
-  download + a full compile). Pre-build/pre-setup gating is verified; the actual
-  download/compile path is exercised by the shared GUI code but untested from
-  the CLI entry.
 - Naming: `LPlanFFmpegApproveSync` / `LPlanToolchainApproveSync` end in a
   qualifier rather than a bare verb. This matches existing deviations in the
   codebase (e.g. `LWorkspaceLayoutResolveVersioned`) but is worth a naming
