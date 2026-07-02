@@ -376,16 +376,30 @@ unsupported combo, 2 invalid args, 10 confirmation rejected, 1 other validation
 failure (e.g. toolchain not prepared). Finer configure/verify codes (7/9) are
 deferred.
 
-Known v1 caveats:
+Resolved v1 gaps:
 
-- The CLI has no `setup` command yet, so `build` requires a workspace whose
-  MSYS2 toolchain is already prepared (by the GUI or manually). An unprepared
-  workspace fails `LToolchainBuildPreparedCheck` before any download.
-- That readiness failure reuses a GUI-oriented localized message ("Go to Build
-  configuration..."), which reads oddly in the CLI. A CLI-specific message (and
-  a `setup` command) is future work.
-- `cmd/promptfulx` now imports `internal/program`, so `promptfulx.exe` links the
+- `setup` command implemented (`cmd/promptfulx/setup.go`). It mirrors `build`:
+  `LPlanToolchainRequest` -> `LPlanToolchainApproveSync` (the toolchain approve
+  tail was refactored the same way as FFmpeg: `lToolchainApproveValidate` +
+  `lToolchainPrepareLaunch(plan, approval, runInline)`). Starts from
+  `LSettingsBuildCreate()` defaults with `--msys2-*` overrides. Exit codes:
+  0 done, 6 setup failure, 4 blocked, 2 bad args, 10 rejected.
+- `build` now pre-checks `LToolchainBuildPreparedCheck` and prints a CLI-native
+  message with the exact `promptfulx setup --workspace ... --yes` command
+  (exit 6), instead of the GUI-oriented "Go to Build configuration" text.
+
+Remaining v1 caveats:
+
+- `cmd/promptfulx` imports `internal/program`, so `promptfulx.exe` links the
   Wails library as dead weight until Step 7 (`buildflow`) removes it.
+- A real end-to-end `setup` + `build` has not been run here (needs MSYS2
+  download + a full compile). Pre-build/pre-setup gating is verified; the actual
+  download/compile path is exercised by the shared GUI code but untested from
+  the CLI entry.
+- Naming: `LPlanFFmpegApproveSync` / `LPlanToolchainApproveSync` end in a
+  qualifier rather than a bare verb. This matches existing deviations in the
+  codebase (e.g. `LWorkspaceLayoutResolveVersioned`) but is worth a naming
+  review pass.
 
 **v1 ships here:** standalone single-build CLI.
 

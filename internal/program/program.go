@@ -325,28 +325,56 @@ func (program *LProgram) LPlanFFmpegRequest(ffmpegBuildSettings planning.LSettin
 	return planning.LReviewFFmpeg{ReviewSessionId: reviewSession.ReviewSessionId, ExpectedLConsentText: reviewSession.ExpectedLConsentText, ExpectedLConsentTextHash: reviewSession.ExpectedLConsentTextHash, ExpiresAtUnixTime: reviewSession.ExpiresAtUnixTime, Plan: plan}, nil
 }
 
+// LPlanToolchainApprove validates the review, confirms, and prepares the
+// toolchain asynchronously (GUI behavior).
 func (program *LProgram) LPlanToolchainApprove(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
-	storedReviewSession, err := program.lReviewToolchainValidate(reviewSessionId, approval)
+	plan, err := program.lToolchainApproveValidate(reviewSessionId, approval)
 	if err != nil {
 		return LResultAction{}, err
+	}
+	return program.lToolchainPrepareLaunch(plan, approval, false)
+}
+
+// LPlanToolchainApproveSync is the CLI counterpart: it prepares the toolchain
+// inline and returns only after preparation finishes, so the caller can map the
+// outcome to an exit code. The final status arrives through the reporter.
+func (program *LProgram) LPlanToolchainApproveSync(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
+	plan, err := program.lToolchainApproveValidate(reviewSessionId, approval)
+	if err != nil {
+		return LResultAction{}, err
+	}
+	return program.lToolchainPrepareLaunch(plan, approval, true)
+}
+
+// lToolchainApproveValidate performs the shared validation for both toolchain
+// approve paths and consumes the single-use session only after confirmation.
+func (program *LProgram) lToolchainApproveValidate(reviewSessionId string, approval consent.LRequestApproval) (planning.LPlanToolchain, error) {
+	storedReviewSession, err := program.lReviewToolchainValidate(reviewSessionId, approval)
+	if err != nil {
+		return planning.LPlanToolchain{}, err
 	}
 	plan := storedReviewSession.Plan
 	if err := planning.LPlanRunCheck(plan.IsExecutable); err != nil {
-		return LResultAction{}, err
+		return planning.LPlanToolchain{}, err
 	}
 	if err := LHashToolchainVerify(plan); err != nil {
-		return LResultAction{}, err
+		return planning.LPlanToolchain{}, err
 	}
-	confirmedByNativeDialog, err := program.lConsentNativeAsk(plan.ActionName, plan.PlanHash)
+	confirmed, err := program.lConsentNativeAsk(plan.ActionName, plan.PlanHash)
 	if err != nil {
-		return LResultAction{}, err
+		return planning.LPlanToolchain{}, err
 	}
-	if !confirmedByNativeDialog {
-		return LResultAction{}, errors.New("user rejected approval in backend-owned native confirmation dialog")
+	if !confirmed {
+		return planning.LPlanToolchain{}, errors.New("user rejected approval in backend-owned confirmation")
 	}
-	// Confirmed: consume the session now so it is single-use, but only after the
-	// dialog succeeded, so a cancelled/failed dialog leaves it retryable.
 	program.lReviewToolchainConsume(reviewSessionId)
+	return plan, nil
+}
+
+// lToolchainPrepareLaunch builds the per-action consents and starts the
+// toolchain worker, inline when runInline is true (CLI) or on a goroutine
+// otherwise (GUI).
+func (program *LProgram) lToolchainPrepareLaunch(plan planning.LPlanToolchain, approval consent.LRequestApproval, runInline bool) (LResultAction, error) {
 	userLConsentMsys, err := consent.LConsentMsysCreate(approval)
 	if err != nil {
 		return LResultAction{}, err
@@ -363,7 +391,11 @@ func (program *LProgram) LPlanToolchainApprove(reviewSessionId string, approval 
 	if err != nil {
 		return LResultAction{}, err
 	}
-	go program.lToolchainPrepare(LContextAction, LRunId, plan, userLConsentMsys, userLConsentArchive, userPacmanPackageInstallLConsent)
+	if runInline {
+		program.lToolchainPrepare(LContextAction, LRunId, plan, userLConsentMsys, userLConsentArchive, userPacmanPackageInstallLConsent)
+	} else {
+		go program.lToolchainPrepare(LContextAction, LRunId, plan, userLConsentMsys, userLConsentArchive, userPacmanPackageInstallLConsent)
+	}
 	return LResultAction{RunId: LRunId, StartedAt: time.Now().UTC().Format(time.RFC3339)}, nil
 }
 

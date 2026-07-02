@@ -27,6 +27,8 @@ func run(args []string) int {
 		return cmdList(args[1:])
 	case "plan":
 		return cmdPlan(args[1:])
+	case "setup":
+		return cmdSetup(args[1:])
 	case "build":
 		return cmdBuild(args[1:])
 	default:
@@ -45,7 +47,8 @@ Usage:
 Commands:
   list       List known versions, presets, or libraries
   plan       Show the resolved build plan (no build is run)
-  build      Build FFmpeg (workspace toolchain must be prepared first)
+  setup      Prepare the MSYS2 build environment in a workspace
+  build      Build FFmpeg (run setup on the workspace first)
   verify     Verify a built FFmpeg executable    (not implemented yet)
   explain    Explain a version, library, or preset (not implemented yet)
 
@@ -57,13 +60,20 @@ Plan / build options:
   --disable-libNAME      remove a library from the preset
   --workspace DIR        build workspace directory (absolute)
   --jobs N               parallel build jobs
-  --yes                  accept the confirmation automatically (build)
-  --no-input             never prompt; fail if input would be needed (build)
+  --yes                  accept the confirmation automatically
+  --no-input             never prompt; fail if input would be needed
+
+Setup options:
+  --workspace DIR        required; where the MSYS2 toolchain is prepared
+  --msys2-url URL        override the MSYS2 archive URL (default: repo.msys2.org)
+  --msys2-sha256 HASH    verify the MSYS2 archive hash
+  --msys2-signature-url URL   override the MSYS2 archive signature URL
 
 Examples:
   promptfulx list versions
   promptfulx list libraries --ffmpeg-version 8.1.2
   promptfulx plan --ffmpeg-version 8.1.2 --preset full --disable-liboapv
+  promptfulx setup --workspace D:\Work --yes
   promptfulx build --ffmpeg-version 8.1.2 --preset full --workspace D:\Work --yes
 
 See docs/internal/PlanCLI.md.`)

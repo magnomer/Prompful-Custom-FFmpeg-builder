@@ -55,6 +55,19 @@ func cmdBuild(args []string) int {
 		return 4
 	}
 
+	// Give a CLI-native message (and the exact setup command) when the workspace
+	// toolchain is not prepared, instead of the GUI-oriented text the shared
+	// check would otherwise surface.
+	profile := review.Plan.WindowsShellProfileName
+	if profile == "" {
+		profile = "ucrt64"
+	}
+	if err := program.LToolchainBuildPreparedCheck(review.Plan.WorkspaceDirectory, profile); err != nil {
+		fmt.Fprintf(os.Stderr, "promptfulx: build environment is not prepared for profile %s in %s\n", profile, review.Plan.WorkspaceDirectory)
+		fmt.Fprintf(os.Stderr, "  prepare it first: promptfulx setup --workspace %s --yes\n", review.Plan.WorkspaceDirectory)
+		return 6
+	}
+
 	approval := consent.LRequestApproval{
 		ApprovedActionName: review.Plan.ActionName,
 		ApprovedPlanHash:   review.Plan.PlanHash,

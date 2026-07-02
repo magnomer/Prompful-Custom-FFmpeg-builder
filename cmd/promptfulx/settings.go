@@ -38,6 +38,11 @@ type cliBuildArgs struct {
 	jobs      int
 	yes       bool
 	noInput   bool
+
+	// setup-only MSYS2 source overrides (empty = use embedded defaults)
+	msys2URL          string
+	msys2Sha256       string
+	msys2SignatureURL string
 }
 
 // argsParse scans build-shaped CLI arguments. Dynamic --enable-lib*/--disable-lib*
@@ -94,6 +99,24 @@ func argsParse(args []string) (cliBuildArgs, error) {
 				return parsed, badArgs("--jobs needs a non-negative integer, got %q", value)
 			}
 			parsed.jobs = jobs
+		case name == "--msys2-url":
+			value, err := takeValue(name, inline, hasInline)
+			if err != nil {
+				return parsed, err
+			}
+			parsed.msys2URL = value
+		case name == "--msys2-sha256":
+			value, err := takeValue(name, inline, hasInline)
+			if err != nil {
+				return parsed, err
+			}
+			parsed.msys2Sha256 = value
+		case name == "--msys2-signature-url":
+			value, err := takeValue(name, inline, hasInline)
+			if err != nil {
+				return parsed, err
+			}
+			parsed.msys2SignatureURL = value
 		case name == "--extended":
 			parsed.extended = true
 		case name == "--no-preset":
@@ -158,6 +181,27 @@ func settingsResolve(parsed cliBuildArgs) (planning.LSettingsFFmpeg, error) {
 		SelectedLibraryIds:       libraryIds,
 		ParallelJobCount:         parsed.jobs,
 	}, nil
+}
+
+// toolchainSettingsResolve builds the MSYS2 toolchain settings for `setup`,
+// starting from the embedded defaults (archive URL, signature URL, package set,
+// ucrt64 profile) and applying any --msys2-* overrides.
+func toolchainSettingsResolve(parsed cliBuildArgs) (planning.LSettingsBuild, error) {
+	if strings.TrimSpace(parsed.workspace) == "" {
+		return planning.LSettingsBuild{}, badArgs("--workspace is required")
+	}
+	settings := planning.LSettingsBuildCreate()
+	settings.WorkspaceDirectory = strings.TrimSpace(parsed.workspace)
+	if parsed.msys2URL != "" {
+		settings.Msys2ArchiveUrl = parsed.msys2URL
+	}
+	if parsed.msys2Sha256 != "" {
+		settings.Msys2ArchiveSha256Hash = parsed.msys2Sha256
+	}
+	if parsed.msys2SignatureURL != "" {
+		settings.Msys2ArchiveSignatureUrl = parsed.msys2SignatureURL
+	}
+	return settings, nil
 }
 
 func idAppendUnique(ids []string, id string) []string {
