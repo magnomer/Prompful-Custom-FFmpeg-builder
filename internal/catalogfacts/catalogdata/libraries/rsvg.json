@@ -1,0 +1,312 @@
+{
+  "schemaVersion": 2,
+  "recordKind": "ffmpeg-version-aware-library",
+  "generatedFromCurrentV4CodeOnly": true,
+  "sourceFiles": [
+    "internal/planning/LCatalogLibrarySource.go",
+    "backup/shared/releasesupport/ffmpeg-release-support.json",
+    "backup/shared/librarysources/library-sources.json",
+    "internal/planning/preparation.go",
+    "frontend/src/tabs/libraries.tsx",
+    "versions/*.json",
+    "versions/{ffmpegVersion}/{libraryId}.go"
+  ],
+  "libraryId": "rsvg",
+  "importantModelingRule": "No build-relevant library field is authoritative at the top level. Each FFmpeg-version record carries its own display name, FFmpeg-facing configure flags, track/provider, package names, availability, source pin, and preparation status.",
+  "ffmpegVersions": {
+    "4.4.8": {
+      "libraryId": "rsvg",
+      "ffmpegVersion": "4.4.8",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "librsvg",
+      "categoryName": "Image codecs",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-librsvg"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-librsvg"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-librsvg"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-librsvg"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-librsvg"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://gitlab.gnome.org/GNOME/librsvg",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
+    },
+    "5.1.9": {
+      "libraryId": "rsvg",
+      "ffmpegVersion": "5.1.9",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "librsvg",
+      "categoryName": "Image codecs",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-librsvg"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-librsvg"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-librsvg"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-librsvg"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-librsvg"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://gitlab.gnome.org/GNOME/librsvg",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
+    },
+    "6.1.6": {
+      "libraryId": "rsvg",
+      "ffmpegVersion": "6.1.6",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "librsvg",
+      "categoryName": "Image codecs",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-librsvg"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-librsvg"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-librsvg"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-librsvg"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-librsvg"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://gitlab.gnome.org/GNOME/librsvg",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
+    },
+    "7.0.3": {
+      "libraryId": "rsvg",
+      "ffmpegVersion": "7.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "librsvg",
+      "categoryName": "Image codecs",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-librsvg"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-librsvg"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-librsvg"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-librsvg"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-librsvg"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://gitlab.gnome.org/GNOME/librsvg",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
+    },
+    "7.1.5": {
+      "libraryId": "rsvg",
+      "ffmpegVersion": "7.1.5",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "librsvg",
+      "categoryName": "Image codecs",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-librsvg"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-librsvg"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-librsvg"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-librsvg"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-librsvg"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://gitlab.gnome.org/GNOME/librsvg",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
+    },
+    "8.0.3": {
+      "libraryId": "rsvg",
+      "ffmpegVersion": "8.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "librsvg",
+      "categoryName": "Image codecs",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-librsvg"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-librsvg"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-librsvg"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-librsvg"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-librsvg"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://gitlab.gnome.org/GNOME/librsvg",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
+    },
+    "8.1.2": {
+      "libraryId": "rsvg",
+      "ffmpegVersion": "8.1.2",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "librsvg",
+      "categoryName": "Image codecs",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-librsvg"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-librsvg"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-librsvg"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-librsvg"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-librsvg"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://gitlab.gnome.org/GNOME/librsvg",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
+    }
+  }
+}

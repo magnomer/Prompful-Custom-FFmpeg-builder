@@ -1,4 +1,4 @@
-type PlanWarning = {
+type LWarningPlan = {
   // Wails-generated Go models expose this as string, so keep the frontend type compatible.
   riskLevelName: string;
   message: string;
@@ -6,14 +6,14 @@ type PlanWarning = {
   messageValues?: Record<string, string | number>;
 };
 
-type PlanOperation = {
+type LOperationPlan = {
   operationName: string;
   summary: string;
   summaryKey?: string;
   summaryValues?: Record<string, string | number>;
 };
 
-type LibraryChoice = {
+type LLibraryChoice = {
   libraryId: string;
   trackName: 'native' | 'internal' | 'external' | string;
   displayName: string;
@@ -26,6 +26,17 @@ type LibraryChoice = {
   technicalExplanation: string;
   defaultChecked: boolean;
   locked: boolean;
+  supportState?: string;
+  preparationStatus?: {
+    required: boolean;
+    kind?: string;
+    implemented: boolean;
+    implementation?: string;
+    implementationLanguage?: string;
+    reason?: string;
+  };
+  unavailableReasons?: string[];
+  unavailableProfiles?: string[];
   versionCompatibility?: {
     supported: boolean;
     available: boolean;
@@ -34,12 +45,12 @@ type LibraryChoice = {
 };
 
 
-type TrackedLibrarySelection = {
+type LLibraryTrackSelection = {
   trackName: 'native' | 'internal' | 'external' | string;
-  libraries: LibraryChoice[];
+  libraries: LLibraryChoice[];
 };
 
-type LibraryPreparation = {
+type LLibraryPreparation = {
   libraryId: string;
   displayName: string;
   trackName: 'internal' | 'external' | string;
@@ -65,7 +76,7 @@ type LibraryPreparation = {
   verifyLibStem: string;
 };
 
-type ConfigureOptionChoice = {
+type LOptionChoice = {
   optionId: string;
   displayName: string;
   categoryName: string;
@@ -77,7 +88,7 @@ type ConfigureOptionChoice = {
   riskLevelName: string;
 };
 
-type BuildConfigSettings = {
+type LSettingsBuild = {
   workspaceDirectory: string;
   msys2ArchiveUrl: string;
   msys2ArchiveSha256Hash: string;
@@ -86,7 +97,7 @@ type BuildConfigSettings = {
   windowsShellProfileName: string;
 };
 
-type FfmpegBuildSettings = {
+type LSettingsFFmpeg = {
   workspaceDirectory: string;
   ffmpegSourceArchiveUrl: string;
   ffmpegSourceSignatureUrl: string;
@@ -100,7 +111,7 @@ type FfmpegBuildSettings = {
   licenseProfileName: string;
 };
 
-type ToolchainPreparationPlan = {
+type LPlanToolchain = {
   actionName: string;
   planHash: string;
   workspaceDirectory: string;
@@ -114,12 +125,12 @@ type ToolchainPreparationPlan = {
   willRequireAdminRights: boolean;
   willUseExistingMsys2: boolean;
   willDeleteFiles: boolean;
-  operations: PlanOperation[];
-  warnings: PlanWarning[];
+  operations: LOperationPlan[];
+  warnings: LWarningPlan[];
   isExecutable: boolean;
 };
 
-type FfmpegBuildPlan = {
+type LPlanFFmpeg = {
   actionName: string;
   planHash: string;
   workspaceDirectory: string;
@@ -128,15 +139,15 @@ type FfmpegBuildPlan = {
   ffmpegSourceSignatureUrl: string;
   ffmpegSourceSha256Hash: string;
   selectedLibraryIds: string[];
-  selectedLibraries: LibraryChoice[];
-  selectedNativeLibraries: LibraryChoice[];
-  selectedInternalLibraries: LibraryChoice[];
-  selectedExternalLibraries: LibraryChoice[];
-  selectedLibrariesByTrack: TrackedLibrarySelection[];
-  libraryPreparations: LibraryPreparation[];
+  selectedLibraries: LLibraryChoice[];
+  selectedNativeLibraries: LLibraryChoice[];
+  selectedInternalLibraries: LLibraryChoice[];
+  selectedExternalLibraries: LLibraryChoice[];
+  selectedLibrariesByTrack: LLibraryTrackSelection[];
+  libraryPreparations: LLibraryPreparation[];
   requiredMsys2PackageNames: string[];
   generatedConfigureFlags: string[];
-  selectedConfigureOptions: ConfigureOptionChoice[];
+  selectedConfigureOptions: LOptionChoice[];
   generatedOptionFlags: string[];
   extraConfigureFlags: string[];
   configureFlags: string[];
@@ -147,69 +158,79 @@ type FfmpegBuildPlan = {
   willRequireAdminRights: boolean;
   willUseExistingMsys2: boolean;
   willDeleteFiles: boolean;
-  operations: PlanOperation[];
-  warnings: PlanWarning[];
+  operations: LOperationPlan[];
+  warnings: LWarningPlan[];
   isExecutable: boolean;
 };
 
-type ToolchainPreparationPlanReview = {
+type LReviewToolchain = {
   reviewSessionId: string;
-  expectedConsentText: string;
-  expectedConsentTextHash: string;
+  expectedLConsentText: string;
+  expectedLConsentTextHash: string;
   expiresAtUnixTime: number;
-  plan: ToolchainPreparationPlan;
+  plan: LPlanToolchain;
 };
 
-type FfmpegBuildPlanReview = {
+type LReviewFFmpeg = {
   reviewSessionId: string;
-  expectedConsentText: string;
-  expectedConsentTextHash: string;
+  expectedLConsentText: string;
+  expectedLConsentTextHash: string;
   expiresAtUnixTime: number;
-  plan: FfmpegBuildPlan;
+  plan: LPlanFFmpeg;
 };
 
-type InitialApplicationState = {
+type LStateInitial = {
   hostOs: string;
   kindExplanation: string;
   securityRuleSummary: string;
   namingRuleSummary: string;
-  defaultBuildConfigSettings: BuildConfigSettings;
-  defaultFfmpegBuildSettings: FfmpegBuildSettings;
-  defaultLibraryCatalog: LibraryChoice[];
-  defaultConfigureOptionCatalog: ConfigureOptionChoice[];
-  supportedFfmpegReleases: FfmpegReleaseChoice[];
+  defaultBuildConfigSettings: LSettingsBuild;
+  defaultFfmpegBuildSettings: LSettingsFFmpeg;
+  defaultLibraryCatalog: LLibraryChoice[];
+  defaultLibraryPresetCatalog: LPresetLibraryChoice[];
+  defaultConfigureOptionCatalog: LOptionChoice[];
+  supportedFfmpegReleases: LReleaseChoice[];
 };
 
-type FfmpegReleaseChoice = {
+
+type LPresetLibraryChoice = {
+  presetId: string;
+  libraryIds: string[];
+  extendedLibraryIds?: string[];
+  hidden?: boolean;
+  dev?: boolean;
+};
+
+type LReleaseChoice = {
   version: string;
   codename: string;
   archiveUrl: string;
   signatureUrl: string;
 };
 
-type ApprovalRequest = {
+type LRequestApproval = {
   approvedActionName: string;
   approvedPlanHash: string;
   consentText: string;
 };
 
-type ApprovedActionResult = {
+type LResultAction = {
   runId: string;
   startedAt: string;
 };
 
-type BuildResultFile = {
+type LFileResult = {
   name: string;
   path: string;
   sizeBytes: number;
   sha256Hash: string;
 };
 
-type BuildResult = {
+type LResultBuild = {
   artifactsDirectory: string;
   reportPath: string;
   ffmpegVersion: string;
-  files: BuildResultFile[];
+  files: LFileResult[];
   selectedLibraries: string[];
   selectedConfigureOptions: string[];
   requiredMsys2PackageNames: string[];
@@ -218,7 +239,7 @@ type BuildResult = {
   createdAt: string;
 };
 
-type LibraryVerification = {
+type LVerificationLibrary = {
   libraryId: string;
   displayName: string;
   method: string;
@@ -228,10 +249,10 @@ type LibraryVerification = {
   status: string;
 };
 
-type BuildVerification = {
+type LVerificationBuild = {
   ffmpegPath: string;
   ffmpegVersion: string;
-  libraries: LibraryVerification[];
+  libraries: LVerificationLibrary[];
   unexpectedEnableFlags: string[];
   okCount: number;
   totalCount: number;
@@ -241,29 +262,29 @@ type BuildVerification = {
 };
 
 
-type LocalLogEntry = {
+type LLogLocalEntry = {
   level: 'info' | 'warn' | 'error';
   message: string;
   timestamp: string;
 };
 
-type LocalLogRecord = {
+type LRecordLog = {
   runId: string;
   createdAt: string;
   displayTime: string;
   kind: 'toolchain' | 'ffmpeg' | 'unknown' | string;
   status: string;
   directory: string;
-  entries: LocalLogEntry[];
+  entries: LLogLocalEntry[];
   rawText: string;
   errorCount: number;
   warnCount: number;
   hasStdoutLog: boolean;
   hasStderrLog: boolean;
-  hasSecurityEvents: boolean;
+  hasSecurityLAuditEvents: boolean;
 };
 
-type ToolchainStatus = {
+type LStatusToolchain = {
   installed: boolean;
   healthy: boolean;
   msys2RootDirectory: string;
@@ -275,7 +296,7 @@ type ToolchainStatus = {
   planHash: string;
 };
 
-type ToolchainVerification = {
+type LVerificationToolchain = {
   verified: boolean;
   checkedPackageCount: number;
   missingPackageNames: string[];

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type WorkspaceLayout struct {
+type LWorkspaceLayout struct {
 	WorkspaceDirectory  string `json:"workspaceDirectory"`
 	CacheDirectory      string `json:"cacheDirectory"`
 	DownloadsDirectory  string `json:"downloadsDirectory"`
@@ -20,8 +20,8 @@ type WorkspaceLayout struct {
 	ToolchainsDirectory string `json:"toolchainsDirectory"`
 }
 
-func WorkspaceLayoutFor(workspaceDirectory string) WorkspaceLayout {
-	return WorkspaceLayout{
+func LWorkspaceLayoutResolve(workspaceDirectory string) LWorkspaceLayout {
+	return LWorkspaceLayout{
 		WorkspaceDirectory:  workspaceDirectory,
 		CacheDirectory:      filepath.Join(workspaceDirectory, "cache"),
 		DownloadsDirectory:  filepath.Join(workspaceDirectory, "cache", "downloads"),
@@ -34,7 +34,7 @@ func WorkspaceLayoutFor(workspaceDirectory string) WorkspaceLayout {
 	}
 }
 
-func CreateWorkspaceFolders(workspaceLayout WorkspaceLayout) error {
+func LWorkspaceFolderCreate(workspaceLayout LWorkspaceLayout) error {
 	directoryPaths := []string{
 		workspaceLayout.WorkspaceDirectory,
 		workspaceLayout.CacheDirectory,
@@ -50,14 +50,14 @@ func CreateWorkspaceFolders(workspaceLayout WorkspaceLayout) error {
 		if err := os.MkdirAll(directoryPath, 0o755); err != nil {
 			return err
 		}
-		if err := CheckRealPathInsideWorkspace(workspaceLayout.WorkspaceDirectory, directoryPath); err != nil {
+		if err := LPathRealCheck(workspaceLayout.WorkspaceDirectory, directoryPath); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func CheckPathInsideWorkspace(workspaceDirectory string, candidatePath string) error {
+func LPathWorkspaceCheck(workspaceDirectory string, candidatePath string) error {
 	absoluteWorkspaceDirectory, err := filepath.Abs(workspaceDirectory)
 	if err != nil {
 		return err
@@ -79,14 +79,14 @@ func CheckPathInsideWorkspace(workspaceDirectory string, candidatePath string) e
 	return nil
 }
 
-// CheckRealPathInsideWorkspace verifies both the string path and the existing
+// LPathRealCheck verifies both the string path and the existing
 // filesystem object or nearest existing parent after symlink/reparse resolution.
 // Use this before reads, writes, renames, directory creation, and command execution.
-func CheckRealPathInsideWorkspace(workspaceDirectory string, candidatePath string) error {
+func LPathRealCheck(workspaceDirectory string, candidatePath string) error {
 	if workspaceDirectory == "" || candidatePath == "" {
 		return errors.New("workspace and candidate paths must not be empty")
 	}
-	if err := CheckPathInsideWorkspace(workspaceDirectory, candidatePath); err != nil {
+	if err := LPathWorkspaceCheck(workspaceDirectory, candidatePath); err != nil {
 		return err
 	}
 
@@ -99,21 +99,21 @@ func CheckRealPathInsideWorkspace(workspaceDirectory string, candidatePath strin
 		return err
 	}
 
-	nearestExistingParent, err := nearestExistingParent(candidatePath)
+	LPathParentFind, err := LPathParentFind(candidatePath)
 	if err != nil {
 		return err
 	}
-	if err := RejectSymlinkComponents(workspaceRealPath, nearestExistingParent); err != nil {
+	if err := LPathSymlinkReject(workspaceRealPath, LPathParentFind); err != nil {
 		return err
 	}
-	candidateRealPath, err := filepath.EvalSymlinks(nearestExistingParent)
+	candidateRealPath, err := filepath.EvalSymlinks(LPathParentFind)
 	if err != nil {
 		return err
 	}
-	return checkPathInsideBase(workspaceRealPath, candidateRealPath, "resolved path escapes selected workspace")
+	return LPathBaseInsideCheck(workspaceRealPath, candidateRealPath, "resolved path escapes selected workspace")
 }
 
-func CheckDirectoryNotSymlink(directoryPath string) error {
+func LDirectorySymlinkCheck(directoryPath string) error {
 	fileInfo, err := os.Lstat(directoryPath)
 	if err != nil {
 		return err
@@ -127,7 +127,7 @@ func CheckDirectoryNotSymlink(directoryPath string) error {
 	return nil
 }
 
-func RejectSymlinkComponents(basePath string, candidatePath string) error {
+func LPathSymlinkReject(basePath string, candidatePath string) error {
 	absoluteBasePath, err := filepath.Abs(basePath)
 	if err != nil {
 		return err
@@ -136,7 +136,7 @@ func RejectSymlinkComponents(basePath string, candidatePath string) error {
 	if err != nil {
 		return err
 	}
-	if err := checkPathInsideBase(absoluteBasePath, absoluteCandidatePath, "path escapes selected workspace"); err != nil {
+	if err := LPathBaseInsideCheck(absoluteBasePath, absoluteCandidatePath, "path escapes selected workspace"); err != nil {
 		return err
 	}
 	relativePath, err := filepath.Rel(absoluteBasePath, absoluteCandidatePath)
@@ -144,7 +144,7 @@ func RejectSymlinkComponents(basePath string, candidatePath string) error {
 		return err
 	}
 	if relativePath == "." {
-		return CheckDirectoryNotSymlink(absoluteBasePath)
+		return LDirectorySymlinkCheck(absoluteBasePath)
 	}
 	currentPath := absoluteBasePath
 	components := strings.Split(relativePath, string(os.PathSeparator))
@@ -167,7 +167,7 @@ func RejectSymlinkComponents(basePath string, candidatePath string) error {
 	return nil
 }
 
-func nearestExistingParent(candidatePath string) (string, error) {
+func LPathParentFind(candidatePath string) (string, error) {
 	absoluteCandidatePath, err := filepath.Abs(candidatePath)
 	if err != nil {
 		return "", err
@@ -189,7 +189,7 @@ func nearestExistingParent(candidatePath string) (string, error) {
 	}
 }
 
-func checkPathInsideBase(basePath string, candidatePath string, errorMessage string) error {
+func LPathBaseInsideCheck(basePath string, candidatePath string, errorMessage string) error {
 	absoluteBasePath, err := filepath.Abs(basePath)
 	if err != nil {
 		return err

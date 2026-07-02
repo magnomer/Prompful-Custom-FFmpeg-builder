@@ -128,7 +128,7 @@ These commands start the development version.
 
 ### Documentation
 
-- [Consent boundary](docs/CONSENT_BOUNDARY_EN.md)
+- [LConsent boundary](docs/CONSENT_BOUNDARY_EN.md)
 - [Transparency model](docs/TRANSPARENCY_EN.md)
 
 ---

@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 2,
+  "recordKind": "ffmpeg-version-aware-library",
+  "generatedFromCurrentV4CodeOnly": true,
+  "sourceFiles": [
+    "internal/planning/LCatalogLibrarySource.go",
+    "backup/shared/releasesupport/ffmpeg-release-support.json",
+    "backup/shared/librarysources/library-sources.json",
+    "internal/planning/preparation.go",
+    "frontend/src/tabs/libraries.tsx",
+    "versions/*.json",
+    "versions/{ffmpegVersion}/{libraryId}.go"
+  ],
+  "libraryId": "tensorflow",
+  "importantModelingRule": "No build-relevant library field is authoritative at the top level. Each FFmpeg-version record carries its own display name, FFmpeg-facing configure flags, track/provider, package names, availability, source pin, and preparation status.",
+  "ffmpegVersions": {
+    "4.4.8": {
+      "libraryId": "tensorflow",
+      "ffmpegVersion": "4.4.8",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "TensorFlow / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libtensorflow"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtensorflow"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.tensorflow.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "disabled-in-current-v4-ui"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-external-preparation",
+        "implementation": "versions/4.4.8/tensorflow.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "5.1.9": {
+      "libraryId": "tensorflow",
+      "ffmpegVersion": "5.1.9",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "TensorFlow / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libtensorflow"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtensorflow"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.tensorflow.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "disabled-in-current-v4-ui"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-external-preparation",
+        "implementation": "versions/5.1.9/tensorflow.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "6.1.6": {
+      "libraryId": "tensorflow",
+      "ffmpegVersion": "6.1.6",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "TensorFlow / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libtensorflow"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtensorflow"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.tensorflow.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "disabled-in-current-v4-ui"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-external-preparation",
+        "implementation": "versions/6.1.6/tensorflow.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "7.0.3": {
+      "libraryId": "tensorflow",
+      "ffmpegVersion": "7.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "TensorFlow / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libtensorflow"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtensorflow"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.tensorflow.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "disabled-in-current-v4-ui"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-external-preparation",
+        "implementation": "versions/7.0.3/tensorflow.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "7.1.5": {
+      "libraryId": "tensorflow",
+      "ffmpegVersion": "7.1.5",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "TensorFlow / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libtensorflow"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtensorflow"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.tensorflow.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "disabled-in-current-v4-ui"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-external-preparation",
+        "implementation": "versions/7.1.5/tensorflow.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "8.0.3": {
+      "libraryId": "tensorflow",
+      "ffmpegVersion": "8.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "TensorFlow / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libtensorflow"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtensorflow"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.tensorflow.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "disabled-in-current-v4-ui"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-external-preparation",
+        "implementation": "versions/8.0.3/tensorflow.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "8.1.2": {
+      "libraryId": "tensorflow",
+      "ffmpegVersion": "8.1.2",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "TensorFlow / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libtensorflow"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtensorflow"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.tensorflow.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "disabled-in-current-v4-ui"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-external-preparation",
+        "implementation": "versions/8.1.2/tensorflow.go",
+        "implementationLanguage": "go",
+        "sourcePin": {
+          "version": "2.16.1",
+          "url": "https://storage.googleapis.com/tensorflow/versions/2.16.1/libtensorflow-cpu-windows-x86_64.zip",
+          "sha256": "78c2b8caa2fafe11b2b7507dc4a2122e61e9c25fab30f92b1713f365c7ecaf76",
+          "format": "zip",
+          "host": "storage.googleapis.com"
+        }
+      }
+    }
+  }
+}

@@ -7,12 +7,13 @@ import { resolve } from "path";
 const wailsConfig = JSON.parse(
   readFileSync(resolve(__dirname, "../wails.json"), "utf-8")
 );
-const appVersion: string = wailsConfig.version ?? "unknown";
+const programVersion: string = wailsConfig.version ?? "unknown";
 
 export default defineConfig({
+  base: "./",
   plugins: [react()],
   define: {
-    __APP_VERSION__: JSON.stringify(appVersion),
+    __PROGRAM_VERSION__: JSON.stringify(programVersion),
   },
   server: {
     host: "127.0.0.1",

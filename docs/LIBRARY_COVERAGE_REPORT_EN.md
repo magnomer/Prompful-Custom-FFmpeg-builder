@@ -2,11 +2,11 @@
 
 This report describes which FFmpeg library entries are registered in this version of Promptful Custom FFmpeg Builder, which entries can be selected, and which entries are restricted by FFmpeg version, MSYS2 shell profile, package availability, or missing preparation support.
 
-A catalog entry is not necessarily a selectable option. Some entries are registered for tracking, comparison, warning, or future preparation support, and some selectable entries may still be excluded from the final build plan for a particular FFmpeg release or MSYS2 profile.
+A library catalog entry is not necessarily a selectable option. Some entries are registered for tracking, comparison, warning, or future preparation support, and some selectable entries may still be excluded from the final build plan for a particular FFmpeg release or MSYS2 profile.
 
 ## Summary
 
-- Total catalog entries: **125**.
+- Total library catalog entries: **125**.
 - Official FFmpeg-source entries: **10**.
 - Native MSYS2 package entries: **96**.
 - Internal source-prepared entries: **13**.
@@ -26,8 +26,8 @@ Version/profile-restricted entries are not counted as globally disabled. For exa
 | Native MSYS2 package | Uses an MSYS2 package and a standard FFmpeg configure flag |
 | Internal source-prepared | The program prepares source or import files inside the private build environment |
 | External SDK/import | Needs an outside SDK, import library, or preparation path that is not package-based selection |
-| UI-disabled | Registered in the catalog, but not selectable in the standard UI |
-| Blocked | Registered in the catalog, but no supported build/import path exists yet |
+| UI-disabled | Registered in the library catalog, but not selectable in the standard UI |
+| Blocked | Registered in the library catalog, but no supported build/import path exists yet |
 | Version/profile-restricted | Available only for certain FFmpeg releases or MSYS2 shell profiles |
 
 This distinction prevents the report from overstating support. A configure flag alone is not enough; the program must also define how the library is obtained, prepared, reviewed, and passed to FFmpeg.
@@ -121,9 +121,9 @@ The program keeps these states separate:
 
 `libmfx` is not a blocked entry. It is an implemented internal source-prepared legacy Intel backend and is normalized against `libvpl`.
 
-## Full library catalog
+## Full library library catalog
 
-The following table lists the complete library catalog before profile-specific runtime filtering. Package names use `<profile>` to mean the active MSYS2 shell profile prefix, for example `mingw-w64-ucrt-x86_64`, `mingw-w64-x86_64`, or `mingw-w64-clang-x86_64`.
+The following table lists the complete library library catalog before profile-specific runtime filtering. Package names use `<profile>` to mean the active MSYS2 shell profile prefix, for example `mingw-w64-ucrt-x86_64`, `mingw-w64-x86_64`, or `mingw-w64-clang-x86_64`.
 
 ### Included by default (official FFmpeg source)
 
@@ -339,6 +339,6 @@ The program derives the final license profile from selected libraries and final 
 
 For ordinary Windows users, the meaningful supported surface is the set that the program can select, prepare, review, and pass to FFmpeg for the chosen release/profile. That includes official FFmpeg-source entries, native MSYS2-package entries, and implemented internal source-prepared entries.
 
-The catalog deliberately avoids claiming that every upstream FFmpeg library can be enabled just because a configure flag exists. Entries such as `cuda-nvcc`, DeckLink, OpenVINO, Torch, TensorFlow, VapourSynth, SVT JPEG XS, ONNX Runtime, PocketSphinx, lensfun, and SMB are treated conservatively because they are blocked, disabled, version/profile-restricted, or dependent on external SDK/runtime assumptions.
+The library catalog deliberately avoids claiming that every upstream FFmpeg library can be enabled just because a configure flag exists. Entries such as `cuda-nvcc`, DeckLink, OpenVINO, Torch, TensorFlow, VapourSynth, SVT JPEG XS, ONNX Runtime, PocketSphinx, lensfun, and SMB are treated conservatively because they are blocked, disabled, version/profile-restricted, or dependent on external SDK/runtime assumptions.
 
 `libmfx` is different from that blocked group. It is an implemented legacy Intel backend and is normalized against `libvpl`.

@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 2,
+  "recordKind": "ffmpeg-version-aware-library",
+  "generatedFromCurrentV4CodeOnly": true,
+  "sourceFiles": [
+    "internal/planning/LCatalogLibrarySource.go",
+    "backup/shared/releasesupport/ffmpeg-release-support.json",
+    "backup/shared/librarysources/library-sources.json",
+    "internal/planning/preparation.go",
+    "frontend/src/tabs/libraries.tsx",
+    "versions/*.json",
+    "versions/{ffmpegVersion}/{libraryId}.go"
+  ],
+  "libraryId": "torch",
+  "importantModelingRule": "No build-relevant library field is authoritative at the top level. Each FFmpeg-version record carries its own display name, FFmpeg-facing configure flags, track/provider, package names, availability, source pin, and preparation status.",
+  "ffmpegVersions": {
+    "4.4.8": {
+      "libraryId": "torch",
+      "ffmpegVersion": "4.4.8",
+      "state": "unsupported-by-ffmpeg-version",
+      "supportedByFfmpeg": false,
+      "availableInCurrentV4": false,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "Torch / libtorch",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtorch"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://pytorch.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation",
+          "unsupported-by-selected-ffmpeg-version"
+        ]
+      },
+      "preparation": {
+        "required": false,
+        "kind": "ffmpeg-version-unsupported",
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+      }
+    },
+    "5.1.9": {
+      "libraryId": "torch",
+      "ffmpegVersion": "5.1.9",
+      "state": "unsupported-by-ffmpeg-version",
+      "supportedByFfmpeg": false,
+      "availableInCurrentV4": false,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "Torch / libtorch",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtorch"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://pytorch.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation",
+          "unsupported-by-selected-ffmpeg-version"
+        ]
+      },
+      "preparation": {
+        "required": false,
+        "kind": "ffmpeg-version-unsupported",
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+      }
+    },
+    "6.1.6": {
+      "libraryId": "torch",
+      "ffmpegVersion": "6.1.6",
+      "state": "unsupported-by-ffmpeg-version",
+      "supportedByFfmpeg": false,
+      "availableInCurrentV4": false,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "Torch / libtorch",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtorch"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://pytorch.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation",
+          "unsupported-by-selected-ffmpeg-version"
+        ]
+      },
+      "preparation": {
+        "required": false,
+        "kind": "ffmpeg-version-unsupported",
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+      }
+    },
+    "7.0.3": {
+      "libraryId": "torch",
+      "ffmpegVersion": "7.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "Torch / libtorch",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libtorch"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtorch"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://pytorch.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
+    },
+    "7.1.5": {
+      "libraryId": "torch",
+      "ffmpegVersion": "7.1.5",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "Torch / libtorch",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libtorch"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtorch"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://pytorch.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
+    },
+    "8.0.3": {
+      "libraryId": "torch",
+      "ffmpegVersion": "8.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "Torch / libtorch",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libtorch"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtorch"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://pytorch.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
+    },
+    "8.1.2": {
+      "libraryId": "torch",
+      "ffmpegVersion": "8.1.2",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "Torch / libtorch",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libtorch"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtorch"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://pytorch.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
+    }
+  }
+}

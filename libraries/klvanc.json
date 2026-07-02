@@ -1,0 +1,284 @@
+{
+  "schemaVersion": 2,
+  "recordKind": "ffmpeg-version-aware-library",
+  "generatedFromCurrentV4CodeOnly": true,
+  "sourceFiles": [
+    "internal/planning/LCatalogLibrarySource.go",
+    "backup/shared/releasesupport/ffmpeg-release-support.json",
+    "backup/shared/librarysources/library-sources.json",
+    "internal/planning/preparation.go",
+    "frontend/src/tabs/libraries.tsx",
+    "versions/*.json",
+    "versions/{ffmpegVersion}/{libraryId}.go"
+  ],
+  "libraryId": "klvanc",
+  "importantModelingRule": "No build-relevant library field is authoritative at the top level. Each FFmpeg-version record carries its own display name, FFmpeg-facing configure flags, track/provider, package names, availability, source pin, and preparation status.",
+  "ffmpegVersions": {
+    "4.4.8": {
+      "libraryId": "klvanc",
+      "ffmpegVersion": "4.4.8",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libklvanc / Broadcast metadata",
+      "categoryName": "Support libraries",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libklvanc"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libklvanc"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/stoth68000/libklvanc",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/4.4.8/klvanc.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "5.1.9": {
+      "libraryId": "klvanc",
+      "ffmpegVersion": "5.1.9",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libklvanc / Broadcast metadata",
+      "categoryName": "Support libraries",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libklvanc"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libklvanc"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/stoth68000/libklvanc",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/5.1.9/klvanc.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "6.1.6": {
+      "libraryId": "klvanc",
+      "ffmpegVersion": "6.1.6",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libklvanc / Broadcast metadata",
+      "categoryName": "Support libraries",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libklvanc"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libklvanc"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/stoth68000/libklvanc",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/6.1.6/klvanc.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "7.0.3": {
+      "libraryId": "klvanc",
+      "ffmpegVersion": "7.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libklvanc / Broadcast metadata",
+      "categoryName": "Support libraries",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libklvanc"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libklvanc"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/stoth68000/libklvanc",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/7.0.3/klvanc.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "7.1.5": {
+      "libraryId": "klvanc",
+      "ffmpegVersion": "7.1.5",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libklvanc / Broadcast metadata",
+      "categoryName": "Support libraries",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libklvanc"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libklvanc"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/stoth68000/libklvanc",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/7.1.5/klvanc.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "8.0.3": {
+      "libraryId": "klvanc",
+      "ffmpegVersion": "8.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libklvanc / Broadcast metadata",
+      "categoryName": "Support libraries",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libklvanc"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libklvanc"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/stoth68000/libklvanc",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.0.3/klvanc.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "8.1.2": {
+      "libraryId": "klvanc",
+      "ffmpegVersion": "8.1.2",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libklvanc / Broadcast metadata",
+      "categoryName": "Support libraries",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libklvanc"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libklvanc"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/stoth68000/libklvanc",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.1.2/klvanc.go",
+        "implementationLanguage": "go",
+        "sourcePin": {
+          "version": "vid.obe.1.6.0",
+          "url": "https://github.com/stoth68000/libklvanc/archive/refs/tags/vid.obe.1.6.0.tar.gz",
+          "sha256": "5076ca48455a4ef4ead2cd880ba189b21937a9ad8fd458adfc133d7bb1c948c3",
+          "format": "tar.gz",
+          "host": "github.com"
+        }
+      }
+    }
+  }
+}

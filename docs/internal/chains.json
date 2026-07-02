@@ -1,0 +1,34 @@
+{
+  "LProgramStart": {
+    "trigger": "The program starts and Wails invokes the backend startup lifecycle.",
+    "uniqueSubchains": [
+      "LProgramStart_lWindowGeometryRestore",
+      "LProgramStart_LStateInitialGet"
+    ],
+    "notes": "Startup-specific subchains should not be reused for user-triggered build or preparation actions. Shared logic should keep a normal L-object name."
+  },
+  "PPrepClick": {
+    "trigger": "The user approves the toolchain preparation plan from the UI.",
+    "uniqueSubchains": [
+      "PPrepClick_LPlanToolchainApprove",
+      "PPrepClick_lToolchainPrepare"
+    ],
+    "notes": "The approval chain validates the review session, asks native approval if needed, consumes the session, then starts the toolchain action."
+  },
+  "PBuildClick": {
+    "trigger": "The user approves the FFmpeg build plan from the UI.",
+    "uniqueSubchains": [
+      "PBuildClick_LPlanFFmpegApprove",
+      "PBuildClick_lFFmpegBuild"
+    ],
+    "notes": "The approval chain validates the review session, asks native approval if needed, consumes the session, then starts the FFmpeg build action."
+  },
+  "PSourceSelect": {
+    "trigger": "The user selects a workspace or FFmpeg source release from the Source tab.",
+    "uniqueSubchains": [
+      "PSourceSelect_LWorkspaceSelect",
+      "PSourceSelect_LCatalogSourceGet"
+    ],
+    "notes": "Source-tab selection can refresh library catalog compatibility without becoming a build action."
+  }
+}

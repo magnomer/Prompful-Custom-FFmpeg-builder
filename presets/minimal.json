@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 3,
+  "recordKind": "ffmpeg-preset",
+  "generatedFromCurrentV4CodeOnly": true,
+  "sourceFiles": [
+    "frontend/src/tabs/libraries.tsx",
+    "versions/{ffmpegVersion}.json",
+    "libraries/{libraryId}.json"
+  ],
+  "presetId": "minimal",
+  "modelingRule": "Preset files are flat intent records. Each preset/version directly owns its complete libraryIds and optional extendedLibraryIds; no preset inherits from another preset, mode, subgroup, or resolved shell-profile result.",
+  "ffmpegVersions": {
+    "4.4.8": {
+      "ffmpegVersion": "4.4.8",
+      "hiddenInCurrentV4Ui": false,
+      "devInCurrentV4Ui": false,
+      "libraryIds": [
+        "ffmpeg-program",
+        "ffprobe-program",
+        "libavcodec",
+        "libavformat",
+        "libavfilter",
+        "libavutil",
+        "libswscale",
+        "libswresample",
+        "native-codecs",
+        "native-formats"
+      ]
+    },
+    "5.1.9": {
+      "ffmpegVersion": "5.1.9",
+      "hiddenInCurrentV4Ui": false,
+      "devInCurrentV4Ui": false,
+      "libraryIds": [
+        "ffmpeg-program",
+        "ffprobe-program",
+        "libavcodec",
+        "libavformat",
+        "libavfilter",
+        "libavutil",
+        "libswscale",
+        "libswresample",
+        "native-codecs",
+        "native-formats"
+      ]
+    },
+    "6.1.6": {
+      "ffmpegVersion": "6.1.6",
+      "hiddenInCurrentV4Ui": false,
+      "devInCurrentV4Ui": false,
+      "libraryIds": [
+        "ffmpeg-program",
+        "ffprobe-program",
+        "libavcodec",
+        "libavformat",
+        "libavfilter",
+        "libavutil",
+        "libswscale",
+        "libswresample",
+        "native-codecs",
+        "native-formats"
+      ]
+    },
+    "7.0.3": {
+      "ffmpegVersion": "7.0.3",
+      "hiddenInCurrentV4Ui": false,
+      "devInCurrentV4Ui": false,
+      "libraryIds": [
+        "ffmpeg-program",
+        "ffprobe-program",
+        "libavcodec",
+        "libavformat",
+        "libavfilter",
+        "libavutil",
+        "libswscale",
+        "libswresample",
+        "native-codecs",
+        "native-formats"
+      ]
+    },
+    "7.1.5": {
+      "ffmpegVersion": "7.1.5",
+      "hiddenInCurrentV4Ui": false,
+      "devInCurrentV4Ui": false,
+      "libraryIds": [
+        "ffmpeg-program",
+        "ffprobe-program",
+        "libavcodec",
+        "libavformat",
+        "libavfilter",
+        "libavutil",
+        "libswscale",
+        "libswresample",
+        "native-codecs",
+        "native-formats"
+      ]
+    },
+    "8.0.3": {
+      "ffmpegVersion": "8.0.3",
+      "hiddenInCurrentV4Ui": false,
+      "devInCurrentV4Ui": false,
+      "libraryIds": [
+        "ffmpeg-program",
+        "ffprobe-program",
+        "libavcodec",
+        "libavformat",
+        "libavfilter",
+        "libavutil",
+        "libswscale",
+        "libswresample",
+        "native-codecs",
+        "native-formats"
+      ]
+    },
+    "8.1.2": {
+      "ffmpegVersion": "8.1.2",
+      "hiddenInCurrentV4Ui": false,
+      "devInCurrentV4Ui": false,
+      "libraryIds": [
+        "ffmpeg-program",
+        "ffprobe-program",
+        "libavcodec",
+        "libavformat",
+        "libavfilter",
+        "libavutil",
+        "libswscale",
+        "libswresample",
+        "native-codecs",
+        "native-formats"
+      ]
+    }
+  }
+}

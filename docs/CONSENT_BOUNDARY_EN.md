@@ -28,7 +28,7 @@ The approval process proceeds in the following order:
 1. the backend creates an executable plan;
 2. the backend stores the plan in an in-memory review session;
 3. the UI displays the plan, warnings, final configure flags, package list, license effects, and approval wording;
-4. the UI sends an approval request containing the review session ID, operation name, plan hash, and approval wording;
+4. the UI sends a approval request containing the review session ID, operation name, plan hash, and approval wording;
 5. the backend checks that the session exists, has not expired, has not already been used, and matches the request;
 6. the backend recalculates the plan hash from the stored plan;
 7. the backend checks that the stored plan is executable;
@@ -66,7 +66,7 @@ Archive extraction checks that the archive and extraction destination are inside
 
 ### Package installation and build commands
 
-Package installation and build execution are performed through separate plans. During execution, the program checks the executable path, working directory, MSYS2 root, log-file location, executable name, shell metacharacters in executable paths, and null bytes in command arguments. These checks prevent an approved build step from running a build command outside the selected workspace.
+Package installation and build execution are performed through separate plans. During execution, the program checks the executable path, working directory, MSYS2 root, log-file location, executable name, shell metacharacters in executable paths, and null bytes in command arguments. These checks prevent a approved build step from running a build command outside the selected workspace.
 
 ### Scripts
 

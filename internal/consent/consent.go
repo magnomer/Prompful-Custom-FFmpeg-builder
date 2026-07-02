@@ -7,74 +7,74 @@ import (
 	"time"
 )
 
-type ConsentKind string
+type LConsentKind string
 
 const (
-	ConsentKindMsys2Download             ConsentKind = "msys2-download"
-	ConsentKindFfmpegSourceDownload      ConsentKind = "ffmpeg-source-download"
-	ConsentKindArchiveExtraction         ConsentKind = "archive-extraction"
-	ConsentKindPacmanPackageInstallation ConsentKind = "pacman-package-installation"
-	ConsentKindExternalCommandExecution  ConsentKind = "external-command-execution"
-	ConsentKindWorkspaceDeletion         ConsentKind = "workspace-deletion"
+	LConsentKindMsys      LConsentKind = "msys2-download"
+	LConsentKindFFmpeg    LConsentKind = "ffmpeg-source-download"
+	LConsentKindArchive   LConsentKind = "archive-extraction"
+	LConsentKindPacman    LConsentKind = "pacman-package-installation"
+	LConsentKindCommand   LConsentKind = "external-command-execution"
+	LConsentKindWorkspace LConsentKind = "workspace-deletion"
 )
 
-type Consent struct {
-	ConsentId          string      `json:"consentId"`
-	ConsentKind        ConsentKind `json:"kind"`
-	ApprovedActionName string      `json:"approvedActionName"`
-	ApprovedPlanHash   string      `json:"approvedPlanHash"`
-	ApprovedAtUnixTime int64       `json:"approvedAtUnixTime"`
-	ConsentText        string      `json:"consentText"`
+type LConsent struct {
+	LConsentId         string       `json:"consentId"`
+	LConsentKind       LConsentKind `json:"kind"`
+	ApprovedActionName string       `json:"approvedActionName"`
+	ApprovedPlanHash   string       `json:"approvedPlanHash"`
+	ApprovedAtUnixTime int64        `json:"approvedAtUnixTime"`
+	LConsentText       string       `json:"consentText"`
 }
 
-type Msys2DownloadConsent struct{ Consent }
-type FfmpegSourceDownloadConsent struct{ Consent }
-type ArchiveExtractionConsent struct{ Consent }
-type PacmanInstallConsent struct{ Consent }
-type CommandExecutionConsent struct{ Consent }
-type WorkspaceDeletionConsent struct{ Consent }
+type LConsentMsys struct{ LConsent }
+type LConsentFFmpeg struct{ LConsent }
+type LConsentArchive struct{ LConsent }
+type LConsentPacman struct{ LConsent }
+type LConsentCommand struct{ LConsent }
+type LConsentWorkspace struct{ LConsent }
 
-type ApprovalRequest struct {
+type LRequestApproval struct {
 	ApprovedActionName string `json:"approvedActionName"`
 	ApprovedPlanHash   string `json:"approvedPlanHash"`
-	ConsentText        string `json:"consentText"`
+	LConsentText       string `json:"consentText"`
 }
 
-func Msys2DownloadApproval(approval ApprovalRequest) (Msys2DownloadConsent, error) {
-	approvalRecord, err := createConsent(ConsentKindMsys2Download, approval)
-	return Msys2DownloadConsent{Consent: approvalRecord}, err
+func LConsentMsysCreate(approval LRequestApproval) (LConsentMsys, error) {
+	approvalRecord, err := LConsentCreate(LConsentKindMsys, approval)
+	return LConsentMsys{LConsent: approvalRecord}, err
 }
 
-func FfmpegSourceDownloadApproval(approval ApprovalRequest) (FfmpegSourceDownloadConsent, error) {
-	approvalRecord, err := createConsent(ConsentKindFfmpegSourceDownload, approval)
-	return FfmpegSourceDownloadConsent{Consent: approvalRecord}, err
+func LConsentFFmpegCreate(approval LRequestApproval) (LConsentFFmpeg, error) {
+	approvalRecord, err := LConsentCreate(LConsentKindFFmpeg, approval)
+	return LConsentFFmpeg{LConsent: approvalRecord}, err
 }
 
-func ArchiveExtractionApproval(approval ApprovalRequest) (ArchiveExtractionConsent, error) {
-	approvalRecord, err := createConsent(ConsentKindArchiveExtraction, approval)
-	return ArchiveExtractionConsent{Consent: approvalRecord}, err
+func LConsentArchiveCreate(approval LRequestApproval) (LConsentArchive, error) {
+	approvalRecord, err := LConsentCreate(LConsentKindArchive, approval)
+	return LConsentArchive{LConsent: approvalRecord}, err
 }
 
-func PacmanInstallApproval(approval ApprovalRequest) (PacmanInstallConsent, error) {
-	approvalRecord, err := createConsent(ConsentKindPacmanPackageInstallation, approval)
-	return PacmanInstallConsent{Consent: approvalRecord}, err
+func LConsentPacmanCreate(approval LRequestApproval) (LConsentPacman, error) {
+	approvalRecord, err := LConsentCreate(LConsentKindPacman, approval)
+	return LConsentPacman{LConsent: approvalRecord}, err
 }
 
-func CommandExecutionApproval(approval ApprovalRequest) (CommandExecutionConsent, error) {
-	approvalRecord, err := createConsent(ConsentKindExternalCommandExecution, approval)
-	return CommandExecutionConsent{Consent: approvalRecord}, err
+func LConsentCommandCreate(approval LRequestApproval) (LConsentCommand, error) {
+	approvalRecord, err := LConsentCreate(LConsentKindCommand, approval)
+	return LConsentCommand{LConsent: approvalRecord}, err
 }
 
-func WorkspaceDeletionApproval(approval ApprovalRequest) (WorkspaceDeletionConsent, error) {
-	approvalRecord, err := createConsent(ConsentKindWorkspaceDeletion, approval)
-	return WorkspaceDeletionConsent{Consent: approvalRecord}, err
+func LConsentWorkspaceCreate(approval LRequestApproval) (LConsentWorkspace, error) {
+	approvalRecord, err := LConsentCreate(LConsentKindWorkspace, approval)
+	return LConsentWorkspace{LConsent: approvalRecord}, err
 }
 
-func CheckConsent(approvalRecord Consent, expectedConsentKind ConsentKind, expectedActionName string, expectedPlanHash string) error {
-	if approvalRecord.ConsentId == "" {
+func LConsentCheck(approvalRecord LConsent, expectedLConsentKind LConsentKind, expectedActionName string, expectedPlanHash string) error {
+	if approvalRecord.LConsentId == "" {
 		return errors.New("missing user consent id")
 	}
-	if approvalRecord.ConsentKind != expectedConsentKind {
+	if approvalRecord.LConsentKind != expectedLConsentKind {
 		return errors.New("user consent kind does not match requested operation")
 	}
 	if approvalRecord.ApprovedActionName != expectedActionName {
@@ -86,37 +86,37 @@ func CheckConsent(approvalRecord Consent, expectedConsentKind ConsentKind, expec
 	if approvalRecord.ApprovedAtUnixTime <= 0 {
 		return errors.New("missing user consent timestamp")
 	}
-	if approvalRecord.ConsentText == "" {
+	if approvalRecord.LConsentText == "" {
 		return errors.New("missing user consent text")
 	}
 	return nil
 }
 
-func createConsent(kind ConsentKind, approval ApprovalRequest) (Consent, error) {
+func LConsentCreate(kind LConsentKind, approval LRequestApproval) (LConsent, error) {
 	if approval.ApprovedActionName == "" {
-		return Consent{}, errors.New("missing approved action name")
+		return LConsent{}, errors.New("missing approved action name")
 	}
 	if approval.ApprovedPlanHash == "" {
-		return Consent{}, errors.New("missing approved plan hash")
+		return LConsent{}, errors.New("missing approved plan hash")
 	}
-	if approval.ConsentText == "" {
-		return Consent{}, errors.New("missing consent text")
+	if approval.LConsentText == "" {
+		return LConsent{}, errors.New("missing consent text")
 	}
-	consentId, err := createConsentId()
+	consentId, err := LConsentIdCreate()
 	if err != nil {
-		return Consent{}, err
+		return LConsent{}, err
 	}
-	return Consent{
-		ConsentId:          consentId,
-		ConsentKind:        kind,
+	return LConsent{
+		LConsentId:         consentId,
+		LConsentKind:       kind,
 		ApprovedActionName: approval.ApprovedActionName,
 		ApprovedPlanHash:   approval.ApprovedPlanHash,
 		ApprovedAtUnixTime: time.Now().UTC().Unix(),
-		ConsentText:        approval.ConsentText,
+		LConsentText:       approval.LConsentText,
 	}, nil
 }
 
-func createConsentId() (string, error) {
+func LConsentIdCreate() (string, error) {
 	randomBytes := make([]byte, 16)
 	if _, err := rand.Read(randomBytes); err != nil {
 		return "", err

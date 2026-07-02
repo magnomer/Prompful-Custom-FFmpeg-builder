@@ -312,7 +312,7 @@
 
 | ID | 표시 이름 | 경로 | 상태 | 라이선스 | configure 플래그 | 패키지 / 준비 | 용도 |
 |---|---|---|---|---|---|---|---|
-| `xml2` | xml2 / XML 지원 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-libxml2` | `<profile>-libxml2` | 일부 미디어 형식, 자막, manifest, 메타데이터 작업에 쓰이는 XML 구조 데이터를 읽습니다. |
+| `xml2` | xml2 / XML 지원 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-libxml2` | `<profile>-libxml2` | 일부 미디어 형식, 자막, release-support manifest, 메타데이터 작업에 쓰이는 XML 구조 데이터를 읽습니다. |
 | `quirc` | libquirc / QR 코드 디코딩 | 내부 소스 준비 경로 | 선택 가능: 소스 준비/가져오기 | LGPL | `--enable-libquirc` | 고정된 소스/가져오기 절차로 준비 | 영상 프레임이나 이미지에서 QR 코드를 읽습니다. 자동화, 스캔, 시각 메타데이터 작업에 유용합니다. |
 | `klvanc` | libklvanc / 방송 메타데이터 | 내부 소스 준비 경로 | 선택 가능: 소스 준비/가져오기 | LGPL | `--enable-libklvanc` | 고정된 소스/가져오기 절차로 준비 | 방송 영상의 수직 보조 데이터(VANC)를 처리합니다. 영상 라인에 함께 실리는 메타데이터 작업에 유용합니다. |
 

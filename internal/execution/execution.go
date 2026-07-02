@@ -28,22 +28,22 @@ import (
 // command is safe. These constants bound how many times and how long apart a
 // command is retried before its failure is treated as real.
 const (
-	maxCommandAttempts        = 10
-	commandRetryInitialDelay  = 5 * time.Second
-	commandRetryBackoffFactor = 2
-	commandRetryMaxDelay      = 60 * time.Second
+	LCommandAttemptMax         = 10
+	LCommandRetryInitialDelay  = 5 * time.Second
+	LCommandRetryBackoffFactor = 2
+	LCommandRetryMaxDelay      = 60 * time.Second
 )
 
-type ScriptKind string
+type LScriptKind string
 
 const (
-	PacmanInstallScript      ScriptKind = "pacman-install"
-	FfmpegConfigureScript    ScriptKind = "ffmpeg-configure"
-	FfmpegMakeScript         ScriptKind = "ffmpeg-make"
-	LibraryPreparationScript ScriptKind = "library-preparation"
+	LScriptPacmanInstall      LScriptKind = "pacman-install"
+	LScriptFFmpegConfigure    LScriptKind = "ffmpeg-configure"
+	LScriptFFmpegMake         LScriptKind = "ffmpeg-make"
+	LScriptLibraryPreparation LScriptKind = "library-preparation"
 )
 
-type CommandPlan struct {
+type LPlanCommand struct {
 	ActionName                 string            `json:"actionName"`
 	PlanHash                   string            `json:"planHash"`
 	ExecutablePath             string            `json:"executablePath"`
@@ -54,42 +54,42 @@ type CommandPlan struct {
 	WindowsShellProfileName    string            `json:"windowsShellProfileName"`
 	EnvironmentVariables       map[string]string `json:"environmentVariables"`
 	AllowedExecutableBasenames []string          `json:"allowedExecutableBasenames"`
-	ScriptKind                 ScriptKind        `json:"approvedScriptKindName"`
+	LScriptKind                LScriptKind       `json:"approvedScriptKindName"`
 	ApprovedScriptFilePath     string            `json:"approvedScriptFilePath"`
 	ApprovedScriptSha256Hash   string            `json:"approvedScriptSha256Hash"`
-	RunLogDirectory            string            `json:"runLogDirectory"`
+	RunLAuditDirectoryGet      string            `json:"runLAuditDirectoryGet"`
 }
 
-type ProgressFunc func(level string, message string)
+type LProgressFunc func(level string, message string)
 
-func RunCommandWithConsent(ctx context.Context, userExternalCommandExecutionConsent consent.CommandExecutionConsent, commandPlan CommandPlan, emitProgress ProgressFunc) error {
-	if err := consent.CheckConsent(userExternalCommandExecutionConsent.Consent, consent.ConsentKindExternalCommandExecution, commandPlan.ActionName, commandPlan.PlanHash); err != nil {
+func LCommandConsentRun(LContext context.Context, userExternalLConsentCommand consent.LConsentCommand, commandPlan LPlanCommand, emitProgress LProgressFunc) error {
+	if err := consent.LConsentCheck(userExternalLConsentCommand.LConsent, consent.LConsentKindCommand, commandPlan.ActionName, commandPlan.PlanHash); err != nil {
 		return err
 	}
-	return executeCommand(ctx, commandPlan, emitProgress)
+	return LCommandRun(LContext, commandPlan, emitProgress)
 }
 
-func RunPacmanWithConsent(ctx context.Context, userPacmanPackageInstallConsent consent.PacmanInstallConsent, commandPlan CommandPlan, emitProgress ProgressFunc) error {
-	if err := consent.CheckConsent(userPacmanPackageInstallConsent.Consent, consent.ConsentKindPacmanPackageInstallation, commandPlan.ActionName, commandPlan.PlanHash); err != nil {
+func LCommandPacmanRun(LContext context.Context, userPacmanPackageInstallLConsent consent.LConsentPacman, commandPlan LPlanCommand, emitProgress LProgressFunc) error {
+	if err := consent.LConsentCheck(userPacmanPackageInstallLConsent.LConsent, consent.LConsentKindPacman, commandPlan.ActionName, commandPlan.PlanHash); err != nil {
 		return err
 	}
-	return executeCommand(ctx, commandPlan, emitProgress)
+	return LCommandRun(LContext, commandPlan, emitProgress)
 }
 
-func executeCommand(ctx context.Context, commandPlan CommandPlan, emitProgress ProgressFunc) error {
-	if err := ValidateCommandPlan(commandPlan); err != nil {
+func LCommandRun(LContext context.Context, commandPlan LPlanCommand, emitProgress LProgressFunc) error {
+	if err := LPlanCommandValidate(commandPlan); err != nil {
 		return err
 	}
 	var scriptBytes []byte
 	if commandPlan.ApprovedScriptFilePath != "" {
-		preparedScriptBytes, updatedArgumentValues, err := prepareScriptForStdin(commandPlan)
+		preparedScriptBytes, updatedArgumentValues, err := LScriptStdinPrepare(commandPlan)
 		if err != nil {
 			return err
 		}
 		scriptBytes = preparedScriptBytes
 		commandPlan.ArgumentValues = updatedArgumentValues
 	}
-	stdoutLogFile, stderrLogFile, err := openCommandLogs(commandPlan.WorkspaceDirectory, commandPlan.RunLogDirectory)
+	stdoutLogFile, stderrLogFile, err := LLogCommandOpen(commandPlan.WorkspaceDirectory, commandPlan.RunLAuditDirectoryGet)
 	if err != nil {
 		return err
 	}
@@ -100,42 +100,42 @@ func executeCommand(ctx context.Context, commandPlan CommandPlan, emitProgress P
 		defer stderrLogFile.Close()
 	}
 
-	retryDelay := commandRetryInitialDelay
+	retryDelay := LCommandRetryInitialDelay
 	for attemptNumber := 1; ; attemptNumber++ {
-		transientFailureSeen, runErr := runCommandAttempt(ctx, commandPlan, scriptBytes, stdoutLogFile, stderrLogFile, emitProgress)
+		transientFailureSeen, runErr := LCommandAttemptRun(LContext, commandPlan, scriptBytes, stdoutLogFile, stderrLogFile, emitProgress)
 		if runErr == nil {
 			return nil
 		}
 		// Never retry a cancelled run, a clearly non-transient failure, or once
 		// the attempt budget is spent. Surface the real error in those cases.
-		if ctx.Err() != nil || !transientFailureSeen || attemptNumber >= maxCommandAttempts {
+		if LContext.Err() != nil || !transientFailureSeen || attemptNumber >= LCommandAttemptMax {
 			return runErr
 		}
 		if emitProgress != nil {
-			emitProgress("warn", fmt.Sprintf("Transient network failure detected (attempt %d of %d): %v. Retrying in %s...", attemptNumber, maxCommandAttempts, runErr, retryDelay))
+			emitProgress("warn", fmt.Sprintf("Transient network failure detected (attempt %d of %d): %v. Retrying in %s...", attemptNumber, LCommandAttemptMax, runErr, retryDelay))
 		}
 		select {
-		case <-ctx.Done():
+		case <-LContext.Done():
 			return runErr
 		case <-time.After(retryDelay):
 		}
-		if retryDelay *= commandRetryBackoffFactor; retryDelay > commandRetryMaxDelay {
-			retryDelay = commandRetryMaxDelay
+		if retryDelay *= LCommandRetryBackoffFactor; retryDelay > LCommandRetryMaxDelay {
+			retryDelay = LCommandRetryMaxDelay
 		}
 	}
 }
 
-// runCommandAttempt executes the planned command exactly once. It reports
+// LCommandAttemptRun executes the planned command exactly once. It reports
 // whether any streamed line looked like a transient network failure so the
-// caller can decide to retry. Fresh pipes and a fresh stdin reader are built
+// caller can decide to retry. Fresh pipes and a fresh stdin LReader are built
 // per attempt because both are single-use.
-func runCommandAttempt(ctx context.Context, commandPlan CommandPlan, scriptBytes []byte, stdoutLogFile, stderrLogFile *os.File, emitProgress ProgressFunc) (bool, error) {
+func LCommandAttemptRun(LContext context.Context, commandPlan LPlanCommand, scriptBytes []byte, stdoutLogFile, stderrLogFile *os.File, emitProgress LProgressFunc) (bool, error) {
 	if emitProgress != nil {
 		emitProgress("info", "Running approved command: "+filepath.Base(commandPlan.ExecutablePath))
 	}
-	command := exec.CommandContext(ctx, commandPlan.ExecutablePath, commandPlan.ArgumentValues...)
+	command := exec.CommandContext(LContext, commandPlan.ExecutablePath, commandPlan.ArgumentValues...)
 	command.Dir = commandPlan.WorkingDirectory
-	command.Env = createMsys2Env(commandPlan)
+	command.Env = LEnvironmentMsysCreate(commandPlan)
 	if scriptBytes != nil {
 		command.Stdin = bytes.NewReader(scriptBytes)
 	}
@@ -154,8 +154,8 @@ func runCommandAttempt(ctx context.Context, commandPlan CommandPlan, scriptBytes
 	var transientFailureSeen atomic.Bool
 	var lastErrorLine atomic.Pointer[string]
 	doneChannel := make(chan struct{}, 2)
-	go copyCommandOutput(stdoutPipe, stdoutLogFile, "info", emitProgress, &transientFailureSeen, &lastErrorLine, doneChannel)
-	go copyCommandOutput(stderrPipe, stderrLogFile, "warn", emitProgress, &transientFailureSeen, &lastErrorLine, doneChannel)
+	go LLogCommandCopy(stdoutPipe, stdoutLogFile, "info", emitProgress, &transientFailureSeen, &lastErrorLine, doneChannel)
+	go LLogCommandCopy(stderrPipe, stderrLogFile, "warn", emitProgress, &transientFailureSeen, &lastErrorLine, doneChannel)
 	<-doneChannel
 	<-doneChannel
 	waitErr := command.Wait()
@@ -170,48 +170,48 @@ func runCommandAttempt(ctx context.Context, commandPlan CommandPlan, scriptBytes
 	return transientFailureSeen.Load(), waitErr
 }
 
-func ValidateCommandPlan(commandPlan CommandPlan) error {
+func LPlanCommandValidate(commandPlan LPlanCommand) error {
 	if commandPlan.ExecutablePath == "" {
 		return errors.New("approved command executable path is empty")
 	}
 	if commandPlan.WorkingDirectory == "" || commandPlan.WorkspaceDirectory == "" {
 		return errors.New("approved command directories are empty")
 	}
-	if err := workspace.CheckPathInsideWorkspace(commandPlan.WorkspaceDirectory, commandPlan.WorkingDirectory); err != nil {
+	if err := workspace.LPathWorkspaceCheck(commandPlan.WorkspaceDirectory, commandPlan.WorkingDirectory); err != nil {
 		return err
 	}
-	if err := workspace.CheckRealPathInsideWorkspace(commandPlan.WorkspaceDirectory, commandPlan.WorkingDirectory); err != nil {
+	if err := workspace.LPathRealCheck(commandPlan.WorkspaceDirectory, commandPlan.WorkingDirectory); err != nil {
 		return err
 	}
-	if err := workspace.CheckPathInsideWorkspace(commandPlan.WorkspaceDirectory, commandPlan.ExecutablePath); err != nil {
+	if err := workspace.LPathWorkspaceCheck(commandPlan.WorkspaceDirectory, commandPlan.ExecutablePath); err != nil {
 		return err
 	}
-	if err := workspace.CheckRealPathInsideWorkspace(commandPlan.WorkspaceDirectory, commandPlan.ExecutablePath); err != nil {
+	if err := workspace.LPathRealCheck(commandPlan.WorkspaceDirectory, commandPlan.ExecutablePath); err != nil {
 		return err
 	}
 	if len(commandPlan.AllowedExecutableBasenames) == 0 {
 		return errors.New("approved command must include executable basename allowlist")
 	}
-	if !isAllowedProgramName(filepath.Base(commandPlan.ExecutablePath), commandPlan.AllowedExecutableBasenames) {
+	if !LProgramAllowedCheck(filepath.Base(commandPlan.ExecutablePath), commandPlan.AllowedExecutableBasenames) {
 		return fmt.Errorf("approved command executable is not allowlisted: %s", filepath.Base(commandPlan.ExecutablePath))
 	}
 	if commandPlan.Msys2RootDirectory != "" {
-		if err := workspace.CheckPathInsideWorkspace(commandPlan.WorkspaceDirectory, commandPlan.Msys2RootDirectory); err != nil {
+		if err := workspace.LPathWorkspaceCheck(commandPlan.WorkspaceDirectory, commandPlan.Msys2RootDirectory); err != nil {
 			return err
 		}
-		if err := workspace.CheckRealPathInsideWorkspace(commandPlan.WorkspaceDirectory, commandPlan.Msys2RootDirectory); err != nil {
-			return err
-		}
-	}
-	if commandPlan.RunLogDirectory != "" {
-		if err := workspace.CheckPathInsideWorkspace(commandPlan.WorkspaceDirectory, commandPlan.RunLogDirectory); err != nil {
-			return err
-		}
-		if err := workspace.CheckRealPathInsideWorkspace(commandPlan.WorkspaceDirectory, filepath.Dir(commandPlan.RunLogDirectory)); err != nil {
+		if err := workspace.LPathRealCheck(commandPlan.WorkspaceDirectory, commandPlan.Msys2RootDirectory); err != nil {
 			return err
 		}
 	}
-	if hasShellMetacharacter(commandPlan.ExecutablePath) {
+	if commandPlan.RunLAuditDirectoryGet != "" {
+		if err := workspace.LPathWorkspaceCheck(commandPlan.WorkspaceDirectory, commandPlan.RunLAuditDirectoryGet); err != nil {
+			return err
+		}
+		if err := workspace.LPathRealCheck(commandPlan.WorkspaceDirectory, filepath.Dir(commandPlan.RunLAuditDirectoryGet)); err != nil {
+			return err
+		}
+	}
+	if LTextShellCheck(commandPlan.ExecutablePath) {
 		return errors.New("approved command executable contains shell metacharacters")
 	}
 	for _, argumentValue := range commandPlan.ArgumentValues {
@@ -220,32 +220,32 @@ func ValidateCommandPlan(commandPlan CommandPlan) error {
 		}
 	}
 	if commandPlan.ApprovedScriptFilePath != "" {
-		if commandPlan.ScriptKind == "" {
+		if commandPlan.LScriptKind == "" {
 			return errors.New("approved script kind is empty")
 		}
-		if err := checkScriptHash(commandPlan); err != nil {
+		if err := LHashScriptCheck(commandPlan); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkScriptHash(commandPlan CommandPlan) error {
-	_, _, err := prepareScriptForStdin(commandPlan)
+func LHashScriptCheck(commandPlan LPlanCommand) error {
+	_, _, err := LScriptStdinPrepare(commandPlan)
 	return err
 }
 
-func prepareScriptForStdin(commandPlan CommandPlan) ([]byte, []string, error) {
+func LScriptStdinPrepare(commandPlan LPlanCommand) ([]byte, []string, error) {
 	if commandPlan.ApprovedScriptSha256Hash == "" {
 		return nil, nil, errors.New("approved script hash is empty")
 	}
-	if err := workspace.CheckPathInsideWorkspace(commandPlan.WorkspaceDirectory, commandPlan.ApprovedScriptFilePath); err != nil {
+	if err := workspace.LPathWorkspaceCheck(commandPlan.WorkspaceDirectory, commandPlan.ApprovedScriptFilePath); err != nil {
 		return nil, nil, err
 	}
-	if err := workspace.CheckRealPathInsideWorkspace(commandPlan.WorkspaceDirectory, commandPlan.ApprovedScriptFilePath); err != nil {
+	if err := workspace.LPathRealCheck(commandPlan.WorkspaceDirectory, commandPlan.ApprovedScriptFilePath); err != nil {
 		return nil, nil, err
 	}
-	updatedArgumentValues, foundScriptArgument := replaceScriptFileWithStdinFlag(commandPlan.ArgumentValues, commandPlan.ApprovedScriptFilePath)
+	updatedArgumentValues, foundScriptArgument := LFlagStdinReplace(commandPlan.ArgumentValues, commandPlan.ApprovedScriptFilePath)
 	if !foundScriptArgument {
 		return nil, nil, errors.New("approved script path is not present in command arguments")
 	}
@@ -266,7 +266,7 @@ func prepareScriptForStdin(commandPlan CommandPlan) ([]byte, []string, error) {
 	return scriptBytes, updatedArgumentValues, nil
 }
 
-func createMsys2Env(commandPlan CommandPlan) []string {
+func LEnvironmentMsysCreate(commandPlan LPlanCommand) []string {
 	environmentByName := map[string]string{}
 	environmentNameOrder := []string{}
 	setEnvironmentValue := func(environmentName string, environmentValue string) {
@@ -319,7 +319,7 @@ func createMsys2Env(commandPlan CommandPlan) []string {
 	}
 
 	for environmentName, environmentValue := range commandPlan.EnvironmentVariables {
-		if !isSafeEnvironmentVariable(environmentName, environmentValue) {
+		if !LEnvironmentSafeCheck(environmentName, environmentValue) {
 			continue
 		}
 		setEnvironmentValue(environmentName, environmentValue)
@@ -332,27 +332,27 @@ func createMsys2Env(commandPlan CommandPlan) []string {
 	return environment
 }
 
-func openCommandLogs(workspaceDirectory string, runLogDirectory string) (*os.File, *os.File, error) {
-	if runLogDirectory == "" {
+func LLogCommandOpen(workspaceDirectory string, runLAuditDirectoryGet string) (*os.File, *os.File, error) {
+	if runLAuditDirectoryGet == "" {
 		return nil, nil, nil
 	}
-	if err := workspace.CheckPathInsideWorkspace(workspaceDirectory, runLogDirectory); err != nil {
+	if err := workspace.LPathWorkspaceCheck(workspaceDirectory, runLAuditDirectoryGet); err != nil {
 		return nil, nil, err
 	}
-	if err := workspace.CheckRealPathInsideWorkspace(workspaceDirectory, filepath.Dir(runLogDirectory)); err != nil {
+	if err := workspace.LPathRealCheck(workspaceDirectory, filepath.Dir(runLAuditDirectoryGet)); err != nil {
 		return nil, nil, err
 	}
-	if err := os.MkdirAll(runLogDirectory, 0o755); err != nil {
+	if err := os.MkdirAll(runLAuditDirectoryGet, 0o755); err != nil {
 		return nil, nil, err
 	}
-	if err := workspace.CheckRealPathInsideWorkspace(workspaceDirectory, runLogDirectory); err != nil {
+	if err := workspace.LPathRealCheck(workspaceDirectory, runLAuditDirectoryGet); err != nil {
 		return nil, nil, err
 	}
-	stdoutLogFile, err := os.OpenFile(filepath.Join(runLogDirectory, "stdout.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+	stdoutLogFile, err := os.OpenFile(filepath.Join(runLAuditDirectoryGet, "stdout.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 	if err != nil {
 		return nil, nil, err
 	}
-	stderrLogFile, err := os.OpenFile(filepath.Join(runLogDirectory, "stderr.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+	stderrLogFile, err := os.OpenFile(filepath.Join(runLAuditDirectoryGet, "stderr.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 	if err != nil {
 		_ = stdoutLogFile.Close()
 		return nil, nil, err
@@ -360,7 +360,7 @@ func openCommandLogs(workspaceDirectory string, runLogDirectory string) (*os.Fil
 	return stdoutLogFile, stderrLogFile, nil
 }
 
-func isSafeEnvironmentVariable(environmentName string, environmentValue string) bool {
+func LEnvironmentSafeCheck(environmentName string, environmentValue string) bool {
 	if environmentName == "" || strings.Contains(environmentName, "=") || strings.Contains(environmentName, "\x00") || strings.Contains(environmentValue, "\x00") {
 		return false
 	}
@@ -372,11 +372,11 @@ func isSafeEnvironmentVariable(environmentName string, environmentValue string) 
 	return true
 }
 
-func hasShellMetacharacter(value string) bool {
+func LTextShellCheck(value string) bool {
 	return strings.ContainsAny(value, ";&|><`$\n\r")
 }
 
-func isAllowedProgramName(executableBasename string, allowedExecutableBasenames []string) bool {
+func LProgramAllowedCheck(executableBasename string, allowedExecutableBasenames []string) bool {
 	for _, allowedExecutableBasename := range allowedExecutableBasenames {
 		if strings.EqualFold(executableBasename, allowedExecutableBasename) {
 			return true
@@ -385,7 +385,7 @@ func isAllowedProgramName(executableBasename string, allowedExecutableBasenames 
 	return false
 }
 
-func replaceScriptFileWithStdinFlag(argumentValues []string, scriptFilePath string) ([]string, bool) {
+func LFlagStdinReplace(argumentValues []string, scriptFilePath string) ([]string, bool) {
 	updatedArgumentValues := make([]string, len(argumentValues))
 	copy(updatedArgumentValues, argumentValues)
 	for index, argumentValue := range updatedArgumentValues {
@@ -397,7 +397,7 @@ func replaceScriptFileWithStdinFlag(argumentValues []string, scriptFilePath stri
 	return updatedArgumentValues, false
 }
 
-func copyCommandOutput(pipeReader interface{ Read([]byte) (int, error) }, logFile *os.File, level string, emitProgress ProgressFunc, transientFailureSeen *atomic.Bool, lastErrorLine *atomic.Pointer[string], doneChannel chan<- struct{}) {
+func LLogCommandCopy(pipeReader interface{ Read([]byte) (int, error) }, logFile *os.File, level string, emitProgress LProgressFunc, transientFailureSeen *atomic.Bool, lastErrorLine *atomic.Pointer[string], doneChannel chan<- struct{}) {
 	defer func() { doneChannel <- struct{}{} }()
 	scanner := bufio.NewScanner(pipeReader)
 	for scanner.Scan() {
@@ -405,13 +405,15 @@ func copyCommandOutput(pipeReader interface{ Read([]byte) (int, error) }, logFil
 		if logFile != nil {
 			_, _ = logFile.WriteString(line + "\n")
 		}
-		if transientFailureSeen != nil && isTransientNetworkFailureLine(line) {
+		if transientFailureSeen != nil && LLogNetworkCheck(line) {
 			transientFailureSeen.Store(true)
 		}
-		classifiedLevel := classifyLogLine(level, line)
+		classifiedLevel := LLogLineClassify(level, line)
 		if lastErrorLine != nil && classifiedLevel == "error" {
 			capturedLine := strings.TrimSpace(line)
-			lastErrorLine.Store(&capturedLine)
+			if !LLogLineGenericMakeFailure(capturedLine) || lastErrorLine.Load() == nil {
+				lastErrorLine.Store(&capturedLine)
+			}
 		}
 		if emitProgress != nil {
 			emitProgress(classifiedLevel, line)
@@ -419,13 +421,13 @@ func copyCommandOutput(pipeReader interface{ Read([]byte) (int, error) }, logFil
 	}
 }
 
-// transientNetworkFailureMarkers are substrings (matched case-insensitively)
+// LErrorNetworkTransientMarkers are substrings (matched case-insensitively)
 // that signal a download or connection failed for a transient reason rather
 // than a real build/install error: a stalled transfer, a dropped or refused
 // connection, DNS failure, or a 5xx from a mirror. A line carrying any of these
 // makes the whole command eligible for retry. Markers are kept specific so a
 // genuine compile/link error is never mistaken for a network blip.
-var transientNetworkFailureMarkers = []string{
+var LErrorNetworkTransientMarkers = []string{
 	"operation too slow",
 	"failed retrieving file",
 	"could not resolve host",
@@ -446,11 +448,11 @@ var transientNetworkFailureMarkers = []string{
 	"unexpected disconnect",
 }
 
-// isTransientNetworkFailureLine reports whether a streamed output line indicates
+// LLogNetworkCheck reports whether a streamed output line indicates
 // a transient network failure that warrants retrying the command.
-func isTransientNetworkFailureLine(line string) bool {
+func LLogNetworkCheck(line string) bool {
 	lower := strings.ToLower(line)
-	for _, marker := range transientNetworkFailureMarkers {
+	for _, marker := range LErrorNetworkTransientMarkers {
 		if strings.Contains(lower, marker) {
 			return true
 		}
@@ -458,19 +460,19 @@ func isTransientNetworkFailureLine(line string) bool {
 	return false
 }
 
-// compilerSourceEchoRegex matches the source-echo and caret lines GCC prints
+// LPatternCompilerSourceEcho matches the source-echo and caret lines GCC prints
 // beneath a diagnostic, such as "297 |     memmove(...)" and "    | ^~~~". These
 // arrive on stderr but are continuation context, not warnings of their own.
-var compilerSourceEchoRegex = regexp.MustCompile(`^\s*(?:\d+\s*)?\|`)
+var LPatternCompilerSourceEcho = regexp.MustCompile(`^\s*(?:\d+\s*)?\|`)
 
-// classifyLogLine refines the severity of a streamed build-output line from its
+// LLogLineClassify refines the severity of a streamed build-output line from its
 // content. The raw pipe gives only a coarse default: every stderr line would
 // otherwise be a "warn", burying genuine warnings under compiler notes,
 // source-echo lines, "#pragma message" output, and pacman reinstall notices.
 // This promotes real errors and demotes known-benign noise so the UI's warning
 // level reflects lines that actually warrant attention. The full raw line is
 // still written verbatim to the on-disk log regardless of level.
-func classifyLogLine(defaultLevel string, line string) string {
+func LLogLineClassify(defaultLevel string, line string) string {
 	trimmed := strings.TrimSpace(line)
 	if trimmed == "" {
 		return defaultLevel
@@ -495,17 +497,18 @@ func classifyLogLine(defaultLevel string, line string) string {
 		return "info"
 	}
 
-	// "strip: ... has no sections" is binutils refusing an intentionally-empty object:
+	// "strip: ... has no section(s)" is binutils refusing an intentionally-empty object:
 	// x264/xavs2-style build systems assemble a 32-bit-only .asm (e.g. pixel-32.asm) even
 	// in a 64-bit build, where every symbol is guarded out, yielding a 0-section object the
 	// makefile then strips with an ignored ('-') rule. The build succeeds and the empty
 	// object links harmlessly, so this strip message is benign tool noise, not a failure.
-	if strings.Contains(lower, "has no sections") {
+	if strings.Contains(lower, "strip") && strings.Contains(lower, "has no section") {
 		return "info"
 	}
 
 	// Genuine failures: compiler/linker/configure/pacman errors and aborted make.
 	if strings.Contains(lower, "error:") ||
+		strings.Contains(lower, "argument list too long") ||
 		strings.Contains(lower, "undefined reference") ||
 		strings.HasPrefix(lower, "collect2:") ||
 		strings.Contains(line, "] Error ") {
@@ -523,8 +526,8 @@ func classifyLogLine(defaultLevel string, line string) string {
 		strings.HasPrefix(trimmed, "In function") ||
 		strings.HasPrefix(trimmed, "inlined from") ||
 		strings.Contains(line, ": In function") ||
-		isBenignThirdPartyBuildWarning(lower) ||
-		compilerSourceEchoRegex.MatchString(line) {
+		LWarningThirdpartyCheck(lower) ||
+		LPatternCompilerSourceEcho.MatchString(line) {
 		return "info"
 	}
 
@@ -537,14 +540,14 @@ func classifyLogLine(defaultLevel string, line string) string {
 	return defaultLevel
 }
 
-// isBenignThirdPartyBuildWarning matches compiler/assembler warnings that flood the log
+// LWarningThirdpartyCheck matches compiler/assembler warnings that flood the log
 // when building Internal-track libraries from their own upstream source (uavs3d, davs2,
 // etc.) but are not actionable here: unused symbols, MSVC-only #pragma warning lines,
 // macro/type redefinitions, and x264/nasm legacy macro-parameter warnings. They are
 // demoted to info so genuine warnings stay visible. Deliberately NOT included:
 // stringop-overflow and similar correctness warnings, which can flag real bugs and stay
 // at warn. `lower` is the already-lowercased line.
-func isBenignThirdPartyBuildWarning(lower string) bool {
+func LWarningThirdpartyCheck(lower string) bool {
 	for _, marker := range []string{
 		"-wunused-variable",
 		"-wunused-but-set-variable",
@@ -559,4 +562,10 @@ func isBenignThirdPartyBuildWarning(lower string) bool {
 		}
 	}
 	return false
+}
+
+func LLogLineGenericMakeFailure(line string) bool {
+	trimmed := strings.TrimSpace(line)
+	lower := strings.ToLower(trimmed)
+	return strings.HasPrefix(lower, "make: ***") || strings.Contains(trimmed, "] Error ")
 }

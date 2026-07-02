@@ -1252,5 +1252,6 @@
   "logs.local.loading": "선택한 로그를 불러오는 중...",
   "logs.local.empty.raw": "이 로컬 기록에는 원시 로그 텍스트가 기록되지 않았습니다.",
   "logs.local.meta.errors": "오류 {count}개",
-  "logs.local.meta.warnings": "경고 {count}개"
+  "logs.local.meta.warnings": "경고 {count}개",
+  "libraries.row.unavailable.preparationUnimplemented": "일시적으로 사용 불가: 이 라이브러리는 소스 빌드/가져오기 준비가 필요하지만, 선택한 FFmpeg 릴리스에 대한 준비 구현이 아직 없습니다."
 }

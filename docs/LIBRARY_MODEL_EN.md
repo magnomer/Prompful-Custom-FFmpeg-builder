@@ -35,7 +35,7 @@ Most optional libraries use the native MSYS2 package path. For these entries, th
 
 Examples include `x264`, `x265`, `libvpx`, `aom`, `dav1d`, `opus`, `mp3lame`, `ass`, `freetype`, `zimg`, `vmaf`, `srt`, and `openssl`.
 
-A native package entry can still be unavailable for a particular FFmpeg release or MSYS2 shell profile. The program filters the catalog before planning so an unavailable package/profile combination is not treated as selectable.
+A native package entry can still be unavailable for a particular FFmpeg release or MSYS2 shell profile. The program filters the library catalog before planning so an unavailable package/profile combination is not treated as selectable.
 
 ## Internal source-prepared entries
 
@@ -59,7 +59,7 @@ Current implemented internal source-prepared entries include:
 
 ## External or blocked entries
 
-Some FFmpeg integrations need an external SDK, special import library, or build path that the program does not currently prepare safely. These entries may be registered in the catalog, but the plan blocks them instead of presenting them as reliably enableable.
+Some FFmpeg integrations need an external SDK, special import library, or build path that the program does not currently prepare safely. These entries may be registered in the library catalog, but the plan blocks them instead of presenting them as reliably enableable.
 
 Current blocked entries without a supported build/import path are:
 
@@ -87,12 +87,12 @@ Examples:
 - `libvpl` is the preferred Intel oneVPL path on newer FFmpeg release lines.
 - `libmfx` is the legacy Intel Media SDK path and must not be enabled together with `libvpl`.
 - `lensfun` can be blocked when the available package does not satisfy the FFmpeg release requirement.
-- `onnxruntime` is not available for the official FFmpeg release lines covered by the current manifest and is also unavailable for `mingw64`.
+- `onnxruntime` is not available for the official FFmpeg release lines covered by the current release-support manifest and is also unavailable for `mingw64`.
 - `svtjpegxs` is gated by FFmpeg release requirements and pkg-config results.
 
 ## Public library presets
 
-Library presets are starting points for selection. They do not replace the catalog, and they do not guarantee that every selected item will remain valid for every FFmpeg release/profile combination.
+Library presets are starting points for selection. They do not replace the library catalog, and they do not guarantee that every selected item will remain valid for every FFmpeg release/profile combination.
 
 The public presets are:
 
@@ -104,7 +104,7 @@ The public presets are:
 | `compatibility` | Broader codec, subtitle, caption, image, speech, and protocol coverage | `default` + compatibility additions only |
 | `editor` | Editing, filtering, color, audio-analysis, subtitle, transcription, and image-workflow additions | `default` + editor additions only |
 | `full` | The broadest public preset after mutually exclusive choices are normalized | `default` + efficiency + compatibility + editor + full-only additions |
-| `custom` | Shown when the current selection no longer exactly matches a preset | Not an applied preset template |
+| `custom` | Shown when the current selection no longer exactly matches a preset | Not a programlied preset template |
 
 `efficiency`, `compatibility`, and `editor` are not cumulative steps. Each one starts from `default` and adds its own purpose-specific entries. `full` is the broad public union.
 
@@ -148,11 +148,11 @@ The UI removes conflicting selections as the user toggles entries. The planner a
 
 ## Manual configure flags
 
-The advanced configure-flags box is intended for explicit user-supplied FFmpeg configure flags. It does not bypass catalog validation.
+The advanced configure-flags box is intended for explicit user-supplied FFmpeg configure flags. It does not bypass library catalog validation.
 
 If a manual flag exactly matches a flag from a known library entry, the planner treats that entry as effectively selected. This lets the planner add the matching packages, license information, and preparation gates.
 
-This recovery works only for catalog entries that have configure flags. Entries that only add packages cannot be recovered from a manual `--enable-lib...` flag unless such a flag exists in the entry.
+This recovery works only for library catalog entries that have configure flags. Entries that only add packages cannot be recovered from a manual `--enable-lib...` flag unless such a flag exists in the entry.
 
 ## Configure options
 
@@ -242,7 +242,7 @@ A library should be described as fully supported only when the program can appro
 
 These are different claims:
 
-- listed in the catalog;
+- listed in the library catalog;
 - visible in the UI;
 - selectable in standard use;
 - selected by a public preset;

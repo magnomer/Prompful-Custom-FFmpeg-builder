@@ -1,0 +1,822 @@
+{
+  "schemaVersion": 2,
+  "recordKind": "ffmpeg-version",
+  "generatedFromCurrentV4CodeOnly": true,
+  "sourceFiles": [
+    "internal/planning/ffmpegreleases.go",
+    "backup/shared/releasesupport/ffmpeg-release-support.json",
+    "internal/planning/LCatalogLibrarySource.go",
+    "frontend/src/tabs/libraries.tsx",
+    "libraries/{libraryId}.json",
+    "presets/{presetId}.json"
+  ],
+  "ffmpeg": {
+    "version": "7.1.5",
+    "releaseLine": "7.1",
+    "codename": "Péter",
+    "archiveUrl": "https://www.ffmpeg.org/releases/ffmpeg-7.1.5.tar.xz",
+    "signatureUrl": "https://www.ffmpeg.org/releases/ffmpeg-7.1.5.tar.xz.asc"
+  },
+  "libraries": {
+    "modelingRule": "This section connects the FFmpeg version to library ids only. Full per-version library details are authoritative in /libraries/{libraryId}.json.",
+    "metadataFolder": "libraries",
+    "includedByOfficialFfmpegSource": [
+      {
+        "libraryId": "ffmpeg-program",
+        "metadata": "libraries/ffmpeg-program.json"
+      },
+      {
+        "libraryId": "ffprobe-program",
+        "metadata": "libraries/ffprobe-program.json"
+      },
+      {
+        "libraryId": "libavcodec",
+        "metadata": "libraries/libavcodec.json"
+      },
+      {
+        "libraryId": "libavfilter",
+        "metadata": "libraries/libavfilter.json"
+      },
+      {
+        "libraryId": "libavformat",
+        "metadata": "libraries/libavformat.json"
+      },
+      {
+        "libraryId": "libavutil",
+        "metadata": "libraries/libavutil.json"
+      },
+      {
+        "libraryId": "libswresample",
+        "metadata": "libraries/libswresample.json"
+      },
+      {
+        "libraryId": "libswscale",
+        "metadata": "libraries/libswscale.json"
+      },
+      {
+        "libraryId": "native-codecs",
+        "metadata": "libraries/native-codecs.json"
+      },
+      {
+        "libraryId": "native-formats",
+        "metadata": "libraries/native-formats.json"
+      }
+    ],
+    "compatible": [
+      {
+        "libraryId": "amf",
+        "metadata": "libraries/amf.json"
+      },
+      {
+        "libraryId": "aom",
+        "metadata": "libraries/aom.json",
+        "ffmpegPkgConfigMinimumVersion": "2.0.0"
+      },
+      {
+        "libraryId": "aribb24",
+        "metadata": "libraries/aribb24.json"
+      },
+      {
+        "libraryId": "aribcaption",
+        "metadata": "libraries/aribcaption.json",
+        "ffmpegPkgConfigMinimumVersion": "1.1.1"
+      },
+      {
+        "libraryId": "ass",
+        "metadata": "libraries/ass.json",
+        "ffmpegPkgConfigMinimumVersion": "0.11.0"
+      },
+      {
+        "libraryId": "avisynthplus",
+        "metadata": "libraries/avisynthplus.json",
+        "ffmpegPkgConfigMinimumVersion": "3.7.3",
+        "preparation": "versions/7.1.5/avisynthplus.go"
+      },
+      {
+        "libraryId": "bluray",
+        "metadata": "libraries/bluray.json"
+      },
+      {
+        "libraryId": "bs2b",
+        "metadata": "libraries/bs2b.json"
+      },
+      {
+        "libraryId": "caca",
+        "metadata": "libraries/caca.json"
+      },
+      {
+        "libraryId": "cdio",
+        "metadata": "libraries/cdio.json"
+      },
+      {
+        "libraryId": "chromaprint",
+        "metadata": "libraries/chromaprint.json"
+      },
+      {
+        "libraryId": "codec2",
+        "metadata": "libraries/codec2.json"
+      },
+      {
+        "libraryId": "cuda-nvcc",
+        "metadata": "libraries/cuda-nvcc.json"
+      },
+      {
+        "libraryId": "dav1d",
+        "metadata": "libraries/dav1d.json",
+        "ffmpegPkgConfigMinimumVersion": "0.5.0"
+      },
+      {
+        "libraryId": "davs2",
+        "metadata": "libraries/davs2.json",
+        "ffmpegPkgConfigMinimumVersion": "1.6.0",
+        "preparation": "versions/7.1.5/davs2.go"
+      },
+      {
+        "libraryId": "dc1394",
+        "metadata": "libraries/dc1394.json"
+      },
+      {
+        "libraryId": "decklink",
+        "metadata": "libraries/decklink.json"
+      },
+      {
+        "libraryId": "dvdnav",
+        "metadata": "libraries/dvdnav.json",
+        "ffmpegPkgConfigMinimumVersion": "6.1.1"
+      },
+      {
+        "libraryId": "dvdread",
+        "metadata": "libraries/dvdread.json",
+        "ffmpegPkgConfigMinimumVersion": "6.1.2"
+      },
+      {
+        "libraryId": "fdk-aac",
+        "metadata": "libraries/fdk-aac.json"
+      },
+      {
+        "libraryId": "fontconfig",
+        "metadata": "libraries/fontconfig.json"
+      },
+      {
+        "libraryId": "freetype",
+        "metadata": "libraries/freetype.json"
+      },
+      {
+        "libraryId": "frei0r",
+        "metadata": "libraries/frei0r.json"
+      },
+      {
+        "libraryId": "fribidi",
+        "metadata": "libraries/fribidi.json"
+      },
+      {
+        "libraryId": "glslang",
+        "metadata": "libraries/glslang.json"
+      },
+      {
+        "libraryId": "gme",
+        "metadata": "libraries/gme.json"
+      },
+      {
+        "libraryId": "gnutls",
+        "metadata": "libraries/gnutls.json"
+      },
+      {
+        "libraryId": "gsm",
+        "metadata": "libraries/gsm.json"
+      },
+      {
+        "libraryId": "harfbuzz",
+        "metadata": "libraries/harfbuzz.json"
+      },
+      {
+        "libraryId": "ilbc",
+        "metadata": "libraries/ilbc.json"
+      },
+      {
+        "libraryId": "jack",
+        "metadata": "libraries/jack.json"
+      },
+      {
+        "libraryId": "klvanc",
+        "metadata": "libraries/klvanc.json",
+        "preparation": "versions/7.1.5/klvanc.go"
+      },
+      {
+        "libraryId": "kvazaar",
+        "metadata": "libraries/kvazaar.json",
+        "ffmpegPkgConfigMinimumVersion": "2.0.0"
+      },
+      {
+        "libraryId": "ladspa",
+        "metadata": "libraries/ladspa.json"
+      },
+      {
+        "libraryId": "lc3",
+        "metadata": "libraries/lc3.json",
+        "ffmpegPkgConfigMinimumVersion": "1.1.0"
+      },
+      {
+        "libraryId": "lcevc-dec",
+        "metadata": "libraries/lcevc-dec.json",
+        "ffmpegPkgConfigMinimumVersion": "2.0.0",
+        "preparation": "versions/7.1.5/lcevc_dec.go"
+      },
+      {
+        "libraryId": "lcms2",
+        "metadata": "libraries/lcms2.json",
+        "ffmpegPkgConfigMinimumVersion": "2.13"
+      },
+      {
+        "libraryId": "libjxl",
+        "metadata": "libraries/libjxl.json",
+        "ffmpegPkgConfigMinimumVersion": "0.7.0"
+      },
+      {
+        "libraryId": "libmfx",
+        "metadata": "libraries/libmfx.json",
+        "ffmpegPkgConfigMinimumVersion": "1.28",
+        "preparation": "versions/7.1.5/libmfx.go"
+      },
+      {
+        "libraryId": "libplacebo",
+        "metadata": "libraries/libplacebo.json",
+        "ffmpegPkgConfigMinimumVersion": "4.192.0"
+      },
+      {
+        "libraryId": "libtls",
+        "metadata": "libraries/libtls.json",
+        "preparation": "versions/7.1.5/libtls.go"
+      },
+      {
+        "libraryId": "libvpl",
+        "metadata": "libraries/libvpl.json",
+        "ffmpegPkgConfigMinimumVersion": "2.6"
+      },
+      {
+        "libraryId": "libvpx",
+        "metadata": "libraries/libvpx.json",
+        "ffmpegPkgConfigMinimumVersion": "1.4.0"
+      },
+      {
+        "libraryId": "lv2",
+        "metadata": "libraries/lv2.json"
+      },
+      {
+        "libraryId": "mbedtls",
+        "metadata": "libraries/mbedtls.json"
+      },
+      {
+        "libraryId": "modplug",
+        "metadata": "libraries/modplug.json"
+      },
+      {
+        "libraryId": "mp3lame",
+        "metadata": "libraries/mp3lame.json"
+      },
+      {
+        "libraryId": "mysofa",
+        "metadata": "libraries/mysofa.json"
+      },
+      {
+        "libraryId": "nvenc",
+        "metadata": "libraries/nvenc.json"
+      },
+      {
+        "libraryId": "openal",
+        "metadata": "libraries/openal.json",
+        "ffmpegPkgConfigMinimumVersion": "1.1"
+      },
+      {
+        "libraryId": "opencl",
+        "metadata": "libraries/opencl.json"
+      },
+      {
+        "libraryId": "opencore-amr",
+        "metadata": "libraries/opencore-amr.json"
+      },
+      {
+        "libraryId": "opencv",
+        "metadata": "libraries/opencv.json"
+      },
+      {
+        "libraryId": "opengl",
+        "metadata": "libraries/opengl.json"
+      },
+      {
+        "libraryId": "openh264",
+        "metadata": "libraries/openh264.json",
+        "ffmpegPkgConfigMinimumVersion": "1.3.0"
+      },
+      {
+        "libraryId": "openjpeg",
+        "metadata": "libraries/openjpeg.json",
+        "ffmpegPkgConfigMinimumVersion": "2.1.0"
+      },
+      {
+        "libraryId": "openmpt",
+        "metadata": "libraries/openmpt.json",
+        "ffmpegPkgConfigMinimumVersion": "0.2.6557"
+      },
+      {
+        "libraryId": "openssl",
+        "metadata": "libraries/openssl.json"
+      },
+      {
+        "libraryId": "openvino",
+        "metadata": "libraries/openvino.json"
+      },
+      {
+        "libraryId": "opus",
+        "metadata": "libraries/opus.json"
+      },
+      {
+        "libraryId": "png",
+        "metadata": "libraries/png.json"
+      },
+      {
+        "libraryId": "pocketsphinx",
+        "metadata": "libraries/pocketsphinx.json"
+      },
+      {
+        "libraryId": "pulse",
+        "metadata": "libraries/pulse.json"
+      },
+      {
+        "libraryId": "qrencode",
+        "metadata": "libraries/qrencode.json"
+      },
+      {
+        "libraryId": "quirc",
+        "metadata": "libraries/quirc.json",
+        "preparation": "versions/7.1.5/quirc.go"
+      },
+      {
+        "libraryId": "rabbitmq",
+        "metadata": "libraries/rabbitmq.json",
+        "ffmpegPkgConfigMinimumVersion": "0.7.1"
+      },
+      {
+        "libraryId": "rav1e",
+        "metadata": "libraries/rav1e.json",
+        "ffmpegPkgConfigMinimumVersion": "0.5.0"
+      },
+      {
+        "libraryId": "rist",
+        "metadata": "libraries/rist.json",
+        "ffmpegPkgConfigMinimumVersion": "0.2.7"
+      },
+      {
+        "libraryId": "rsvg",
+        "metadata": "libraries/rsvg.json"
+      },
+      {
+        "libraryId": "rtmp",
+        "metadata": "libraries/rtmp.json"
+      },
+      {
+        "libraryId": "rubberband",
+        "metadata": "libraries/rubberband.json",
+        "ffmpegPkgConfigMinimumVersion": "1.8.1"
+      },
+      {
+        "libraryId": "sdl2",
+        "metadata": "libraries/sdl2.json",
+        "ffmpegPkgConfigMinimumVersion": "2.0.1"
+      },
+      {
+        "libraryId": "shaderc",
+        "metadata": "libraries/shaderc.json",
+        "ffmpegPkgConfigMinimumVersion": "2019.1"
+      },
+      {
+        "libraryId": "shine",
+        "metadata": "libraries/shine.json"
+      },
+      {
+        "libraryId": "smbclient",
+        "metadata": "libraries/smbclient.json"
+      },
+      {
+        "libraryId": "snappy",
+        "metadata": "libraries/snappy.json"
+      },
+      {
+        "libraryId": "soxr",
+        "metadata": "libraries/soxr.json"
+      },
+      {
+        "libraryId": "speex",
+        "metadata": "libraries/speex.json"
+      },
+      {
+        "libraryId": "srt",
+        "metadata": "libraries/srt.json",
+        "ffmpegPkgConfigMinimumVersion": "1.3.0"
+      },
+      {
+        "libraryId": "ssh",
+        "metadata": "libraries/ssh.json"
+      },
+      {
+        "libraryId": "svt-av1",
+        "metadata": "libraries/svt-av1.json",
+        "ffmpegPkgConfigMinimumVersion": "0.9.0",
+        "preparation": "versions/7.1.5/svt_av1.go",
+        "sourceBuildRequiredByReleaseManifest": true
+      },
+      {
+        "libraryId": "tensorflow",
+        "metadata": "libraries/tensorflow.json",
+        "preparation": "versions/7.1.5/tensorflow.go"
+      },
+      {
+        "libraryId": "tesseract",
+        "metadata": "libraries/tesseract.json"
+      },
+      {
+        "libraryId": "theora",
+        "metadata": "libraries/theora.json"
+      },
+      {
+        "libraryId": "torch",
+        "metadata": "libraries/torch.json"
+      },
+      {
+        "libraryId": "twolame",
+        "metadata": "libraries/twolame.json"
+      },
+      {
+        "libraryId": "uavs3d",
+        "metadata": "libraries/uavs3d.json",
+        "ffmpegPkgConfigMinimumVersion": "1.1.41",
+        "preparation": "versions/7.1.5/uavs3d.go"
+      },
+      {
+        "libraryId": "vapoursynth",
+        "metadata": "libraries/vapoursynth.json"
+      },
+      {
+        "libraryId": "vidstab",
+        "metadata": "libraries/vidstab.json",
+        "ffmpegPkgConfigMinimumVersion": "0.98"
+      },
+      {
+        "libraryId": "vmaf",
+        "metadata": "libraries/vmaf.json",
+        "ffmpegPkgConfigMinimumVersion": "2.0.0"
+      },
+      {
+        "libraryId": "vo-amrwbenc",
+        "metadata": "libraries/vo-amrwbenc.json"
+      },
+      {
+        "libraryId": "vorbis",
+        "metadata": "libraries/vorbis.json"
+      },
+      {
+        "libraryId": "vvenc",
+        "metadata": "libraries/vvenc.json",
+        "ffmpegPkgConfigMinimumVersion": "1.6.1",
+        "preparation": "versions/7.1.5/vvenc.go"
+      },
+      {
+        "libraryId": "webp",
+        "metadata": "libraries/webp.json",
+        "ffmpegPkgConfigMinimumVersion": "0.2.0"
+      },
+      {
+        "libraryId": "x264",
+        "metadata": "libraries/x264.json"
+      },
+      {
+        "libraryId": "x265",
+        "metadata": "libraries/x265.json"
+      },
+      {
+        "libraryId": "xavs",
+        "metadata": "libraries/xavs.json"
+      },
+      {
+        "libraryId": "xavs2",
+        "metadata": "libraries/xavs2.json",
+        "ffmpegPkgConfigMinimumVersion": "1.3.0",
+        "preparation": "versions/7.1.5/xavs2.go"
+      },
+      {
+        "libraryId": "xevd",
+        "metadata": "libraries/xevd.json",
+        "ffmpegPkgConfigMinimumVersion": "0.4.1"
+      },
+      {
+        "libraryId": "xeve",
+        "metadata": "libraries/xeve.json",
+        "ffmpegPkgConfigMinimumVersion": "0.5.1"
+      },
+      {
+        "libraryId": "xml2",
+        "metadata": "libraries/xml2.json"
+      },
+      {
+        "libraryId": "xvid",
+        "metadata": "libraries/xvid.json"
+      },
+      {
+        "libraryId": "zimg",
+        "metadata": "libraries/zimg.json",
+        "ffmpegPkgConfigMinimumVersion": "2.7.0"
+      },
+      {
+        "libraryId": "zmq",
+        "metadata": "libraries/zmq.json",
+        "ffmpegPkgConfigMinimumVersion": "4.2.1"
+      },
+      {
+        "libraryId": "zvbi",
+        "metadata": "libraries/zvbi.json"
+      }
+    ],
+    "unavailableInCurrentV4": [
+      {
+        "libraryId": "lensfun",
+        "metadata": "libraries/lensfun.json"
+      }
+    ],
+    "unsupportedByThisFfmpegVersion": [
+      {
+        "libraryId": "cairo",
+        "metadata": "libraries/cairo.json"
+      },
+      {
+        "libraryId": "mpeghdec",
+        "metadata": "libraries/mpeghdec.json"
+      },
+      {
+        "libraryId": "oapv",
+        "metadata": "libraries/oapv.json"
+      },
+      {
+        "libraryId": "onnxruntime",
+        "metadata": "libraries/onnxruntime.json"
+      },
+      {
+        "libraryId": "opencolorio",
+        "metadata": "libraries/opencolorio.json"
+      },
+      {
+        "libraryId": "svtjpegxs",
+        "metadata": "libraries/svtjpegxs.json"
+      },
+      {
+        "libraryId": "whisper",
+        "metadata": "libraries/whisper.json"
+      },
+      {
+        "libraryId": "xevdb",
+        "metadata": "libraries/xevdb.json"
+      },
+      {
+        "libraryId": "xeveb",
+        "metadata": "libraries/xeveb.json"
+      }
+    ],
+    "unavailable": [
+      {
+        "libraryId": "lensfun",
+        "metadata": "libraries/lensfun.json",
+        "unavailable": true
+      }
+    ]
+  },
+  "configureOptions": {
+    "supported": [
+      {
+        "optionId": "default-static",
+        "displayName": "Build static libraries",
+        "categoryName": "Default FFmpeg source build",
+        "configureFlags": [],
+        "defaultEnabled": true,
+        "locked": true,
+        "riskLevelName": "low"
+      },
+      {
+        "optionId": "default-programs",
+        "displayName": "Build command-line programs",
+        "categoryName": "Default FFmpeg source build",
+        "configureFlags": [],
+        "defaultEnabled": true,
+        "locked": true,
+        "riskLevelName": "low"
+      },
+      {
+        "optionId": "default-ffmpeg",
+        "displayName": "Build ffmpeg.exe",
+        "categoryName": "Default FFmpeg source build",
+        "configureFlags": [],
+        "defaultEnabled": true,
+        "locked": true,
+        "riskLevelName": "low"
+      },
+      {
+        "optionId": "default-ffprobe",
+        "displayName": "Build ffprobe.exe",
+        "categoryName": "Default FFmpeg source build",
+        "configureFlags": [],
+        "defaultEnabled": true,
+        "locked": true,
+        "riskLevelName": "low"
+      },
+      {
+        "optionId": "enable-shared",
+        "displayName": "Build shared DLL libraries",
+        "categoryName": "Output type",
+        "configureFlags": [
+          "--enable-shared",
+          "--disable-static"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "high"
+      },
+      {
+        "optionId": "disable-ffplay",
+        "displayName": "Do not build ffplay",
+        "categoryName": "Programs",
+        "configureFlags": [
+          "--disable-ffplay"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "low"
+      },
+      {
+        "optionId": "disable-autodetect",
+        "displayName": "Do not auto-use hidden system libraries",
+        "categoryName": "Security and reproducibility",
+        "configureFlags": [
+          "--disable-autodetect"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "low"
+      },
+      {
+        "optionId": "disable-network",
+        "displayName": "Remove all networking support",
+        "categoryName": "Security and reproducibility",
+        "configureFlags": [
+          "--disable-network"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "medium"
+      },
+      {
+        "optionId": "disable-asm",
+        "displayName": "Disable assembly optimizations",
+        "categoryName": "Compatibility",
+        "configureFlags": [
+          "--disable-asm"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "high"
+      },
+      {
+        "optionId": "disable-x86asm",
+        "displayName": "Disable x86 assembly",
+        "categoryName": "Compatibility",
+        "configureFlags": [
+          "--disable-x86asm"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "medium"
+      },
+      {
+        "optionId": "pkg-config-static",
+        "displayName": "Link external libraries statically",
+        "categoryName": "Compatibility",
+        "configureFlags": [
+          "--pkg-config-flags=--static"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "low"
+      },
+      {
+        "optionId": "enable-runtime-cpudetect",
+        "displayName": "Detect CPU features at run time",
+        "categoryName": "Compatibility",
+        "configureFlags": [
+          "--enable-runtime-cpudetect"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "low"
+      },
+      {
+        "optionId": "disable-doc",
+        "displayName": "Skip documentation files",
+        "categoryName": "Size and speed",
+        "configureFlags": [
+          "--disable-doc"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "low"
+      },
+      {
+        "optionId": "enable-small",
+        "displayName": "Prefer smaller binary size",
+        "categoryName": "Size and speed",
+        "configureFlags": [
+          "--enable-small"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "low"
+      },
+      {
+        "optionId": "enable-lto",
+        "displayName": "Enable link-time optimization (LTO)",
+        "categoryName": "Size and speed",
+        "configureFlags": [
+          "--enable-lto"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "medium"
+      },
+      {
+        "optionId": "disable-debug",
+        "displayName": "Remove debug build data",
+        "categoryName": "Debugging",
+        "configureFlags": [
+          "--disable-debug"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "low"
+      },
+      {
+        "optionId": "disable-stripping",
+        "displayName": "Keep symbol information",
+        "categoryName": "Debugging",
+        "configureFlags": [
+          "--disable-stripping"
+        ],
+        "defaultEnabled": false,
+        "locked": false,
+        "riskLevelName": "low"
+      }
+    ],
+    "unsupportedCurrentV4OptionIds": []
+  },
+  "presets": {
+    "modelingRule": "This section connects the FFmpeg version to preset ids only. Full per-version preset details are authoritative in /presets/{presetId}.json.",
+    "metadataFolder": "presets",
+    "availableInCurrentV4Ui": [
+      {
+        "presetId": "minimal",
+        "metadata": "presets/minimal.json"
+      },
+      {
+        "presetId": "default",
+        "metadata": "presets/default.json"
+      },
+      {
+        "presetId": "efficiency",
+        "metadata": "presets/efficiency.json"
+      },
+      {
+        "presetId": "compatibility",
+        "metadata": "presets/compatibility.json"
+      },
+      {
+        "presetId": "editor",
+        "metadata": "presets/editor.json"
+      },
+      {
+        "presetId": "full",
+        "metadata": "presets/full.json"
+      }
+    ],
+    "hiddenOrDevInCurrentV4Ui": [
+      {
+        "presetId": "ai",
+        "metadata": "presets/ai.json"
+      },
+      {
+        "presetId": "streaming",
+        "metadata": "presets/streaming.json"
+      },
+      {
+        "presetId": "maxtest",
+        "metadata": "presets/maxtest.json",
+        "devOnlyInCurrentV4Ui": true
+      }
+    ]
+  },
+  "sourceBuildPinsLocation": "Per-library source pins and preparation records are stored in /libraries/{libraryId}.json and /versions/{ffmpegVersion}/{libraryId}.go."
+}

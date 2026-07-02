@@ -43,7 +43,7 @@
 <li>the backend creates an executable plan;</li>
 <li>the backend stores the plan in an in-memory review session;</li>
 <li>the UI displays the plan, warnings, final configure flags, package list, license effects, and approval wording;</li>
-<li>the UI sends an approval request containing the review session ID, operation name, plan hash, and approval wording;</li>
+<li>the UI sends a approval request containing the review session ID, operation name, plan hash, and approval wording;</li>
 <li>the backend checks that the session exists, has not expired, has not already been used, and matches the request;</li>
 <li>the backend recalculates the plan hash from the stored plan;</li>
 <li>the backend checks that the stored plan is executable;</li>
@@ -81,7 +81,7 @@
 <h3>Archive extraction</h3>
 <p>Archive extraction checks that the archive and extraction destination are inside the selected workspace. It also limits the number of extracted files and the total extracted size. Attempts to extract to invalid paths or to create unsafe symbolic links are blocked before completion. As a result, the actual locations and contents written during extraction are controlled by extraction-time validation.</p>
 <h3>Package installation and build commands</h3>
-<p>Package installation and build execution are performed through separate plans. During execution, the program checks the executable path, working directory, MSYS2 root, log-file location, executable name, shell metacharacters in executable paths, and null bytes in command arguments. These checks prevent an approved build step from running a build command outside the selected workspace.</p>
+<p>Package installation and build execution are performed through separate plans. During execution, the program checks the executable path, working directory, MSYS2 root, log-file location, executable name, shell metacharacters in executable paths, and null bytes in command arguments. These checks prevent a approved build step from running a build command outside the selected workspace.</p>
 <h3>Scripts</h3>
 <p>When FFmpeg builds require shell scripts for package installation, configure, make, or selected library preparation work, the program records the script path and SHA-256 hash when the script is created. Immediately before execution, the script is checked again. If its content no longer matches the approved hash, execution is stopped.</p>
 <h2 id="cleanup-and-auxiliary-actions">Cleanup and auxiliary actions</h2>

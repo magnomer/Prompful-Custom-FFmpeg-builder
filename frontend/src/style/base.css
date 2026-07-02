@@ -8,7 +8,33 @@
 body { margin: 0; height: 100vh; overflow: hidden; background: #eef2f7; }
 button, input, select, textarea { font: inherit; }
 
-.app-shell {
+.program-fatal {
+  min-height: 100vh;
+  padding: 28px;
+  background: #f8fafc;
+  color: #172033;
+}
+.program-fatal__panel {
+  max-width: 980px;
+  margin: 0 auto;
+  border: 1px solid #d9e3f0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 24px;
+}
+.program-fatal__panel h1 {
+  margin: 0 0 16px;
+  color: #9f1d1d;
+  font-size: 1.4rem;
+}
+.program-fatal__panel pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 0.9rem/1.5 Consolas, "Cascadia Code", monospace;
+}
+
+.program-shell {
   display: grid;
   grid-template-columns: 306px minmax(0, 1fr);
   gap: 0;
@@ -335,7 +361,7 @@ button, input, select, textarea { font: inherit; }
 .button:disabled { cursor: not-allowed; opacity: 0.45; }
 
 @media (max-width: 840px) {
-  .app-shell { grid-template-columns: 1fr; height: auto; overflow: visible; }
+  .program-shell { grid-template-columns: 1fr; height: auto; overflow: visible; }
   .left-nav { height: auto; overflow-y: visible; }
  .tab-panel { padding: 16px; }
   .tab-page { min-height: auto; }

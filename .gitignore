@@ -1,14 +1,32 @@
 # Build artifacts
 /build/bin/
 /frontend/dist/
+
+# Dependencies and generated package metadata
 /frontend/node_modules/
 /frontend/package.json.md5
 
 # Generated reports
 /reports/
 
+# Local backups and temporary files
+/backup/
+/tmp/
+/temp/
+*.tmp
+*.temp
+*.log
+*.bak
+
+# Go test/build outputs
+*.test
+*.cover
+coverage.out
+
 # Editor / tooling
 /.claude/
+/.codex-tmp/
+/.codex-*/
 
 # OS
 Thumbs.db

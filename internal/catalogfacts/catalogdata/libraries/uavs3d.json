@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 2,
+  "recordKind": "ffmpeg-version-aware-library",
+  "generatedFromCurrentV4CodeOnly": true,
+  "sourceFiles": [
+    "internal/planning/LCatalogLibrarySource.go",
+    "backup/shared/releasesupport/ffmpeg-release-support.json",
+    "backup/shared/librarysources/library-sources.json",
+    "internal/planning/preparation.go",
+    "frontend/src/tabs/libraries.tsx",
+    "versions/*.json",
+    "versions/{ffmpegVersion}/{libraryId}.go"
+  ],
+  "libraryId": "uavs3d",
+  "importantModelingRule": "No build-relevant library field is authoritative at the top level. Each FFmpeg-version record carries its own display name, FFmpeg-facing configure flags, track/provider, package names, availability, source pin, and preparation status.",
+  "ffmpegVersions": {
+    "4.4.8": {
+      "libraryId": "uavs3d",
+      "ffmpegVersion": "4.4.8",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.1.41",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libuavs3d / AVS3 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libuavs3d"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libuavs3d"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/uavs3/uavs3d",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/4.4.8/uavs3d.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "5.1.9": {
+      "libraryId": "uavs3d",
+      "ffmpegVersion": "5.1.9",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.1.41",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libuavs3d / AVS3 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libuavs3d"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libuavs3d"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/uavs3/uavs3d",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/5.1.9/uavs3d.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "6.1.6": {
+      "libraryId": "uavs3d",
+      "ffmpegVersion": "6.1.6",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.1.41",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libuavs3d / AVS3 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libuavs3d"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libuavs3d"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/uavs3/uavs3d",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/6.1.6/uavs3d.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "7.0.3": {
+      "libraryId": "uavs3d",
+      "ffmpegVersion": "7.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.1.41",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libuavs3d / AVS3 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libuavs3d"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libuavs3d"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/uavs3/uavs3d",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/7.0.3/uavs3d.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "7.1.5": {
+      "libraryId": "uavs3d",
+      "ffmpegVersion": "7.1.5",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.1.41",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libuavs3d / AVS3 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libuavs3d"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libuavs3d"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/uavs3/uavs3d",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/7.1.5/uavs3d.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "8.0.3": {
+      "libraryId": "uavs3d",
+      "ffmpegVersion": "8.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.1.41",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libuavs3d / AVS3 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libuavs3d"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libuavs3d"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/uavs3/uavs3d",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.0.3/uavs3d.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "8.1.2": {
+      "libraryId": "uavs3d",
+      "ffmpegVersion": "8.1.2",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.1.41",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libuavs3d / AVS3 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libuavs3d"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libuavs3d"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/uavs3/uavs3d",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.1.2/uavs3d.go",
+        "implementationLanguage": "go",
+        "sourcePin": {
+          "version": "master",
+          "url": "https://github.com/uavs3/uavs3d/archive/refs/heads/master.tar.gz",
+          "sha256": "f5288ffed9f540a0300fc040b971cb910bf676e2a8441c5aee6495280c0683e8",
+          "format": "tar.gz",
+          "host": "github.com"
+        }
+      }
+    }
+  }
+}

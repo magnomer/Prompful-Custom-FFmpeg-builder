@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 2,
+  "recordKind": "ffmpeg-version-aware-library",
+  "generatedFromCurrentV4CodeOnly": true,
+  "sourceFiles": [
+    "internal/planning/LCatalogLibrarySource.go",
+    "backup/shared/releasesupport/ffmpeg-release-support.json",
+    "backup/shared/librarysources/library-sources.json",
+    "internal/planning/preparation.go",
+    "frontend/src/tabs/libraries.tsx",
+    "versions/*.json",
+    "versions/{ffmpegVersion}/{libraryId}.go"
+  ],
+  "libraryId": "davs2",
+  "importantModelingRule": "No build-relevant library field is authoritative at the top level. Each FFmpeg-version record carries its own display name, FFmpeg-facing configure flags, track/provider, package names, availability, source pin, and preparation status.",
+  "ffmpegVersions": {
+    "4.4.8": {
+      "libraryId": "davs2",
+      "ffmpegVersion": "4.4.8",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.6.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libdavs2 / AVS2 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libdavs2"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libdavs2"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "gpl",
+      "officialWebpageUrl": "https://github.com/pkuvcl/davs2",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/4.4.8/davs2.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "5.1.9": {
+      "libraryId": "davs2",
+      "ffmpegVersion": "5.1.9",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.6.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libdavs2 / AVS2 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libdavs2"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libdavs2"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "gpl",
+      "officialWebpageUrl": "https://github.com/pkuvcl/davs2",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/5.1.9/davs2.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "6.1.6": {
+      "libraryId": "davs2",
+      "ffmpegVersion": "6.1.6",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.6.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libdavs2 / AVS2 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libdavs2"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libdavs2"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "gpl",
+      "officialWebpageUrl": "https://github.com/pkuvcl/davs2",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/6.1.6/davs2.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "7.0.3": {
+      "libraryId": "davs2",
+      "ffmpegVersion": "7.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.6.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libdavs2 / AVS2 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libdavs2"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libdavs2"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "gpl",
+      "officialWebpageUrl": "https://github.com/pkuvcl/davs2",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/7.0.3/davs2.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "7.1.5": {
+      "libraryId": "davs2",
+      "ffmpegVersion": "7.1.5",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.6.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libdavs2 / AVS2 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libdavs2"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libdavs2"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "gpl",
+      "officialWebpageUrl": "https://github.com/pkuvcl/davs2",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/7.1.5/davs2.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "8.0.3": {
+      "libraryId": "davs2",
+      "ffmpegVersion": "8.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.6.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libdavs2 / AVS2 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libdavs2"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libdavs2"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "gpl",
+      "officialWebpageUrl": "https://github.com/pkuvcl/davs2",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.0.3/davs2.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "8.1.2": {
+      "libraryId": "davs2",
+      "ffmpegVersion": "8.1.2",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.6.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libdavs2 / AVS2 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libdavs2"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libdavs2"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "gpl",
+      "officialWebpageUrl": "https://github.com/pkuvcl/davs2",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.1.2/davs2.go",
+        "implementationLanguage": "go",
+        "sourcePin": {
+          "version": "1.7",
+          "url": "https://github.com/pkuvcl/davs2/archive/refs/tags/1.7.tar.gz",
+          "sha256": "b697d0b376a1c7f7eda3a4cc6d29707c8154c4774358303653f0a9727f923cc8",
+          "format": "tar.gz",
+          "host": "github.com"
+        }
+      }
+    }
+  }
+}

@@ -2,4 +2,4 @@
 /// <reference types="react" />
 /// <reference types="react-dom" />
 
-declare const __APP_VERSION__: string;
+declare const __PROGRAM_VERSION__: string;

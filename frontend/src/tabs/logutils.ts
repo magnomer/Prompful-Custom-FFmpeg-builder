@@ -1,25 +1,25 @@
 // Pure log infrastructure — types, constants, phase detectors, parse/compute functions.
-// No React. Imported by logs.tsx (UI) and useBuilderState.ts (progress computation).
-import { t } from "../i18n";
+// No React. Imported by logs.tsx (UI) and LStateBuilderUse.ts (progress computation).
+import { LLocaleTextGet } from "../i18n";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type SecurityLogEntry = {
+export type LLogSecurityEntry = {
   timestamp: string;
   level: "info" | "warn" | "error";
   message: string;
 };
 
-export type SecurityLogPayload = {
+export type LLogSecurityPayload = {
   level: string;
   message: string;
 };
 
-export type ApprovedActionStatusPayload = {
+export type LStatusActionPayload = {
   status: string;
 };
 
-export type ToolchainPhaseId =
+export type LPhaseToolchainId =
   | "tc-download"
   | "tc-extract"
   | "tc-keyring"
@@ -27,17 +27,17 @@ export type ToolchainPhaseId =
   | "tc-install"
   | "tc-verify";
 
-export type FfmpegPhaseId =
+export type LPhaseFFmpegId =
   | "ff-download"
   | "ff-pkgconfig"
   | "ff-configure"
   | "ff-compile"
   | "ff-extraction";
 
-export type LogPhaseId = ToolchainPhaseId | FfmpegPhaseId | "other";
+export type LPhaseLogId = LPhaseToolchainId | LPhaseFFmpegId | "other";
 
-export type ParsedLogEntry = SecurityLogEntry & {
-  phase: LogPhaseId;
+export type LLogParsedEntry = LLogSecurityEntry & {
+  phase: LPhaseLogId;
   compileOp?: string;
   compileTarget?: string;
   dllName?: string;
@@ -46,10 +46,10 @@ export type ParsedLogEntry = SecurityLogEntry & {
   isSystemDll?: boolean;
 };
 
-export type LogPhaseGroup = {
-  phase: LogPhaseId;
+export type LPhaseLogGroup = {
+  phase: LPhaseLogId;
   label: string;
-  entries: ParsedLogEntry[];
+  entries: LLogParsedEntry[];
   compileCount: number;
   assembleCount: number;
   copiedDlls: string[];
@@ -59,9 +59,9 @@ export type LogPhaseGroup = {
   endTime?: string;
 };
 
-export type LiveProgress = {
+export type LProgressLive = {
   currentPhaseLabel: string | null;
-  currentPhaseId: LogPhaseId | null;
+  currentPhaseId: LPhaseLogId | null;
   compileCount: number;
   assembleCount: number;
   copiedDllCount: number;
@@ -69,18 +69,18 @@ export type LiveProgress = {
   failureMessages: string[];
   isComplete: boolean;
   hasFailed: boolean;
-  phaseGroups?: LogPhaseGroup[];
+  phaseGroups?: LPhaseLogGroup[];
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-export const COMPILE_OPS = new Set(["CC", "CXX", "HOSTCC", "X86ASM", "WINDRES"]);
-export const DOCS_OPS    = new Set(["HTML", "POD", "TXT", "TEXI", "GENTEXI"]);
-export const BUILD_OPS   = new Set(["AR", "LDXX", "LD", "HOSTLD"]);
-export const STRIP_OPS   = new Set(["STRIP"]);
-export const SHADER_OPS  = new Set(["GLSLC", "BIN2C", "GZIP", "MINIFY"]);
+export const LLogCompileOps = new Set(["CC", "CXX", "HOSTCC", "X86ASM", "WINDRES"]);
+export const LLogDocsOps    = new Set(["HTML", "POD", "TXT", "TEXI", "GENTEXI"]);
+export const LLogBuildOps   = new Set(["AR", "LDXX", "LD", "HOSTLD"]);
+export const LLogStripOps   = new Set(["STRIP"]);
+export const LLogShaderOps  = new Set(["GLSLC", "BIN2C", "GZIP", "MINIFY"]);
 
-const PHASE_LABEL_KEYS: Record<LogPhaseId, string> = {
+const LPhaseLabelKeys: Record<LPhaseLogId, string> = {
   "tc-download": "logs.phase.tcDownload",
   "tc-extract":  "logs.phase.tcExtract",
   "tc-keyring":  "logs.phase.tcKeyring",
@@ -95,77 +95,77 @@ const PHASE_LABEL_KEYS: Record<LogPhaseId, string> = {
   "other":         "common.other",
 };
 
-export function getPhaseLabel(phase: LogPhaseId): string {
-  return t(PHASE_LABEL_KEYS[phase] ?? "common.other");
+export function LPhaseLabelGet(phase: LPhaseLogId): string {
+  return LLocaleTextGet(LPhaseLabelKeys[phase] ?? "common.other");
 }
 
-export function runtimeLogText(message: string): string {
+export function LLogRuntimeBuild(message: string): string {
   const text = message.trim();
 
   let match = text.match(/^Downloading approved file from (.+)$/);
-  if (match) return t("runtimeLog.downloadingApprovedFile", { source: match[1] });
+  if (match) return LLocaleTextGet("runtimeLog.downloadingApprovedFile", { source: match[1] });
 
   match = text.match(/^Calculated SHA-256 for (.+?):\s*([0-9a-fA-F]+)$/);
-  if (match) return t("runtimeLog.sha256Calculated", { source: match[1], hash: match[2] });
+  if (match) return LLocaleTextGet("runtimeLog.sha256Calculated", { source: match[1], hash: match[2] });
 
   match = text.match(/^Approved FFmpeg build started\. Run:\s*(.+)$/);
-  if (match) return t("run.log.ffmpegStarted", { runId: match[1] });
+  if (match) return LLocaleTextGet("run.log.ffmpegStarted", { runId: match[1] });
 
-  if (text === "Approved FFmpeg build completed. Artifact report written.") return t("run.log.ffmpegCompleted");
+  if (text === "Approved FFmpeg build completed. Artifact report written.") return LLocaleTextGet("run.log.ffmpegCompleted");
 
-  if (text === "Extracting approved archive inside workspace.") return t("runtimeLog.extractingApprovedArchive");
+  if (text === "Extracting approved archive inside workspace.") return LLocaleTextGet("runtimeLog.extractingApprovedArchive");
 
   match = text.match(/^Starting FFmpeg configure at (.+)$/);
-  if (match) return t("runtimeLog.startingFfmpegConfigure", { time: match[1] });
+  if (match) return LLocaleTextGet("runtimeLog.startingFfmpegConfigure", { time: match[1] });
 
   match = text.match(/^Starting FFmpeg make at (.+)$/);
-  if (match) return t("runtimeLog.startingFfmpegMake", { time: match[1] });
+  if (match) return LLocaleTextGet("runtimeLog.startingFfmpegMake", { time: match[1] });
 
   match = text.match(/^Starting FFmpeg artifact collection at (.+)$/);
-  if (match) return t("runtimeLog.startingFfmpegArtifactCollection", { time: match[1] });
+  if (match) return LLocaleTextGet("runtimeLog.startingFfmpegArtifactCollection", { time: match[1] });
 
   match = text.match(/^Emptying FFmpeg artifact directory before copying the new build: (.+)$/);
-  if (match) return t("runtimeLog.emptyingFfmpegArtifactDirectory", { path: match[1] });
+  if (match) return LLocaleTextGet("runtimeLog.emptyingFfmpegArtifactDirectory", { path: match[1] });
 
   match = text.match(/^Removed (\d+) stale FFmpeg artifact entries before copying the new build\.$/);
-  if (match) return t("runtimeLog.removedStaleFfmpegArtifacts", { count: match[1] });
+  if (match) return LLocaleTextGet("runtimeLog.removedStaleFfmpegArtifacts", { count: match[1] });
 
-  if (text.startsWith("Running approved command")) return t("runtimeLog.runningApprovedCommand");
+  if (text.startsWith("Running approved command")) return LLocaleTextGet("runtimeLog.runningApprovedCommand");
 
   return message;
 }
 
-export const TOOLCHAIN_PHASE_ORDER: LogPhaseId[] = [
+export const LPhaseToolchainOrder: LPhaseLogId[] = [
   "tc-download", "tc-extract", "tc-keyring", "tc-syncdb", "tc-install", "tc-verify",
 ];
-export const FFMPEG_PHASE_ORDER: LogPhaseId[] = [
+export const LPhaseFFmpegOrder: LPhaseLogId[] = [
   "ff-download", "ff-pkgconfig", "ff-configure", "ff-compile", "ff-extraction",
 ];
 
-export function getToolchainPipeline(): { id: LogPhaseId; label: string; short: string }[] {
+export function LPipelineToolchainGet(): { id: LPhaseLogId; label: string; short: string }[] {
   return [
-    { id: "tc-download", label: t("logs.phase.tcDownload"), short: t("logs.phaseShort.download") },
-    { id: "tc-extract",  label: t("logs.phase.tcExtract"),  short: t("logs.phaseShort.extract") },
-    { id: "tc-keyring",  label: t("logs.phase.tcKeyring"),  short: t("logs.phaseShort.keyring") },
-    { id: "tc-syncdb",   label: t("logs.phase.tcSyncDb"),   short: t("logs.phaseShort.syncDbs") },
-    { id: "tc-install",  label: t("logs.phase.tcInstall"),  short: t("logs.phaseShort.install") },
-    { id: "tc-verify",   label: t("logs.phase.tcVerify"),   short: t("logs.phaseShort.verify") },
+    { id: "tc-download", label: LLocaleTextGet("logs.phase.tcDownload"), short: LLocaleTextGet("logs.phaseShort.download") },
+    { id: "tc-extract",  label: LLocaleTextGet("logs.phase.tcExtract"),  short: LLocaleTextGet("logs.phaseShort.extract") },
+    { id: "tc-keyring",  label: LLocaleTextGet("logs.phase.tcKeyring"),  short: LLocaleTextGet("logs.phaseShort.keyring") },
+    { id: "tc-syncdb",   label: LLocaleTextGet("logs.phase.tcSyncDb"),   short: LLocaleTextGet("logs.phaseShort.syncDbs") },
+    { id: "tc-install",  label: LLocaleTextGet("logs.phase.tcInstall"),  short: LLocaleTextGet("logs.phaseShort.install") },
+    { id: "tc-verify",   label: LLocaleTextGet("logs.phase.tcVerify"),   short: LLocaleTextGet("logs.phaseShort.verify") },
   ];
 }
 
-export function getFfmpegPipeline(): { id: LogPhaseId; label: string; short: string }[] {
+export function LPipelineFFmpegGet(): { id: LPhaseLogId; label: string; short: string }[] {
   return [
-    { id: "ff-download",   label: t("logs.phase.ffDownload"),   short: t("logs.phaseShort.download") },
-    { id: "ff-pkgconfig",  label: t("logs.phase.ffPkgconfig"),  short: t("logs.phaseShort.library") },
-    { id: "ff-configure",  label: t("logs.phase.ffConfigure"),  short: t("logs.phaseShort.configure") },
-    { id: "ff-compile",    label: t("logs.phase.ffCompile"),    short: t("logs.phaseShort.compile") },
-    { id: "ff-extraction", label: t("logs.phase.ffExtraction"), short: t("logs.phaseShort.extraction") },
+    { id: "ff-download",   label: LLocaleTextGet("logs.phase.ffDownload"),   short: LLocaleTextGet("logs.phaseShort.download") },
+    { id: "ff-pkgconfig",  label: LLocaleTextGet("logs.phase.ffPkgconfig"),  short: LLocaleTextGet("logs.phaseShort.library") },
+    { id: "ff-configure",  label: LLocaleTextGet("logs.phase.ffConfigure"),  short: LLocaleTextGet("logs.phaseShort.configure") },
+    { id: "ff-compile",    label: LLocaleTextGet("logs.phase.ffCompile"),    short: LLocaleTextGet("logs.phaseShort.compile") },
+    { id: "ff-extraction", label: LLocaleTextGet("logs.phase.ffExtraction"), short: LLocaleTextGet("logs.phaseShort.extraction") },
   ];
 }
 
 // ─── Phase detectors ─────────────────────────────────────────────────────────
 
-export function detectToolchainPhase(msg: string): LogPhaseId {
+export function LPhaseToolchainDetect(msg: string): LPhaseLogId {
   if (
     msg.startsWith("Approved private MSYS2 preparation started") ||
     msg.startsWith("Downloading approved file from MSYS2") ||
@@ -235,7 +235,7 @@ export function detectToolchainPhase(msg: string): LogPhaseId {
   return "other";
 }
 
-export function detectFfmpegPhase(msg: string): LogPhaseId {
+export function LPhaseFFmpegDetect(msg: string): LPhaseLogId {
   const n = msg.trimStart();
   const first = n.split(/\s+/)[0] ?? "";
   if (n.startsWith("Starting FFmpeg configure")) return "ff-configure";
@@ -243,11 +243,11 @@ export function detectFfmpegPhase(msg: string): LogPhaseId {
   if (n.startsWith("Starting FFmpeg artifact collection")) return "ff-extraction";
   if (n.startsWith("Emptying FFmpeg artifact directory")) return "ff-extraction";
   if (n.startsWith("Removed ") && n.includes(" stale FFmpeg artifact entries")) return "ff-extraction";
-  if (COMPILE_OPS.has(first)) return "ff-compile";
-  if (SHADER_OPS.has(first)) return "ff-compile";
-  if (STRIP_OPS.has(first)) return "ff-compile";
-  if (BUILD_OPS.has(first)) return "ff-compile";
-  if (DOCS_OPS.has(first)) return "ff-compile";
+  if (LLogCompileOps.has(first)) return "ff-compile";
+  if (LLogShaderOps.has(first)) return "ff-compile";
+  if (LLogStripOps.has(first)) return "ff-compile";
+  if (LLogBuildOps.has(first)) return "ff-compile";
+  if (LLogDocsOps.has(first)) return "ff-compile";
   if (first === "GEN") return "ff-compile";
   if (n.startsWith("pkg-config check") || n.startsWith("Using pkg-config")) return "ff-pkgconfig";
   if (
@@ -295,11 +295,11 @@ export function detectFfmpegPhase(msg: string): LogPhaseId {
 
 // ─── Parsing and aggregation ──────────────────────────────────────────────────
 
-export function parseLogEntry(entry: SecurityLogEntry, context: "toolchain" | "ffmpeg"): ParsedLogEntry {
+export function LLogEntryParse(entry: LLogSecurityEntry, context: "toolchain" | "ffmpeg"): LLogParsedEntry {
   const msg = entry.message;
   const n = msg.trimStart();
-  const phase = context === "toolchain" ? detectToolchainPhase(msg) : detectFfmpegPhase(msg);
-  const parsed: ParsedLogEntry = { ...entry, phase };
+  const phase = context === "toolchain" ? LPhaseToolchainDetect(msg) : LPhaseFFmpegDetect(msg);
+  const parsed: LLogParsedEntry = { ...entry, phase };
   const compileMatch = n.match(/^(CC|CXX|HOSTCC|X86ASM|WINDRES|STRIP|AR|LDXX|LD|HOSTLD|GEN|BIN2C|GZIP|MINIFY|GLSLC|POD|HTML|TXT|TEXI|GENTEXI)\s+(.+)$/);
   if (compileMatch) { parsed.compileOp = compileMatch[1]; parsed.compileTarget = compileMatch[2]; }
   if (msg.startsWith("dependency ")) {
@@ -319,12 +319,12 @@ export function parseLogEntry(entry: SecurityLogEntry, context: "toolchain" | "f
   return parsed;
 }
 
-export function buildPhaseGroups(entries: ParsedLogEntry[], phaseOrder: LogPhaseId[]): LogPhaseGroup[] {
-  const phaseMap = new Map<LogPhaseId, LogPhaseGroup>();
+export function LPhaseGroupBuild(entries: LLogParsedEntry[], phaseOrder: LPhaseLogId[]): LPhaseLogGroup[] {
+  const phaseMap = new Map<LPhaseLogId, LPhaseLogGroup>();
   for (const entry of entries) {
     if (!phaseMap.has(entry.phase)) {
       phaseMap.set(entry.phase, {
-        phase: entry.phase, label: getPhaseLabel(entry.phase), entries: [],
+        phase: entry.phase, label: LPhaseLabelGet(entry.phase), entries: [],
         compileCount: 0, assembleCount: 0, copiedDlls: [], systemDllCount: 0, skippedDllCount: 0,
         startTime: entry.timestamp, endTime: entry.timestamp,
       });
@@ -341,16 +341,16 @@ export function buildPhaseGroups(entries: ParsedLogEntry[], phaseOrder: LogPhase
   return phaseOrder.filter((phase) => phaseMap.has(phase)).map((phase) => phaseMap.get(phase)!);
 }
 
-export function computeProgress(entries: SecurityLogEntry[], approvedActionStatus: string, context: "toolchain" | "ffmpeg"): LiveProgress {
-  const phaseOrder = context === "toolchain" ? TOOLCHAIN_PHASE_ORDER : FFMPEG_PHASE_ORDER;
-  const phaseSet = new Set<LogPhaseId>(phaseOrder);
+export function LProgressCompute(entries: LLogSecurityEntry[], approvedActionStatus: string, context: "toolchain" | "ffmpeg"): LProgressLive {
+  const phaseOrder = context === "toolchain" ? LPhaseToolchainOrder : LPhaseFFmpegOrder;
+  const phaseSet = new Set<LPhaseLogId>(phaseOrder);
 
   if (entries.length === 0) {
     return { currentPhaseLabel: null, currentPhaseId: null, compileCount: 0, assembleCount: 0, copiedDllCount: 0, lastMessage: null, failureMessages: [], isComplete: false, hasFailed: false };
   }
 
-  const parsed = entries.map((e) => parseLogEntry(e, context));
-  const groups = buildPhaseGroups(parsed, phaseOrder);
+  const parsed = entries.map((e) => LLogEntryParse(e, context));
+  const groups = LPhaseGroupBuild(parsed, phaseOrder);
 
   const isComplete =
     approvedActionStatus === "completed" ||
@@ -368,7 +368,7 @@ export function computeProgress(entries: SecurityLogEntry[], approvedActionStatu
     ? ["Approved FFmpeg build completed", "Artifact report"]
     : ["Approved private MSYS2 environment is ready"];
 
-  let currentPhaseId: LogPhaseId | null = null;
+  let currentPhaseId: LPhaseLogId | null = null;
   let currentPhaseIndex = -1;
   for (const e of parsed) {
     if (!phaseSet.has(e.phase)) continue;
@@ -377,7 +377,7 @@ export function computeProgress(entries: SecurityLogEntry[], approvedActionStatu
     if (idx > currentPhaseIndex) { currentPhaseId = e.phase; currentPhaseIndex = idx; }
   }
 
-  const currentPhaseLabel = currentPhaseId ? getPhaseLabel(currentPhaseId) : null;
+  const currentPhaseLabel = currentPhaseId ? LPhaseLabelGet(currentPhaseId) : null;
 
   const NOISY = ["dependency ", "PE DLL dependencies for ", "DLL lookup index"];
   let lastMessage: string | null = null;

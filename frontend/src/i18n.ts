@@ -1,44 +1,44 @@
 import en from "../../shared/localization/en.json";
 import ko from "../../shared/localization/ko.json";
 
-type Dictionary = Record<string, string>;
-export type LocaleCode = "en" | "ko";
+type LDictionary = Record<string, string>;
+export type LLocaleCode = "en" | "ko";
 
-const enDictionary: Dictionary = en as Dictionary;
-const koDictionary: Dictionary = ko as Dictionary;
-const dictionaries: Record<LocaleCode, Dictionary> = { en: enDictionary, ko: koDictionary };
-const localeStorageKey = "customffmpeg.locale";
+const LLocaleEnglishDictionary: LDictionary = en as LDictionary;
+const LLocaleKoreanDictionary: LDictionary = ko as LDictionary;
+const LLocaleDictionaryMap: Record<LLocaleCode, LDictionary> = { en: LLocaleEnglishDictionary, ko: LLocaleKoreanDictionary };
+const LLocaleStorageKey = "customffmpeg.locale";
 
-function normalizeLocale(locale: string | null): LocaleCode {
+function LLocaleNormalize(locale: string | null): LLocaleCode {
   return locale === "ko" ? "ko" : "en";
 }
 
-let currentLocale: LocaleCode = normalizeLocale(globalThis.localStorage?.getItem(localeStorageKey) ?? null);
+let LLocaleCurrent: LLocaleCode = LLocaleNormalize(globalThis.localStorage?.getItem(LLocaleStorageKey) ?? null);
 
-export function getLocale(): LocaleCode {
-  return currentLocale;
+export function LLocaleGet(): LLocaleCode {
+  return LLocaleCurrent;
 }
 
-export function setLocale(locale: LocaleCode): void {
-  currentLocale = normalizeLocale(locale);
-  globalThis.localStorage?.setItem(localeStorageKey, currentLocale);
-  globalThis.dispatchEvent(new CustomEvent("customffmpeg-locale-change", { detail: currentLocale }));
+export function LLocaleSet(locale: LLocaleCode): void {
+  LLocaleCurrent = LLocaleNormalize(locale);
+  globalThis.localStorage?.setItem(LLocaleStorageKey, LLocaleCurrent);
+  globalThis.dispatchEvent(new CustomEvent("customffmpeg-locale-change", { detail: LLocaleCurrent }));
 }
 
-export function hasTranslation(id: string): boolean {
-  return Object.prototype.hasOwnProperty.call(dictionaries[currentLocale], id) || Object.prototype.hasOwnProperty.call(enDictionary, id);
+export function LLocaleTranslationCheck(id: string): boolean {
+  return Object.prototype.hasOwnProperty.call(LLocaleDictionaryMap[LLocaleCurrent], id) || Object.prototype.hasOwnProperty.call(LLocaleEnglishDictionary, id);
 }
 
-export function t(id: string, values: Record<string, string | number> = {}): string {
-  const template = dictionaries[currentLocale][id] ?? enDictionary[id] ?? id;
+export function LLocaleTextGet(id: string, values: Record<string, string | number> = {}): string {
+  const template = LLocaleDictionaryMap[LLocaleCurrent][id] ?? LLocaleEnglishDictionary[id] ?? id;
   return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
 }
 
-export function tFallback(id: string, fallback: string, values: Record<string, string | number> = {}): string {
-  if (!hasTranslation(id)) return fallback;
-  return t(id, values);
+export function LLocaleFallbackGet(id: string, fallback: string, values: Record<string, string | number> = {}): string {
+  if (!LLocaleTranslationCheck(id)) return fallback;
+  return LLocaleTextGet(id, values);
 }
 
-export function tStatus(status: string): string {
-  return tFallback(`status.${status}`, status);
+export function LLocaleStatusGet(status: string): string {
+  return LLocaleFallbackGet(`status.${status}`, status);
 }

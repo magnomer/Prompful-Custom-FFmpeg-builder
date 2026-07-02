@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 2,
+  "recordKind": "ffmpeg-version-aware-library",
+  "generatedFromCurrentV4CodeOnly": true,
+  "sourceFiles": [
+    "internal/planning/LCatalogLibrarySource.go",
+    "backup/shared/releasesupport/ffmpeg-release-support.json",
+    "backup/shared/librarysources/library-sources.json",
+    "internal/planning/preparation.go",
+    "frontend/src/tabs/libraries.tsx",
+    "versions/*.json",
+    "versions/{ffmpegVersion}/{libraryId}.go"
+  ],
+  "libraryId": "ffprobe-program",
+  "importantModelingRule": "No build-relevant library field is authoritative at the top level. Each FFmpeg-version record carries its own display name, FFmpeg-facing configure flags, track/provider, package names, availability, source pin, and preparation status.",
+  "ffmpegVersions": {
+    "4.4.8": {
+      "libraryId": "ffprobe-program",
+      "ffmpegVersion": "4.4.8",
+      "state": "included",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "ffprobe.exe",
+      "categoryName": "Included by default (official FFmpeg source)",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "included",
+      "officialWebpageUrl": "https://ffmpeg.org/",
+      "defaultChecked": true,
+      "locked": true,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "included-in-official-ffmpeg-source"
+      }
+    },
+    "5.1.9": {
+      "libraryId": "ffprobe-program",
+      "ffmpegVersion": "5.1.9",
+      "state": "included",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "ffprobe.exe",
+      "categoryName": "Included by default (official FFmpeg source)",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "included",
+      "officialWebpageUrl": "https://ffmpeg.org/",
+      "defaultChecked": true,
+      "locked": true,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "included-in-official-ffmpeg-source"
+      }
+    },
+    "6.1.6": {
+      "libraryId": "ffprobe-program",
+      "ffmpegVersion": "6.1.6",
+      "state": "included",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "ffprobe.exe",
+      "categoryName": "Included by default (official FFmpeg source)",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "included",
+      "officialWebpageUrl": "https://ffmpeg.org/",
+      "defaultChecked": true,
+      "locked": true,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "included-in-official-ffmpeg-source"
+      }
+    },
+    "7.0.3": {
+      "libraryId": "ffprobe-program",
+      "ffmpegVersion": "7.0.3",
+      "state": "included",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "ffprobe.exe",
+      "categoryName": "Included by default (official FFmpeg source)",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "included",
+      "officialWebpageUrl": "https://ffmpeg.org/",
+      "defaultChecked": true,
+      "locked": true,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "included-in-official-ffmpeg-source"
+      }
+    },
+    "7.1.5": {
+      "libraryId": "ffprobe-program",
+      "ffmpegVersion": "7.1.5",
+      "state": "included",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "ffprobe.exe",
+      "categoryName": "Included by default (official FFmpeg source)",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "included",
+      "officialWebpageUrl": "https://ffmpeg.org/",
+      "defaultChecked": true,
+      "locked": true,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "included-in-official-ffmpeg-source"
+      }
+    },
+    "8.0.3": {
+      "libraryId": "ffprobe-program",
+      "ffmpegVersion": "8.0.3",
+      "state": "included",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "ffprobe.exe",
+      "categoryName": "Included by default (official FFmpeg source)",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "included",
+      "officialWebpageUrl": "https://ffmpeg.org/",
+      "defaultChecked": true,
+      "locked": true,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "included-in-official-ffmpeg-source"
+      }
+    },
+    "8.1.2": {
+      "libraryId": "ffprobe-program",
+      "ffmpegVersion": "8.1.2",
+      "state": "included",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "ffprobe.exe",
+      "categoryName": "Included by default (official FFmpeg source)",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "included",
+      "officialWebpageUrl": "https://ffmpeg.org/",
+      "defaultChecked": true,
+      "locked": true,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "included-in-official-ffmpeg-source"
+      }
+    }
+  }
+}

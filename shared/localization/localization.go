@@ -7,16 +7,16 @@ import (
 )
 
 //go:embed en.json ko.json
-var localizationFiles embed.FS
+var LLocaleFiles embed.FS
 
-var englishLocalization = loadLocalization("en.json")
-var localizationsByLocale = map[string]map[string]string{
-	"en": englishLocalization,
-	"ko": loadLocalization("ko.json"),
+var LLocaleEnglish = LLocaleLoad("en.json")
+var LLocaleMap = map[string]map[string]string{
+	"en": LLocaleEnglish,
+	"ko": LLocaleLoad("ko.json"),
 }
 
-func loadLocalization(fileName string) map[string]string {
-	bytes, err := localizationFiles.ReadFile(fileName)
+func LLocaleLoad(fileName string) map[string]string {
+	bytes, err := LLocaleFiles.ReadFile(fileName)
 	if err != nil {
 		return map[string]string{}
 	}
@@ -27,32 +27,32 @@ func loadLocalization(fileName string) map[string]string {
 	return values
 }
 
-func interpolate(template string, values map[string]string) string {
+func LTextInterpolate(template string, values map[string]string) string {
 	for name, value := range values {
 		template = strings.ReplaceAll(template, "{"+name+"}", value)
 	}
 	return template
 }
 
-// Localize resolves a key in English. Used for backend log and error messages,
+// LLocaleTextGet resolves a key in English. Used for backend log and error messages,
 // which stay English regardless of UI language.
-func Localize(key string, values map[string]string) string {
-	template := englishLocalization[key]
+func LLocaleTextGet(key string, values map[string]string) string {
+	template := LLocaleEnglish[key]
 	if template == "" {
 		return key
 	}
-	return interpolate(template, values)
+	return LTextInterpolate(template, values)
 }
 
-// LocalizeFor resolves a key in the given locale, falling back to English per
+// LLocaleTextForGet resolves a key in the given locale, falling back to English per
 // key so an untranslated key still shows English text rather than a bare key.
 // Used for the native confirmation dialog, the one backend-rendered surface that
 // follows the UI language.
-func LocalizeFor(locale string, key string, values map[string]string) string {
-	if dictionary, ok := localizationsByLocale[locale]; ok {
+func LLocaleTextForGet(locale string, key string, values map[string]string) string {
+	if dictionary, ok := LLocaleMap[locale]; ok {
 		if template, ok := dictionary[key]; ok && template != "" {
-			return interpolate(template, values)
+			return LTextInterpolate(template, values)
 		}
 	}
-	return Localize(key, values)
+	return LLocaleTextGet(key, values)
 }

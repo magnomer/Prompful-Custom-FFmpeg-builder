@@ -1,7 +1,7 @@
 import React from "react";
-import { t } from "../i18n";
-import { configureOptionText } from "../catalogText";
-import { PageHeader } from "./shared";
+import { LLocaleTextGet } from "../i18n";
+import { LOptionTextGet } from "../catalogText";
+import { PHeaderPageRender } from "./shared";
 import optionPresetCardIcon from "../assets/option-card-icons/OptionPreset.svg";
 import optionsCardIcon from "../assets/option-card-icons/Options.svg";
 import optionNoneIcon from "../assets/option-preset-icons/PresetNone.svg";
@@ -14,7 +14,7 @@ import resetIcon from "../assets/button-icons/Reset.svg";
 
 // ─── Preset data ───────────────────────────────────────────────────────────────
 
-export type OptionPresetId =
+export type LPresetOptionId =
   | "none"
   | "standard"
   | "compact"
@@ -22,8 +22,8 @@ export type OptionPresetId =
   | "performance"
   | "custom";
 
-export type OptionPreset = {
-  presetId: OptionPresetId;
+export type LPresetOption = {
+  presetId: LPresetOptionId;
   optionIds: string[];
 };
 
@@ -31,23 +31,23 @@ export type OptionPreset = {
 // on top. High-risk and troubleshooting toggles (enable-shared, disable-asm,
 // disable-x86asm, disable-network, etc.) are intentionally in no preset and stay
 // reachable only by hand, which keeps every preset safe.
-const baseConfigureOptionIds = [
+const LOptionBaseIds = [
   "default-static",
   "default-programs",
   "default-ffmpeg",
   "default-ffprobe",
 ];
 
-export const optionPresets: OptionPreset[] = [
-  { presetId: "none", optionIds: baseConfigureOptionIds },
+export const LPresetOptionList: LPresetOption[] = [
+  { presetId: "none", optionIds: LOptionBaseIds },
   {
     presetId: "standard",
-    optionIds: [...baseConfigureOptionIds, "pkg-config-static", "disable-doc"],
+    optionIds: [...LOptionBaseIds, "pkg-config-static", "disable-doc"],
   },
   {
     presetId: "compact",
     optionIds: [
-      ...baseConfigureOptionIds,
+      ...LOptionBaseIds,
       "pkg-config-static",
       "disable-doc",
       "disable-debug",
@@ -56,7 +56,7 @@ export const optionPresets: OptionPreset[] = [
   {
     presetId: "portable",
     optionIds: [
-      ...baseConfigureOptionIds,
+      ...LOptionBaseIds,
       "pkg-config-static",
       "disable-doc",
       "disable-debug",
@@ -66,7 +66,7 @@ export const optionPresets: OptionPreset[] = [
   {
     presetId: "performance",
     optionIds: [
-      ...baseConfigureOptionIds,
+      ...LOptionBaseIds,
       "pkg-config-static",
       "disable-doc",
       "disable-debug",
@@ -75,11 +75,11 @@ export const optionPresets: OptionPreset[] = [
   },
 ];
 
-export function matchOptionPresetId(
+export function LPresetOptionMatch(
   selectedOptionIds: string[],
-): OptionPresetId {
+): LPresetOptionId {
   const normalizedSelection = Array.from(new Set(selectedOptionIds)).sort();
-  for (const preset of optionPresets) {
+  for (const preset of LPresetOptionList) {
     const normalizedPreset = Array.from(new Set(preset.optionIds)).sort();
     if (
       normalizedSelection.length === normalizedPreset.length &&
@@ -93,7 +93,7 @@ export function matchOptionPresetId(
   return "custom";
 }
 
-const optionPresetIconById: Partial<Record<OptionPresetId, string>> = {
+const LOptionPresetIconMap: Partial<Record<LPresetOptionId, string>> = {
   none: optionNoneIcon,
   standard: optionStandardIcon,
   compact: optionCompactIcon,
@@ -101,24 +101,24 @@ const optionPresetIconById: Partial<Record<OptionPresetId, string>> = {
   performance: optionPerformanceIcon,
 };
 
-function OptionPresetIcon(props: { presetId: OptionPresetId; className?: string }) {
-  const icon = optionPresetIconById[props.presetId];
+function PIconOptionRender(props: { presetId: LPresetOptionId; className?: string }) {
+  const icon = LOptionPresetIconMap[props.presetId];
   if (!icon) return null;
   return <img className={props.className ?? ""} src={icon} alt="" aria-hidden="true" />;
 }
 
-function selectableOptionPresets(): Array<OptionPreset & { presetId: Exclude<OptionPresetId, "custom"> }> {
-  return optionPresets.filter((preset): preset is OptionPreset & { presetId: Exclude<OptionPresetId, "custom"> } => preset.presetId !== "custom");
+function LPresetOptionSelectableList(): Array<LPresetOption & { presetId: Exclude<LPresetOptionId, "custom"> }> {
+  return LPresetOptionList.filter((preset): preset is LPresetOption & { presetId: Exclude<LPresetOptionId, "custom"> } => preset.presetId !== "custom");
 }
 
-function OptionPresetSelector(props: {
-  selectedPresetId: OptionPresetId;
-  onApplyPreset: (presetId: OptionPresetId) => void;
+function PSelectorOptionRender(props: {
+  selectedPresetId: LPresetOptionId;
+  onApplyPreset: (presetId: LPresetOptionId) => void;
 }) {
   return (
     <section className="preset-panel options-preset-panel">
       <div className="preset-grid options-preset-grid">
-        {selectableOptionPresets().map((preset) => {
+        {LPresetOptionSelectableList().map((preset) => {
           const active = props.selectedPresetId === preset.presetId;
           return (
             <button
@@ -127,13 +127,13 @@ function OptionPresetSelector(props: {
               key={preset.presetId}
               onClick={() => props.onApplyPreset(preset.presetId)}
             >
-              <OptionPresetIcon presetId={preset.presetId} className="preset-card__icon" />
+              <PIconOptionRender presetId={preset.presetId} className="preset-card__icon" />
               <span>
                 <span className="preset-card__name">
-                  {t(`options.presets.${preset.presetId}.name`)}
+                  {LLocaleTextGet(`options.presets.${preset.presetId}.name`)}
                 </span>
                 <span className="preset-card__plain">
-                  {t(`options.presets.${preset.presetId}.plain`)}
+                  {LLocaleTextGet(`options.presets.${preset.presetId}.plain`)}
                 </span>
               </span>
               {active && (
@@ -150,39 +150,39 @@ function OptionPresetSelector(props: {
           <span className="preset-panel__custom-icon" aria-hidden="true">
             ✓
           </span>
-          {t("options.presetSelector.custom")}
+          {LLocaleTextGet("options.presetSelector.custom")}
         </p>
       )}
     </section>
   );
 }
 
-function SimpleOptionPresetCard(props: {
-  selectedPresetId: OptionPresetId;
-  onApplyPreset: (presetId: OptionPresetId) => void;
+function PCardOptionPresetRender(props: {
+  selectedPresetId: LPresetOptionId;
+  onApplyPreset: (presetId: LPresetOptionId) => void;
 }) {
-  const presets = selectableOptionPresets();
+  const presets = LPresetOptionSelectableList();
   const selectedPreset = presets.find((preset) => preset.presetId === props.selectedPresetId);
   const selectedPresetDescription = selectedPreset
-    ? t(`options.presets.${selectedPreset.presetId}.plain`)
-    : t("options.presetSelector.custom");
+    ? LLocaleTextGet(`options.presets.${selectedPreset.presetId}.plain`)
+    : LLocaleTextGet("options.presetSelector.custom");
 
   return (
     <section className="card card--blue options-simple-card options-simple-preset-card">
       <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={optionPresetCardIcon} alt="" /></span>
       <div className="card__head">
-        <h2 className="card__title">{t("options.simple.preset.title")}</h2>
+        <h2 className="card__title">{LLocaleTextGet("options.simple.preset.title")}</h2>
       </div>
       <div className="card__control options-simple-card__control">
         <select
           className="card__input"
           value={props.selectedPresetId}
-          onChange={(event) => props.onApplyPreset(event.target.value as OptionPresetId)}
+          onChange={(event) => props.onApplyPreset(event.target.value as LPresetOptionId)}
         >
-          {props.selectedPresetId === "custom" && <option value="custom">{t("options.presets.custom.name")}</option>}
+          {props.selectedPresetId === "custom" && <option value="custom">{LLocaleTextGet("options.presets.custom.name")}</option>}
           {presets.map((preset) => (
             <option value={preset.presetId} key={preset.presetId}>
-              {t(`options.presets.${preset.presetId}.name`)}
+              {LLocaleTextGet(`options.presets.${preset.presetId}.name`)}
             </option>
           ))}
         </select>
@@ -197,7 +197,7 @@ function SimpleOptionPresetCard(props: {
 // Renders an option's plain text: "\n" becomes a line break, "**text**" becomes
 // bold, and "<red>text</red>" becomes a red-colored span (used for the "Risk"
 // keyword on high-risk options). No other markup is interpreted.
-function renderOptionRichText(text: string): React.ReactNode {
+function PTextOptionRender(text: string): React.ReactNode {
   return text.split("\n").map((line, lineIndex) => (
     <React.Fragment key={lineIndex}>
       {lineIndex > 0 && <br />}
@@ -206,11 +206,11 @@ function renderOptionRichText(text: string): React.ReactNode {
         .map((segment, segmentIndex) =>
           segment.startsWith("**") && segment.endsWith("**") ? (
             <strong key={segmentIndex}>
-              {renderRedEmphasis(segment.slice(2, -2))}
+              {PTextEmphasisRender(segment.slice(2, -2))}
             </strong>
           ) : (
             <React.Fragment key={segmentIndex}>
-              {renderRedEmphasis(segment)}
+              {PTextEmphasisRender(segment)}
             </React.Fragment>
           ),
         )}
@@ -218,7 +218,7 @@ function renderOptionRichText(text: string): React.ReactNode {
   ));
 }
 
-function renderRedEmphasis(text: string): React.ReactNode {
+function PTextEmphasisRender(text: string): React.ReactNode {
   return text.split(/(<red>[^<]+<\/red>)/g).map((segment, index) =>
     segment.startsWith("<red>") && segment.endsWith("</red>") ? (
       <span key={index} className="option-row__risk-word">
@@ -230,21 +230,21 @@ function renderRedEmphasis(text: string): React.ReactNode {
   );
 }
 
-function optionRiskLabel(riskLevelName: string): string {
-  return t(`options.row.risk.${normalizeOptionRiskName(riskLevelName)}`);
+function LOptionRiskResolve(riskLevelName: string): string {
+  return LLocaleTextGet(`options.row.risk.${LOptionRiskNormalize(riskLevelName)}`);
 }
 
-function normalizeOptionRiskName(riskLevelName: string): string {
+function LOptionRiskNormalize(riskLevelName: string): string {
   return riskLevelName === "high" || riskLevelName === "medium"
     ? riskLevelName
     : "low";
 }
 
-function groupConfigureOptionsByCategory(catalog: ConfigureOptionChoice[]) {
-  return catalog.reduce<Record<string, ConfigureOptionChoice[]>>(
+function LOptionCategoryGroup(LCatalogLibrarySource: LOptionChoice[]) {
+  return LCatalogLibrarySource.reduce<Record<string, LOptionChoice[]>>(
     (groups, option) => {
       const categoryName =
-        configureOptionText(option, "categoryName") || t("common.other");
+        LOptionTextGet(option, "categoryName") || LLocaleTextGet("common.other");
       groups[categoryName] = groups[categoryName] || [];
       groups[categoryName].push(option);
       return groups;
@@ -253,31 +253,31 @@ function groupConfigureOptionsByCategory(catalog: ConfigureOptionChoice[]) {
   );
 }
 
-export function licenseBoundaryLabel(licenseProfileName: string): string {
+export function LLicenseBoundaryResolve(licenseProfileName: string): string {
   switch (licenseProfileName) {
     case "gpl-local":
-      return t("options.licenseBoundary.gpl");
+      return LLocaleTextGet("options.licenseBoundary.gpl");
     case "nonfree-local":
-      return t("options.licenseBoundary.nonfree");
+      return LLocaleTextGet("options.licenseBoundary.nonfree");
     case "lgpl-local":
     default:
-      return t("options.licenseBoundary.lgpl");
+      return LLocaleTextGet("options.licenseBoundary.lgpl");
   }
 }
 
-export function licenseBoundaryShortLabel(licenseProfileName: string): string {
+export function LLicenseBoundaryLabelShortGet(licenseProfileName: string): string {
   switch (licenseProfileName) {
     case "gpl-local":
-      return t("options.summary.license.gpl-local");
+      return LLocaleTextGet("options.summary.license.gpl-local");
     case "nonfree-local":
-      return t("options.summary.license.nonfree-local");
+      return LLocaleTextGet("options.summary.license.nonfree-local");
     case "lgpl-local":
     default:
-      return t("options.summary.license.lgpl-local");
+      return LLocaleTextGet("options.summary.license.lgpl-local");
   }
 }
 
-function normalizeLicenseBoundaryName(licenseProfileName: string): string {
+function LLicenseBoundaryNormalize(licenseProfileName: string): string {
   switch (licenseProfileName) {
     case "gpl-local":
     case "nonfree-local":
@@ -289,18 +289,18 @@ function normalizeLicenseBoundaryName(licenseProfileName: string): string {
 
 // ─── Option summary ───────────────────────────────────────────────────────────
 
-function OptionSummary(props: {
+function PSummaryOptionRender(props: {
   licenseProfileName: string;
   selectedOptionCount: number;
-  selectedPresetId: OptionPresetId;
+  selectedPresetId: LPresetOptionId;
 }) {
-  const licenseBoundary = normalizeLicenseBoundaryName(
+  const licenseBoundary = LLicenseBoundaryNormalize(
     props.licenseProfileName,
   );
   return (
     <section
       className="option-summary-card"
-      aria-label={t("options.summary.ariaLabel")}
+      aria-label={LLocaleTextGet("options.summary.ariaLabel")}
     >
       <div className="option-summary-card__header">
         <span className="option-summary-card__status" aria-hidden="true">
@@ -308,28 +308,28 @@ function OptionSummary(props: {
         </span>
         <div className="option-summary-card__copy">
           <span className="option-summary-card__title">
-            {t("options.summary.currentSelection")}
+            {LLocaleTextGet("options.summary.currentSelection")}
           </span>
           <span className="option-summary-card__message">
-            {t(`options.presets.${props.selectedPresetId}.name`)}
+            {LLocaleTextGet(`options.presets.${props.selectedPresetId}.name`)}
           </span>
         </div>
       </div>
       <div className="option-summary">
         <div className="option-summary__item">
           <span className="option-summary__label">
-            {t("options.summary.license")}
+            {LLocaleTextGet("options.summary.license")}
           </span>
           <strong
             className={`option-summary__value option-summary__license option-summary__license--${licenseBoundary}`}
-            title={licenseBoundaryLabel(props.licenseProfileName)}
+            title={LLicenseBoundaryResolve(props.licenseProfileName)}
           >
-            {licenseBoundaryShortLabel(props.licenseProfileName)}
+            {LLicenseBoundaryLabelShortGet(props.licenseProfileName)}
           </strong>
         </div>
         <div className="option-summary__item">
           <span className="option-summary__label">
-            {t("options.summary.selected")}
+            {LLocaleTextGet("options.summary.selected")}
           </span>
           <strong className="option-summary__value">
             {props.selectedOptionCount}
@@ -342,45 +342,45 @@ function OptionSummary(props: {
 
 // ─── Technical panel ──────────────────────────────────────────────────────────
 
-function OptionTechnicalPanel() {
+function PPanelTechnicalRender() {
   return (
     <section className="option-technical-panel">
       <h2 className="option-technical-panel__title">
-        {t("options.technical.title")}
+        {LLocaleTextGet("options.technical.title")}
       </h2>
       <div className="option-technical-details">
         <section className="option-technical-detail">
           <h3 className="option-technical-detail__title">
-            {t("options.technical.license.title")}
+            {LLocaleTextGet("options.technical.license.title")}
           </h3>
           <p className="option-technical-detail__text">
-            {t("options.license.hint")}
+            {LLocaleTextGet("options.license.hint")}
           </p>
           <p className="option-technical-detail__text">
-            {t("options.license.rule.lgpl")}{" "}
-            <strong>{t("libraries.summary.license.lgpl-local")}</strong>.<br />
-            {t("options.license.rule.gpl")}{" "}
-            <strong>{t("libraries.summary.license.gpl-local")}</strong>.<br />
-            {t("options.license.rule.nonfree.prefix")}{" "}
+            {LLocaleTextGet("options.license.rule.lgpl")}{" "}
+            <strong>{LLocaleTextGet("libraries.summary.license.lgpl-local")}</strong>.<br />
+            {LLocaleTextGet("options.license.rule.gpl")}{" "}
+            <strong>{LLocaleTextGet("libraries.summary.license.gpl-local")}</strong>.<br />
+            {LLocaleTextGet("options.license.rule.nonfree.prefix")}{" "}
             <code>--enable-nonfree</code>
-            {t("options.license.rule.nonfree.suffix")}{" "}
-            <strong>{t("libraries.summary.license.nonfree-local")}</strong>.
+            {LLocaleTextGet("options.license.rule.nonfree.suffix")}{" "}
+            <strong>{LLocaleTextGet("libraries.summary.license.nonfree-local")}</strong>.
           </p>
         </section>
         <section className="option-technical-detail">
           <h3 className="option-technical-detail__title">
-            {t("options.technical.configure.title")}
+            {LLocaleTextGet("options.technical.configure.title")}
           </h3>
           <p className="option-technical-detail__text">
-            {t("options.technical.configure.text")}
+            {LLocaleTextGet("options.technical.configure.text")}
           </p>
         </section>
         <section className="option-technical-detail">
           <h3 className="option-technical-detail__title">
-            {t("options.technical.advanced.title")}
+            {LLocaleTextGet("options.technical.advanced.title")}
           </h3>
           <p className="option-technical-detail__text">
-            {t("options.technical.advanced.text")}
+            {LLocaleTextGet("options.technical.advanced.text")}
           </p>
         </section>
       </div>
@@ -388,8 +388,8 @@ function OptionTechnicalPanel() {
   );
 }
 
-function optionMatchesSearch(
-  option: ConfigureOptionChoice,
+function LOptionSearchMatch(
+  option: LOptionChoice,
   query: string,
 ): boolean {
   const normalizedQuery = query.trim().toLowerCase();
@@ -397,28 +397,28 @@ function optionMatchesSearch(
     return true;
   }
   return [
-    configureOptionText(option, "displayName"),
-    configureOptionText(option, "plainExplanation"),
-    configureOptionText(option, "technicalNote"),
-    configureOptionText(option, "categoryName"),
+    LOptionTextGet(option, "displayName"),
+    LOptionTextGet(option, "plainExplanation"),
+    LOptionTextGet(option, "technicalNote"),
+    LOptionTextGet(option, "categoryName"),
     ...option.configureFlags,
   ].some((value) => value.toLowerCase().includes(normalizedQuery));
 }
 
-function configureOptionCategoryNames(
-  catalog: ConfigureOptionChoice[],
+function LOptionCategoryNamesGet(
+  LCatalogLibrarySource: LOptionChoice[],
 ): string[] {
   return Array.from(
     new Set(
-      catalog.map(
+      LCatalogLibrarySource.map(
         (option) =>
-          configureOptionText(option, "categoryName") || t("common.other"),
+          LOptionTextGet(option, "categoryName") || LLocaleTextGet("common.other"),
       ),
     ),
   );
 }
 
-function OptionsCategoryDropdown(props: {
+function PDropdownCategoryRender(props: {
   categories: string[];
   selectedCategoryName: string;
   open: boolean;
@@ -436,7 +436,7 @@ function OptionsCategoryDropdown(props: {
         onClick={props.onToggleOpen}
       >
         <span className="options-category-dropdown__value">
-          {props.selectedCategoryName || t("options.category.all")}
+          {props.selectedCategoryName || LLocaleTextGet("options.category.all")}
         </span>
         <span
           className="options-category-dropdown__chevron"
@@ -452,7 +452,7 @@ function OptionsCategoryDropdown(props: {
             aria-selected={!props.selectedCategoryName}
             onClick={() => props.onSelectCategory("")}
           >
-            <span>{t("options.category.all")}</span>
+            <span>{LLocaleTextGet("options.category.all")}</span>
             {!props.selectedCategoryName && (
               <span
                 className="options-category-dropdown__check"
@@ -493,26 +493,26 @@ function OptionsCategoryDropdown(props: {
 
 // ─── Option list ──────────────────────────────────────────────────────────────
 
-function ConfigureOptionList(props: {
-  catalog: ConfigureOptionChoice[];
+function PListOptionRender(props: {
+  LCatalogLibrarySource: LOptionChoice[];
   selectedOptionIds: string[];
   onToggleOption: (optionId: string) => void;
   showTechnicalDetails: boolean;
   searchQuery: string;
   selectedCategoryName: string;
 }) {
-  const filteredOptions = props.catalog.filter(
+  const filteredOptions = props.LCatalogLibrarySource.filter(
     (option) =>
       (!props.selectedCategoryName ||
-        (configureOptionText(option, "categoryName") || t("common.other")) ===
+        (LOptionTextGet(option, "categoryName") || LLocaleTextGet("common.other")) ===
           props.selectedCategoryName) &&
-      optionMatchesSearch(option, props.searchQuery),
+      LOptionSearchMatch(option, props.searchQuery),
   );
-  const groupedOptions = groupConfigureOptionsByCategory(filteredOptions);
+  const groupedOptions = LOptionCategoryGroup(filteredOptions);
   return (
     <div className="option-list">
       {Object.keys(groupedOptions).length === 0 && (
-        <section className="option-empty">{t("options.empty")}</section>
+        <section className="option-empty">{LLocaleTextGet("options.empty")}</section>
       )}
       {Object.entries(groupedOptions).map(([categoryName, options]) => (
         <section className="option-group" key={categoryName}>
@@ -527,34 +527,34 @@ function ConfigureOptionList(props: {
               />
               <span className="option-row__main">
                 <span className="option-row__name">
-                  {configureOptionText(option, "displayName")}
+                  {LOptionTextGet(option, "displayName")}
                 </span>
                 <span className="option-row__plain">
-                  {renderOptionRichText(
-                    configureOptionText(option, "plainExplanation"),
+                  {PTextOptionRender(
+                    LOptionTextGet(option, "plainExplanation"),
                   )}
                 </span>
                 {props.showTechnicalDetails &&
-                  configureOptionText(option, "technicalNote") && (
+                  LOptionTextGet(option, "technicalNote") && (
                     <span className="option-row__detail">
-                      {configureOptionText(option, "technicalNote")}
+                      {LOptionTextGet(option, "technicalNote")}
                     </span>
                   )}
                 {props.showTechnicalDetails && (
                   <span className="option-row__detail option-row__detail--flags">
                     {option.configureFlags.length > 0
-                      ? t("options.configure.flags", {
+                      ? LLocaleTextGet("options.configure.flags", {
                           flags: option.configureFlags.join(" "),
                         })
-                      : t("options.configure.defaultBehavior")}
+                      : LLocaleTextGet("options.configure.defaultBehavior")}
                   </span>
                 )}
               </span>
               <span
-                className={`option-row__risk option-row__risk--${normalizeOptionRiskName(option.riskLevelName)}`}
-                title={t("options.row.riskLabel")}
+                className={`option-row__risk option-row__risk--${LOptionRiskNormalize(option.riskLevelName)}`}
+                title={LLocaleTextGet("options.row.riskLabel")}
               >
-                {optionRiskLabel(option.riskLevelName)}
+                {LOptionRiskResolve(option.riskLevelName)}
               </span>
             </label>
           ))}
@@ -564,41 +564,41 @@ function ConfigureOptionList(props: {
   );
 }
 
-function AdvancedConfigureFlagsSection(props: {
+function PSectionFlagRender(props: {
   extraConfigureFlagText: string;
   onExtraFlagTextChange: (text: string) => void;
 }) {
   return (
     <section className="options-section options-section--advanced">
       <h2 className="options-section__title">
-        {t("options.advancedFlags.label")}
+        {LLocaleTextGet("options.advancedFlags.label")}
       </h2>
       <label className="field options-field options-section__body">
         <span className="field__hint">
-          {t("options.advancedFlags.hint.prefix")} <code>./configure</code>
-          {t("options.advancedFlags.hint.suffix")}
+          {LLocaleTextGet("options.advancedFlags.hint.prefix")} <code>./configure</code>
+          {LLocaleTextGet("options.advancedFlags.hint.suffix")}
         </span>
         <textarea
           className="field__textarea"
           rows={5}
           value={props.extraConfigureFlagText}
           onChange={(event) => props.onExtraFlagTextChange(event.target.value)}
-          placeholder={t("options.advancedFlags.placeholder")}
+          placeholder={LLocaleTextGet("options.advancedFlags.placeholder")}
         />
       </label>
     </section>
   );
 }
 
-function ThreadsSection(props: {
+function PSectionThreadRender(props: {
   parallelJobCount: number;
-  updateFfmpegBuildSettings: (partial: Partial<FfmpegBuildSettings>) => void;
+  updateFfmpegBuildSettings: (partial: Partial<LSettingsFFmpeg>) => void;
 }) {
   return (
     <section className="options-section">
-      <h2 className="options-section__title">{t("options.jobs.label")}</h2>
+      <h2 className="options-section__title">{LLocaleTextGet("options.jobs.label")}</h2>
       <label className="field options-field options-section__body">
-        <span className="field__hint">{t("options.jobs.hint")}</span>
+        <span className="field__hint">{LLocaleTextGet("options.jobs.hint")}</span>
         <input
           className="field__input"
           type="number"
@@ -616,8 +616,8 @@ function ThreadsSection(props: {
   );
 }
 
-function SimpleOptionsCard(props: {
-  catalog: ConfigureOptionChoice[];
+function PCardOptionRender(props: {
+  LCatalogLibrarySource: LOptionChoice[];
   selectedOptionIds: string[];
   onToggleOption: (optionId: string) => void;
   searchQuery: string;
@@ -626,27 +626,27 @@ function SimpleOptionsCard(props: {
   onSelectCategory: (categoryName: string) => void;
   categoryDropdownOpen: boolean;
   onToggleCategoryDropdown: () => void;
-  optionCategoryNames: string[];
+  LOptionCategoryNameGets: string[];
 }) {
   return (
     <section className="card card--teal options-simple-card options-simple-options-card">
       <span className="card__badge" aria-hidden="true"><img className="card__badge-icon" src={optionsCardIcon} alt="" /></span>
       <div className="card__head">
-        <h2 className="card__title">{t("options.simple.options.title")}</h2>
+        <h2 className="card__title">{LLocaleTextGet("options.simple.options.title")}</h2>
       </div>
       <div className="options-simple-options-card__body">
         <div className="options-simple-options-card__controls">
           <label className="options-search">
-            <span className="visually-hidden">{t("options.search.label")}</span>
+            <span className="visually-hidden">{LLocaleTextGet("options.search.label")}</span>
             <input
               type="search"
               value={props.searchQuery}
               onChange={(event) => props.onSearchQueryChange(event.target.value)}
-              placeholder={t("options.search.placeholder")}
+              placeholder={LLocaleTextGet("options.search.placeholder")}
             />
           </label>
-          <OptionsCategoryDropdown
-            categories={props.optionCategoryNames}
+          <PDropdownCategoryRender
+            categories={props.LOptionCategoryNameGets}
             selectedCategoryName={props.selectedCategoryName}
             open={props.categoryDropdownOpen}
             onToggleOpen={props.onToggleCategoryDropdown}
@@ -654,8 +654,8 @@ function SimpleOptionsCard(props: {
           />
         </div>
         <div className="options-simple-options-card__results">
-          <ConfigureOptionList
-            catalog={props.catalog}
+          <PListOptionRender
+            LCatalogLibrarySource={props.LCatalogLibrarySource}
             selectedOptionIds={props.selectedOptionIds}
             onToggleOption={props.onToggleOption}
             showTechnicalDetails={false}
@@ -668,25 +668,25 @@ function SimpleOptionsCard(props: {
   );
 }
 
-// ─── OptionsTab ───────────────────────────────────────────────────────────────
+// ─── POptionRender ───────────────────────────────────────────────────────────────
 
-export type OptionsTabProps = {
-  ffmpegBuildSettings: FfmpegBuildSettings;
-  initialApplicationState: InitialApplicationState;
+export type POptionProps = {
+  ffmpegBuildSettings: LSettingsFFmpeg;
+  initialProgramState: LStateInitial;
   extraConfigureFlagText: string;
   onExtraFlagTextChange: (text: string) => void;
-  updateFfmpegBuildSettings: (partial: Partial<FfmpegBuildSettings>) => void;
+  updateFfmpegBuildSettings: (partial: Partial<LSettingsFFmpeg>) => void;
   toggleConfigureOption: (optionId: string) => void;
-  applyOptionPreset: (presetId: OptionPresetId) => void;
+  applyOptionPreset: (presetId: LPresetOptionId) => void;
   optionsDetailedView: boolean;
   setOptionsDetailedView: (value: boolean) => void;
   showTechnicalDetails: boolean;
   setShowTechnicalDetails: (value: boolean) => void;
 };
 
-export function OptionsTab({
+export function POptionRender({
   ffmpegBuildSettings,
-  initialApplicationState,
+  initialProgramState,
   extraConfigureFlagText,
   onExtraFlagTextChange,
   updateFfmpegBuildSettings,
@@ -696,25 +696,25 @@ export function OptionsTab({
   setOptionsDetailedView,
   showTechnicalDetails,
   setShowTechnicalDetails,
-}: OptionsTabProps) {
+}: POptionProps) {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedCategoryName, setSelectedCategoryName] = React.useState("");
   const [categoryDropdownOpen, setCategoryDropdownOpen] = React.useState(false);
-  const selectedPresetId = matchOptionPresetId(
+  const selectedPresetId = LPresetOptionMatch(
     ffmpegBuildSettings.selectedConfigureOptionIds,
   );
-  const optionCategoryNames = React.useMemo(
+  const LOptionCategoryNameGets = React.useMemo(
     () =>
-      configureOptionCategoryNames(
-        initialApplicationState.defaultConfigureOptionCatalog,
+      LOptionCategoryNamesGet(
+        initialProgramState.defaultConfigureOptionCatalog,
       ),
-    [initialApplicationState.defaultConfigureOptionCatalog],
+    [initialProgramState.defaultConfigureOptionCatalog],
   );
 
   return (
     <section className="tab-page options-page">
       <div className="options-page__header-row">
-        <PageHeader title={t("options.title")} text={t("options.intro")} />
+        <PHeaderPageRender title={LLocaleTextGet("options.title")} text={LLocaleTextGet("options.intro")} />
         <label className="options-design-toggle">
           <input
             type="checkbox"
@@ -722,19 +722,19 @@ export function OptionsTab({
             onChange={(event) => setOptionsDetailedView(event.target.checked)}
           />
           <span className="options-design-toggle__text">
-            {t("options.designToggle.label")}
+            {LLocaleTextGet("options.designToggle.label")}
           </span>
         </label>
       </div>
 
       {!optionsDetailedView && (
         <div className="options-simple-layout">
-          <SimpleOptionPresetCard
+          <PCardOptionPresetRender
             selectedPresetId={selectedPresetId}
             onApplyPreset={applyOptionPreset}
           />
-          <SimpleOptionsCard
-            catalog={initialApplicationState.defaultConfigureOptionCatalog}
+          <PCardOptionRender
+            LCatalogLibrarySource={initialProgramState.defaultConfigureOptionCatalog}
             selectedOptionIds={ffmpegBuildSettings.selectedConfigureOptionIds}
             onToggleOption={toggleConfigureOption}
             searchQuery={searchQuery}
@@ -746,19 +746,19 @@ export function OptionsTab({
             }}
             categoryDropdownOpen={categoryDropdownOpen}
             onToggleCategoryDropdown={() => setCategoryDropdownOpen((value) => !value)}
-            optionCategoryNames={optionCategoryNames}
+            LOptionCategoryNameGets={LOptionCategoryNameGets}
           />
         </div>
       )}
 
       {optionsDetailedView && (
         <>
-          <OptionPresetSelector
+          <PSelectorOptionRender
             selectedPresetId={selectedPresetId}
             onApplyPreset={applyOptionPreset}
           />
 
-          <OptionSummary
+          <PSummaryOptionRender
             licenseProfileName={ffmpegBuildSettings.licenseProfileName}
             selectedOptionCount={
               ffmpegBuildSettings.selectedConfigureOptionIds.length
@@ -775,20 +775,20 @@ export function OptionsTab({
             >
               <img className="card__btn-icon" src={technicalDetailsIcon} alt="" aria-hidden="true" />
               {showTechnicalDetails
-                ? t("options.technical.hide")
-                : t("options.technical.show")}
+                ? LLocaleTextGet("options.technical.hide")
+                : LLocaleTextGet("options.technical.show")}
             </button>
             <label className="options-search">
-              <span className="visually-hidden">{t("options.search.label")}</span>
+              <span className="visually-hidden">{LLocaleTextGet("options.search.label")}</span>
               <input
                 type="search"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder={t("options.search.placeholder")}
+                placeholder={LLocaleTextGet("options.search.placeholder")}
               />
             </label>
-            <OptionsCategoryDropdown
-              categories={optionCategoryNames}
+            <PDropdownCategoryRender
+              categories={LOptionCategoryNameGets}
               selectedCategoryName={selectedCategoryName}
               open={categoryDropdownOpen}
               onToggleOpen={() => setCategoryDropdownOpen((value) => !value)}
@@ -807,14 +807,14 @@ export function OptionsTab({
               }}
             >
               <img className="card__btn-icon" src={resetIcon} alt="" aria-hidden="true" />
-              {t("options.filter.reset")}
+              {LLocaleTextGet("options.filter.reset")}
             </button>
           </div>
 
-          {showTechnicalDetails && <OptionTechnicalPanel />}
+          {showTechnicalDetails && <PPanelTechnicalRender />}
 
-          <ConfigureOptionList
-            catalog={initialApplicationState.defaultConfigureOptionCatalog}
+          <PListOptionRender
+            LCatalogLibrarySource={initialProgramState.defaultConfigureOptionCatalog}
             selectedOptionIds={ffmpegBuildSettings.selectedConfigureOptionIds}
             onToggleOption={toggleConfigureOption}
             showTechnicalDetails={showTechnicalDetails}
@@ -822,12 +822,12 @@ export function OptionsTab({
             selectedCategoryName={selectedCategoryName}
           />
 
-          <AdvancedConfigureFlagsSection
+          <PSectionFlagRender
             extraConfigureFlagText={extraConfigureFlagText}
             onExtraFlagTextChange={onExtraFlagTextChange}
           />
 
-          <ThreadsSection
+          <PSectionThreadRender
             parallelJobCount={ffmpegBuildSettings.parallelJobCount}
             updateFfmpegBuildSettings={updateFfmpegBuildSettings}
           />

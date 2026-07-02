@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 2,
+  "recordKind": "ffmpeg-version-aware-library",
+  "generatedFromCurrentV4CodeOnly": true,
+  "sourceFiles": [
+    "internal/planning/LCatalogLibrarySource.go",
+    "backup/shared/releasesupport/ffmpeg-release-support.json",
+    "backup/shared/librarysources/library-sources.json",
+    "internal/planning/preparation.go",
+    "frontend/src/tabs/libraries.tsx",
+    "versions/*.json",
+    "versions/{ffmpegVersion}/{libraryId}.go"
+  ],
+  "libraryId": "libmfx",
+  "importantModelingRule": "No build-relevant library field is authoritative at the top level. Each FFmpeg-version record carries its own display name, FFmpeg-facing configure flags, track/provider, package names, availability, source pin, and preparation status.",
+  "ffmpegVersions": {
+    "4.4.8": {
+      "libraryId": "libmfx",
+      "ffmpegVersion": "4.4.8",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libmfx (legacy Intel Media SDK)",
+      "categoryName": "Hardware encoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libmfx"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libmfx"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/4.4.8/libmfx.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "5.1.9": {
+      "libraryId": "libmfx",
+      "ffmpegVersion": "5.1.9",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.28",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libmfx (legacy Intel Media SDK)",
+      "categoryName": "Hardware encoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libmfx"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libmfx"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/5.1.9/libmfx.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "6.1.6": {
+      "libraryId": "libmfx",
+      "ffmpegVersion": "6.1.6",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.28",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libmfx (legacy Intel Media SDK)",
+      "categoryName": "Hardware encoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libmfx"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libmfx"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/6.1.6/libmfx.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "7.0.3": {
+      "libraryId": "libmfx",
+      "ffmpegVersion": "7.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.28",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libmfx (legacy Intel Media SDK)",
+      "categoryName": "Hardware encoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libmfx"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libmfx"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/7.0.3/libmfx.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "7.1.5": {
+      "libraryId": "libmfx",
+      "ffmpegVersion": "7.1.5",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.28",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libmfx (legacy Intel Media SDK)",
+      "categoryName": "Hardware encoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libmfx"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libmfx"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/7.1.5/libmfx.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "8.0.3": {
+      "libraryId": "libmfx",
+      "ffmpegVersion": "8.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.28",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libmfx (legacy Intel Media SDK)",
+      "categoryName": "Hardware encoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libmfx"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libmfx"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.0.3/libmfx.go",
+        "implementationLanguage": "go"
+      }
+    },
+    "8.1.2": {
+      "libraryId": "libmfx",
+      "ffmpegVersion": "8.1.2",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.28",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libmfx (legacy Intel Media SDK)",
+      "categoryName": "Hardware encoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libmfx"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libmfx"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.1.2/libmfx.go",
+        "implementationLanguage": "go",
+        "sourcePin": {
+          "version": "1.35.1",
+          "url": "https://github.com/lu-zero/mfx_dispatch/archive/refs/tags/1.35.1.tar.gz",
+          "sha256": "673636da98a4fd5c3e3dc5267da5429e986f53089ed6c33cdca5751f56d9416b",
+          "format": "tar.gz",
+          "host": "github.com"
+        }
+      }
+    }
+  }
+}

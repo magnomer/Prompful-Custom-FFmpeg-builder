@@ -1,0 +1,266 @@
+package program
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"promptfulcustomffmpegbuilder/internal/audit"
+	"promptfulcustomffmpegbuilder/internal/consent"
+	"promptfulcustomffmpegbuilder/internal/download"
+	"promptfulcustomffmpegbuilder/internal/execution"
+	"promptfulcustomffmpegbuilder/internal/extraction"
+	"promptfulcustomffmpegbuilder/internal/planning"
+	"promptfulcustomffmpegbuilder/internal/scripting"
+	"promptfulcustomffmpegbuilder/internal/workspace"
+)
+
+const LSignatureFFmpegUrl = "https://ffmpeg.org/ffmpeg-devel.asc"
+const LSignatureFFmpegFingerprint = "FCF986EA15E6E293A5644F10B4322F04D67658D8"
+
+func LSignatureFFmpegVerify(signaturePath string, archivePath string, publicKeyPath string, emitProgress func(string, string)) error {
+	return LSignatureDetachedPublicVerify(signaturePath, archivePath, publicKeyPath, LSignatureFFmpegFingerprint, "FFmpeg .asc", emitProgress)
+}
+
+func (program *LProgram) lFFmpegBuild(LContext context.Context, LRunId string, plan planning.LPlanFFmpeg, userLConsentFFmpeg consent.LConsentFFmpeg, userLConsentArchive consent.LConsentArchive, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand) {
+	actionSucceeded := false
+	copyFailed := false
+	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
+	sourceRootDirectory := filepath.Join(workspaceLayout.SourcesDirectory, "ffmpeg-"+LRunId)
+	ffmpegSourceDirectory := ""
+	defer func() {
+		if actionSucceeded {
+			program.lActionApprovedFinish("completed")
+			return
+		}
+		if copyFailed && ffmpegSourceDirectory != "" {
+			program.lLogEmit("warn", LLocaleTextGetInternal("run.log.copyFailedFilesKept", nil))
+			program.lLogEmit("warn", LLocaleTextGetInternal("run.log.copyFailedFilesLocation", map[string]string{"path": ffmpegSourceDirectory}))
+			program.lActionApprovedFinish("failed")
+			return
+		}
+		program.lLogConfigSave(ffmpegSourceDirectory, workspaceLayout.WorkspaceDirectory)
+		program.lFFmpegFailedClean(plan, workspaceLayout, sourceRootDirectory, LRunId)
+		program.lActionApprovedFinish("failed")
+	}()
+	program.lStatusEmit("building-ffmpeg")
+	if err := workspace.LWorkspaceFolderCreate(workspaceLayout); err != nil {
+		program.lErrorLocalizedEmit("run.failure.createWorkspaceDirectories", "Could not create workspace directories", err)
+		return
+	}
+	auditWriter, err := audit.LAuditWriterCreate(workspaceLayout.LogsDirectory, LRunId)
+	if err != nil {
+		program.lErrorLocalizedEmit("run.failure.createAuditLog", "Could not create audit log", err)
+		return
+	}
+	emitProgress := program.lAuditProgressCreate(auditWriter, plan.ActionName, plan.PlanHash)
+	_ = auditWriter.LAuditEventWrite("action-started", plan.ActionName, plan.PlanHash, "info", "Approved FFmpeg build started.")
+	emitProgress("info", LLocaleTextGetInternal("run.log.ffmpegStarted", map[string]string{"runId": LRunId}))
+
+	archivePath := filepath.Join(workspaceLayout.DownloadsDirectory, "ffmpeg-approved-source"+LArchiveExtensionResolve(plan.FfmpegSourceArchiveUrl))
+	downloadPlan := download.LPlanDownload{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "FFmpeg", DownloadUrl: plan.FfmpegSourceArchiveUrl, ExpectedSha256Hash: plan.FfmpegSourceSha256Hash, DestinationFilePath: archivePath, AllowedHosts: []string{"ffmpeg.org", "www.ffmpeg.org"}, ExpectedFileSizeMinimum: 1_000_000, ExpectedFileSizeMaximum: 200_000_000, LPolicyFile: LPolicyHashResolve(plan.FfmpegSourceSha256Hash)}
+	if err := download.LDownloadFFmpegRun(LContext, userLConsentFFmpeg, downloadPlan, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.ffmpegSourceDownload", "FFmpeg source download failed", err)
+		return
+	}
+	signaturePath := filepath.Join(workspaceLayout.DownloadsDirectory, "ffmpeg-approved-source"+LArchiveExtensionResolve(plan.FfmpegSourceArchiveUrl)+".asc")
+	signatureDownloadPlan := download.LPlanDownload{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "FFmpeg signature", DownloadUrl: plan.FfmpegSourceSignatureUrl, DestinationFilePath: signaturePath, AllowedHosts: []string{"ffmpeg.org", "www.ffmpeg.org"}, ExpectedFileSizeMinimum: 100, ExpectedFileSizeMaximum: 100_000, LPolicyFile: download.LPolicyFileOverwrite}
+	if err := download.LDownloadFFmpegRun(LContext, userLConsentFFmpeg, signatureDownloadPlan, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.ffmpegSignatureDownload", "FFmpeg source signature download failed", err)
+		return
+	}
+	publicKeyPath := filepath.Join(workspaceLayout.DownloadsDirectory, "ffmpeg-devel.asc")
+	publicKeyDownloadPlan := download.LPlanDownload{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "FFmpeg release signing key", DownloadUrl: LSignatureFFmpegUrl, DestinationFilePath: publicKeyPath, AllowedHosts: []string{"ffmpeg.org", "www.ffmpeg.org"}, ExpectedFileSizeMinimum: 1000, ExpectedFileSizeMaximum: 100_000, LPolicyFile: download.LPolicyFileOverwrite}
+	if err := download.LDownloadFFmpegRun(LContext, userLConsentFFmpeg, publicKeyDownloadPlan, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.ffmpegSigningKeyDownload", "FFmpeg signing key download failed", err)
+		return
+	}
+	if err := LSignatureFFmpegVerify(signaturePath, archivePath, publicKeyPath, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.ffmpegSignatureVerification", "FFmpeg source signature verification failed", err)
+		return
+	}
+	extractPlan := extraction.LPlanExtraction{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ArchiveFilePath: archivePath, DestinationDirectory: sourceRootDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, LArchiveFormat: LArchiveFormatResolve(plan.FfmpegSourceArchiveUrl), LPolicyExtraction: extraction.LPolicyExtractionRequireNewDirectory, LPolicyFilemode: extraction.LPolicyFilemodeExecutablePreserve, MaximumFileCount: 50000, MaximumExtractedByteCount: 2_000_000_000, MaximumSingleFileByteCount: 500_000_000}
+	if err := extraction.LArchiveConsentExtract(LContext, userLConsentArchive, extractPlan, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.ffmpegSourceExtraction", "FFmpeg source extraction failed", err)
+		return
+	}
+	ffmpegSourceDirectory, err = LDirectoryChildFind(sourceRootDirectory)
+	if err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.ffmpegSourceDirectoryMissing", "Could not locate extracted FFmpeg source directory", err)
+		return
+	}
+	if err := program.lLibraryVersionValidate(plan, ffmpegSourceDirectory, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.libraryVersionIncompatible", "A prepared library version is incompatible with the selected FFmpeg release", err)
+		return
+	}
+	if err := program.lPackageLibraryInstall(LContext, plan, userLibraryPackageInstallLConsent, auditWriter, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.ffmpegLibraryPackageInstall", "FFmpeg library package installation failed", err)
+		return
+	}
+	if err := program.lLibraryNonnativePrepare(LContext, plan, userLConsentFFmpeg, userLConsentArchive, userLibraryPackageInstallLConsent, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.libraryPreparation", "Non-Native library preparation failed", err)
+		return
+	}
+	if err := program.lFFmpegConfigureRun(LContext, plan, ffmpegSourceDirectory, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.ffmpegConfigure", "FFmpeg configure failed", err)
+		return
+	}
+	if err := program.lFFmpegMakeRun(LContext, plan, ffmpegSourceDirectory, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.ffmpegBuild", "FFmpeg build failed", err)
+		return
+	}
+	if err := LArtifactFFmpegCopy(ffmpegSourceDirectory, workspaceLayout, plan, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		copyFailed = true
+		program.lErrorLocalizedEmit("run.failure.copyArtifacts", "Could not copy FFmpeg artifacts", err)
+		return
+	}
+	if err := LReportArtifactWrite(workspaceLayout, LRunId, plan); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.writeArtifactReport", "Could not write artifact report", err)
+		return
+	}
+	_ = auditWriter.LAuditEventWrite("action-completed", plan.ActionName, plan.PlanHash, "info", "Approved FFmpeg build completed.")
+	emitProgress("info", LLocaleTextGetInternal("run.log.ffmpegCompleted", nil))
+	actionSucceeded = true
+}
+
+func (program *LProgram) lLogConfigSave(ffmpegSourceDirectory string, workspaceDirectory string) {
+	if ffmpegSourceDirectory == "" {
+		return
+	}
+	configLogPath := filepath.Join(ffmpegSourceDirectory, "ffbuild", "config.log")
+	if _, err := os.Stat(configLogPath); err != nil {
+		return
+	}
+	destPath := filepath.Join(workspaceDirectory, "ffmpeg-config.log")
+	data, err := os.ReadFile(configLogPath)
+	if err != nil {
+		program.lLogEmit("warn", LLocaleTextGetInternal("run.log.configReadFailed", map[string]string{"message": err.Error()}))
+		return
+	}
+	if err := os.WriteFile(destPath, data, 0o600); err != nil {
+		program.lLogEmit("warn", LLocaleTextGetInternal("run.log.configSaveFailed", map[string]string{"message": err.Error()}))
+		return
+	}
+	program.lLogEmit("info", LLocaleTextGetInternal("run.log.configSaved", map[string]string{"path": destPath}))
+}
+
+func (program *LProgram) lFFmpegFailedClean(plan planning.LPlanFFmpeg, workspaceLayout workspace.LWorkspaceLayout, sourceRootDirectory string, LRunId string) {
+	program.lLogEmit("warn", LLocaleTextGetInternal("run.log.cleaningFfmpegPartial", nil))
+	cleanupTargets := []string{
+		sourceRootDirectory,
+		filepath.Join(workspaceLayout.BuildDirectory, "scripts", "ffmpeg-library-packages-"+plan.PlanHash+".sh"),
+		filepath.Join(workspaceLayout.BuildDirectory, "scripts", "ffmpeg-configure-"+plan.PlanHash+".sh"),
+		filepath.Join(workspaceLayout.BuildDirectory, "scripts", "ffmpeg-make-"+plan.PlanHash+".sh"),
+	}
+	for _, preparation := range plan.LLibraryPreparationList {
+		cleanupTargets = append(cleanupTargets,
+			filepath.Join(workspaceLayout.BuildDirectory, "prep", preparation.LibraryId+"-"+plan.PlanHash),
+			filepath.Join(workspaceLayout.BuildDirectory, "scripts", "prep-"+preparation.LibraryId+"-"+plan.PlanHash+".sh"),
+			filepath.Join(workspaceLayout.BuildDirectory, "scripts", "prep-builddeps-"+preparation.LibraryId+"-"+plan.PlanHash+".sh"),
+		)
+	}
+	program.lWorkspaceTargetsClean(plan.WorkspaceDirectory, cleanupTargets)
+}
+
+func (program *LProgram) lPackageLibraryInstall(LContext context.Context, plan planning.LPlanFFmpeg, userLibraryPackageInstallLConsent consent.LConsentPacman, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+	if len(plan.RequiredMsys2PackageNames) == 0 {
+		emitProgress("info", "No extra MSYS2 library packages are required by the selected FFmpeg libraries.")
+		return nil
+	}
+	if err := consent.LConsentCheck(userLibraryPackageInstallLConsent.LConsent, consent.LConsentKindPacman, plan.ActionName, plan.PlanHash); err != nil {
+		return err
+	}
+	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
+	scriptLines, err := scripting.LScriptPackageLinesCreate(plan.RequiredMsys2PackageNames)
+	if err != nil {
+		return err
+	}
+	scriptFile, err := scripting.LScriptFileWrite(scripting.LPlanScript{WorkspaceDirectory: plan.WorkspaceDirectory, ScriptFilePath: filepath.Join(workspaceLayout.BuildDirectory, "scripts", "ffmpeg-library-packages-"+plan.PlanHash+".sh"), ScriptLines: scriptLines})
+	if err != nil {
+		return err
+	}
+	commandPlan := execution.LPlanCommand{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ExecutablePath: filepath.Join(plan.Msys2RootDirectory, "usr", "bin", "bash.exe"), ArgumentValues: []string{filepath.ToSlash(scriptFile.ScriptFilePath)}, WorkingDirectory: plan.Msys2RootDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, Msys2RootDirectory: plan.Msys2RootDirectory, WindowsShellProfileName: plan.WindowsShellProfileName, EnvironmentVariables: map[string]string{}, AllowedExecutableBasenames: []string{"bash.exe"}, LScriptKind: execution.LScriptPacmanInstall, ApprovedScriptFilePath: scriptFile.ScriptFilePath, ApprovedScriptSha256Hash: scriptFile.ScriptSha256Hash, RunLAuditDirectoryGet: auditWriter.LAuditDirectoryGet()}
+	_ = auditWriter.LAuditEventWrite("command-started", plan.ActionName, plan.PlanHash, "info", "Running approved FFmpeg library package installation script.")
+	return execution.LCommandPacmanRun(LContext, userLibraryPackageInstallLConsent, commandPlan, emitProgress)
+}
+
+func LPathPkgconfigResolve(plan planning.LPlanFFmpeg) string {
+	profileDirectoryName := strings.ToLower(plan.WindowsShellProfileName)
+	if profileDirectoryName == "" {
+		profileDirectoryName = "ucrt64"
+	}
+	msys2Prefix := "/" + profileDirectoryName
+	// Privately-installed libraries (e.g. libtls) live in their own per-library prefix to
+	// avoid archive-name collisions in the shared prefix; their pkgconfig dirs go first so
+	// pkg-config resolves them (and their isolated libssl/libcrypto) ahead of the shared
+	// prefix's same-named modules.
+	paths := append([]string{}, LPathPkgconfigList(plan)...)
+	paths = append(paths,
+		msys2Prefix+"/lib/pkgconfig",
+		msys2Prefix+"/share/pkgconfig",
+		"/usr/lib/pkgconfig",
+		"/usr/share/pkgconfig",
+	)
+	return strings.Join(paths, ":")
+}
+
+// LPathPkgconfigList returns the unix pkgconfig directories of every privately-installed
+// library in the plan (see planning.LLibraryPreparation.PrivatePrefixInstall), in plan order.
+func LPathPkgconfigList(plan planning.LPlanFFmpeg) []string {
+	profileDirectoryName := strings.ToLower(plan.WindowsShellProfileName)
+	if profileDirectoryName == "" {
+		profileDirectoryName = "ucrt64"
+	}
+	msys2Prefix := "/" + profileDirectoryName
+	dirs := []string{}
+	for _, preparation := range plan.LLibraryPreparationList {
+		if preparation.PrivatePrefixInstall && preparation.PkgConfigName != "" {
+			dirs = append(dirs, scripting.LLibraryPrivatePkgconfigDirGet(msys2Prefix, preparation.PkgConfigName))
+		}
+	}
+	return dirs
+}
+
+func (program *LProgram) lFFmpegConfigureRun(LContext context.Context, plan planning.LPlanFFmpeg, ffmpegSourceDirectory string, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
+	scriptLines, err := scripting.LScriptConfigureLinesCreate(plan.ConfigureFlags, LPathPkgconfigList(plan), planning.LVersionArchiveParse(plan.FfmpegSourceArchiveUrl))
+	if err != nil {
+		return err
+	}
+	scriptFile, err := scripting.LScriptFileWrite(scripting.LPlanScript{WorkspaceDirectory: plan.WorkspaceDirectory, ScriptFilePath: filepath.Join(workspaceLayout.BuildDirectory, "scripts", "ffmpeg-configure-"+plan.PlanHash+".sh"), ScriptLines: scriptLines})
+	if err != nil {
+		return err
+	}
+	commandPlan := execution.LPlanCommand{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ExecutablePath: filepath.Join(plan.Msys2RootDirectory, "usr", "bin", "bash.exe"), ArgumentValues: []string{filepath.ToSlash(scriptFile.ScriptFilePath)}, WorkingDirectory: ffmpegSourceDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, Msys2RootDirectory: plan.Msys2RootDirectory, WindowsShellProfileName: plan.WindowsShellProfileName, EnvironmentVariables: map[string]string{"PKG_CONFIG_PATH": LPathPkgconfigResolve(plan)}, AllowedExecutableBasenames: []string{"bash.exe"}, LScriptKind: execution.LScriptFFmpegConfigure, ApprovedScriptFilePath: scriptFile.ScriptFilePath, ApprovedScriptSha256Hash: scriptFile.ScriptSha256Hash, RunLAuditDirectoryGet: auditWriter.LAuditDirectoryGet()}
+	_ = auditWriter.LAuditEventWrite("command-started", plan.ActionName, plan.PlanHash, "info", "Running approved FFmpeg configure script.")
+	return execution.LCommandConsentRun(LContext, userExternalLConsentCommand, commandPlan, emitProgress)
+}
+
+func (program *LProgram) lFFmpegMakeRun(LContext context.Context, plan planning.LPlanFFmpeg, ffmpegSourceDirectory string, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
+	scriptLines, err := scripting.LScriptMakeLinesCreate(plan.ParallelJobCount)
+	if err != nil {
+		return err
+	}
+	scriptFile, err := scripting.LScriptFileWrite(scripting.LPlanScript{WorkspaceDirectory: plan.WorkspaceDirectory, ScriptFilePath: filepath.Join(workspaceLayout.BuildDirectory, "scripts", "ffmpeg-make-"+plan.PlanHash+".sh"), ScriptLines: scriptLines})
+	if err != nil {
+		return err
+	}
+	commandPlan := execution.LPlanCommand{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ExecutablePath: filepath.Join(plan.Msys2RootDirectory, "usr", "bin", "bash.exe"), ArgumentValues: []string{filepath.ToSlash(scriptFile.ScriptFilePath)}, WorkingDirectory: ffmpegSourceDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, Msys2RootDirectory: plan.Msys2RootDirectory, WindowsShellProfileName: plan.WindowsShellProfileName, EnvironmentVariables: map[string]string{}, AllowedExecutableBasenames: []string{"bash.exe"}, LScriptKind: execution.LScriptFFmpegMake, ApprovedScriptFilePath: scriptFile.ScriptFilePath, ApprovedScriptSha256Hash: scriptFile.ScriptSha256Hash, RunLAuditDirectoryGet: auditWriter.LAuditDirectoryGet()}
+	_ = auditWriter.LAuditEventWrite("command-started", plan.ActionName, plan.PlanHash, "info", "Running approved FFmpeg make script.")
+	return execution.LCommandConsentRun(LContext, userExternalLConsentCommand, commandPlan, emitProgress)
+}

@@ -21,67 +21,67 @@ import (
 	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
-type ArchiveFormat string
+type LArchiveFormat string
 
-type ExtractDestinationPolicy string
+type LPolicyExtraction string
 
-type ExtractedFileModePolicy string
+type LPolicyFilemode string
 
 const (
-	TarBz2             ArchiveFormat = "tar-bz2"
-	ArchiveFormatTarGz ArchiveFormat = "tar-gz"
-	TarXz              ArchiveFormat = "tar-xz"
-	TarZst             ArchiveFormat = "tar-zst"
-	ArchiveFormatTar   ArchiveFormat = "tar"
-	ArchiveFormatZip   ArchiveFormat = "zip"
+	LArchiveTarBz2 LArchiveFormat = "tar-bz2"
+	LArchiveTarGz  LArchiveFormat = "tar-gz"
+	LArchiveTarXz  LArchiveFormat = "tar-xz"
+	LArchiveTarZst LArchiveFormat = "tar-zst"
+	LArchiveTar    LArchiveFormat = "tar"
+	LArchiveZip    LArchiveFormat = "zip"
 
-	RequireNewDirectory                    ExtractDestinationPolicy = "must-not-exist"
-	ExtractionDestinationPolicyMustBeEmpty ExtractDestinationPolicy = "must-be-empty"
-	OverwriteExtractedFiles                ExtractDestinationPolicy = "overwrite-approved"
+	LPolicyExtractionRequireNewDirectory LPolicyExtraction = "must-not-exist"
+	LPolicyExtractionDestinationEmpty    LPolicyExtraction = "must-be-empty"
+	LPolicyExtractionOverwrite           LPolicyExtraction = "overwrite-approved"
 
-	PreserveSafeExecutableBits              ExtractedFileModePolicy = "preserve-safe-executable-bits"
-	FileModePolicyRegularFilesNotExecutable ExtractedFileModePolicy = "regular-files-not-executable"
+	LPolicyFilemodeExecutablePreserve LPolicyFilemode = "preserve-safe-executable-bits"
+	LPolicyFilemodeRegularOnly        LPolicyFilemode = "regular-files-not-executable"
 )
 
-type ExtractPlan struct {
-	ActionName                 string                   `json:"actionName"`
-	PlanHash                   string                   `json:"planHash"`
-	ArchiveFilePath            string                   `json:"archiveFilePath"`
-	DestinationDirectory       string                   `json:"destinationDirectory"`
-	WorkspaceDirectory         string                   `json:"workspaceDirectory"`
-	ArchiveFormat              ArchiveFormat            `json:"archiveFormatName"`
-	ExtractDestinationPolicy   ExtractDestinationPolicy `json:"extractionDestinationPolicyName"`
-	ExtractedFileModePolicy    ExtractedFileModePolicy  `json:"fileModePolicyName"`
-	MaximumFileCount           int                      `json:"maximumFileCount"`
-	MaximumExtractedByteCount  int64                    `json:"maximumExtractedByteCount"`
-	MaximumSingleFileByteCount int64                    `json:"maximumSingleFileByteCount"`
+type LPlanExtraction struct {
+	ActionName                 string            `json:"actionName"`
+	PlanHash                   string            `json:"planHash"`
+	ArchiveFilePath            string            `json:"archiveFilePath"`
+	DestinationDirectory       string            `json:"destinationDirectory"`
+	WorkspaceDirectory         string            `json:"workspaceDirectory"`
+	LArchiveFormat             LArchiveFormat    `json:"archiveFormatName"`
+	LPolicyExtraction          LPolicyExtraction `json:"extractionDestinationPolicyName"`
+	LPolicyFilemode            LPolicyFilemode   `json:"fileModePolicyName"`
+	MaximumFileCount           int               `json:"maximumFileCount"`
+	MaximumExtractedByteCount  int64             `json:"maximumExtractedByteCount"`
+	MaximumSingleFileByteCount int64             `json:"maximumSingleFileByteCount"`
 }
 
-type ProgressFunc func(level string, message string)
+type LProgressFunc func(level string, message string)
 
-func ExtractArchiveWithConsent(ctx context.Context, userArchiveExtractionConsent consent.ArchiveExtractionConsent, extractPlan ExtractPlan, emitProgress ProgressFunc) error {
-	if err := consent.CheckConsent(userArchiveExtractionConsent.Consent, consent.ConsentKindArchiveExtraction, extractPlan.ActionName, extractPlan.PlanHash); err != nil {
+func LArchiveConsentExtract(LContext context.Context, userLConsentArchive consent.LConsentArchive, extractPlan LPlanExtraction, emitProgress LProgressFunc) error {
+	if err := consent.LConsentCheck(userLConsentArchive.LConsent, consent.LConsentKindArchive, extractPlan.ActionName, extractPlan.PlanHash); err != nil {
 		return err
 	}
-	extractPlan = applyExtractDefaults(extractPlan)
-	if err := validateExtractPlan(extractPlan); err != nil {
+	extractPlan = LExtractionDefaultApply(extractPlan)
+	if err := LPlanExtractionValidate(extractPlan); err != nil {
 		return err
 	}
 	if emitProgress != nil {
 		emitProgress("info", "Extracting approved archive inside workspace.")
 	}
-	if extractPlan.ArchiveFormat == ArchiveFormatZip {
-		return extractZipArchive(ctx, extractPlan)
+	if extractPlan.LArchiveFormat == LArchiveZip {
+		return LArchiveZipExtract(LContext, extractPlan)
 	}
-	return extractTarArchive(ctx, extractPlan)
+	return LArchiveTarExtract(LContext, extractPlan)
 }
 
-func applyExtractDefaults(extractPlan ExtractPlan) ExtractPlan {
-	if extractPlan.ExtractDestinationPolicy == "" {
-		extractPlan.ExtractDestinationPolicy = RequireNewDirectory
+func LExtractionDefaultApply(extractPlan LPlanExtraction) LPlanExtraction {
+	if extractPlan.LPolicyExtraction == "" {
+		extractPlan.LPolicyExtraction = LPolicyExtractionRequireNewDirectory
 	}
-	if extractPlan.ExtractedFileModePolicy == "" {
-		extractPlan.ExtractedFileModePolicy = PreserveSafeExecutableBits
+	if extractPlan.LPolicyFilemode == "" {
+		extractPlan.LPolicyFilemode = LPolicyFilemodeExecutablePreserve
 	}
 	if extractPlan.MaximumFileCount <= 0 {
 		extractPlan.MaximumFileCount = 250000
@@ -95,20 +95,20 @@ func applyExtractDefaults(extractPlan ExtractPlan) ExtractPlan {
 	return extractPlan
 }
 
-func validateExtractPlan(extractPlan ExtractPlan) error {
+func LPlanExtractionValidate(extractPlan LPlanExtraction) error {
 	if extractPlan.ArchiveFilePath == "" || extractPlan.DestinationDirectory == "" || extractPlan.WorkspaceDirectory == "" {
 		return errors.New("archive extraction paths must not be empty")
 	}
-	if err := workspace.CheckPathInsideWorkspace(extractPlan.WorkspaceDirectory, extractPlan.ArchiveFilePath); err != nil {
+	if err := workspace.LPathWorkspaceCheck(extractPlan.WorkspaceDirectory, extractPlan.ArchiveFilePath); err != nil {
 		return err
 	}
-	if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, extractPlan.ArchiveFilePath); err != nil {
+	if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, extractPlan.ArchiveFilePath); err != nil {
 		return err
 	}
-	if err := workspace.CheckPathInsideWorkspace(extractPlan.WorkspaceDirectory, extractPlan.DestinationDirectory); err != nil {
+	if err := workspace.LPathWorkspaceCheck(extractPlan.WorkspaceDirectory, extractPlan.DestinationDirectory); err != nil {
 		return err
 	}
-	if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, filepath.Dir(extractPlan.DestinationDirectory)); err != nil {
+	if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, filepath.Dir(extractPlan.DestinationDirectory)); err != nil {
 		return err
 	}
 	if extractPlan.MaximumFileCount < 1 {
@@ -120,10 +120,10 @@ func validateExtractPlan(extractPlan ExtractPlan) error {
 	if extractPlan.MaximumSingleFileByteCount < 1 {
 		return errors.New("archive maximum single file byte count must be positive")
 	}
-	return checkExtractDestinationPolicy(extractPlan)
+	return LPolicyExtractionCheck(extractPlan)
 }
 
-func checkExtractDestinationPolicy(extractPlan ExtractPlan) error {
+func LPolicyExtractionCheck(extractPlan LPlanExtraction) error {
 	fileInfo, statError := os.Lstat(extractPlan.DestinationDirectory)
 	if errors.Is(statError, os.ErrNotExist) {
 		return nil
@@ -137,10 +137,10 @@ func checkExtractDestinationPolicy(extractPlan ExtractPlan) error {
 	if !fileInfo.IsDir() {
 		return errors.New("archive extraction destination exists and is not a directory")
 	}
-	switch extractPlan.ExtractDestinationPolicy {
-	case RequireNewDirectory:
+	switch extractPlan.LPolicyExtraction {
+	case LPolicyExtractionRequireNewDirectory:
 		return errors.New("archive extraction destination already exists")
-	case ExtractionDestinationPolicyMustBeEmpty:
+	case LPolicyExtractionDestinationEmpty:
 		entries, err := os.ReadDir(extractPlan.DestinationDirectory)
 		if err != nil {
 			return err
@@ -149,21 +149,21 @@ func checkExtractDestinationPolicy(extractPlan ExtractPlan) error {
 			return errors.New("archive extraction destination must be empty")
 		}
 		return nil
-	case OverwriteExtractedFiles:
+	case LPolicyExtractionOverwrite:
 		return nil
 	default:
-		return fmt.Errorf("unknown extraction destination policy: %s", extractPlan.ExtractDestinationPolicy)
+		return fmt.Errorf("unknown extraction destination policy: %s", extractPlan.LPolicyExtraction)
 	}
 }
 
-func extractTarArchive(ctx context.Context, extractPlan ExtractPlan) error {
-	if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, filepath.Dir(extractPlan.DestinationDirectory)); err != nil {
+func LArchiveTarExtract(LContext context.Context, extractPlan LPlanExtraction) error {
+	if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, filepath.Dir(extractPlan.DestinationDirectory)); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(extractPlan.DestinationDirectory, 0o755); err != nil {
 		return err
 	}
-	if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, extractPlan.DestinationDirectory); err != nil {
+	if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, extractPlan.DestinationDirectory); err != nil {
 		return err
 	}
 	archiveFile, err := os.Open(extractPlan.ArchiveFilePath)
@@ -172,7 +172,7 @@ func extractTarArchive(ctx context.Context, extractPlan ExtractPlan) error {
 	}
 	defer archiveFile.Close()
 
-	archiveReader, closeReader, err := openArchiveReader(archiveFile, extractPlan.ArchiveFormat)
+	archiveReader, closeReader, err := LArchiveReaderOpen(archiveFile, extractPlan.LArchiveFormat)
 	if err != nil {
 		return err
 	}
@@ -185,8 +185,8 @@ func extractTarArchive(ctx context.Context, extractPlan ExtractPlan) error {
 	tarReader := tar.NewReader(archiveReader)
 	for {
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-LContext.Done():
+			return LContext.Err()
 		default:
 		}
 		header, err := tarReader.Next()
@@ -196,22 +196,22 @@ func extractTarArchive(ctx context.Context, extractPlan ExtractPlan) error {
 		if err != nil {
 			return err
 		}
-		targetPath, err := safeExtractTargetPath(extractPlan.DestinationDirectory, header.Name)
+		targetPath, err := LPathExtractionResolve(extractPlan.DestinationDirectory, header.Name)
 		if err != nil {
 			return err
 		}
-		if err := workspace.CheckPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetPath); err != nil {
+		if err := workspace.LPathWorkspaceCheck(extractPlan.WorkspaceDirectory, targetPath); err != nil {
 			return err
 		}
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, filepath.Dir(targetPath)); err != nil {
+			if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, filepath.Dir(targetPath)); err != nil {
 				return err
 			}
 			if err := os.MkdirAll(targetPath, 0o755); err != nil {
 				return err
 			}
-			if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetPath); err != nil {
+			if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, targetPath); err != nil {
 				return err
 			}
 		case tar.TypeReg, tar.TypeRegA:
@@ -230,31 +230,31 @@ func extractTarArchive(ctx context.Context, extractPlan ExtractPlan) error {
 				return errors.New("archive extracted byte count exceeds limit")
 			}
 			targetDirectory := filepath.Dir(targetPath)
-			if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetDirectory); err != nil {
+			if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, targetDirectory); err != nil {
 				return err
 			}
 			if err := os.MkdirAll(targetDirectory, 0o755); err != nil {
 				return err
 			}
-			if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetPath); err != nil {
+			if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, targetPath); err != nil {
 				return err
 			}
-			if extractPlan.ExtractDestinationPolicy != OverwriteExtractedFiles {
+			if extractPlan.LPolicyExtraction != LPolicyExtractionOverwrite {
 				if _, statError := os.Lstat(targetPath); statError == nil {
 					return fmt.Errorf("archive extraction would overwrite existing file: %s", header.Name)
 				} else if !errors.Is(statError, os.ErrNotExist) {
 					return statError
 				}
 			}
-			outputFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, safeFileMode(header.FileInfo().Mode(), extractPlan.ExtractedFileModePolicy))
+			outputFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, LModeFileResolve(header.FileInfo().Mode(), extractPlan.LPolicyFilemode))
 			if err != nil {
-				if extractPlan.ExtractDestinationPolicy == OverwriteExtractedFiles && errors.Is(err, os.ErrExist) {
+				if extractPlan.LPolicyExtraction == LPolicyExtractionOverwrite && errors.Is(err, os.ErrExist) {
 					if fileInfo, lstatErr := os.Lstat(targetPath); lstatErr != nil {
 						err = lstatErr
 					} else if fileInfo.Mode()&os.ModeSymlink != 0 {
 						err = errors.New("archive extraction refuses to overwrite symlink")
 					} else {
-						outputFile, err = os.OpenFile(targetPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, safeFileMode(header.FileInfo().Mode(), extractPlan.ExtractedFileModePolicy))
+						outputFile, err = os.OpenFile(targetPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, LModeFileResolve(header.FileInfo().Mode(), extractPlan.LPolicyFilemode))
 					}
 				}
 				if err != nil {
@@ -278,7 +278,7 @@ func extractTarArchive(ctx context.Context, extractPlan ExtractPlan) error {
 			// ptools/Makefile.Linux64 -> Makefile.Linux — is skipped silently and the build, which
 			// does not use it, proceeds. A link whose target escapes the destination is the classic
 			// hostile setup and is rejected so a malicious archive still fails loudly.
-			if !linkTargetWithinDestination(extractPlan.DestinationDirectory, header.Name, header.Linkname, header.Typeflag == tar.TypeLink) {
+			if !LLinkDestinationCheck(extractPlan.DestinationDirectory, header.Name, header.Linkname, header.Typeflag == tar.TypeLink) {
 				return fmt.Errorf("archive link target escapes extraction root: %s -> %s", header.Name, header.Linkname)
 			}
 		default:
@@ -287,20 +287,20 @@ func extractTarArchive(ctx context.Context, extractPlan ExtractPlan) error {
 	}
 }
 
-// extractZipArchive extracts a .zip archive (used for vendor binary archives that
+// LArchiveZipExtract extracts a .zip archive (used for vendor binary archives that
 // ship as .zip on Windows) under the same safety bounds as the tar path: zip-slip
-// protection via cleanEntryName + checkExtractTarget + workspace containment checks,
+// protection via LEntryNameClean + LTargetExtractionCheck + workspace containment checks,
 // per-file and total size limits, file-count limit, no symlinks, and the file-mode
 // policy. archive/zip needs random access, so this is a separate path from the
-// streaming tar reader rather than another openArchiveReader case.
-func extractZipArchive(ctx context.Context, extractPlan ExtractPlan) error {
-	if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, filepath.Dir(extractPlan.DestinationDirectory)); err != nil {
+// streaming tar LReader rather than another LArchiveReaderOpen case.
+func LArchiveZipExtract(LContext context.Context, extractPlan LPlanExtraction) error {
+	if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, filepath.Dir(extractPlan.DestinationDirectory)); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(extractPlan.DestinationDirectory, 0o755); err != nil {
 		return err
 	}
-	if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, extractPlan.DestinationDirectory); err != nil {
+	if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, extractPlan.DestinationDirectory); err != nil {
 		return err
 	}
 	zipReader, err := zip.OpenReader(extractPlan.ArchiveFilePath)
@@ -313,28 +313,28 @@ func extractZipArchive(ctx context.Context, extractPlan ExtractPlan) error {
 	fileCount := 0
 	for _, zipEntry := range zipReader.File {
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-LContext.Done():
+			return LContext.Err()
 		default:
 		}
 		if zipEntry.Mode()&os.ModeSymlink != 0 {
 			return fmt.Errorf("archive links are blocked for safety: %s", zipEntry.Name)
 		}
-		targetPath, err := safeExtractTargetPath(extractPlan.DestinationDirectory, zipEntry.Name)
+		targetPath, err := LPathExtractionResolve(extractPlan.DestinationDirectory, zipEntry.Name)
 		if err != nil {
 			return err
 		}
-		if err := workspace.CheckPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetPath); err != nil {
+		if err := workspace.LPathWorkspaceCheck(extractPlan.WorkspaceDirectory, targetPath); err != nil {
 			return err
 		}
 		if zipEntry.FileInfo().IsDir() {
-			if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, filepath.Dir(targetPath)); err != nil {
+			if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, filepath.Dir(targetPath)); err != nil {
 				return err
 			}
 			if err := os.MkdirAll(targetPath, 0o755); err != nil {
 				return err
 			}
-			if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetPath); err != nil {
+			if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, targetPath); err != nil {
 				return err
 			}
 			continue
@@ -355,39 +355,39 @@ func extractZipArchive(ctx context.Context, extractPlan ExtractPlan) error {
 			return errors.New("archive extracted byte count exceeds limit")
 		}
 		targetDirectory := filepath.Dir(targetPath)
-		if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetDirectory); err != nil {
+		if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, targetDirectory); err != nil {
 			return err
 		}
 		if err := os.MkdirAll(targetDirectory, 0o755); err != nil {
 			return err
 		}
-		if err := workspace.CheckRealPathInsideWorkspace(extractPlan.WorkspaceDirectory, targetDirectory); err != nil {
+		if err := workspace.LPathRealCheck(extractPlan.WorkspaceDirectory, targetDirectory); err != nil {
 			return err
 		}
-		if extractPlan.ExtractDestinationPolicy != OverwriteExtractedFiles {
+		if extractPlan.LPolicyExtraction != LPolicyExtractionOverwrite {
 			if _, statError := os.Lstat(targetPath); statError == nil {
 				return fmt.Errorf("archive extraction would overwrite existing file: %s", zipEntry.Name)
 			} else if !errors.Is(statError, os.ErrNotExist) {
 				return statError
 			}
 		}
-		if err := writeZipEntry(zipEntry, targetPath, entrySize, extractPlan); err != nil {
+		if err := LArchiveEntryWrite(zipEntry, targetPath, entrySize, extractPlan); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func writeZipEntry(zipEntry *zip.File, targetPath string, entrySize int64, extractPlan ExtractPlan) error {
+func LArchiveEntryWrite(zipEntry *zip.File, targetPath string, entrySize int64, extractPlan LPlanExtraction) error {
 	entryReader, err := zipEntry.Open()
 	if err != nil {
 		return err
 	}
 	defer entryReader.Close()
-	fileMode := safeFileMode(zipEntry.Mode(), extractPlan.ExtractedFileModePolicy)
+	fileMode := LModeFileResolve(zipEntry.Mode(), extractPlan.LPolicyFilemode)
 	outputFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, fileMode)
 	if err != nil {
-		if extractPlan.ExtractDestinationPolicy == OverwriteExtractedFiles && errors.Is(err, os.ErrExist) {
+		if extractPlan.LPolicyExtraction == LPolicyExtractionOverwrite && errors.Is(err, os.ErrExist) {
 			if fileInfo, lstatErr := os.Lstat(targetPath); lstatErr != nil {
 				return lstatErr
 			} else if fileInfo.Mode()&os.ModeSymlink != 0 {
@@ -407,43 +407,43 @@ func writeZipEntry(zipEntry *zip.File, targetPath string, entrySize int64, extra
 	return closeErr
 }
 
-func openArchiveReader(archiveFile *os.File, archiveFormatName ArchiveFormat) (io.Reader, func(), error) {
+func LArchiveReaderOpen(archiveFile *os.File, archiveFormatName LArchiveFormat) (io.Reader, func(), error) {
 	switch archiveFormatName {
-	case TarBz2:
+	case LArchiveTarBz2:
 		return bzip2.NewReader(archiveFile), nil, nil
-	case ArchiveFormatTarGz:
+	case LArchiveTarGz:
 		gzipReader, err := gzip.NewReader(archiveFile)
 		if err != nil {
 			return nil, nil, err
 		}
 		return gzipReader, func() { _ = gzipReader.Close() }, nil
-	case TarXz:
+	case LArchiveTarXz:
 		xzReader, err := xz.NewReader(archiveFile)
 		if err != nil {
 			return nil, nil, err
 		}
 		return xzReader, nil, nil
-	case TarZst:
+	case LArchiveTarZst:
 		zstdReader, err := zstd.NewReader(archiveFile)
 		if err != nil {
 			return nil, nil, err
 		}
 		return zstdReader, func() { zstdReader.Close() }, nil
-	case ArchiveFormatTar:
+	case LArchiveTar:
 		return archiveFile, nil, nil
 	default:
 		return nil, nil, fmt.Errorf("unsupported archive format: %s", archiveFormatName)
 	}
 }
 
-// linkTargetWithinDestination reports whether an archive link entry resolves to a path inside the
+// LLinkDestinationCheck reports whether an archive link entry resolves to a path inside the
 // extraction destination. The link is never created either way; this only decides whether to skip
 // it silently (benign, in-tree target) or reject the whole archive as hostile (the target escapes
 // the destination — the classic symlink-traversal setup). Hardlink targets are archive-root
 // relative; symlink targets are relative to the entry's own directory, and an absolute symlink
 // target is treated as root-relative so it fails the containment check below. Names use forward
 // slashes (tar), so path (not filepath) is used to resolve them before the OS-path containment check.
-func linkTargetWithinDestination(destinationDirectory string, entryName string, linkName string, isHardlink bool) bool {
+func LLinkDestinationCheck(destinationDirectory string, entryName string, linkName string, isHardlink bool) bool {
 	if linkName == "" {
 		return false
 	}
@@ -451,12 +451,12 @@ func linkTargetWithinDestination(destinationDirectory string, entryName string, 
 	if !isHardlink && !path.IsAbs(linkName) {
 		archiveRelativeTarget = path.Join(path.Dir(entryName), linkName)
 	}
-	_, err := safeExtractTargetPath(destinationDirectory, archiveRelativeTarget)
+	_, err := LPathExtractionResolve(destinationDirectory, archiveRelativeTarget)
 	return err == nil
 }
 
-func safeExtractTargetPath(destinationDirectory string, headerName string) (string, error) {
-	cleanName, err := cleanEntryName(headerName)
+func LPathExtractionResolve(destinationDirectory string, headerName string) (string, error) {
+	cleanName, err := LEntryNameClean(headerName)
 	if err != nil {
 		return "", err
 	}
@@ -465,29 +465,29 @@ func safeExtractTargetPath(destinationDirectory string, headerName string) (stri
 		return "", fmt.Errorf("unsafe archive path: %s", headerName)
 	}
 	targetPath := filepath.Join(destinationDirectory, localName)
-	if err := checkExtractTarget(destinationDirectory, targetPath, headerName); err != nil {
+	if err := LTargetExtractionCheck(destinationDirectory, targetPath, headerName); err != nil {
 		return "", err
 	}
 	return targetPath, nil
 }
 
-func cleanEntryName(headerName string) (string, error) {
+func LEntryNameClean(headerName string) (string, error) {
 	if headerName == "" {
 		return "", errors.New("archive entry has empty path")
 	}
 	normalizedName := strings.ReplaceAll(headerName, "\\", "/")
 	cleanName := path.Clean(normalizedName)
-	if cleanName == "." || !fs.ValidPath(cleanName) || path.IsAbs(normalizedName) || hasWindowsDrivePrefix(normalizedName) || strings.HasPrefix(cleanName, "../") || strings.Contains(cleanName, "/../") {
+	if cleanName == "." || !fs.ValidPath(cleanName) || path.IsAbs(normalizedName) || LPathDriveCheck(normalizedName) || strings.HasPrefix(cleanName, "../") || strings.Contains(cleanName, "/../") {
 		return "", fmt.Errorf("unsafe archive path: %s", headerName)
 	}
 	return cleanName, nil
 }
 
-func hasWindowsDrivePrefix(name string) bool {
+func LPathDriveCheck(name string) bool {
 	return len(name) >= 2 && name[1] == ':' && ((name[0] >= 'A' && name[0] <= 'Z') || (name[0] >= 'a' && name[0] <= 'z'))
 }
 
-func checkExtractTarget(destinationDirectory string, targetPath string, originalHeaderName string) error {
+func LTargetExtractionCheck(destinationDirectory string, targetPath string, originalHeaderName string) error {
 	absoluteDestinationDirectory, err := filepath.Abs(destinationDirectory)
 	if err != nil {
 		return err
@@ -506,11 +506,11 @@ func checkExtractTarget(destinationDirectory string, targetPath string, original
 	return nil
 }
 
-func safeFileMode(fileMode os.FileMode, fileModePolicyName ExtractedFileModePolicy) os.FileMode {
+func LModeFileResolve(fileMode os.FileMode, fileModePolicyName LPolicyFilemode) os.FileMode {
 	switch fileModePolicyName {
-	case FileModePolicyRegularFilesNotExecutable:
+	case LPolicyFilemodeRegularOnly:
 		return fileMode & 0o644
-	case PreserveSafeExecutableBits, "":
+	case LPolicyFilemodeExecutablePreserve, "":
 		return fileMode & 0o755
 	default:
 		return fileMode & 0o755

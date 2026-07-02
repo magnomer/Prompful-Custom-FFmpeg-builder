@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 )
 
-func HashPlan(planValue interface{}) (string, error) {
+func LPlanHashCreate(planValue interface{}) (string, error) {
 	planBytes, err := json.Marshal(planValue)
 	if err != nil {
 		return "", err

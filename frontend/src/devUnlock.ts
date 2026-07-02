@@ -2,7 +2,7 @@
 //
 //   1. Basic dev unlock: clicking the version number in the About tab twelve times
 //      toggles the UI-unavailable libraries (see uiUnavailableLibraryIds and
-//      unimplementedBuildLibraryIds in libraries.tsx) between locked and selectable.
+//      LLibraryBuildUnimplementedIds in libraries.tsx) between locked and selectable.
 //      It ONLY relaxes availability; the normal-mode mutual-exclusion rules (one TLS
 //      backend, shaderc-over-glslang, one EVC profile binding) stay enforced so a
 //      basic-dev selection is still buildable.
@@ -13,47 +13,47 @@
 //      for UI testing. The backend still validates and blocks an unbuildable mix, so
 //      this is a UI-exploration aid, not a way to ship a conflicting build.
 //
-// Neither tier touches the catalog, recipes, or backend gating. Both are persisted in
+// Neither tier touches the library catalog, recipes, or backend gating. Both are persisted in
 // localStorage so they survive a reload during a dev session; the click counts are
 // in-memory, so each twelve-click toggle must happen within one run. Sudo is gated on
 // basic, and turning basic off clears sudo.
 
-const DEV_UNLOCK_KEY = "ffbuilder.devUnlockUnavailable";
-const SUDO_DEV_UNLOCK_KEY = "ffbuilder.sudoDevUnlock";
-const REQUIRED_CLICKS = 12;
+const LUnlockKeyBasic = "ffbuilder.devUnlockUnavailable";
+const LUnlockKeySudo = "ffbuilder.sudoDevUnlock";
+const LUnlockClickRequiredCount = 12;
 
-let versionClickCount = 0;
-let devUnlockIndicatorClickCount = 0;
+let LUnlockVersionClickCount = 0;
+let LUnlockIndicatorClickCount = 0;
 
-export function isDevUnlockEnabled(): boolean {
+export function LUnlockBasicCheck(): boolean {
   try {
-    return localStorage.getItem(DEV_UNLOCK_KEY) === "1";
+    return localStorage.getItem(LUnlockKeyBasic) === "1";
   } catch {
     return false;
   }
 }
 
-// isSudoDevUnlockEnabled reports the sudo tier. It requires basic dev to be on, so a
+// LUnlockSudoCheck reports the sudo tier. It requires basic dev to be on, so a
 // lingering sudo flag never takes effect once basic is locked again.
-export function isSudoDevUnlockEnabled(): boolean {
-  if (!isDevUnlockEnabled()) {
+export function LUnlockSudoCheck(): boolean {
+  if (!LUnlockBasicCheck()) {
     return false;
   }
   try {
-    return localStorage.getItem(SUDO_DEV_UNLOCK_KEY) === "1";
+    return localStorage.getItem(LUnlockKeySudo) === "1";
   } catch {
     return false;
   }
 }
 
-function setDevUnlockEnabled(enabled: boolean): boolean {
+function LUnlockBasicSet(enabled: boolean): boolean {
   try {
     if (enabled) {
-      localStorage.setItem(DEV_UNLOCK_KEY, "1");
+      localStorage.setItem(LUnlockKeyBasic, "1");
     } else {
-      localStorage.removeItem(DEV_UNLOCK_KEY);
+      localStorage.removeItem(LUnlockKeyBasic);
       // Basic off implies sudo off: clear it so re-enabling basic starts un-sudoed.
-      localStorage.removeItem(SUDO_DEV_UNLOCK_KEY);
+      localStorage.removeItem(LUnlockKeySudo);
     }
   } catch {
     // localStorage unavailable: the in-memory UI state can still update for this
@@ -62,45 +62,45 @@ function setDevUnlockEnabled(enabled: boolean): boolean {
   return enabled;
 }
 
-function setSudoDevUnlockEnabled(enabled: boolean): boolean {
+function LUnlockSudoSet(enabled: boolean): boolean {
   try {
     if (enabled) {
-      localStorage.setItem(SUDO_DEV_UNLOCK_KEY, "1");
+      localStorage.setItem(LUnlockKeySudo, "1");
     } else {
-      localStorage.removeItem(SUDO_DEV_UNLOCK_KEY);
+      localStorage.removeItem(LUnlockKeySudo);
     }
   } catch {
-    // localStorage unavailable: not fatal (see setDevUnlockEnabled).
+    // localStorage unavailable: not fatal (see LUnlockBasicSet).
   }
-  return enabled && isDevUnlockEnabled();
+  return enabled && LUnlockBasicCheck();
 }
 
-// registerVersionClick records one click on the version number and returns the
+// LUnlockVersionClickRegister records one click on the version number and returns the
 // current basic developer-unlock state. Every twelve clicks toggle the state: locked
 // -> unlocked, then unlocked -> locked, and so on.
-export function registerVersionClick(): boolean {
-  versionClickCount += 1;
-  if (versionClickCount < REQUIRED_CLICKS) {
-    return isDevUnlockEnabled();
+export function LUnlockVersionClickRegister(): boolean {
+  LUnlockVersionClickCount += 1;
+  if (LUnlockVersionClickCount < LUnlockClickRequiredCount) {
+    return LUnlockBasicCheck();
   }
 
-  versionClickCount = 0;
-  return setDevUnlockEnabled(!isDevUnlockEnabled());
+  LUnlockVersionClickCount = 0;
+  return LUnlockBasicSet(!LUnlockBasicCheck());
 }
 
-// registerDevUnlockIndicatorClick records one click on the "Developer mode ..."
+// LUnlockIndicatorClickRegister records one click on the "Developer mode ..."
 // indicator and returns the current sudo state. Every twelve clicks toggle sudo, but
 // only while basic dev is on; with basic off it is a no-op that stays un-sudoed.
-export function registerDevUnlockIndicatorClick(): boolean {
-  if (!isDevUnlockEnabled()) {
-    devUnlockIndicatorClickCount = 0;
+export function LUnlockIndicatorClickRegister(): boolean {
+  if (!LUnlockBasicCheck()) {
+    LUnlockIndicatorClickCount = 0;
     return false;
   }
-  devUnlockIndicatorClickCount += 1;
-  if (devUnlockIndicatorClickCount < REQUIRED_CLICKS) {
-    return isSudoDevUnlockEnabled();
+  LUnlockIndicatorClickCount += 1;
+  if (LUnlockIndicatorClickCount < LUnlockClickRequiredCount) {
+    return LUnlockSudoCheck();
   }
 
-  devUnlockIndicatorClickCount = 0;
-  return setSudoDevUnlockEnabled(!isSudoDevUnlockEnabled());
+  LUnlockIndicatorClickCount = 0;
+  return LUnlockSudoSet(!LUnlockSudoCheck());
 }

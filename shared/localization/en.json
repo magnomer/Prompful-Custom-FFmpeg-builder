@@ -2,7 +2,7 @@
   "app.brand": "Promptful Custom FFmpeg Builder",
   "common.other": "Other",
   "locale.english": "English",
-  "locale.selector.ariaLabel": "Application language",
+  "locale.selector.ariaLabel": "Program language",
   "actions.addBuildPlanAndContinue": "Prepare build tools",
   "actions.browse": "Browse",
   "actions.copy": "Copy",
@@ -411,7 +411,7 @@
   "about.intro": "A simple summary of what this program does and how it keeps the build under your control.",
   "about.identity.title": "Promptful Custom FFmpeg Builder",
   "about.identity.text": "Build FFmpeg locally on your own Windows computer.",
-  "about.version.ariaLabel": "Application version",
+  "about.version.ariaLabel": "Program version",
   "about.version.label": "Current version",
   "about.version.value": "Version {version}",
   "about.version.devUnlocked": "Developer mode: unavailable libraries are now selectable.",
@@ -1232,7 +1232,7 @@
   "logs.local.raw.stderr.simple": "Problems and warnings the build reported.",
   "logs.local.raw.stderr.tech": "Standard error (stderr) stream. Compilers and build tools emit warnings, errors, and progress here, separate from stdout.",
   "logs.local.raw.events.title": "Security audit trail",
-  "logs.local.raw.events.simple": "A record of what the app did on your system while building.",
+  "logs.local.raw.events.simple": "A record of what the program did on your system while building.",
   "logs.local.raw.events.tech": "Structured JSON Lines audit log: one JSON event per line (action, level, message, timestamp). Backs the Summary view.",
   "logs.local.tabs.ariaLabel": "Selected log views",
   "logs.local.tabs.environmentSummary": "Build environment summary",
@@ -1252,5 +1252,6 @@
   "logs.local.loading": "Loading selected log...",
   "logs.local.empty.raw": "No raw log text was recorded for this local record.",
   "logs.local.meta.errors": "{count} errors",
-  "logs.local.meta.warnings": "{count} warnings"
+  "logs.local.meta.warnings": "{count} warnings",
+  "libraries.row.unavailable.preparationUnimplemented": "Temporarily unavailable: this library needs source/import preparation, but no implemented preparation hook exists for the selected FFmpeg release yet."
 }

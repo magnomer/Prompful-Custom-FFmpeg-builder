@@ -1,0 +1,323 @@
+package program
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"promptfulcustomffmpegbuilder/internal/audit"
+	"promptfulcustomffmpegbuilder/internal/consent"
+	"promptfulcustomffmpegbuilder/internal/download"
+	"promptfulcustomffmpegbuilder/internal/execution"
+	"promptfulcustomffmpegbuilder/internal/extraction"
+	"promptfulcustomffmpegbuilder/internal/planning"
+	"promptfulcustomffmpegbuilder/internal/scripting"
+	"promptfulcustomffmpegbuilder/internal/workspace"
+)
+
+const LSignatureMsysKeyUrl = "https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&search=0x0EBF782C5D53F7E5FB02A66746BD761F7A49B0EC"
+const LSignatureMsysFingerprint = "0EBF782C5D53F7E5FB02A66746BD761F7A49B0EC"
+
+func LSignatureMsysVerify(signaturePath string, archivePath string, publicKeyPath string, emitProgress func(string, string)) error {
+	return LSignatureDetachedPublicVerify(signaturePath, archivePath, publicKeyPath, LSignatureMsysFingerprint, "MSYS2 .sig", emitProgress)
+}
+
+func (program *LProgram) lToolchainPrepare(LContext context.Context, LRunId string, plan planning.LPlanToolchain, userLConsentMsys consent.LConsentMsys, userLConsentArchive consent.LConsentArchive, userPacmanPackageInstallLConsent consent.LConsentPacman) {
+	actionSucceeded := false
+	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
+	defer func() {
+		if actionSucceeded {
+			program.lActionApprovedFinish("completed")
+			return
+		}
+		program.lToolchainFailedClean(plan, workspaceLayout, LRunId)
+		program.lActionApprovedFinish("failed")
+	}()
+	program.lStatusEmit("preparing-toolchain")
+	if err := workspace.LWorkspaceFolderCreate(workspaceLayout); err != nil {
+		program.lErrorLocalizedEmit("run.failure.createWorkspaceDirectories", "Could not create workspace directories", err)
+		return
+	}
+	auditWriter, err := audit.LAuditWriterCreate(workspaceLayout.LogsDirectory, LRunId)
+	if err != nil {
+		program.lErrorLocalizedEmit("run.failure.createAuditLog", "Could not create audit log", err)
+		return
+	}
+	emitProgress := program.lAuditProgressCreate(auditWriter, plan.ActionName, plan.PlanHash)
+	_ = auditWriter.LAuditEventWrite("action-started", plan.ActionName, plan.PlanHash, "info", "Approved private MSYS2 preparation started.")
+	emitProgress("info", "Approved private MSYS2 preparation started. Run: "+LRunId)
+
+	archivePath := filepath.Join(workspaceLayout.DownloadsDirectory, "msys2-approved"+LArchiveExtensionResolve(plan.Msys2ArchiveUrl))
+	downloadPlan := download.LPlanDownload{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "MSYS2 archive", DownloadUrl: plan.Msys2ArchiveUrl, ExpectedSha256Hash: plan.Msys2ArchiveSha256Hash, DestinationFilePath: archivePath, AllowedHosts: []string{"github.com", "repo.msys2.org", "mirror.msys2.org"}, ExpectedFileSizeMinimum: 1_000_000, ExpectedFileSizeMaximum: 500_000_000, LPolicyFile: LPolicyHashResolve(plan.Msys2ArchiveSha256Hash)}
+	if err := download.LDownloadMsysRun(LContext, userLConsentMsys, downloadPlan, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.msys2ArchiveDownload", "MSYS2 archive download failed", err)
+		return
+	}
+	if plan.Msys2ArchiveSignatureUrl != "" {
+		signaturePath := archivePath + ".sig"
+		signatureDownloadPlan := download.LPlanDownload{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "MSYS2 signature", DownloadUrl: plan.Msys2ArchiveSignatureUrl, DestinationFilePath: signaturePath, AllowedHosts: []string{"github.com", "repo.msys2.org", "mirror.msys2.org"}, ExpectedFileSizeMinimum: 100, ExpectedFileSizeMaximum: 100_000, LPolicyFile: download.LPolicyFileOverwrite}
+		if err := download.LDownloadMsysRun(LContext, userLConsentMsys, signatureDownloadPlan, emitProgress); err != nil {
+			_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+			program.lErrorLocalizedEmit("run.failure.msys2SignatureDownload", "MSYS2 signature download failed", err)
+			return
+		}
+		publicKeyPath := filepath.Join(workspaceLayout.DownloadsDirectory, "msys2-installer-signing-key.asc")
+		publicKeyDownloadPlan := download.LPlanDownload{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "MSYS2 installer signing key", DownloadUrl: LSignatureMsysKeyUrl, DestinationFilePath: publicKeyPath, AllowedHosts: []string{"keyserver.ubuntu.com"}, ExpectedFileSizeMinimum: 1000, ExpectedFileSizeMaximum: 1_000_000, LPolicyFile: download.LPolicyFileOverwrite}
+		if err := download.LDownloadMsysRun(LContext, userLConsentMsys, publicKeyDownloadPlan, emitProgress); err != nil {
+			_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+			program.lErrorLocalizedEmit("run.failure.msys2SigningKeyDownload", "MSYS2 signing key download failed", err)
+			return
+		}
+		if err := LSignatureMsysVerify(signaturePath, archivePath, publicKeyPath, emitProgress); err != nil {
+			_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+			program.lErrorLocalizedEmit("run.failure.msys2SignatureVerification", "MSYS2 signature verification failed", err)
+			return
+		}
+	}
+	if err := program.lDirectoryToolchainFreshPrepare(plan.WorkspaceDirectory, plan.Msys2RootDirectory, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.msys2Cleanup", "MSYS2 private toolchain folder cleanup failed", err)
+		return
+	}
+	extractPlan := extraction.LPlanExtraction{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ArchiveFilePath: archivePath, DestinationDirectory: plan.Msys2RootDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, LArchiveFormat: LArchiveFormatResolve(plan.Msys2ArchiveUrl), LPolicyExtraction: extraction.LPolicyExtractionRequireNewDirectory, LPolicyFilemode: extraction.LPolicyFilemodeExecutablePreserve, MaximumFileCount: 250000, MaximumExtractedByteCount: 10_000_000_000, MaximumSingleFileByteCount: 2_000_000_000}
+	if err := extraction.LArchiveConsentExtract(LContext, userLConsentArchive, extractPlan, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.msys2Extraction", "MSYS2 archive extraction failed", err)
+		return
+	}
+	if err := LDirectoryMsysRootNormalize(plan.Msys2RootDirectory, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.msys2Layout", "MSYS2 archive layout check failed", err)
+		return
+	}
+	if err := program.lPackagePacmanInstall(LContext, plan, userPacmanPackageInstallLConsent, auditWriter, emitProgress); err != nil {
+		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+		program.lErrorLocalizedEmit("run.failure.msys2PackageInstall", "MSYS2 package installation failed", err)
+		return
+	}
+	if err := LManifestToolchainWrite(plan); err != nil {
+		emitProgress("warn", LLocaleTextGetInternal("run.log.toolchainManifestFailed", nil))
+	}
+	_ = auditWriter.LAuditEventWrite("action-completed", plan.ActionName, plan.PlanHash, "info", "Approved private MSYS2 environment is ready.")
+	emitProgress("info", LLocaleTextGetInternal("run.log.toolchainReady", nil))
+	actionSucceeded = true
+}
+
+func (program *LProgram) lDirectoryToolchainFreshPrepare(workspaceDirectory string, msys2RootDirectory string, emitProgress func(string, string)) error {
+	if msys2RootDirectory == "" {
+		return errors.New("private MSYS2 toolchain folder is empty")
+	}
+	if err := workspace.LPathWorkspaceCheck(workspaceDirectory, msys2RootDirectory); err != nil {
+		return err
+	}
+	if _, err := os.Lstat(msys2RootDirectory); errors.Is(err, os.ErrNotExist) {
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("could not inspect existing private MSYS2 folder: %w", err)
+	}
+	if err := workspace.LPathRealCheck(workspaceDirectory, msys2RootDirectory); err != nil {
+		return fmt.Errorf("existing private MSYS2 folder is unsafe to clean: %w", err)
+	}
+	emitProgress("warn", LLocaleTextGetInternal("run.log.previousMsys2Exists", nil))
+	LProcessMsysPrivateStop(msys2RootDirectory, emitProgress)
+	if err := LPathRetryRemove(msys2RootDirectory); err != nil {
+		return fmt.Errorf("could not remove previous private MSYS2 folder: %w", err)
+	}
+	emitProgress("info", LLocaleTextGetInternal("run.log.previousMsys2Removed", nil))
+	return nil
+}
+
+func LDirectoryMsysRootNormalize(msys2RootDirectory string, emitProgress func(string, string)) error {
+	if LFileExistCheck(filepath.Join(msys2RootDirectory, "usr", "bin", "bash.exe")) {
+		emitProgress("info", LLocaleTextGetInternal("run.log.msys2LayoutConfirmed", nil))
+		return nil
+	}
+
+	entries, err := os.ReadDir(msys2RootDirectory)
+	if err != nil {
+		return fmt.Errorf("could not inspect extracted MSYS2 directory: %w", err)
+	}
+
+	candidateDirectories := []string{}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			candidateDirectories = append(candidateDirectories, filepath.Join(msys2RootDirectory, entry.Name()))
+		}
+	}
+
+	matchingDirectories := []string{}
+	for _, candidateDirectory := range candidateDirectories {
+		if LFileExistCheck(filepath.Join(candidateDirectory, "usr", "bin", "bash.exe")) {
+			matchingDirectories = append(matchingDirectories, candidateDirectory)
+		}
+	}
+
+	if len(matchingDirectories) == 0 {
+		return errors.New("could not find usr/bin/bash.exe after extraction; check that the MSYS2 URL points to a base tar archive, not an installer, signature, or HTML page")
+	}
+	if len(matchingDirectories) > 1 {
+		return fmt.Errorf("found multiple possible MSYS2 roots after extraction: %s", strings.Join(matchingDirectories, ", "))
+	}
+
+	nestedRootDirectory := matchingDirectories[0]
+	emitProgress("info", LLocaleTextGetInternal("run.log.msys2TopFolderMoving", nil))
+	if err := LDirectoryContentMove(nestedRootDirectory, msys2RootDirectory); err != nil {
+		return err
+	}
+	if err := os.Remove(nestedRootDirectory); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("could not remove empty extracted MSYS2 wrapper folder: %w", err)
+	}
+	if !LFileExistCheck(filepath.Join(msys2RootDirectory, "usr", "bin", "bash.exe")) {
+		return errors.New("MSYS2 archive layout normalization did not produce usr/bin/bash.exe")
+	}
+	emitProgress("info", LLocaleTextGetInternal("run.log.msys2LayoutNormalized", nil))
+	return nil
+}
+
+func LDirectoryContentMove(sourceDirectory string, destinationDirectory string) error {
+	entries, err := os.ReadDir(sourceDirectory)
+	if err != nil {
+		return fmt.Errorf("could not read extracted MSYS2 wrapper folder: %w", err)
+	}
+	for _, entry := range entries {
+		sourcePath := filepath.Join(sourceDirectory, entry.Name())
+		destinationPath := filepath.Join(destinationDirectory, entry.Name())
+		if LFileExistCheck(destinationPath) {
+			return fmt.Errorf("cannot move extracted MSYS2 entry because destination already exists: %s", destinationPath)
+		}
+		if err := os.Rename(sourcePath, destinationPath); err != nil {
+			return fmt.Errorf("could not move extracted MSYS2 entry %s: %w", entry.Name(), err)
+		}
+	}
+	return nil
+}
+
+func (program *LProgram) lPackagePacmanInstall(LContext context.Context, plan planning.LPlanToolchain, userPacmanPackageInstallLConsent consent.LConsentPacman, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+	if err := consent.LConsentCheck(userPacmanPackageInstallLConsent.LConsent, consent.LConsentKindPacman, plan.ActionName, plan.PlanHash); err != nil {
+		return err
+	}
+	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
+	scriptLines, err := scripting.LScriptPacmanBuild(plan.Msys2PackageNames, plan.WindowsShellProfileName)
+	if err != nil {
+		return err
+	}
+	scriptFile, err := scripting.LScriptFileWrite(scripting.LPlanScript{WorkspaceDirectory: plan.WorkspaceDirectory, ScriptFilePath: filepath.Join(workspaceLayout.BuildDirectory, "scripts", "pacman-install-"+plan.PlanHash+".sh"), ScriptLines: scriptLines})
+	if err != nil {
+		return err
+	}
+	commandPlan := execution.LPlanCommand{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ExecutablePath: filepath.Join(plan.Msys2RootDirectory, "usr", "bin", "bash.exe"), ArgumentValues: []string{filepath.ToSlash(scriptFile.ScriptFilePath)}, WorkingDirectory: plan.Msys2RootDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, Msys2RootDirectory: plan.Msys2RootDirectory, WindowsShellProfileName: plan.WindowsShellProfileName, EnvironmentVariables: map[string]string{}, AllowedExecutableBasenames: []string{"bash.exe"}, LScriptKind: execution.LScriptPacmanInstall, ApprovedScriptFilePath: scriptFile.ScriptFilePath, ApprovedScriptSha256Hash: scriptFile.ScriptSha256Hash, RunLAuditDirectoryGet: auditWriter.LAuditDirectoryGet()}
+	_ = auditWriter.LAuditEventWrite("command-started", plan.ActionName, plan.PlanHash, "info", "Running approved pacman package installation script.")
+	return execution.LCommandPacmanRun(LContext, userPacmanPackageInstallLConsent, commandPlan, emitProgress)
+}
+
+func (program *LProgram) lToolchainFailedClean(plan planning.LPlanToolchain, workspaceLayout workspace.LWorkspaceLayout, LRunId string) {
+	program.lLogEmit("warn", LLocaleTextGetInternal("run.log.cleaningToolchainPartial", nil))
+	cleanupTargets := []string{
+		plan.Msys2RootDirectory,
+		filepath.Join(workspaceLayout.BuildDirectory, "scripts", "pacman-install-"+plan.PlanHash+".sh"),
+	}
+	program.lWorkspaceTargetsClean(plan.WorkspaceDirectory, cleanupTargets)
+}
+
+func (program *LProgram) lWorkspaceTargetsClean(workspaceDirectory string, targets []string) {
+	for _, targetPath := range targets {
+		if targetPath == "" {
+			continue
+		}
+		if _, err := os.Lstat(targetPath); errors.Is(err, os.ErrNotExist) {
+			continue
+		} else if err != nil {
+			program.lLogEmit("warn", LLocaleTextGetInternal("run.log.cleanupInspectFailed", map[string]string{"message": err.Error()}))
+			continue
+		}
+		if err := workspace.LPathWorkspaceCheck(workspaceDirectory, targetPath); err != nil {
+			program.lLogEmit("warn", LLocaleTextGetInternal("run.log.cleanupOutsideWorkspace", map[string]string{"message": err.Error()}))
+			continue
+		}
+		if err := workspace.LPathRealCheck(workspaceDirectory, targetPath); err != nil {
+			program.lLogEmit("warn", LLocaleTextGetInternal("run.log.cleanupUnsafe", map[string]string{"message": err.Error()}))
+			continue
+		}
+		LProcessMsysPrivateStop(targetPath, program.lLogEmit)
+		if err := LPathRetryRemove(targetPath); err != nil {
+			program.lLogEmit("warn", LLocaleTextGetInternal("run.log.cleanupRemoveFailed", map[string]string{"message": err.Error()}))
+			continue
+		}
+		program.lLogEmit("info", LLocaleTextGetInternal("run.log.cleanupRemoved", map[string]string{"path": targetPath}))
+	}
+}
+
+func LProcessMsysPrivateStop(msys2RootDirectory string, emitProgress func(string, string)) {
+	bashPath := filepath.Join(msys2RootDirectory, "usr", "bin", "bash.exe")
+	if !LFileExistCheck(bashPath) {
+		return
+	}
+	command := exec.Command(bashPath, "-lc", "GNUPGHOME=/etc/pacman.d/gnupg gpgconf --kill gpg-agent >/dev/null 2>&1 || true; GNUPGHOME=/etc/pacman.d/gnupg gpgconf --kill all >/dev/null 2>&1 || true")
+	command.Dir = msys2RootDirectory
+	command.Env = append(os.Environ(), "MSYSTEM=UCRT64", "MSYS2_PATH_TYPE=inherit", "CHERE_INVOKING=1")
+	if err := command.Run(); err == nil && emitProgress != nil {
+		emitProgress("info", LLocaleTextGetInternal("run.log.stoppedMsys2Agents", nil))
+	}
+}
+
+func LPathRetryRemove(targetPath string) error {
+	var lastErr error
+	for attempt := 0; attempt < 8; attempt++ {
+		if err := os.RemoveAll(targetPath); err != nil {
+			lastErr = err
+			time.Sleep(time.Duration(250+attempt*150) * time.Millisecond)
+			continue
+		}
+		if _, err := os.Lstat(targetPath); errors.Is(err, os.ErrNotExist) {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		lastErr = fmt.Errorf("path still exists after cleanup attempt: %s", targetPath)
+		time.Sleep(time.Duration(250+attempt*150) * time.Millisecond)
+	}
+	if lastErr == nil {
+		lastErr = fmt.Errorf("could not remove path: %s", targetPath)
+	}
+	return lastErr
+}
+
+func LArchiveExtensionResolve(downloadUrl string) string {
+	lowerUrl := strings.ToLower(downloadUrl)
+	switch {
+	case strings.HasSuffix(lowerUrl, ".tar.xz"):
+		return ".tar.xz"
+	case strings.HasSuffix(lowerUrl, ".tar.zst"):
+		return ".tar.zst"
+	case strings.HasSuffix(lowerUrl, ".tar.bz2"):
+		return ".tar.bz2"
+	case strings.HasSuffix(lowerUrl, ".tar.gz") || strings.HasSuffix(lowerUrl, ".tgz"):
+		return ".tar.gz"
+	default:
+		return ".tar.xz"
+	}
+}
+
+func LArchiveFormatResolve(downloadUrl string) extraction.LArchiveFormat {
+	lowerUrl := strings.ToLower(downloadUrl)
+	switch {
+	case strings.HasSuffix(lowerUrl, ".tar.bz2"):
+		return extraction.LArchiveTarBz2
+	case strings.HasSuffix(lowerUrl, ".tar.gz") || strings.HasSuffix(lowerUrl, ".tgz"):
+		return extraction.LArchiveTarGz
+	case strings.HasSuffix(lowerUrl, ".tar.zst"):
+		return extraction.LArchiveTarZst
+	case strings.HasSuffix(lowerUrl, ".tar.xz"):
+		return extraction.LArchiveTarXz
+	case strings.HasSuffix(lowerUrl, ".tar"):
+		return extraction.LArchiveTar
+	default:
+		return extraction.LArchiveTarXz
+	}
+}

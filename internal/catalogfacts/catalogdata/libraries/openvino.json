@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 2,
+  "recordKind": "ffmpeg-version-aware-library",
+  "generatedFromCurrentV4CodeOnly": true,
+  "sourceFiles": [
+    "internal/planning/LCatalogLibrarySource.go",
+    "backup/shared/releasesupport/ffmpeg-release-support.json",
+    "backup/shared/librarysources/library-sources.json",
+    "internal/planning/preparation.go",
+    "frontend/src/tabs/libraries.tsx",
+    "versions/*.json",
+    "versions/{ffmpegVersion}/{libraryId}.go"
+  ],
+  "libraryId": "openvino",
+  "importantModelingRule": "No build-relevant library field is authoritative at the top level. Each FFmpeg-version record carries its own display name, FFmpeg-facing configure flags, track/provider, package names, availability, source pin, and preparation status.",
+  "ffmpegVersions": {
+    "4.4.8": {
+      "libraryId": "openvino",
+      "ffmpegVersion": "4.4.8",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "OpenVINO / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libopenvino"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libopenvino"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/overview.html",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
+    },
+    "5.1.9": {
+      "libraryId": "openvino",
+      "ffmpegVersion": "5.1.9",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "OpenVINO / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libopenvino"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libopenvino"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/overview.html",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
+    },
+    "6.1.6": {
+      "libraryId": "openvino",
+      "ffmpegVersion": "6.1.6",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "OpenVINO / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libopenvino"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libopenvino"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/overview.html",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
+    },
+    "7.0.3": {
+      "libraryId": "openvino",
+      "ffmpegVersion": "7.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "OpenVINO / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libopenvino"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libopenvino"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/overview.html",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
+    },
+    "7.1.5": {
+      "libraryId": "openvino",
+      "ffmpegVersion": "7.1.5",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "OpenVINO / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libopenvino"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libopenvino"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/overview.html",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
+    },
+    "8.0.3": {
+      "libraryId": "openvino",
+      "ffmpegVersion": "8.0.3",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "OpenVINO / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libopenvino"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libopenvino"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/overview.html",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
+    },
+    "8.1.2": {
+      "libraryId": "openvino",
+      "ffmpegVersion": "8.1.2",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "OpenVINO / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libopenvino"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libopenvino"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/overview.html",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
+    }
+  }
+}
