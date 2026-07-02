@@ -24,9 +24,13 @@ export function LLocaleSet(arg1:string):Promise<void>;
 
 export function LPlanFFmpegApprove(arg1:string,arg2:consent.LRequestApproval):Promise<program.LResultAction>;
 
+export function LPlanFFmpegApproveSync(arg1:string,arg2:consent.LRequestApproval):Promise<program.LResultAction>;
+
 export function LPlanFFmpegRequest(arg1:planning.LSettingsFFmpeg):Promise<planning.LReviewFFmpeg>;
 
 export function LPlanToolchainApprove(arg1:string,arg2:consent.LRequestApproval):Promise<program.LResultAction>;
+
+export function LPlanToolchainApproveSync(arg1:string,arg2:consent.LRequestApproval):Promise<program.LResultAction>;
 
 export function LPlanToolchainRequest(arg1:planning.LSettingsBuild):Promise<planning.LReviewToolchain>;
 

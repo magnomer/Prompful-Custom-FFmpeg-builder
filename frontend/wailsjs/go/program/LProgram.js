@@ -42,12 +42,20 @@ export function LPlanFFmpegApprove(arg1, arg2) {
   return window['go']['program']['LProgram']['LPlanFFmpegApprove'](arg1, arg2);
 }
 
+export function LPlanFFmpegApproveSync(arg1, arg2) {
+  return window['go']['program']['LProgram']['LPlanFFmpegApproveSync'](arg1, arg2);
+}
+
 export function LPlanFFmpegRequest(arg1) {
   return window['go']['program']['LProgram']['LPlanFFmpegRequest'](arg1);
 }
 
 export function LPlanToolchainApprove(arg1, arg2) {
   return window['go']['program']['LProgram']['LPlanToolchainApprove'](arg1, arg2);
+}
+
+export function LPlanToolchainApproveSync(arg1, arg2) {
+  return window['go']['program']['LProgram']['LPlanToolchainApproveSync'](arg1, arg2);
 }
 
 export function LPlanToolchainRequest(arg1) {
