@@ -367,31 +367,62 @@ func (program *LProgram) LPlanToolchainApprove(reviewSessionId string, approval 
 	return LResultAction{RunId: LRunId, StartedAt: time.Now().UTC().Format(time.RFC3339)}, nil
 }
 
+// LPlanFFmpegApprove validates the review, confirms, and launches the build
+// asynchronously (GUI behavior: returns a RunId immediately, progress arrives
+// through the reporter).
 func (program *LProgram) LPlanFFmpegApprove(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
-	storedReviewSession, err := program.lReviewFFmpegValidate(reviewSessionId, approval)
+	plan, err := program.lFFmpegApproveValidate(reviewSessionId, approval)
 	if err != nil {
 		return LResultAction{}, err
+	}
+	return program.lFFmpegBuildLaunch(plan, approval, false)
+}
+
+// LPlanFFmpegApproveSync is the CLI counterpart of LPlanFFmpegApprove: it runs
+// the build inline and returns only after the build finishes, so the caller can
+// map the outcome to an exit code. The final status is delivered through the
+// reporter, exactly as in the async path.
+func (program *LProgram) LPlanFFmpegApproveSync(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
+	plan, err := program.lFFmpegApproveValidate(reviewSessionId, approval)
+	if err != nil {
+		return LResultAction{}, err
+	}
+	return program.lFFmpegBuildLaunch(plan, approval, true)
+}
+
+// lFFmpegApproveValidate performs the shared, side-effect-ordered validation for
+// both approve paths: session check, executability, hash, toolchain readiness,
+// and the backend-owned confirmation. It consumes the single-use session only
+// after confirmation succeeds, so a rejected confirmation leaves it retryable.
+func (program *LProgram) lFFmpegApproveValidate(reviewSessionId string, approval consent.LRequestApproval) (planning.LPlanFFmpeg, error) {
+	storedReviewSession, err := program.lReviewFFmpegValidate(reviewSessionId, approval)
+	if err != nil {
+		return planning.LPlanFFmpeg{}, err
 	}
 	plan := storedReviewSession.Plan
 	if err := planning.LPlanRunCheck(plan.IsExecutable); err != nil {
-		return LResultAction{}, err
+		return planning.LPlanFFmpeg{}, err
 	}
 	if err := LHashFFmpegVerify(plan); err != nil {
-		return LResultAction{}, err
+		return planning.LPlanFFmpeg{}, err
 	}
 	if err := LToolchainBuildPreparedCheck(plan.WorkspaceDirectory, plan.WindowsShellProfileName); err != nil {
-		return LResultAction{}, err
+		return planning.LPlanFFmpeg{}, err
 	}
-	confirmedByNativeDialog, err := program.lConsentNativeAsk(plan.ActionName, plan.PlanHash)
+	confirmed, err := program.lConsentNativeAsk(plan.ActionName, plan.PlanHash)
 	if err != nil {
-		return LResultAction{}, err
+		return planning.LPlanFFmpeg{}, err
 	}
-	if !confirmedByNativeDialog {
-		return LResultAction{}, errors.New("user rejected approval in backend-owned native confirmation dialog")
+	if !confirmed {
+		return planning.LPlanFFmpeg{}, errors.New("user rejected approval in backend-owned confirmation")
 	}
-	// Confirmed: consume the session now so it is single-use, but only after the
-	// dialog succeeded, so a cancelled/failed dialog leaves it retryable.
 	program.lReviewFFmpegConsume(reviewSessionId)
+	return plan, nil
+}
+
+// lFFmpegBuildLaunch builds the per-action consents and starts the build worker,
+// inline when runInline is true (CLI) or on a goroutine otherwise (GUI).
+func (program *LProgram) lFFmpegBuildLaunch(plan planning.LPlanFFmpeg, approval consent.LRequestApproval, runInline bool) (LResultAction, error) {
 	userLConsentFFmpeg, err := consent.LConsentFFmpegCreate(approval)
 	if err != nil {
 		return LResultAction{}, err
@@ -412,7 +443,11 @@ func (program *LProgram) LPlanFFmpegApprove(reviewSessionId string, approval con
 	if err != nil {
 		return LResultAction{}, err
 	}
-	go program.lFFmpegBuild(LContextAction, LRunId, plan, userLConsentFFmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
+	if runInline {
+		program.lFFmpegBuild(LContextAction, LRunId, plan, userLConsentFFmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
+	} else {
+		go program.lFFmpegBuild(LContextAction, LRunId, plan, userLConsentFFmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
+	}
 	return LResultAction{RunId: LRunId, StartedAt: time.Now().UTC().Format(time.RFC3339)}, nil
 }
 

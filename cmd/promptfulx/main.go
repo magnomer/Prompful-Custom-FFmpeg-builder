@@ -23,6 +23,12 @@ func run(args []string) int {
 	case "-h", "--help", "help":
 		printUsage()
 		return 0
+	case "list":
+		return cmdList(args[1:])
+	case "plan":
+		return cmdPlan(args[1:])
+	case "build":
+		return cmdBuild(args[1:])
 	default:
 		fmt.Fprintln(os.Stderr, "promptfulx: unknown command:", args[0])
 		fmt.Fprintln(os.Stderr, "run 'promptfulx --help' for usage")
@@ -36,12 +42,29 @@ func printUsage() {
 Usage:
   promptfulx <command> [options]
 
-Commands (planned):
-  plan       Show the resolved build plan
-  build      Build FFmpeg
-  list       List known versions, libraries, or presets
-  verify     Verify a built FFmpeg executable
-  explain    Explain a version, library, or preset
+Commands:
+  list       List known versions, presets, or libraries
+  plan       Show the resolved build plan (no build is run)
+  build      Build FFmpeg (workspace toolchain must be prepared first)
+  verify     Verify a built FFmpeg executable    (not implemented yet)
+  explain    Explain a version, library, or preset (not implemented yet)
 
-Status: skeleton. See docs/internal/PlanCLI.md.`)
+Plan / build options:
+  --ffmpeg-version X     required; a supported release (e.g. 8.1.2)
+  --preset P             start from a preset (e.g. full, minimal)
+  --extended             use the preset's extended library set
+  --enable-libNAME       add an FFmpeg library (e.g. --enable-libx264)
+  --disable-libNAME      remove a library from the preset
+  --workspace DIR        build workspace directory (absolute)
+  --jobs N               parallel build jobs
+  --yes                  accept the confirmation automatically (build)
+  --no-input             never prompt; fail if input would be needed (build)
+
+Examples:
+  promptfulx list versions
+  promptfulx list libraries --ffmpeg-version 8.1.2
+  promptfulx plan --ffmpeg-version 8.1.2 --preset full --disable-liboapv
+  promptfulx build --ffmpeg-version 8.1.2 --preset full --workspace D:\Work --yes
+
+See docs/internal/PlanCLI.md.`)
 }

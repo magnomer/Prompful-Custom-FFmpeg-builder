@@ -99,12 +99,12 @@ New methods (all end in a bare verb already used in the codebase — `Emit`,
 ### Ladder overview
 
 ```
-Step 0   cmd/ split                            mechanical, ship first
-Step 1A  Reporter + Confirmer interface shim   the only seam work
-Step 1   CLI reporter/confirmer impls
-Step 2   plan + list commands                  pure, cheap, high value
-Step 3   version + preset resolvers -> backend
-Step 4   build command (sync, exit codes)
+Step 0   cmd/ split                            mechanical, ship first     DONE
+Step 1A  Reporter + Confirmer interface shim   the only seam work         DONE
+Step 1   CLI reporter/confirmer impls                                     DONE
+Step 2   version + preset + flag resolvers -> backend (shared, tested)   DONE
+Step 3   plan + list commands                  pure, cheap, high value    DONE
+Step 4   build command (sync, exit codes)                                 DONE
 -------- v1 SHIPS: standalone single-build CLI --------
 Step 5   flag files @file  (spec §15)
 Step 6   verify + explain commands
@@ -114,8 +114,12 @@ Step 8   batch: folder/zip discovery, isolation, summary (spec §17-34)
 Step 9   parallel, json-log, strict/dry-run
 ```
 
-Biggest early win: Steps 0-2 give a working `promptfulx plan` / `list` quickly —
-pure functions, no seam work. The seam refactor (1A) only gates `build`.
+Steps 2 and 3 were swapped from an earlier draft: the `plan`/`list` commands
+call the version/preset/flag resolvers, so the resolvers (now Step 2) must land
+before the commands (now Step 3). Build order = number order.
+
+Biggest early win: Steps 2-3 give a working `promptfulx plan` / `list` quickly —
+pure functions, no seam work. The seam refactor (1A, done) only gates `build`.
 
 ---
 
@@ -250,9 +254,54 @@ func (c LConfirmerFlag) LConfirmerApprovalGet(action, hash, msg string) (bool, e
 }
 ```
 
-### Step 2 — `plan` and `list` commands (pure, no seams)
+### Step 2 — version + preset + flag resolvers (shared backend)
 
-`cmd/promptfulx/main.go`:
+`LSettingsFFmpeg` takes a source archive URL + a `SelectedLibraryIds` list, not a
+version string or preset name. The planner (`LPlanFFmpegCreate`) is already
+authoritative — given the URL and library IDs it resolves version, libraries,
+compatibility, and the configure command itself. So the CLI only has to produce
+those two inputs, and every source primitive already exists in the backend. No
+frontend logic needs extraction (the earlier "extract PresetResolutionService"
+concern was wrong: presets carry their library IDs directly).
+
+| Need | Existing backend primitive |
+|---|---|
+| version -> archive/signature URL | `planning.LReleaseSupportedListGet()` -> `LReleaseChoice{Version, Codename, ArchiveUrl, SignatureUrl}` |
+| preset -> library IDs (per version, `normal`/`extended` mode) | `LCatalogPresetSourceBuildResolved(url, profile)` -> `LPresetLibraryChoice{PresetId, LibraryIds, ExtendedLibraryIds}` |
+| ffmpeg flag -> internal library ID | `LCatalogSourceGet(url, profile)` -> `LLibraryChoice{LibraryId, ConfigureFlags}` (scan ConfigureFlags) |
+| shell profile default | `LCatalogDefaultWindowsShellProfileName = "ucrt64"` (empty normalizes to it) |
+
+Facts that shape the CLI surface (verified against `catalogdata`):
+
+- Real preset IDs: `ai, compatibility, default, editor, efficiency, full,
+  maxtest, minimal, streaming`. (The spec's `extended-full` is fictional.)
+- Presets are per-FFmpeg-version and have two modes: `normal` (`libraryIds`) and
+  `extended` (`extendedLibraryIds`, a superset). CLI: `--preset P [--extended]`.
+- Supported versions: 4.4.8, 5.1.9, 6.1.6, 7.0.3, 7.1.5, 8.0.3, 8.1.2.
+- Library IDs differ from ffmpeg flag names (`x264` id vs `--enable-libx264`
+  flag; `fdk-aac` vs `--enable-libfdk-aac`), so the flag surface needs the
+  ConfigureFlags scan.
+
+New resolvers in `internal/planning` (shared by GUI and CLI, unit-tested):
+
+```text
+LReleaseVersionResolve(version string) (LReleaseChoice, bool)
+LPresetLibraryIdsResolve(url, profile, presetId string, extended bool) ([]string, bool)
+LLibraryFlagResolve(url, profile, flagName string) (libraryId string, bool)
+```
+
+Locked decisions:
+
+- Library enable/disable surface is FFmpeg-style: `--enable-libx264` /
+  `--disable-libfdk-aac`, mapped to internal IDs via `LLibraryFlagResolve`
+  (spec §9.3).
+- `list libraries` requires `--ffmpeg-version` (fails exit 2 otherwise) because
+  availability is genuinely per-version.
+- `--extended` selects a preset's extended mode. Default is normal.
+
+### Step 3 — `plan` and `list` commands (pure, no seams)
+
+Consumes the Step 2 resolvers. `cmd/promptfulx/main.go`:
 
 ```go
 func main() { os.Exit(run(os.Args[1:])) }
@@ -275,42 +324,30 @@ func run(args []string) int {
 }
 ```
 
-`cmdPlan` maps flags into `LSettingsFFmpeg`, then calls the pure planner:
+`parseSettings` maps flags into `LSettingsFFmpeg` using the Step 2 resolvers
+(version -> URL, preset -> IDs, enable/disable overrides). `cmdPlan` then calls
+the pure planner:
 
 ```go
 func cmdPlan(args []string) int {
-	settings, err := parseSettings(args) // includes version/preset resolve, Step 3
+	settings, err := parseSettings(args) // uses Step 2 resolvers
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
 	}
-	review, err := planning.LPlanFFmpegCreate(settings)
+	plan, err := planning.LPlanFFmpegCreate(settings)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 4 // unsupported version/library/preset combo
 	}
-	printPlan(review) // resolved libs, configure command, warnings
+	printPlan(plan) // resolved libs, configure command, warnings
 	return 0
 }
 ```
 
-`list` reads embedded catalog data via `catalogfacts` / `planning` — no seams.
-
-### Step 3 — version + preset resolvers (the one real logic gap)
-
-`LSettingsFFmpeg` takes a source archive URL + libraries, not a version string or
-preset name. Two resolvers must exist as shared backend:
-
-1. `--ffmpeg-version 8.1.2` -> `FfmpegSourceArchiveUrl` + signature URL + hash.
-   Source exists (`internal/planning/ffmpegreleases.go`, `LCatalogSourceGet`).
-   Wrap as a backend resolver (e.g. `LVersionSourceResolve`).
-2. `--preset X` + `--enable-lib*` / `--disable-lib*` -> `SelectedLibraryIds`.
-   Preset base set via `LCatalogPresetSourceGet`, then apply enable/disable
-   overrides. The merge logic likely lives in the frontend today and must be
-   extracted to the backend (spec §36 `PresetResolutionService`).
-
-These are shared by GUI and CLI, so they belong in `internal/planning`, not in
-`cmd/promptfulx`.
+`list versions|presets|libraries` reads embedded catalog data via the Step 2
+resolvers / `planning` — no seams. `list libraries` requires `--ffmpeg-version`.
+Output is human text for v1; JSON is deferred.
 
 ### Step 4 — `build` command
 
@@ -328,11 +365,27 @@ Exit codes to wire (spec §38): 0 success, 1 general, 2 invalid args,
 4 unsupported combo, 7 configure failure, 8 build failure, 9 verify failure,
 10 user cancelled. Start with 0/1/2/4/7/8 for v1.
 
-> Note: `LPlanFFmpegApprove` currently launches the worker via `go` and returns a
-> RunId immediately (GUI polls events). For the CLI, either add a synchronous
-> variant or have the CLI block on completion (the reporter already streams
-> progress). Simplest: a shared run helper both callers use, GUI wraps it in
-> `go`, CLI calls it directly.
+Resolved: `LPlanFFmpegApprove`'s tail was refactored into shared helpers
+(`lFFmpegApproveValidate` + `lFFmpegBuildLaunch(plan, approval, runInline)`).
+GUI keeps the async `go` path via `LPlanFFmpegApprove`; the CLI calls the new
+`LPlanFFmpegApproveSync`, which runs the worker inline and returns on completion.
+The CLI's `buildReporter` captures the final status ("completed" -> 0, else 8).
+
+Implemented exit codes: 0 completed, 8 build did not complete, 4 blocked plan /
+unsupported combo, 2 invalid args, 10 confirmation rejected, 1 other validation
+failure (e.g. toolchain not prepared). Finer configure/verify codes (7/9) are
+deferred.
+
+Known v1 caveats:
+
+- The CLI has no `setup` command yet, so `build` requires a workspace whose
+  MSYS2 toolchain is already prepared (by the GUI or manually). An unprepared
+  workspace fails `LToolchainBuildPreparedCheck` before any download.
+- That readiness failure reuses a GUI-oriented localized message ("Go to Build
+  configuration..."), which reads oddly in the CLI. A CLI-specific message (and
+  a `setup` command) is future work.
+- `cmd/promptfulx` now imports `internal/program`, so `promptfulx.exe` links the
+  Wails library as dead weight until Step 7 (`buildflow`) removes it.
 
 **v1 ships here:** standalone single-build CLI.
 

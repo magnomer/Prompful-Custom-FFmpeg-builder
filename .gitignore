@@ -23,6 +23,10 @@
 *.cover
 coverage.out
 
+# Local `go build` litter in the repo root (real releases go to /build/bin/)
+/promptfulcustomffmpegbuilder.exe
+/promptfulx.exe
+
 # Editor / tooling
 /.claude/
 /.codex-tmp/
