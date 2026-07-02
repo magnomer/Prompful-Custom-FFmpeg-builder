@@ -1614,43 +1614,88 @@ func LScriptMakeLinesCreate(parallelJobCount int) ([]string, error) {
 	// FFmpeg's config.mak sets CC=gcc and LD=gcc resolved through PATH, so a gcc shim placed
 	// first on PATH intercepts both compilation and linking; when an invocation approaches the
 	// cap it is forwarded through a gcc @response-file, which sidesteps the length limit (gcc
-	// then also uses response files for its own collect2/ld sub-invocation). Short invocations
-	// exec the real gcc unchanged, so the added cost is a single bash startup per call.
-	return []string{
+	// then also uses response files for its own collect2/ld sub-invocation).
+	//
+	// The shim is a small native program compiled once at the start of make, not a bash
+	// script. A bash shim re-spawned env+bash for every one of the ~2000+ compiler
+	// invocations (each MSYS2 process spawn is a costly fork emulation), adding minutes of
+	// pure overhead to an otherwise clean build. The native shim execs the real gcc directly:
+	// the common short-command path is a single fast native exec with no extra process, and
+	// only the rare over-cap link invocation writes and forwards a response file. Behaviour is
+	// identical to the previous bash shim (same 30000-char threshold, same backslash/space/
+	// quote escaping of response-file arguments); no compiler output is cached, so every
+	// build still recompiles from source.
+	shimSource := []string{
+		`#include <stdio.h>`,
+		`#include <stdlib.h>`,
+		`#include <string.h>`,
+		`#include <unistd.h>`,
+		`#include <spawn.h>`,
+		`#include <sys/wait.h>`,
+		`extern char **environ;`,
+		`static const char *real_gcc(void) {`,
+		`    const char *prefix = getenv("MSYSTEM_PREFIX");`,
+		`    if (prefix == NULL || prefix[0] == '\0') prefix = "/ucrt64";`,
+		`    static char path[4096];`,
+		`    snprintf(path, sizeof(path), "%s/bin/gcc.exe", prefix);`,
+		`    return path;`,
+		`}`,
+		`int main(int argc, char **argv) {`,
+		`    const char *gcc = real_gcc();`,
+		`    size_t command_length = 0;`,
+		`    for (int i = 1; i < argc; i++) command_length += strlen(argv[i]) + 1;`,
+		`    if (command_length < 30000) {`,
+		`        argv[0] = (char *)gcc;`,
+		`        execv(gcc, argv);`,
+		`        perror("gcc shim: execv");`,
+		`        return 127;`,
+		`    }`,
+		`    char response_path[] = "/tmp/ffmpeg_gcc_respXXXXXX";`,
+		`    int fd = mkstemp(response_path);`,
+		`    if (fd < 0) { perror("gcc shim: mkstemp"); return 1; }`,
+		`    FILE *rf = fdopen(fd, "w");`,
+		`    if (rf == NULL) { perror("gcc shim: fdopen"); return 1; }`,
+		`    for (int i = 1; i < argc; i++) {`,
+		`        for (const char *c = argv[i]; *c; c++) {`,
+		`            if (*c == '\\' || *c == ' ' || *c == '"') fputc('\\', rf);`,
+		`            fputc(*c, rf);`,
+		`        }`,
+		`        fputc('\n', rf);`,
+		`    }`,
+		`    if (fclose(rf) != 0) { perror("gcc shim: fclose"); unlink(response_path); return 1; }`,
+		`    char at_arg[4096];`,
+		`    snprintf(at_arg, sizeof(at_arg), "@%s", response_path);`,
+		`    char *child_argv[] = { (char *)gcc, at_arg, NULL };`,
+		`    pid_t pid;`,
+		`    int status = 0;`,
+		`    if (posix_spawn(&pid, gcc, NULL, NULL, child_argv, environ) != 0) {`,
+		`        perror("gcc shim: posix_spawn"); unlink(response_path); return 1;`,
+		`    }`,
+		`    if (waitpid(pid, &status, 0) < 0) { perror("gcc shim: waitpid"); unlink(response_path); return 1; }`,
+		`    unlink(response_path);`,
+		`    if (WIFEXITED(status)) return WEXITSTATUS(status);`,
+		`    return 1;`,
+		`}`,
+	}
+	scriptLines := []string{
 		"#!/usr/bin/env bash",
 		"set -euo pipefail",
 		`wrapper_dir="$(mktemp -d)"`,
 		`trap 'rm -rf "${wrapper_dir}"' EXIT`,
-		`cat > "${wrapper_dir}/gcc" <<'FFMPEG_GCC_WRAPPER'`,
-		"#!/usr/bin/env bash",
-		"set -uo pipefail",
 		`real_gcc="${MSYSTEM_PREFIX:-/ucrt64}/bin/gcc.exe"`,
-		`command_length=0`,
-		`for argument in "$@"; do command_length=$(( command_length + ${#argument} + 1 )); done`,
-		`if [ "${command_length}" -lt 30000 ]; then`,
-		`  exec "${real_gcc}" "$@"`,
-		`fi`,
-		`response_file="$(mktemp)"`,
-		`{`,
-		`  for argument in "$@"; do`,
-		`    escaped_argument=${argument//\\/\\\\}`,
-		`    escaped_argument=${escaped_argument// /\\ }`,
-		`    escaped_argument=${escaped_argument//\"/\\\"}`,
-		`    printf '%s\n' "${escaped_argument}"`,
-		`  done`,
-		`} > "${response_file}"`,
-		`"${real_gcc}" "@${response_file}"`,
-		`gcc_status=$?`,
-		`rm -f "${response_file}"`,
-		`exit "${gcc_status}"`,
-		"FFMPEG_GCC_WRAPPER",
-		`chmod +x "${wrapper_dir}/gcc"`,
+		`cat > "${wrapper_dir}/gcc_shim.c" <<'FFMPEG_GCC_SHIM'`,
+	}
+	scriptLines = append(scriptLines, shimSource...)
+	scriptLines = append(scriptLines,
+		"FFMPEG_GCC_SHIM",
+		`"${real_gcc}" -O2 -o "${wrapper_dir}/gcc.exe" "${wrapper_dir}/gcc_shim.c"`,
 		`export PATH="${wrapper_dir}:${PATH}"`,
-		`echo "Installed gcc response-file wrapper at ${wrapper_dir} to bypass the Windows 32767-char command-line limit during the shared-library link."`,
+		`echo "Compiled native gcc response-file shim at ${wrapper_dir} to bypass the Windows 32767-char command-line limit during the shared-library link (no per-call bash spawn)."`,
 		`echo "Starting FFmpeg make at $(date +%T)"`,
 		fmt.Sprintf("make -j%d", parallelJobCount),
 		`echo "FFmpeg make completed at $(date +%T)"`,
-	}, nil
+	)
+	return scriptLines, nil
 }
 
 func LTextShellQuote(value string) string {

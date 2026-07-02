@@ -35,7 +35,7 @@ func (program *LProgram) lToolchainPrepare(LContext context.Context, LRunId stri
 			program.lActionApprovedFinish("completed")
 			return
 		}
-		program.lToolchainFailedClean(plan, workspaceLayout, LRunId)
+		program.lToolchainFailedClean(plan, workspaceLayout)
 		program.lActionApprovedFinish("failed")
 	}()
 	program.lStatusEmit("preparing-toolchain")
@@ -216,7 +216,7 @@ func (program *LProgram) lPackagePacmanInstall(LContext context.Context, plan pl
 	return execution.LCommandPacmanRun(LContext, userPacmanPackageInstallLConsent, commandPlan, emitProgress)
 }
 
-func (program *LProgram) lToolchainFailedClean(plan planning.LPlanToolchain, workspaceLayout workspace.LWorkspaceLayout, LRunId string) {
+func (program *LProgram) lToolchainFailedClean(plan planning.LPlanToolchain, workspaceLayout workspace.LWorkspaceLayout) {
 	program.lLogEmit("warn", LLocaleTextGetInternal("run.log.cleaningToolchainPartial", nil))
 	cleanupTargets := []string{
 		plan.Msys2RootDirectory,

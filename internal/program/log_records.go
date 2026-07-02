@@ -281,6 +281,7 @@ func LAuditLocalRead(path string) []LAuditLocalEvent {
 			events = append(events, event)
 		}
 	}
+	_ = scanner.Err()
 	return events
 }
 

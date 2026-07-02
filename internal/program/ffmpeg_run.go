@@ -26,7 +26,7 @@ func LSignatureFFmpegVerify(signaturePath string, archivePath string, publicKeyP
 func (program *LProgram) lFFmpegBuild(LContext context.Context, LRunId string, plan planning.LPlanFFmpeg, userLConsentFFmpeg consent.LConsentFFmpeg, userLConsentArchive consent.LConsentArchive, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand) {
 	actionSucceeded := false
 	copyFailed := false
-	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
+	workspaceLayout := workspace.LWorkspaceLayoutResolveVersioned(plan.WorkspaceDirectory, planning.LVersionArchiveParse(plan.FfmpegSourceArchiveUrl))
 	sourceRootDirectory := filepath.Join(workspaceLayout.SourcesDirectory, "ffmpeg-"+LRunId)
 	ffmpegSourceDirectory := ""
 	defer func() {
@@ -41,7 +41,7 @@ func (program *LProgram) lFFmpegBuild(LContext context.Context, LRunId string, p
 			return
 		}
 		program.lLogConfigSave(ffmpegSourceDirectory, workspaceLayout.WorkspaceDirectory)
-		program.lFFmpegFailedClean(plan, workspaceLayout, sourceRootDirectory, LRunId)
+		program.lFFmpegFailedClean(plan, workspaceLayout, sourceRootDirectory)
 		program.lActionApprovedFinish("failed")
 	}()
 	program.lStatusEmit("building-ffmpeg")
@@ -158,7 +158,7 @@ func (program *LProgram) lLogConfigSave(ffmpegSourceDirectory string, workspaceD
 	program.lLogEmit("info", LLocaleTextGetInternal("run.log.configSaved", map[string]string{"path": destPath}))
 }
 
-func (program *LProgram) lFFmpegFailedClean(plan planning.LPlanFFmpeg, workspaceLayout workspace.LWorkspaceLayout, sourceRootDirectory string, LRunId string) {
+func (program *LProgram) lFFmpegFailedClean(plan planning.LPlanFFmpeg, workspaceLayout workspace.LWorkspaceLayout, sourceRootDirectory string) {
 	program.lLogEmit("warn", LLocaleTextGetInternal("run.log.cleaningFfmpegPartial", nil))
 	cleanupTargets := []string{
 		sourceRootDirectory,

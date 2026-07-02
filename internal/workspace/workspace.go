@@ -5,8 +5,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
+
+// LPatternArtifactVersion matches the dotted-numeric FFmpeg release used as the
+// per-version artifact subdirectory name (e.g. "8.1.2"). Anything else is
+// rejected so a malformed version can never introduce path separators or ".."
+// into the artifact path.
+var LPatternArtifactVersion = regexp.MustCompile(`^\d+(?:\.\d+){0,2}$`)
 
 type LWorkspaceLayout struct {
 	WorkspaceDirectory  string `json:"workspaceDirectory"`
@@ -15,23 +22,44 @@ type LWorkspaceLayout struct {
 	SourcesDirectory    string `json:"sourcesDirectory"`
 	BuildDirectory      string `json:"buildDirectory"`
 	PrefixDirectory     string `json:"prefixDirectory"`
-	ArtifactsDirectory  string `json:"artifactsDirectory"`
-	LogsDirectory       string `json:"logsDirectory"`
-	ToolchainsDirectory string `json:"toolchainsDirectory"`
+	// ArtifactsBaseDirectory is the parent that holds one per-version subdirectory
+	// per built FFmpeg release (e.g. <workspace>/FFmpeg). ArtifactsDirectory is the
+	// directory a specific build's files live in: the version subdirectory for a
+	// versioned resolve, or the base itself when no version is known.
+	ArtifactsBaseDirectory string `json:"artifactsBaseDirectory"`
+	ArtifactsDirectory     string `json:"artifactsDirectory"`
+	LogsDirectory          string `json:"logsDirectory"`
+	ToolchainsDirectory    string `json:"toolchainsDirectory"`
 }
 
 func LWorkspaceLayoutResolve(workspaceDirectory string) LWorkspaceLayout {
+	artifactsBaseDirectory := filepath.Join(workspaceDirectory, "FFmpeg")
 	return LWorkspaceLayout{
-		WorkspaceDirectory:  workspaceDirectory,
-		CacheDirectory:      filepath.Join(workspaceDirectory, "cache"),
-		DownloadsDirectory:  filepath.Join(workspaceDirectory, "cache", "downloads"),
-		SourcesDirectory:    filepath.Join(workspaceDirectory, "sources"),
-		BuildDirectory:      filepath.Join(workspaceDirectory, "build"),
-		PrefixDirectory:     filepath.Join(workspaceDirectory, "prefix"),
-		ArtifactsDirectory:  filepath.Join(workspaceDirectory, "FFmpeg"),
-		LogsDirectory:       filepath.Join(workspaceDirectory, "logs"),
-		ToolchainsDirectory: filepath.Join(workspaceDirectory, "toolchains"),
+		WorkspaceDirectory:     workspaceDirectory,
+		CacheDirectory:         filepath.Join(workspaceDirectory, "cache"),
+		DownloadsDirectory:     filepath.Join(workspaceDirectory, "cache", "downloads"),
+		SourcesDirectory:       filepath.Join(workspaceDirectory, "sources"),
+		BuildDirectory:         filepath.Join(workspaceDirectory, "build"),
+		PrefixDirectory:        filepath.Join(workspaceDirectory, "prefix"),
+		ArtifactsBaseDirectory: artifactsBaseDirectory,
+		ArtifactsDirectory:     artifactsBaseDirectory,
+		LogsDirectory:          filepath.Join(workspaceDirectory, "logs"),
+		ToolchainsDirectory:    filepath.Join(workspaceDirectory, "toolchains"),
 	}
+}
+
+// LWorkspaceLayoutResolveVersioned resolves a layout whose ArtifactsDirectory is
+// the per-version subdirectory <workspace>/FFmpeg/<version>. A build stores its
+// executables, shared libraries, and build report there so releases no longer
+// overwrite one another. If the version is not a valid dotted-numeric release the
+// artifact path falls back to the base FFmpeg directory rather than risk an
+// unsafe subdirectory name.
+func LWorkspaceLayoutResolveVersioned(workspaceDirectory string, version string) LWorkspaceLayout {
+	layout := LWorkspaceLayoutResolve(workspaceDirectory)
+	if LPatternArtifactVersion.MatchString(version) {
+		layout.ArtifactsDirectory = filepath.Join(layout.ArtifactsBaseDirectory, version)
+	}
+	return layout
 }
 
 func LWorkspaceFolderCreate(workspaceLayout LWorkspaceLayout) error {

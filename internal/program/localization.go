@@ -1,11 +1,11 @@
 package program
 
-import sharedlocalization "promptfulcustomffmpegbuilder/shared/localization"
+import "promptfulcustomffmpegbuilder/localization"
 
 func LLocaleTextGetInternal(key string, values map[string]string) string {
-	return sharedlocalization.LLocaleTextGet(key, values)
+	return localization.LLocaleTextGet(key, values)
 }
 
 func LLocaleTextForGet(locale string, key string, values map[string]string) string {
-	return sharedlocalization.LLocaleTextForGet(locale, key, values)
+	return localization.LLocaleTextForGet(locale, key, values)
 }

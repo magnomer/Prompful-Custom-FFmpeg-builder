@@ -32,7 +32,7 @@ func LSettingsFFmpegCreate() LSettingsFFmpeg {
 		SelectedConfigureOptionIds: LOptionDefaultList(),
 		ExtraConfigureFlags:        []string{},
 		ConfigureFlags:             []string{},
-		ParallelJobCount:           LNumberMaxGet(1, runtime.NumCPU()-1),
+		ParallelJobCount:           LNumberMaxGet(1, runtime.NumCPU()),
 		WindowsShellProfileName:    "ucrt64",
 		LicenseProfileName:         "lgpl-local",
 	}

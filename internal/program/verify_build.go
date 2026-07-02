@@ -54,7 +54,7 @@ func (program *LProgram) LVerificationBuildRun(workspaceDirectory string) (LVeri
 	if workspaceDirectory == "" {
 		return LVerificationBuild{}, errors.New("workspace directory is required")
 	}
-	layout := workspace.LWorkspaceLayoutResolve(workspaceDirectory)
+	layout := LArtifactLatestLayoutFind(workspaceDirectory)
 	if err := workspace.LPathRealCheck(layout.WorkspaceDirectory, layout.ArtifactsDirectory); err != nil {
 		return LVerificationBuild{}, err
 	}

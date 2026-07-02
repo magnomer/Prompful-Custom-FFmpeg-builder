@@ -488,6 +488,51 @@ func LArtifactVersionRead(workspaceLayout workspace.LWorkspaceLayout) string {
 	return LVersionFFmpegParse(versionOutput)
 }
 
+// LArtifactLatestLayoutFind returns the workspace layout whose ArtifactsDirectory
+// holds the most recently written build report. Builds are stored per FFmpeg
+// version under <workspace>/FFmpeg/<version>/, so this scans each version
+// subdirectory (and, for backward compatibility with pre-versioning builds, the
+// FFmpeg base directory itself) and selects the directory with the newest
+// build-report-*.json. When no report exists anywhere it returns the base layout,
+// so callers still get a valid (empty) artifacts directory to report on.
+func LArtifactLatestLayoutFind(workspaceDirectory string) workspace.LWorkspaceLayout {
+	baseLayout := workspace.LWorkspaceLayoutResolve(workspaceDirectory)
+	candidateDirectories := []string{baseLayout.ArtifactsBaseDirectory}
+	if baseEntries, err := os.ReadDir(baseLayout.ArtifactsBaseDirectory); err == nil {
+		for _, baseEntry := range baseEntries {
+			if baseEntry.IsDir() {
+				candidateDirectories = append(candidateDirectories, filepath.Join(baseLayout.ArtifactsBaseDirectory, baseEntry.Name()))
+			}
+		}
+	}
+	bestDirectory := ""
+	var bestModTime time.Time
+	for _, candidateDirectory := range candidateDirectories {
+		entries, err := os.ReadDir(candidateDirectory)
+		if err != nil {
+			continue
+		}
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasPrefix(entry.Name(), "build-report-") || !strings.HasSuffix(entry.Name(), ".json") {
+				continue
+			}
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+			if bestDirectory == "" || info.ModTime().After(bestModTime) {
+				bestDirectory = candidateDirectory
+				bestModTime = info.ModTime()
+			}
+		}
+	}
+	layout := baseLayout
+	if bestDirectory != "" {
+		layout.ArtifactsDirectory = bestDirectory
+	}
+	return layout
+}
+
 func LReportLatestRead(workspaceLayout workspace.LWorkspaceLayout) (string, LReportArtifact, error) {
 	entries, err := os.ReadDir(workspaceLayout.ArtifactsDirectory)
 	if err != nil {

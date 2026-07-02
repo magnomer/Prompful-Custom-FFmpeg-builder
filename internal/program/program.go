@@ -168,7 +168,7 @@ func (program *LProgram) LCatalogPresetSourceGet(ffmpegSourceArchiveUrl string, 
 }
 
 func (program *LProgram) LResultBuildGet(workspaceDirectory string) (LResultBuild, error) {
-	workspaceLayout := workspace.LWorkspaceLayoutResolve(workspaceDirectory)
+	workspaceLayout := LArtifactLatestLayoutFind(workspaceDirectory)
 	if err := workspace.LPathRealCheck(workspaceLayout.WorkspaceDirectory, workspaceLayout.ArtifactsDirectory); err != nil {
 		return LResultBuild{}, err
 	}
@@ -241,7 +241,7 @@ func (program *LProgram) LResultBuildGet(workspaceDirectory string) (LResultBuil
 }
 
 func (program *LProgram) LDirectoryResultOpen(workspaceDirectory string) error {
-	workspaceLayout := workspace.LWorkspaceLayoutResolve(workspaceDirectory)
+	workspaceLayout := LArtifactLatestLayoutFind(workspaceDirectory)
 	if err := os.MkdirAll(workspaceLayout.ArtifactsDirectory, 0o755); err != nil {
 		return err
 	}
@@ -259,7 +259,7 @@ func (program *LProgram) LDirectoryResultOpen(workspaceDirectory string) error {
 }
 
 func (program *LProgram) LReportResultOpen(workspaceDirectory string) error {
-	workspaceLayout := workspace.LWorkspaceLayoutResolve(workspaceDirectory)
+	workspaceLayout := LArtifactLatestLayoutFind(workspaceDirectory)
 	reportPath, _, err := LReportLatestRead(workspaceLayout)
 	if err != nil {
 		return err

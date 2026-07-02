@@ -1,5 +1,5 @@
-import en from "../../shared/localization/en.json";
-import ko from "../../shared/localization/ko.json";
+import en from "../../localization/en.json";
+import ko from "../../localization/ko.json";
 
 type LDictionary = Record<string, string>;
 export type LLocaleCode = "en" | "ko";
