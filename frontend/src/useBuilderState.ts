@@ -504,6 +504,14 @@ export function LStateBuilderUse() {
   }
 
   async function cancelApprovedAction() { await LActionApprovedCancel(); }
+  // Clear a finished-but-unsuccessful run (failed or cancelled) so the user can
+  // discard the dead plan and its logs, returning the page to its idle state.
+  function clearApprovedAction() {
+    setToolchainLogEntries([]); setFfmpegLogEntries([]);
+    setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null);
+    setBuildResult(null); setBuildResultError("");
+    setApprovedActionPhase(null); setApprovedActionStatus("idle");
+  }
   async function openInUserBrowser(url: string) { BrowserOpenURL(url); }
 
   function toggleLibrary(libraryId: string) {
@@ -609,7 +617,7 @@ export function LStateBuilderUse() {
     updateBuildConfigSettings, updateFfmpegBuildSettings, updateMsys2ArchiveUrl, changeShellProfile,
     chooseWorkspaceDirectory,
     addBuildConfigPlanAndContinueToPrep, reviewFfmpegPlans,
-    approveToolchainPreparationPlan, approveFfmpegBuildPlan, cancelToolchainPreparationPlan, cancelApprovedAction,
+    approveToolchainPreparationPlan, approveFfmpegBuildPlan, cancelToolchainPreparationPlan, cancelApprovedAction, clearApprovedAction,
     openInUserBrowser,
     toggleLibrary, applyLibraryPreset, setExtendedLibraries, toggleConfigureOption, applyOptionPreset,
     restoreRecommendedToolchainPackages, restoreRecommendedExtraFlags,

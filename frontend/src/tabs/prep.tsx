@@ -24,6 +24,7 @@ export type PPrepProps = {
   approveToolchainPreparationPlan: () => Promise<void>;
   cancelToolchainPreparationPlan: () => void;
   cancelApprovedAction: () => Promise<void>;
+  clearApprovedAction: () => void;
   onVerifyToolchain: () => void;
   onReuseToolchain: () => void;
   onReinstallToolchain: () => void;
@@ -163,7 +164,7 @@ function PCardRecoveryRender(props: {
   );
 }
 
-export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntries, approvedActionPhase, approvedActionStatus, toolchainProgress, canCancelToolchain, toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain, isApprovedActionRunning, currentShellProfileName, configuredMsys2PackageNames, approveToolchainPreparationPlan, cancelToolchainPreparationPlan, cancelApprovedAction, onVerifyToolchain, onReuseToolchain, onReinstallToolchain, onGoToBuildConfig, onClearBuildEnvironments }: PPrepProps) {
+export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntries, approvedActionPhase, approvedActionStatus, toolchainProgress, canCancelToolchain, toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain, isApprovedActionRunning, currentShellProfileName, configuredMsys2PackageNames, approveToolchainPreparationPlan, cancelToolchainPreparationPlan, cancelApprovedAction, clearApprovedAction, onVerifyToolchain, onReuseToolchain, onReinstallToolchain, onGoToBuildConfig, onClearBuildEnvironments }: PPrepProps) {
   // A running toolchain action takes priority: show its live progress and hide
   // the approval panel, so a refused/duplicate confirm can never strand the UI on
   // the plan while the install is actually progressing.
@@ -221,6 +222,7 @@ export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntrie
           completionLabel={LLocaleTextGet("prep.progress.completionLabel")}
           onCancel={cancelApprovedAction}
           canCancel={canCancelToolchain}
+          onClear={clearApprovedAction}
         />
       )}
     </section>

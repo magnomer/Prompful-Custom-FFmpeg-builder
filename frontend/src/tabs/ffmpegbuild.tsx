@@ -15,6 +15,7 @@ export type PBuildProps = {
   canCancelFfmpeg: boolean;
   approveFfmpegBuildPlan: () => Promise<void>;
   cancelApprovedAction: () => Promise<void>;
+  clearApprovedAction: () => void;
   onGoToOptions: () => void;
 };
 
@@ -194,7 +195,7 @@ function PCardBuildRender(props: { review: LReviewFFmpeg }) {
   );
 }
 
-export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approvedActionPhase, approvedActionStatus, ffmpegProgress, canCancelFfmpeg, cancelApprovedAction, onGoToOptions }: PBuildProps) {
+export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approvedActionPhase, approvedActionStatus, ffmpegProgress, canCancelFfmpeg, cancelApprovedAction, clearApprovedAction, onGoToOptions }: PBuildProps) {
   // A running FFmpeg build takes priority: show live progress, hide the plan.
   const isFfmpegRunning = approvedActionPhase === "ffmpeg";
   const showProgress = isFfmpegRunning || ffmpegLogEntries.length > 0;
@@ -215,6 +216,7 @@ export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approved
           completionLabel={LLocaleTextGet("ffmpegBuild.progress.completionLabel")}
           onCancel={cancelApprovedAction}
           canCancel={canCancelFfmpeg}
+          onClear={clearApprovedAction}
         />
       )}
     </section>

@@ -15,6 +15,7 @@
   "footer.hint.options": "계획을 검토하거나 권장 옵션을 복원합니다.",
   "footer.hint.buildFfmpeg": "백엔드 확인을 요청해 빌드를 시작합니다.",
   "actions.cancel": "취소",
+  "actions.clear": "지우기",
   "actions.chooseBuildConfig": "빌드 도구 선택",
   "actions.chooseFfmpegLibraries": "FFmpeg 라이브러리 선택",
   "actions.continueToFfmpegOptions": "FFmpeg 옵션으로",

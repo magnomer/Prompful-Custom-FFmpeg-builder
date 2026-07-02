@@ -18,6 +18,7 @@
 .live-progress__check { color: #2a9050; font-size: 1.1rem; }
 .live-progress__x     { color: #c03030; font-size: 1.1rem; }
 .live-progress__cancel { flex-shrink: 0; }
+.live-progress__clear { flex-shrink: 0; }
 
 .live-progress__spinner {
   display: inline-block;

@@ -234,8 +234,9 @@ export function PProgressBuildLiveRender(props: {
   completionLabel: string;
   onCancel: () => void;
   canCancel: boolean;
+  onClear?: () => void;
 }) {
-  const { isActive, approvedActionStatus, progress, pipeline, completionLabel, onCancel, canCancel } = props;
+  const { isActive, approvedActionStatus, progress, pipeline, completionLabel, onCancel, canCancel, onClear } = props;
 
   const currentPhaseId = progress.currentPhaseId;
   const pipelineIds = pipeline.map((s) => s.id);
@@ -260,8 +261,11 @@ export function PProgressBuildLiveRender(props: {
           {isComplete && LLocaleTextGet("progress.complete", { label: completionLabel })}
           {hasFailed && LLocaleTextGet("progress.failed", { label: completionLabel })}
         </span>
-        {isActive && !isComplete && !isIdle && (
+        {isActive && !isComplete && !hasFailed && !isIdle && (
           <button className="button button--danger live-progress__cancel" type="button" disabled={!canCancel} onClick={onCancel}>{LLocaleTextGet("actions.cancel")}</button>
+        )}
+        {hasFailed && onClear && (
+          <button className="button live-progress__clear" type="button" onClick={onClear}>{LLocaleTextGet("actions.clear")}</button>
         )}
       </div>
 

@@ -15,6 +15,7 @@
   "footer.hint.options": "Review the plan, or restore the recommended options.",
   "footer.hint.buildFfmpeg": "Request backend confirmation to start the build.",
   "actions.cancel": "Cancel",
+  "actions.clear": "Clear",
   "actions.chooseBuildConfig": "Choose build tools",
   "actions.chooseFfmpegLibraries": "Choose FFmpeg libraries",
   "actions.continueToFfmpegOptions": "Continue to options",

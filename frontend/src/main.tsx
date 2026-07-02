@@ -196,6 +196,7 @@ function PProgramRender() {
               approveToolchainPreparationPlan={s.approveToolchainPreparationPlan}
               cancelToolchainPreparationPlan={s.cancelToolchainPreparationPlan}
               cancelApprovedAction={s.cancelApprovedAction}
+              clearApprovedAction={s.clearApprovedAction}
               onVerifyToolchain={s.verifyToolchain}
               onReuseToolchain={() => s.setActiveTabId("library")}
               onReinstallToolchain={s.addBuildConfigPlanAndContinueToPrep}
@@ -248,6 +249,7 @@ function PProgramRender() {
               canCancelFfmpeg={s.canCancelFfmpeg}
               approveFfmpegBuildPlan={s.approveFfmpegBuildPlan}
               cancelApprovedAction={s.cancelApprovedAction}
+              clearApprovedAction={s.clearApprovedAction}
               onGoToOptions={() => s.setActiveTabId("options")}
             />
           )}
