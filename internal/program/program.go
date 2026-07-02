@@ -16,6 +16,7 @@ import (
 	"promptfulcustomffmpegbuilder/internal/consent"
 	"promptfulcustomffmpegbuilder/internal/download"
 	"promptfulcustomffmpegbuilder/internal/planning"
+	"promptfulcustomffmpegbuilder/internal/reporting"
 	"promptfulcustomffmpegbuilder/internal/reviewsession"
 	"promptfulcustomffmpegbuilder/internal/workspace"
 
@@ -33,6 +34,8 @@ type LProgram struct {
 	LStateWindowStartup          LStateWindow
 	LLocaleUi                    string
 	LMutexLocaleUi               sync.RWMutex
+	LReporter                    reporting.LReporter
+	LConfirmer                   reporting.LConfirmer
 }
 
 type LReviewToolchainStored struct {
@@ -108,6 +111,8 @@ func LLocaleTextGet(key string, values map[string]string) string {
 
 func (program *LProgram) LProgramStart(LContext context.Context) {
 	program.LContext = LContext
+	program.LReporter = LReporterWails{program: program}
+	program.LConfirmer = LConfirmerWails{program: program}
 	program.lWindowGeometryRestore()
 }
 
@@ -454,28 +459,10 @@ func (program *LProgram) lReviewFFmpegConsume(reviewSessionId string) {
 }
 
 func (program *LProgram) lConsentNativeAsk(actionName string, planHash string) (bool, error) {
-	if program.LContext == nil {
-		return false, errors.New("program context is not ready for native approval dialog")
+	if program.LConfirmer == nil {
+		return false, errors.New("no approval confirmer is configured")
 	}
-	locale := program.lLocaleCurrentGet()
-	message := LLocaleTextForGet(locale, "native.approval.message", map[string]string{"action": LLocaleTextForGet(locale, "approval.action."+actionName, nil), "planHash": planHash})
-	noButtonLabel := LLocaleTextForGet(locale, "native.approval.no", nil)
-	yesButtonLabel := LLocaleTextForGet(locale, "native.approval.yes", nil)
-	choice, err := wailsRuntime.MessageDialog(program.LContext, wailsRuntime.MessageDialogOptions{
-		Type:          wailsRuntime.QuestionDialog,
-		Title:         LLocaleTextForGet(locale, "native.approval.title", nil),
-		Message:       message,
-		Buttons:       []string{noButtonLabel, yesButtonLabel},
-		DefaultButton: noButtonLabel,
-		CancelButton:  noButtonLabel,
-	})
-	if err != nil {
-		return false, err
-	}
-	// On Windows, Wails' QuestionDialog ignores custom button labels and returns
-	// the native "Yes"/"No" strings, so a localized yes label would never match.
-	// Accept the localized label or the native English "Yes".
-	return choice == yesButtonLabel || choice == "Yes", nil
+	return program.LConfirmer.LConfirmerApprovalGet(actionName, planHash)
 }
 
 func (program *LProgram) LActionApprovedCancel() bool {
@@ -518,14 +505,14 @@ func (program *LProgram) lAuditProgressCreate(auditWriter *audit.LAuditWriter, a
 }
 
 func (program *LProgram) lStatusEmit(status string) {
-	if program.LContext != nil {
-		wailsRuntime.EventsEmit(program.LContext, "approved-action-status", map[string]string{"status": status})
+	if program.LReporter != nil {
+		program.LReporter.LReporterStatusEmit(status)
 	}
 }
 
 func (program *LProgram) lLogEmit(level string, message string) {
-	if program.LContext != nil {
-		wailsRuntime.EventsEmit(program.LContext, "security-log", map[string]string{"level": level, "message": message})
+	if program.LReporter != nil {
+		program.LReporter.LReporterLogEmit(level, message)
 	}
 }
 

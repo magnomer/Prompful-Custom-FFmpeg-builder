@@ -53,6 +53,12 @@
     "noun": "Configure",
     "role": "FFmpeg configure-file and configure-script test/support logic."
   },
+  "LConfirmer": {
+    "prefix": "L",
+    "kind": "logic",
+    "noun": "Confirmer",
+    "role": "Backend-owned approval gate (GUI native dialog / CLI prompt)."
+  },
   "LConsent": {
     "prefix": "L",
     "kind": "logic",
@@ -346,6 +352,12 @@
     "kind": "logic",
     "noun": "Report",
     "role": "Build artifact report reading and writing."
+  },
+  "LReporter": {
+    "prefix": "L",
+    "kind": "logic",
+    "noun": "Reporter",
+    "role": "Build status and log output sink (GUI events / CLI stdout)."
   },
   "LRequest": {
     "prefix": "L",

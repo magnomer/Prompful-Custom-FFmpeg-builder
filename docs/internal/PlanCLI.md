@@ -119,20 +119,30 @@ pure functions, no seam work. The seam refactor (1A) only gates `build`.
 
 ---
 
-### Step 0 — split the binaries
+### Step 0 — add the CLI binary (DONE)
 
 Mechanical. No logic change.
 
 ```
+main.go                 GUI, stays at repo root (wails build works)
 cmd/
-  promptful/main.go     current root main.go moves here (GUI, //go:embed frontend)
   promptfulx/main.go    new CLI entry
 ```
 
-- Move root `main.go` -> `cmd/promptful/main.go`. The `//go:embed` frontend
-  directive and its asset path move with it.
-- Update `wails.json` to point the build at `cmd/promptful`.
-- Build check: `go build ./cmd/promptful` and `go build ./cmd/promptfulx`.
+> Decision: the GUI main stays at the repo root, NOT under `cmd/promptful`.
+> The wails CLI (`wails dev` / `wails build`, per README) requires the main
+> package at the module root and has no config field to relocate it. Go's
+> `//go:embed` also cannot reach `frontend/dist` from `cmd/promptful` (no `..`
+> in embed paths). Moving the GUI would break the wails toolchain and its NSIS
+> installer packaging for no gain — the CLI does not need wails at all. If the
+> project later drops the wails CLI, the GUI can move to `cmd/promptful` then.
+
+- Root `main.go` unchanged; `wails.json` and the frontend embed untouched.
+- New `cmd/promptfulx/main.go`: CLI skeleton (arg dispatch + usage). Exit code 2
+  on unknown command, per §38.
+- Build: GUI via `wails build`; CLI via `go build ./cmd/promptfulx`.
+- Verified: both compile; `promptfulx` prints usage (exit 0) and returns exit 2
+  on an unknown command.
 
 ### Step 1A — Reporter + Confirmer interface shim
 
