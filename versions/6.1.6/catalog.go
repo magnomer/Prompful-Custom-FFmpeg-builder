@@ -2,15 +2,15 @@ package version616
 
 import "promptfulcustomffmpegbuilder/versions/shared"
 
-// LLibraryPreparationList lists executable version/library preparation hooks for FFmpeg 6.1.6.
-var LLibraryPreparationList = map[string]shared.LibraryPreparationManipulator{
+// LPreparationCatalog lists executable version/library preparation hooks for FFmpeg 6.1.6.
+var LPreparationCatalog = map[string]shared.LPreparationManipulator{
 	"avisynthplus": LLibraryAvisynthplusPrepare,
-	"davs2":        LLibraryDavs2Prepare,
+	"davs2":        LDavs2Prepare,
 	"klvanc":       LLibraryKlvancPrepare,
 	"libmfx":       LLibraryLibmfxPrepare,
 	"libtls":       LLibraryLibtlsPrepare,
-	"svt-av1":      LLibrarySvtav1Prepare,
+	"svt-av1":      LSvtav1Prepare,
 	"tensorflow":   LLibraryTensorflowPrepare,
-	"uavs3d":       LLibraryUavs3dPrepare,
-	"xavs2":        LLibraryXavs2Prepare,
+	"uavs3d":       LUavs3dPrepare,
+	"xavs2":        LXavs2Prepare,
 }

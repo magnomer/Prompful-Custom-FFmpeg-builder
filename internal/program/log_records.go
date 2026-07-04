@@ -37,7 +37,7 @@ type LRecordLog struct {
 	HasSecurityLAuditEvents bool             `json:"hasSecurityLAuditEvents"`
 }
 
-var LLogRawFileNames = map[string]bool{
+var LLogRawNames = map[string]bool{
 	"stdout.log":            true,
 	"stderr.log":            true,
 	"security-events.jsonl": true,
@@ -52,7 +52,7 @@ type LAuditLocalEvent struct {
 	CreatedAt       string `json:"createdAt"`
 }
 
-func (program *LProgram) LRecordLogList(workspaceDirectory string) ([]LRecordLog, error) {
+func (program *LProgram) LLogRecordList(workspaceDirectory string) ([]LRecordLog, error) {
 	if workspaceDirectory == "" {
 		return []LRecordLog{}, nil
 	}
@@ -158,7 +158,7 @@ func (program *LProgram) LFileRecordOpen(workspaceDirectory string, LRunId strin
 	if strings.Contains(LRunId, string(os.PathSeparator)) || strings.Contains(LRunId, "/") || strings.Contains(LRunId, "\\") || strings.Contains(LRunId, "\x00") {
 		return errors.New("invalid log record id")
 	}
-	if !LLogRawFileNames[fileName] {
+	if !LLogRawNames[fileName] {
 		return errors.New("invalid log file")
 	}
 	layout := workspace.LWorkspaceLayoutResolve(workspaceDirectory)
@@ -198,17 +198,17 @@ func LPathOpen(path string) error {
 
 func LRecordLocalRead(recordDirectory string, LRunId string, includeDetails bool) (LRecordLog, bool) {
 	events := LAuditLocalRead(filepath.Join(recordDirectory, "security-events.jsonl"))
-	hasLAuditEvents := LFileTextReadableCheck(filepath.Join(recordDirectory, "security-events.jsonl"))
-	hasStdout := LFileTextReadableCheck(filepath.Join(recordDirectory, "stdout.log"))
-	hasStderr := LFileTextReadableCheck(filepath.Join(recordDirectory, "stderr.log"))
+	hasLAuditEvents := LTextReadableCheck(filepath.Join(recordDirectory, "security-events.jsonl"))
+	hasStdout := LTextReadableCheck(filepath.Join(recordDirectory, "stdout.log"))
+	hasStderr := LTextReadableCheck(filepath.Join(recordDirectory, "stderr.log"))
 	if len(events) == 0 && !hasStdout && !hasStderr {
 		return LRecordLog{}, false
 	}
 	stdoutText := ""
 	stderrText := ""
 	if includeDetails {
-		stdoutText = LFileTextSmallRead(filepath.Join(recordDirectory, "stdout.log"), 256*1024)
-		stderrText = LFileTextSmallRead(filepath.Join(recordDirectory, "stderr.log"), 256*1024)
+		stdoutText = LTextSmallRead(filepath.Join(recordDirectory, "stdout.log"), 256*1024)
+		stderrText = LTextSmallRead(filepath.Join(recordDirectory, "stderr.log"), 256*1024)
 	}
 
 	record := LRecordLog{RunId: LRunId, Directory: recordDirectory, Kind: "unknown", Status: "unknown", Entries: []LLogLocalEntry{}, HasStdoutLog: hasStdout, HasStderrLog: hasStderr, HasSecurityLAuditEvents: hasLAuditEvents}
@@ -225,10 +225,10 @@ func LRecordLocalRead(recordDirectory string, LRunId string, includeDetails bool
 			record.RunId = event.RunId
 		}
 		if event.CreatedAt != "" {
-			record.CreatedAt = LTextFirstNonEmptyGet(record.CreatedAt, event.CreatedAt)
+			record.CreatedAt = LTextFirstGet(record.CreatedAt, event.CreatedAt)
 		}
 		if record.Kind == "unknown" {
-			record.Kind = LLogKindInfer(event.ActionName, event.Message)
+			record.Kind = LLogKindGet(event.ActionName, event.Message)
 		}
 		if event.Level == "error" {
 			record.ErrorCount++
@@ -255,13 +255,13 @@ func LRecordLocalRead(recordDirectory string, LRunId string, includeDetails bool
 		}
 	}
 	if record.Kind == "unknown" {
-		record.Kind = LLogKindInfer("", LFileTextSmallRead(filepath.Join(recordDirectory, "stdout.log"), 16*1024)+"\n"+LFileTextSmallRead(filepath.Join(recordDirectory, "stderr.log"), 16*1024))
+		record.Kind = LLogKindGet("", LTextSmallRead(filepath.Join(recordDirectory, "stdout.log"), 16*1024)+"\n"+LTextSmallRead(filepath.Join(recordDirectory, "stderr.log"), 16*1024))
 	}
 	if record.Status == "unknown" && (len(events) > 0 || hasStdout || hasStderr) {
 		record.Status = "recorded"
 	}
 	if includeDetails {
-		record.RawText = LLogRawTextBuild(events, stdoutText, stderrText)
+		record.RawText = LLogRawCreate(events, stdoutText, stderrText)
 	}
 	return record, true
 }
@@ -285,7 +285,7 @@ func LAuditLocalRead(path string) []LAuditLocalEvent {
 	return events
 }
 
-func LFileTextSmallRead(path string, limit int64) string {
+func LTextSmallRead(path string, limit int64) string {
 	fileInfo, err := os.Stat(path)
 	if err != nil || fileInfo.IsDir() || fileInfo.Size() == 0 {
 		return ""
@@ -307,12 +307,12 @@ func LFileTextSmallRead(path string, limit int64) string {
 	return string(data)
 }
 
-func LFileTextReadableCheck(path string) bool {
+func LTextReadableCheck(path string) bool {
 	fileInfo, err := os.Stat(path)
 	return err == nil && !fileInfo.IsDir() && fileInfo.Size() > 0
 }
 
-func LLogRawTextBuild(events []LAuditLocalEvent, stdoutText string, stderrText string) string {
+func LLogRawCreate(events []LAuditLocalEvent, stdoutText string, stderrText string) string {
 	sections := []string{}
 	if len(events) > 0 {
 		lines := []string{"security-events.jsonl"}
@@ -333,7 +333,7 @@ func LLogRawTextBuild(events []LAuditLocalEvent, stdoutText string, stderrText s
 	return strings.Join(sections, "\n\n")
 }
 
-func LLogKindInfer(actionName string, text string) string {
+func LLogKindGet(actionName string, text string) string {
 	value := strings.ToLower(actionName + "\n" + text)
 	if strings.Contains(value, "build-ffmpeg") || strings.Contains(value, "ffmpeg build") || strings.Contains(value, "ffmpeg configure") || strings.Contains(value, "ffmpeg make") {
 		return "ffmpeg"
@@ -344,7 +344,7 @@ func LLogKindInfer(actionName string, text string) string {
 	return "unknown"
 }
 
-func LTextFirstNonEmptyGet(current string, next string) string {
+func LTextFirstGet(current string, next string) string {
 	if current != "" {
 		return current
 	}

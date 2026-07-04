@@ -1,10 +1,10 @@
 package planning
 
-// LCatalogSourceBuildResolved returns the Libraries-tab catalog through the
+// LCatalogLibraryGet returns the Libraries-tab catalog through the
 // embedded version resolver. A known release line resolves to that line's catalog;
 // an unknown newer release line uses the highest known catalog line. An empty,
 // custom, or unparseable FFmpeg URL still returns no catalog.
-func LCatalogSourceBuildResolved(ffmpegSourceArchiveUrl string, windowsShellProfileName string) []LLibraryChoice {
+func LCatalogLibraryGet(ffmpegSourceArchiveUrl string, windowsShellProfileName string) []LLibraryChoice {
 	ffmpegVersion := LVersionArchiveParse(ffmpegSourceArchiveUrl)
 	if ffmpegVersion == "" {
 		return []LLibraryChoice{}
@@ -20,22 +20,22 @@ func LCatalogSourceBuildResolved(ffmpegSourceArchiveUrl string, windowsShellProf
 	if err != nil {
 		return []LLibraryChoice{}
 	}
-	return LResolvedLibraryChoicesCreate(resolvedPlan.VisibleLibraries)
+	return LLibraryChoicesCreate(resolvedPlan.VisibleLibraries)
 }
 
-// LResolvedLibraryChoicesCreate converts resolved library rows into the legacy
+// LLibraryChoicesCreate converts resolved library rows into the legacy
 // LLibraryChoice shape consumed by the current frontend. The compatibility field
 // carries the resolver state forward without forcing the frontend to understand
 // the new catalog model yet.
-func LResolvedLibraryChoicesCreate(resolvedLibraries []LResolvedLibrary) []LLibraryChoice {
+func LLibraryChoicesCreate(resolvedLibraries []LResolvedLibrary) []LLibraryChoice {
 	choices := make([]LLibraryChoice, 0, len(resolvedLibraries))
 	for _, resolvedLibrary := range resolvedLibraries {
-		choices = append(choices, LResolvedLibraryChoiceCreate(resolvedLibrary))
+		choices = append(choices, LLibraryChoiceCreate(resolvedLibrary))
 	}
 	return choices
 }
 
-func LResolvedLibraryChoiceCreate(resolvedLibrary LResolvedLibrary) LLibraryChoice {
+func LLibraryChoiceCreate(resolvedLibrary LResolvedLibrary) LLibraryChoice {
 	return LLibraryChoice{
 		LibraryId:            resolvedLibrary.LibraryId,
 		TrackName:            resolvedLibrary.TrackName,
@@ -57,11 +57,11 @@ func LResolvedLibraryChoiceCreate(resolvedLibrary LResolvedLibrary) LLibraryChoi
 	}
 }
 
-// LLibraryConfigureFlagMatchFromChoices returns library entries from an already
+// LLibraryFlagMatch returns library entries from an already
 // resolved catalog whose configure flags overlap with the supplied extra flags.
-// This is the version-aware equivalent of LLibraryConfigureFlagMatch; it keeps
+// This is the version-aware equivalent of LConfigureFlagMatch; it keeps
 // extra raw flags on the same catalog authority as checkbox selections.
-func LLibraryConfigureFlagMatchFromChoices(catalog []LLibraryChoice, flags []string, skip []LLibraryChoice) []LLibraryChoice {
+func LLibraryFlagMatch(catalog []LLibraryChoice, flags []string, skip []LLibraryChoice) []LLibraryChoice {
 	flagSet := map[string]bool{}
 	for _, flag := range flags {
 		if flag != "" {
@@ -89,11 +89,11 @@ func LLibraryConfigureFlagMatchFromChoices(catalog []LLibraryChoice, flags []str
 	return result
 }
 
-// LCatalogResolvedPlanFromFFmpegSettings creates the resolver plan associated
+// LCatalogPlanResolve creates the resolver plan associated
 // with a current FFmpeg settings object. Known release lines resolve to their
 // catalog line; unknown newer release lines resolve through the highest known
 // catalog line. Unparseable or older unsupported versions are reported as missing.
-func LCatalogResolvedPlanFromFFmpegSettings(ffmpegBuildSettings LSettingsFFmpeg) (LResolvedVersionPlan, bool, error) {
+func LCatalogPlanResolve(ffmpegBuildSettings LSettingsFFmpeg) (LResolvedVersionPlan, bool, error) {
 	ffmpegVersion := LVersionArchiveParse(ffmpegBuildSettings.FfmpegSourceArchiveUrl)
 	if ffmpegVersion == "" {
 		return LResolvedVersionPlan{}, false, nil
@@ -113,7 +113,7 @@ func LCatalogResolvedPlanFromFFmpegSettings(ffmpegBuildSettings LSettingsFFmpeg)
 	return resolvedPlan, true, nil
 }
 
-func LCatalogResolvedBuildPlanFromFFmpegSettings(ffmpegBuildSettings LSettingsFFmpeg, resolvedVersionPlan LResolvedVersionPlan) LResolvedBuildPlan {
+func LCatalogBuildResolve(ffmpegBuildSettings LSettingsFFmpeg, resolvedVersionPlan LResolvedVersionPlan) LResolvedBuildPlan {
 	selectedById := map[string]LResolvedLibrary{}
 	for _, library := range resolvedVersionPlan.VisibleLibraries {
 		selectedById[library.LibraryId] = library
@@ -131,7 +131,7 @@ func LCatalogResolvedBuildPlanFromFFmpegSettings(ffmpegBuildSettings LSettingsFF
 		selectedLibraries = append(selectedLibraries, library)
 		workIds = append(workIds, library.WorkIds...)
 	}
-	versionWorks := LVersionLibraryWorksFromIdsResolve(resolvedVersionPlan.FfmpegVersion, workIds)
+	versionWorks := LLibraryWorkResolve(resolvedVersionPlan.FfmpegVersion, workIds)
 	return LResolvedBuildPlan{
 		FfmpegVersion:              resolvedVersionPlan.FfmpegVersion,
 		RequestedFfmpegVersion:     LVersionArchiveParse(ffmpegBuildSettings.FfmpegSourceArchiveUrl),
@@ -146,8 +146,8 @@ func LCatalogResolvedBuildPlanFromFFmpegSettings(ffmpegBuildSettings LSettingsFF
 	}
 }
 
-func LVersionLibraryWorksFromIdsResolve(compatibilityFfmpegVersion string, workIds []string) []LVersionLibraryWork {
-	registry, err := LVersionLibraryWorkRegistryLoad()
+func LLibraryWorkResolve(compatibilityFfmpegVersion string, workIds []string) []LVersionLibraryWork {
+	registry, err := LWorkRegistryLoad()
 	if err != nil {
 		return nil
 	}
@@ -164,7 +164,7 @@ func LVersionLibraryWorksFromIdsResolve(compatibilityFfmpegVersion string, workI
 	return filteredWorks
 }
 
-func LLibraryIdFromVersionLibraryWorkId(ffmpegVersion string, workId string) string {
+func LLibraryIdGet(ffmpegVersion string, workId string) string {
 	prefix := "ffmpeg-" + ffmpegVersion + "-"
 	suffix := "-work"
 	if len(workId) <= len(prefix)+len(suffix) {
@@ -186,10 +186,10 @@ type LPresetLibraryChoice struct {
 	Dev                bool     `json:"dev,omitempty"`
 }
 
-// LCatalogPresetSourceBuildResolved returns library presets through the embedded
+// LCatalogPresetGet returns library presets through the embedded
 // V5 preset catalog. Known release lines resolve to their catalog line; unknown
 // newer release lines resolve through the highest known catalog line.
-func LCatalogPresetSourceBuildResolved(ffmpegSourceArchiveUrl string, windowsShellProfileName string) []LPresetLibraryChoice {
+func LCatalogPresetGet(ffmpegSourceArchiveUrl string, windowsShellProfileName string) []LPresetLibraryChoice {
 	ffmpegVersion := LVersionArchiveParse(ffmpegSourceArchiveUrl)
 	if ffmpegVersion == "" {
 		return []LPresetLibraryChoice{}
@@ -198,7 +198,7 @@ func LCatalogPresetSourceBuildResolved(ffmpegSourceArchiveUrl string, windowsShe
 	if err != nil {
 		return []LPresetLibraryChoice{}
 	}
-	presets, err := resolver.LPresetLibraryChoicesResolve(LCatalogResolutionSettings{
+	presets, err := resolver.LPresetChoicesResolve(LCatalogResolutionSettings{
 		FfmpegVersion:           ffmpegVersion,
 		WindowsShellProfileName: windowsShellProfileName,
 	})
@@ -211,35 +211,35 @@ func LCatalogPresetSourceBuildResolved(ffmpegSourceArchiveUrl string, windowsShe
 	return presets
 }
 
-// LPresetLibraryChoicesResolve resolves all presets exposed by the version record.
-func (resolver LCatalogResolver) LPresetLibraryChoicesResolve(settings LCatalogResolutionSettings) ([]LPresetLibraryChoice, error) {
-	settings = LCatalogResolutionSettingsNormalize(settings)
-	catalogFfmpegVersion, exists := resolver.LCatalogVersionForRequestedResolve(settings.FfmpegVersion)
+// LPresetChoicesResolve resolves all presets exposed by the version record.
+func (resolver LCatalogResolver) LPresetChoicesResolve(settings LCatalogResolutionSettings) ([]LPresetLibraryChoice, error) {
+	settings = LCatalogSettingsNormalize(settings)
+	catalogFfmpegVersion, exists := resolver.LCatalogVersionResolve(settings.FfmpegVersion)
 	if !exists {
 		return nil, nil
 	}
 	versionRecord := resolver.VersionRecords[catalogFfmpegVersion]
-	presetIds := LCatalogVersionPresetOrderRead(versionRecord)
+	presetIds := LPresetOrderRead(versionRecord)
 	choices := make([]LPresetLibraryChoice, 0, len(presetIds))
 	for _, presetId := range presetIds {
 		presetRecord, exists := resolver.PresetRecords[presetId]
 		if !exists {
 			continue
 		}
-		presetVersionRecord, exists := LCatalogPresetVersionRecordRead(presetRecord, catalogFfmpegVersion)
+		presetVersionRecord, exists := LPresetRecordRead(presetRecord, catalogFfmpegVersion)
 		if !exists {
 			continue
 		}
-		normalLibraryIds, normalOk := resolver.LPresetModeLibraryIdsResolve(settings, presetId, LCatalogDefaultPresetModeName)
+		normalLibraryIds, normalOk := resolver.LPresetModeResolve(settings, presetId, LPresetModeName)
 		if !normalOk {
 			continue
 		}
-		extendedLibraryIds, extendedOk := resolver.LPresetModeLibraryIdsResolve(settings, presetId, "extended")
+		extendedLibraryIds, extendedOk := resolver.LPresetModeResolve(settings, presetId, "extended")
 		choice := LPresetLibraryChoice{
 			PresetId:   presetId,
 			LibraryIds: normalLibraryIds,
-			Hidden:     LCatalogBoolField(presetVersionRecord, "hiddenInCurrentV4Ui"),
-			Dev:        LCatalogBoolField(presetVersionRecord, "devInCurrentV4Ui"),
+			Hidden:     LCatalogBooleanGet(presetVersionRecord, "hiddenInCurrentV4Ui"),
+			Dev:        LCatalogBooleanGet(presetVersionRecord, "devInCurrentV4Ui"),
 		}
 		if extendedOk {
 			choice.ExtendedLibraryIds = extendedLibraryIds
@@ -249,7 +249,7 @@ func (resolver LCatalogResolver) LPresetLibraryChoicesResolve(settings LCatalogR
 	return choices, nil
 }
 
-func (resolver LCatalogResolver) LPresetModeLibraryIdsResolve(settings LCatalogResolutionSettings, presetId string, modeName string) ([]string, bool) {
+func (resolver LCatalogResolver) LPresetModeResolve(settings LCatalogResolutionSettings, presetId string, modeName string) ([]string, bool) {
 	resolvedPlan, err := resolver.LVersionResolve(LCatalogResolutionSettings{
 		FfmpegVersion:           settings.FfmpegVersion,
 		PresetId:                presetId,
@@ -262,7 +262,7 @@ func (resolver LCatalogResolver) LPresetModeLibraryIdsResolve(settings LCatalogR
 	return append([]string{}, resolvedPlan.NormalizedLibraryIds...), true
 }
 
-func LCatalogVersionPresetOrderRead(versionRecord map[string]any) []string {
+func LPresetOrderRead(versionRecord map[string]any) []string {
 	presetsObject, ok := versionRecord["presets"].(map[string]any)
 	if !ok {
 		return nil
@@ -278,11 +278,11 @@ func LCatalogVersionPresetOrderRead(versionRecord map[string]any) []string {
 			if !ok {
 				continue
 			}
-			presetId := LCatalogStringField(itemObject, "presetId")
+			presetId := LCatalogFieldGet(itemObject, "presetId")
 			if presetId != "" {
 				presetIds = append(presetIds, presetId)
 			}
 		}
 	}
-	return LCatalogStringsUniqueStable(presetIds)
+	return LStringsUniqueGet(presetIds)
 }

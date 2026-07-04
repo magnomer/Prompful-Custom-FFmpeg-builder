@@ -88,7 +88,7 @@ type LOptionChoice = {
   riskLevelName: string;
 };
 
-type LSettingsBuild = {
+type LSettingsToolchain = {
   workspaceDirectory: string;
   msys2ArchiveUrl: string;
   msys2ArchiveSha256Hash: string;
@@ -184,7 +184,7 @@ type LStateInitial = {
   kindExplanation: string;
   securityRuleSummary: string;
   namingRuleSummary: string;
-  defaultBuildConfigSettings: LSettingsBuild;
+  defaultBuildConfigSettings: LSettingsToolchain;
   defaultFfmpegBuildSettings: LSettingsFFmpeg;
   defaultLibraryCatalog: LLibraryChoice[];
   defaultLibraryPresetCatalog: LPresetLibraryChoice[];
@@ -226,7 +226,7 @@ type LFileResult = {
   sha256Hash: string;
 };
 
-type LResultBuild = {
+type LResultState = {
   artifactsDirectory: string;
   reportPath: string;
   ffmpegVersion: string;
@@ -249,7 +249,7 @@ type LVerificationLibrary = {
   status: string;
 };
 
-type LVerificationBuild = {
+type LVerificationState = {
   ffmpegPath: string;
   ffmpegVersion: string;
   libraries: LVerificationLibrary[];

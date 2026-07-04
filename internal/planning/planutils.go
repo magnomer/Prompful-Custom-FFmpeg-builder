@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-// LLibraryVersionAnnotate sets VersionCompatibility on each library in place,
+// LVersionAnnotationGet sets VersionCompatibility on each library in place,
 // per the chosen FFmpeg release's support release-support manifest: whether the release supports the library
 // and its pkg-config minimum. Covers every track (a non-native library such as libmpeghdec is
 // equally version-gated). When the release line is not release-supported, or the version is a
 // snapshot, libraries are left unannotated. The annotation is informational for the UI; the
 // build-blocking decision is made in LWarningFFmpegAppend.
-func LLibraryVersionAnnotate(libraries []LLibraryChoice, ffmpegVersion string) {
+func LVersionAnnotationGet(libraries []LLibraryChoice, ffmpegVersion string) {
 	release, releaseSupported := LReleaseSupportResolve(ffmpegVersion)
 	if !releaseSupported {
 		return
@@ -64,7 +64,7 @@ func LLibraryTrackApply(libraries []LLibraryChoice, ffmpegVersion string) {
 // blocked early with a clear message (configure would otherwise fail late and cryptically) —
 // the same treatment as an unknown library id or an unprepared track. An unsupported line
 // is not gated here (FFmpeg configure stays the backstop). It always appends the non-blocking
-// release-line advisory (see LWarningFFmpegReleaseAppend).
+// release-line advisory (see LFFmpegWarningAppend).
 func LWarningFFmpegAppend(warnings []LWarningPlan, ffmpegVersion string, libraries []LLibraryChoice, selectedConfigureOptionIds []string) ([]LWarningPlan, bool) {
 	blocked := false
 	if release, releaseSupported := LReleaseSupportResolve(ffmpegVersion); releaseSupported {
@@ -101,11 +101,11 @@ func LWarningFFmpegAppend(warnings []LWarningPlan, ffmpegVersion string, librari
 			}
 		}
 	}
-	warnings = LWarningFFmpegReleaseAppend(warnings, ffmpegVersion)
+	warnings = LFFmpegWarningAppend(warnings, ffmpegVersion)
 	return warnings, blocked
 }
 
-// LWarningFFmpegReleaseAppend adds a non-blocking advisory about the chosen FFmpeg release:
+// LFFmpegWarningAppend adds a non-blocking advisory about the chosen FFmpeg release:
 //   - Supported line, older patch than recommended (e.g. 8.1.1 on the 8.1 line): advise the
 //     recommended patch (8.1.2), which carries that line's security/critical fixes.
 //   - Unmaintained line (e.g. 6.0, 4.2), and not newer than the newest known release: advise
@@ -113,12 +113,12 @@ func LWarningFFmpegAppend(warnings []LWarningPlan, ffmpegVersion string, librari
 //
 // A snapshot/unparseable version, an exact recommended release, a newer patch on a supported
 // line, or a version newer than the newest known release draws no advisory.
-func LWarningFFmpegReleaseAppend(warnings []LWarningPlan, ffmpegVersion string) []LWarningPlan {
+func LFFmpegWarningAppend(warnings []LWarningPlan, ffmpegVersion string) []LWarningPlan {
 	lineKey := LReleaseLineResolve(ffmpegVersion)
 	if lineKey == "" {
 		return warnings
 	}
-	if recommended, supported := LReleaseRecommendedForLineGet(lineKey); supported {
+	if recommended, supported := LReleaseRecommendGet(lineKey); supported {
 		if comparison, decidable := LVersionCompare(ffmpegVersion, recommended); decidable && comparison < 0 {
 			warnings = append(warnings, LWarningLocalizedCreate(LRiskWarning, "plan.warnings.ffmpegPatchOutdated",
 				"FFmpeg "+ffmpegVersion+" is an older patch of the "+lineKey+" line. Use the recommended "+recommended+", which carries that line's security and critical fixes.",
@@ -129,23 +129,23 @@ func LWarningFFmpegReleaseAppend(warnings []LWarningPlan, ffmpegVersion string) 
 	if comparison, decidable := LVersionCompare(ffmpegVersion, LReleaseHighestGet()); decidable && comparison > 0 {
 		return warnings
 	}
-	supportedList := strings.Join(LReleaseRecommendedList(), ", ")
+	supportedList := strings.Join(LReleaseRecommendList(), ", ")
 	warnings = append(warnings, LWarningLocalizedCreate(LRiskWarning, "plan.warnings.ffmpegReleaseUnsupported",
 		"FFmpeg "+ffmpegVersion+" is not a supported release line. The vouched-for versions are: "+supportedList+".",
 		map[string]string{"version": ffmpegVersion, "supported": supportedList}))
 	return warnings
 }
 
-// LPatternFFmpegArchiveVersion extracts the dotted-numeric release from an FFmpeg source
+// LFFmpegVersionPattern extracts the dotted-numeric release from an FFmpeg source
 // archive filename, e.g. ".../ffmpeg-8.1.2.tar.xz" -> "8.1.2".
-var LPatternFFmpegArchiveVersion = regexp.MustCompile(`ffmpeg-(\d+(?:\.\d+){0,2})`)
+var LFFmpegVersionPattern = regexp.MustCompile(`ffmpeg-(\d+(?:\.\d+){0,2})`)
 
-// LVersionArchiveUrlParse derives the FFmpeg version from its source archive URL so
+// LArchiveURLParse derives the FFmpeg version from its source archive URL so
 // the library version layer can be resolved for that release. Returns "" when the URL
 // carries no recognizable version; callers must treat that as missing, not as a cue to
 // substitute another release.
-func LVersionArchiveUrlParse(archiveUrl string) string {
-	match := LPatternFFmpegArchiveVersion.FindStringSubmatch(archiveUrl)
+func LArchiveURLParse(archiveUrl string) string {
+	match := LFFmpegVersionPattern.FindStringSubmatch(archiveUrl)
 	if match == nil {
 		return ""
 	}
@@ -156,7 +156,7 @@ func LVersionArchiveUrlParse(archiveUrl string) string {
 // configure-script builder) to derive the FFmpeg version from a plan's source archive URL so
 // the build-time pkg-config floors can be resolved per release. Returns "" for a snapshot URL.
 func LVersionArchiveParse(archiveUrl string) string {
-	return LVersionArchiveUrlParse(archiveUrl)
+	return LArchiveURLParse(archiveUrl)
 }
 
 func LOptionConfigureSelect(selectedOptionIds []string) ([]LOptionChoice, []string) {
@@ -183,7 +183,7 @@ func LOptionConfigureSelect(selectedOptionIds []string) ([]LOptionChoice, []stri
 	return selectedOptions, unknownOptionIds
 }
 
-func LFlagOptionUniqueGet(options []LOptionChoice) []string {
+func LOptionFlagGet(options []LOptionChoice) []string {
 	flags := []string{}
 	seen := map[string]bool{}
 	for _, option := range options {
@@ -198,17 +198,17 @@ func LFlagOptionUniqueGet(options []LOptionChoice) []string {
 }
 
 func LLibrarySelect(windowsShellProfileName string, selectedLibraryIds []string) ([]LLibraryChoice, []string) {
-	return nil, LCatalogStringsUniqueSortedStable(selectedLibraryIds)
+	return nil, LStringsSortedGet(selectedLibraryIds)
 }
 
-// LLibraryConfigureFlagMatch returns library catalog entries whose configure flags overlap
+// LConfigureFlagMatch returns library catalog entries whose configure flags overlap
 // with the given list, excluding any already in skip. Used to resolve ExtraConfigureFlags
 // back to their MSYS2 packages.
-func LLibraryConfigureFlagMatch(windowsShellProfileName string, flags []string, skip []LLibraryChoice) []LLibraryChoice {
+func LConfigureFlagMatch(windowsShellProfileName string, flags []string, skip []LLibraryChoice) []LLibraryChoice {
 	return nil
 }
 
-func LPackageLibraryUniqueGet(libraries []LLibraryChoice) []string {
+func LLibraryPackageGet(libraries []LLibraryChoice) []string {
 	packages := []string{}
 	seen := map[string]bool{}
 	for _, library := range libraries {
@@ -226,7 +226,7 @@ func LPackageLibraryUniqueGet(libraries []LLibraryChoice) []string {
 	return packages
 }
 
-func LLibraryTrackFilterInternal(libraries []LLibraryChoice, LTrackName LLibraryTrack) []LLibraryChoice {
+func LTrackFilterGet(libraries []LLibraryChoice, LTrackName LLibraryTrack) []LLibraryChoice {
 	trackedLibraries := []LLibraryChoice{}
 	for _, library := range libraries {
 		if library.TrackName == LTrackName {
@@ -236,15 +236,15 @@ func LLibraryTrackFilterInternal(libraries []LLibraryChoice, LTrackName LLibrary
 	return trackedLibraries
 }
 
-func LLibraryTrackGroup(libraries []LLibraryChoice) []LLibraryTrackSelection {
+func LTrackGroupCreate(libraries []LLibraryChoice) []LLibraryTrackSelection {
 	return []LLibraryTrackSelection{
-		{TrackName: LLibraryTrackNative, Libraries: LLibraryTrackFilterInternal(libraries, LLibraryTrackNative)},
-		{TrackName: LLibraryTrackInternal, Libraries: LLibraryTrackFilterInternal(libraries, LLibraryTrackInternal)},
-		{TrackName: LLibraryTrackExternal, Libraries: LLibraryTrackFilterInternal(libraries, LLibraryTrackExternal)},
+		{TrackName: LLibraryTrackNative, Libraries: LTrackFilterGet(libraries, LLibraryTrackNative)},
+		{TrackName: LLibraryTrackInternal, Libraries: LTrackFilterGet(libraries, LLibraryTrackInternal)},
+		{TrackName: LLibraryTrackExternal, Libraries: LTrackFilterGet(libraries, LLibraryTrackExternal)},
 	}
 }
 
-func LFlagLibraryUniqueGet(libraries []LLibraryChoice) []string {
+func LLibraryFlagGet(libraries []LLibraryChoice) []string {
 	flags := []string{}
 	seen := map[string]bool{}
 	for _, library := range libraries {
@@ -271,7 +271,7 @@ func LTextUniqueMerge(first []string, second []string) []string {
 	return merged
 }
 
-// LFlagHardwareList are configure flags forced on for every build because
+// LHardwareFlagList are configure flags forced on for every build because
 // this builder targets Windows only. VAAPI and VDPAU are Linux/X11 hardware-acceleration
 // APIs that do not exist on Windows, but FFmpeg's configure auto-detects VAAPI whenever a
 // libva is visible to pkg-config. libva can arrive transitively — e.g. selecting opencv
@@ -279,7 +279,7 @@ func LTextUniqueMerge(first []string, second []string) []string {
 // breaks the Intel QSV build: libavcodec/qsv_internal.h includes <va/va_drm.h> under
 // CONFIG_VAAPI, a Linux-only header, so qsv*.o fail to compile. Disabling both unconditionally
 // keeps accidental host libraries from changing the build and is harmless on Windows.
-func LFlagHardwareList() []string {
+func LHardwareFlagList() []string {
 	return []string{"--disable-vaapi", "--disable-vdpau"}
 }
 
@@ -294,7 +294,7 @@ func LLicenseFlagAdd(configureFlags []string, licenseProfileName string, librari
 		case "nonfree":
 			needsNonfree = true
 		}
-		if LLibraryVersionThreeCheck(library.LibraryId) {
+		if LVersionThreeCheck(library.LibraryId) {
 			needsVersion3 = true
 		}
 	}
@@ -313,7 +313,7 @@ func LLicenseFlagAdd(configureFlags []string, licenseProfileName string, librari
 	return configureFlags
 }
 
-func LLibraryVersionThreeCheck(LLibraryId string) bool {
+func LVersionThreeCheck(LLibraryId string) bool {
 	switch LLibraryId {
 	case "opencore-amr", "vo-amrwbenc", "lensfun", "aribb24":
 		return true
@@ -322,7 +322,7 @@ func LLibraryVersionThreeCheck(LLibraryId string) bool {
 	}
 }
 
-func LLicenseProfileDerive(selectedLibraries []LLibraryChoice, configureFlags []string) string {
+func LLicenseProfileGet(selectedLibraries []LLibraryChoice, configureFlags []string) string {
 	needsGpl := false
 	needsNonfree := false
 	for _, library := range selectedLibraries {
@@ -350,9 +350,9 @@ func LLicenseProfileDerive(selectedLibraries []LLibraryChoice, configureFlags []
 	return "lgpl-local"
 }
 
-func LLibraryVersion3Check(selectedLibraries []LLibraryChoice) bool {
+func LVersionMajorCheck(selectedLibraries []LLibraryChoice) bool {
 	for _, library := range selectedLibraries {
-		if LLibraryVersionThreeCheck(library.LibraryId) {
+		if LVersionThreeCheck(library.LibraryId) {
 			return true
 		}
 	}

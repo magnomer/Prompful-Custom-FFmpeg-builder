@@ -13,20 +13,20 @@ import (
 //go:embed catalogdata/libraries/*.json catalogdata/versions/*.json catalogdata/presets/*.json catalogdata/librarysources/*.json
 var embeddedCatalog embed.FS
 
-// CatalogDataFile is one embedded catalog JSON file exposed to planner packages.
-type CatalogDataFile struct {
+// LCatalogDataFile is one embedded catalog JSON file exposed to planner packages.
+type LCatalogDataFile struct {
 	Path       string
 	Base       string
 	RawContent []byte
 }
 
-// CatalogDataDomainFilesLoad returns the embedded JSON files for one catalog domain.
-func CatalogDataDomainFilesLoad(domainPath string) ([]CatalogDataFile, error) {
+// LCatalogDomainLoad returns the embedded JSON files for one catalog domain.
+func LCatalogDomainLoad(domainPath string) ([]LCatalogDataFile, error) {
 	entries, err := embeddedCatalog.ReadDir(domainPath)
 	if err != nil {
 		return nil, err
 	}
-	files := []CatalogDataFile{}
+	files := []LCatalogDataFile{}
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
 			continue
@@ -36,7 +36,7 @@ func CatalogDataDomainFilesLoad(domainPath string) ([]CatalogDataFile, error) {
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, CatalogDataFile{
+		files = append(files, LCatalogDataFile{
 			Path:       pathName,
 			Base:       strings.TrimSuffix(entry.Name(), ".json"),
 			RawContent: rawContent,
@@ -48,52 +48,52 @@ func CatalogDataDomainFilesLoad(domainPath string) ([]CatalogDataFile, error) {
 	return files, nil
 }
 
-// CatalogDataFileRead returns one embedded catalog JSON file.
-func CatalogDataFileRead(pathName string) ([]byte, error) {
+// LCatalogFileRead returns one embedded catalog JSON file.
+func LCatalogFileRead(pathName string) ([]byte, error) {
 	return embeddedCatalog.ReadFile(pathName)
 }
 
-type LibrarySupport struct {
+type LCatalogLibrarySupport struct {
 	MinVersion  string
 	Unavailable bool
 	SourceBuild bool
 }
 
-type ReleaseSupport struct {
-	Libraries map[string]LibrarySupport
+type LCatalogReleaseSupport struct {
+	Libraries map[string]LCatalogLibrarySupport
 	Options   []string
 }
 
-type catalogFile struct {
+type LCatalogFile struct {
 	Path string
 	Base string
 	Data map[string]any
 }
 
-type catalog struct {
+type LCatalogFacts struct {
 	Libraries map[string]map[string]any
 	Versions  map[string]map[string]any
 }
 
-func loadCatalog() (catalog, error) {
-	loaded := catalog{Libraries: map[string]map[string]any{}, Versions: map[string]map[string]any{}}
-	libraryFiles, err := loadDomain("catalogdata/libraries")
+func LCatalogLoad() (LCatalogFacts, error) {
+	loaded := LCatalogFacts{Libraries: map[string]map[string]any{}, Versions: map[string]map[string]any{}}
+	libraryFiles, err := LCatalogRecordLoad("catalogdata/libraries")
 	if err != nil {
-		return catalog{}, err
+		return LCatalogFacts{}, err
 	}
-	versionFiles, err := loadDomain("catalogdata/versions")
+	versionFiles, err := LCatalogRecordLoad("catalogdata/versions")
 	if err != nil {
-		return catalog{}, err
+		return LCatalogFacts{}, err
 	}
 	for _, file := range libraryFiles {
-		libraryId := stringField(file.Data, "libraryId")
+		libraryId := LStringFieldGet(file.Data, "libraryId")
 		if libraryId != "" {
 			loaded.Libraries[libraryId] = file.Data
 		}
 	}
 	for _, file := range versionFiles {
 		ffmpeg, _ := file.Data["ffmpeg"].(map[string]any)
-		versionId := stringField(ffmpeg, "version")
+		versionId := LStringFieldGet(ffmpeg, "version")
 		if versionId != "" {
 			loaded.Versions[versionId] = file.Data
 		}
@@ -101,12 +101,12 @@ func loadCatalog() (catalog, error) {
 	return loaded, nil
 }
 
-func loadDomain(dir string) ([]catalogFile, error) {
+func LCatalogRecordLoad(dir string) ([]LCatalogFile, error) {
 	entries, err := embeddedCatalog.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
-	files := []catalogFile{}
+	files := []LCatalogFile{}
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
 			continue
@@ -120,85 +120,85 @@ func loadDomain(dir string) ([]catalogFile, error) {
 		if err := json.Unmarshal(rawContent, &record); err != nil {
 			return nil, fmt.Errorf("decode embedded catalog file %q: %w", pathName, err)
 		}
-		files = append(files, catalogFile{Path: pathName, Base: strings.TrimSuffix(entry.Name(), ".json"), Data: record})
+		files = append(files, LCatalogFile{Path: pathName, Base: strings.TrimSuffix(entry.Name(), ".json"), Data: record})
 	}
 	return files, nil
 }
 
-func ReleaseSupportResolve(version string) (ReleaseSupport, bool) {
-	lineKey := ReleaseLineKeyGet(version)
+func LReleaseSupportResolve(version string) (LCatalogReleaseSupport, bool) {
+	lineKey := LReleaseKeyGet(version)
 	if lineKey == "" {
-		return ReleaseSupport{}, false
+		return LCatalogReleaseSupport{}, false
 	}
-	if recommended, found := ReleaseRecommendedForLineGet(lineKey); found {
-		return ReleaseSupportForVersionGet(recommended)
+	if recommended, found := LReleaseRecommendGet(lineKey); found {
+		return LReleaseVersionGet(recommended)
 	}
-	chosenMajor, chosenMinor, ok := ReleaseLineSplit(lineKey)
+	chosenMajor, chosenMinor, ok := LReleaseLineSplit(lineKey)
 	if !ok {
-		return ReleaseSupport{}, false
+		return LCatalogReleaseSupport{}, false
 	}
-	highestKey := ReleaseLineHighestGet()
-	highestMajor, highestMinor, ok := ReleaseLineSplit(highestKey)
+	highestKey := LReleaseHighestGet()
+	highestMajor, highestMinor, ok := LReleaseLineSplit(highestKey)
 	if !ok {
-		return ReleaseSupport{}, false
+		return LCatalogReleaseSupport{}, false
 	}
 	if chosenMajor > highestMajor || (chosenMajor == highestMajor && chosenMinor > highestMinor) {
-		return ReleaseLineGet(highestKey)
+		return LReleaseLineGet(highestKey)
 	}
-	return ReleaseSupport{}, false
+	return LCatalogReleaseSupport{}, false
 }
 
-func ReleaseLineGet(releaseLineKey string) (ReleaseSupport, bool) {
-	version, found := ReleaseRecommendedForLineGet(releaseLineKey)
+func LReleaseLineGet(releaseLineKey string) (LCatalogReleaseSupport, bool) {
+	version, found := LReleaseRecommendGet(releaseLineKey)
 	if !found {
-		return ReleaseSupport{}, false
+		return LCatalogReleaseSupport{}, false
 	}
-	return ReleaseSupportForVersionGet(version)
+	return LReleaseVersionGet(version)
 }
 
-func ReleaseSupportForVersionGet(ffmpegVersion string) (ReleaseSupport, bool) {
-	catalog, err := loadCatalog()
+func LReleaseVersionGet(ffmpegVersion string) (LCatalogReleaseSupport, bool) {
+	LCatalogFacts, err := LCatalogLoad()
 	if err != nil {
-		return ReleaseSupport{}, false
+		return LCatalogReleaseSupport{}, false
 	}
-	versionRecord, found := catalog.Versions[ffmpegVersion]
+	versionRecord, found := LCatalogFacts.Versions[ffmpegVersion]
 	if !found {
-		return ReleaseSupport{}, false
+		return LCatalogReleaseSupport{}, false
 	}
-	release := ReleaseSupport{Libraries: map[string]LibrarySupport{}, Options: supportedOptionIdsRead(versionRecord)}
-	for libraryId, libraryRecord := range catalog.Libraries {
-		versionObject, exists := libraryVersionRecordRead(libraryRecord, ffmpegVersion)
-		if !exists || !boolField(versionObject, "supportedByFfmpeg") {
+	release := LCatalogReleaseSupport{Libraries: map[string]LCatalogLibrarySupport{}, Options: LOptionIdentifiersRead(versionRecord)}
+	for libraryId, libraryRecord := range LCatalogFacts.Libraries {
+		versionObject, exists := LLibraryRecordRead(libraryRecord, ffmpegVersion)
+		if !exists || !LBooleanFieldGet(versionObject, "supportedByFfmpeg") {
 			continue
 		}
-		release.Libraries[libraryId] = LibrarySupport{
-			MinVersion:  stringField(versionObject, "ffmpegPkgConfigMinimumVersion"),
-			Unavailable: !boolField(versionObject, "availableInCurrentV4"),
-			SourceBuild: boolField(versionObject, "sourceBuildRequiredByReleaseManifest"),
+		release.Libraries[libraryId] = LCatalogLibrarySupport{
+			MinVersion:  LStringFieldGet(versionObject, "ffmpegPkgConfigMinimumVersion"),
+			Unavailable: !LBooleanFieldGet(versionObject, "availableInCurrentV4"),
+			SourceBuild: LBooleanFieldGet(versionObject, "sourceBuildRequiredByReleaseManifest"),
 		}
 	}
 	return release, true
 }
 
-func ReleaseRecommendedForLineGet(releaseLineKey string) (string, bool) {
-	catalog, err := loadCatalog()
+func LReleaseRecommendGet(releaseLineKey string) (string, bool) {
+	LCatalogFacts, err := LCatalogLoad()
 	if err != nil {
 		return "", false
 	}
-	for versionId, versionRecord := range catalog.Versions {
+	for versionId, versionRecord := range LCatalogFacts.Versions {
 		ffmpeg, _ := versionRecord["ffmpeg"].(map[string]any)
-		if stringField(ffmpeg, "releaseLine") == releaseLineKey {
+		if LStringFieldGet(ffmpeg, "releaseLine") == releaseLineKey {
 			return versionId, true
 		}
 	}
 	return "", false
 }
 
-func ReleaseLineHighestGet() string {
+func LReleaseHighestGet() string {
 	best := ""
 	bestMajor, bestMinor := -1, -1
-	for _, lineKey := range ReleaseLineListGet() {
-		major, minor, ok := ReleaseLineSplit(lineKey)
+	for _, lineKey := range LReleaseListGet() {
+		major, minor, ok := LReleaseLineSplit(lineKey)
 		if !ok {
 			continue
 		}
@@ -209,28 +209,28 @@ func ReleaseLineHighestGet() string {
 	return best
 }
 
-func ReleaseLineListGet() []string {
-	catalog, err := loadCatalog()
+func LReleaseListGet() []string {
+	LCatalogFacts, err := LCatalogLoad()
 	if err != nil {
 		return nil
 	}
 	lineKeys := []string{}
-	for _, versionRecord := range catalog.Versions {
+	for _, versionRecord := range LCatalogFacts.Versions {
 		ffmpeg, _ := versionRecord["ffmpeg"].(map[string]any)
-		lineKey := stringField(ffmpeg, "releaseLine")
+		lineKey := LStringFieldGet(ffmpeg, "releaseLine")
 		if lineKey != "" {
 			lineKeys = append(lineKeys, lineKey)
 		}
 	}
-	return stringsUniqueSortedStable(lineKeys)
+	return LStringsSortedGet(lineKeys)
 }
 
-func (release ReleaseSupport) LibrarySupportGet(libraryId string) (LibrarySupport, bool) {
+func (release LCatalogReleaseSupport) LLibrarySupportGet(libraryId string) (LCatalogLibrarySupport, bool) {
 	support, supported := release.Libraries[libraryId]
 	return support, supported
 }
 
-func (release ReleaseSupport) OptionSupportCheck(optionId string) bool {
+func (release LCatalogReleaseSupport) LOptionSupportCheck(optionId string) bool {
 	for _, supportedOptionId := range release.Options {
 		if supportedOptionId == optionId {
 			return true
@@ -239,7 +239,7 @@ func (release ReleaseSupport) OptionSupportCheck(optionId string) bool {
 	return false
 }
 
-func supportedOptionIdsRead(versionRecord map[string]any) []string {
+func LOptionIdentifiersRead(versionRecord map[string]any) []string {
 	configureOptions, ok := versionRecord["configureOptions"].(map[string]any)
 	if !ok {
 		return nil
@@ -254,15 +254,15 @@ func supportedOptionIdsRead(versionRecord map[string]any) []string {
 		if !ok {
 			continue
 		}
-		optionId := stringField(itemObject, "optionId")
+		optionId := LStringFieldGet(itemObject, "optionId")
 		if optionId != "" {
 			optionIds = append(optionIds, optionId)
 		}
 	}
-	return stringsUniqueSortedStable(optionIds)
+	return LStringsSortedGet(optionIds)
 }
 
-func libraryVersionRecordRead(libraryRecord map[string]any, ffmpegVersion string) (map[string]any, bool) {
+func LLibraryRecordRead(libraryRecord map[string]any, ffmpegVersion string) (map[string]any, bool) {
 	versionRecords, ok := libraryRecord["ffmpegVersions"].(map[string]any)
 	if !ok {
 		return nil, false
@@ -271,7 +271,7 @@ func libraryVersionRecordRead(libraryRecord map[string]any, ffmpegVersion string
 	return versionRecord, ok
 }
 
-func stringField(record map[string]any, fieldName string) string {
+func LStringFieldGet(record map[string]any, fieldName string) string {
 	value, ok := record[fieldName].(string)
 	if !ok {
 		return ""
@@ -279,12 +279,12 @@ func stringField(record map[string]any, fieldName string) string {
 	return value
 }
 
-func boolField(record map[string]any, fieldName string) bool {
+func LBooleanFieldGet(record map[string]any, fieldName string) bool {
 	value, ok := record[fieldName].(bool)
 	return ok && value
 }
 
-func ReleaseLineKeyGet(version string) string {
+func LReleaseKeyGet(version string) string {
 	parts := strings.Split(strings.TrimSpace(version), ".")
 	if len(parts) < 2 {
 		return ""
@@ -297,7 +297,7 @@ func ReleaseLineKeyGet(version string) string {
 	return strings.TrimSpace(parts[0]) + "." + strings.TrimSpace(parts[1])
 }
 
-func ReleaseLineSplit(lineKey string) (int, int, bool) {
+func LReleaseLineSplit(lineKey string) (int, int, bool) {
 	parts := strings.Split(lineKey, ".")
 	if len(parts) != 2 {
 		return 0, 0, false
@@ -310,7 +310,7 @@ func ReleaseLineSplit(lineKey string) (int, int, bool) {
 	return major, minor, true
 }
 
-func stringsUniqueSortedStable(values []string) []string {
+func LStringsSortedGet(values []string) []string {
 	seen := map[string]bool{}
 	unique := []string{}
 	for _, value := range values {

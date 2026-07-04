@@ -17,11 +17,11 @@ import (
 	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
-// LManifestToolchainFileName is written inside the private MSYS2 root on a
+// LToolchainManifestName is written inside the private MSYS2 root on a
 // successful toolchain preparation. It lives inside the root so it shares the
 // root's lifecycle: wiping the root (re-prepare / failed cleanup) removes it too,
 // which keeps the recorded metadata from outliving the install it describes.
-const LManifestToolchainFileName = ".ffmpeg-builder-toolchain.json"
+const LToolchainManifestName = ".ffmpeg-builder-toolchain.json"
 
 type LManifestToolchain struct {
 	CreatedAt               string   `json:"createdAt"`
@@ -57,11 +57,11 @@ type LVerificationToolchain struct {
 	Message             string   `json:"message"`
 }
 
-func LDirectoryMsysRootResolve(workspaceDirectory string, windowsShellProfileName string) string {
+func LMSYSRootResolve(workspaceDirectory string, windowsShellProfileName string) string {
 	return planning.LDirectoryProfileResolve(workspaceDirectory, windowsShellProfileName)
 }
 
-func LToolchainBashPathResolve(msys2RootDirectory string) string {
+func LBashPathResolve(msys2RootDirectory string) string {
 	return filepath.Join(msys2RootDirectory, "usr", "bin", "bash.exe")
 }
 
@@ -69,7 +69,7 @@ func LToolchainBashPathResolve(msys2RootDirectory string) string {
 // best-effort: a write failure does not invalidate the (already complete)
 // toolchain, only the recovery metadata.
 func LManifestToolchainWrite(plan planning.LPlanToolchain) error {
-	manifestPath := filepath.Join(plan.Msys2RootDirectory, LManifestToolchainFileName)
+	manifestPath := filepath.Join(plan.Msys2RootDirectory, LToolchainManifestName)
 	if err := workspace.LPathRealCheck(plan.WorkspaceDirectory, manifestPath); err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func LManifestToolchainWrite(plan planning.LPlanToolchain) error {
 
 func LManifestToolchainRead(msys2RootDirectory string) (LManifestToolchain, error) {
 	manifest := LManifestToolchain{}
-	data, err := os.ReadFile(filepath.Join(msys2RootDirectory, LManifestToolchainFileName))
+	data, err := os.ReadFile(filepath.Join(msys2RootDirectory, LToolchainManifestName))
 	if err != nil {
 		return manifest, err
 	}
@@ -99,17 +99,17 @@ func LManifestToolchainRead(msys2RootDirectory string) (LManifestToolchain, erro
 	return manifest, nil
 }
 
-// LToolchainBuildPreparedCheck refuses an FFmpeg build when the build's shell
+// LToolchainPreparedCheck refuses an FFmpeg build when the build's shell
 // profile has no prepared toolchain of its own. With per-profile roots each
 // profile is independent, so the only failure mode is "this profile was never
 // prepared" ??caught here with a clear message instead of a cryptic failure deep
 // in configure/make.
-func LToolchainBuildPreparedCheck(workspaceDirectory string, buildShellProfileName string) error {
+func LToolchainPreparedCheck(workspaceDirectory string, buildShellProfileName string) error {
 	if workspaceDirectory == "" {
 		return errors.New("workspace directory is empty")
 	}
-	msys2RootDirectory := LDirectoryMsysRootResolve(workspaceDirectory, buildShellProfileName)
-	if !LFileExistCheck(LToolchainBashPathResolve(msys2RootDirectory)) {
+	msys2RootDirectory := LMSYSRootResolve(workspaceDirectory, buildShellProfileName)
+	if !LFileExistCheck(LBashPathResolve(msys2RootDirectory)) {
 		return fmt.Errorf("%s", LLocaleTextGetInternal("run.failure.toolchainNotPreparedForProfile", map[string]string{
 			"profile": buildShellProfileName,
 		}))
@@ -126,12 +126,12 @@ func (program *LProgram) LStatusToolchainGet(workspaceDirectory string, windowsS
 	if workspaceDirectory == "" {
 		return status, nil
 	}
-	msys2RootDirectory := LDirectoryMsysRootResolve(workspaceDirectory, windowsShellProfileName)
+	msys2RootDirectory := LMSYSRootResolve(workspaceDirectory, windowsShellProfileName)
 	status.Msys2RootDirectory = msys2RootDirectory
 	if err := workspace.LPathWorkspaceCheck(workspaceDirectory, msys2RootDirectory); err != nil {
 		return status, err
 	}
-	status.Healthy = LFileExistCheck(LToolchainBashPathResolve(msys2RootDirectory))
+	status.Healthy = LFileExistCheck(LBashPathResolve(msys2RootDirectory))
 	status.Installed = status.Healthy
 	if !status.Installed {
 		return status, nil
@@ -150,20 +150,20 @@ func (program *LProgram) LStatusToolchainGet(workspaceDirectory string, windowsS
 	return status, nil
 }
 
-// LProfileShellSupportedNames lists the profiles that can have their own private
+// LShellProfileNames lists the profiles that can have their own private
 // toolchain root. Kept in sync with LProfileShellCheck in planning.
-var LProfileShellSupportedNames = []string{"ucrt64", "mingw64", "clang64"}
+var LShellProfileNames = []string{"ucrt64", "mingw64", "clang64"}
 
-// LProfileToolchainList returns the status of every shell profile that
+// LToolchainProfileList returns the status of every shell profile that
 // already has a prepared toolchain in this workspace. Profiles are independent
 // (per-profile roots), so several can be installed at once; this lets Prep show
 // all of them, not just the currently selected one.
-func (program *LProgram) LProfileToolchainList(workspaceDirectory string) ([]LStatusToolchain, error) {
+func (program *LProgram) LToolchainProfileList(workspaceDirectory string) ([]LStatusToolchain, error) {
 	installedProfiles := []LStatusToolchain{}
 	if workspaceDirectory == "" {
 		return installedProfiles, nil
 	}
-	for _, profileName := range LProfileShellSupportedNames {
+	for _, profileName := range LShellProfileNames {
 		status, err := program.LStatusToolchainGet(workspaceDirectory, profileName)
 		if err != nil {
 			continue
@@ -216,12 +216,12 @@ func (program *LProgram) LToolchainInstallVerify(workspaceDirectory string, wind
 	if workspaceDirectory == "" {
 		return verification, errors.New("workspace directory is empty")
 	}
-	msys2RootDirectory := LDirectoryMsysRootResolve(workspaceDirectory, windowsShellProfileName)
+	msys2RootDirectory := LMSYSRootResolve(workspaceDirectory, windowsShellProfileName)
 	if err := workspace.LPathRealCheck(workspaceDirectory, msys2RootDirectory); err != nil {
 		return verification, err
 	}
 	locale := program.lLocaleCurrentGet()
-	if !LFileExistCheck(LToolchainBashPathResolve(msys2RootDirectory)) {
+	if !LFileExistCheck(LBashPathResolve(msys2RootDirectory)) {
 		verification.Message = LLocaleTextForGet(locale, "verify.toolchain.notInstalled", nil)
 		return verification, nil
 	}
@@ -230,7 +230,7 @@ func (program *LProgram) LToolchainInstallVerify(workspaceDirectory string, wind
 		verification.Message = LLocaleTextForGet(locale, "verify.toolchain.noManifest", nil)
 		return verification, nil
 	}
-	installedNames, err := LPackageInstalledQuery(msys2RootDirectory, manifest.WindowsShellProfileName)
+	installedNames, err := LPackageInstallQuery(msys2RootDirectory, manifest.WindowsShellProfileName)
 	if err != nil {
 		return verification, err
 	}
@@ -256,17 +256,17 @@ func (program *LProgram) LToolchainInstallVerify(workspaceDirectory string, wind
 	return verification, nil
 }
 
-// LPackageInstalledQuery lists every package installed in the private MSYS2
+// LPackageInstallQuery lists every package installed in the private MSYS2
 // database. The package database is shared across shell profiles, so MSYSTEM is
 // set only for correctness; the command and arguments are fixed (no user input).
-func LPackageInstalledQuery(msys2RootDirectory string, windowsShellProfileName string) ([]string, error) {
+func LPackageInstallQuery(msys2RootDirectory string, windowsShellProfileName string) ([]string, error) {
 	LContext, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	shellSystemName := strings.ToUpper(strings.TrimSpace(windowsShellProfileName))
 	if shellSystemName == "" {
 		shellSystemName = "UCRT64"
 	}
-	command := exec.CommandContext(LContext, LToolchainBashPathResolve(msys2RootDirectory), "-lc", "pacman -Qq")
+	command := exec.CommandContext(LContext, LBashPathResolve(msys2RootDirectory), "-lc", "pacman -Qq")
 	command.Dir = msys2RootDirectory
 	command.Env = append(os.Environ(), "MSYSTEM="+shellSystemName, "MSYS2_PATH_TYPE=minimal", "CHERE_INVOKING=1")
 	output, err := command.Output()

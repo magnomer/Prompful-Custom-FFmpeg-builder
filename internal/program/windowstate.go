@@ -11,8 +11,8 @@ import (
 
 const LWindowWidthDefault = 1200
 const LWindowHeightDefault = 820
-const LWindowWidthMinimumRemembered = 640
-const LWindowHeightMinimumRemembered = 480
+const LWindowMinimumWidth = 640
+const LWindowMinimumHeight = 480
 
 // LStateWindow is the persisted window geometry restored on the next launch.
 type LStateWindow struct {
@@ -48,7 +48,7 @@ func LStateWindowLoad() LStateWindow {
 	if err := json.Unmarshal(fileData, &savedState); err != nil {
 		return state
 	}
-	if savedState.Width < LWindowWidthMinimumRemembered || savedState.Height < LWindowHeightMinimumRemembered {
+	if savedState.Width < LWindowMinimumWidth || savedState.Height < LWindowMinimumHeight {
 		return state
 	}
 	savedState.HasGeometry = true
@@ -70,9 +70,9 @@ func LStateWindowSave(state LStateWindow) error {
 	return os.WriteFile(filePath, fileData, 0o644)
 }
 
-// lWindowGeometryRestore applies the saved size, position, and maximised state
+// LWindowGeometryRestore applies the saved size, position, and maximised state
 // once the Wails runtime context is available.
-func (program *LProgram) lWindowGeometryRestore() {
+func (program *LProgram) LWindowGeometryRestore() {
 	if program.LContext == nil || !program.LStateWindowStartup.HasGeometry {
 		return
 	}
@@ -84,10 +84,10 @@ func (program *LProgram) lWindowGeometryRestore() {
 	}
 }
 
-// lWindowGeometrySave records the current window geometry so it can be
+// LWindowGeometrySave records the current window geometry so it can be
 // restored on the next launch. When maximised, the last known normal bounds
 // are kept so a later unmaximise restores a sane size.
-func (program *LProgram) lWindowGeometrySave(LContext context.Context) {
+func (program *LProgram) LWindowGeometrySave(LContext context.Context) {
 	if LContext == nil {
 		return
 	}
@@ -98,7 +98,7 @@ func (program *LProgram) lWindowGeometrySave(LContext context.Context) {
 		state.Height = program.LStateWindowStartup.Height
 		state.X = program.LStateWindowStartup.X
 		state.Y = program.LStateWindowStartup.Y
-		if state.Width < LWindowWidthMinimumRemembered || state.Height < LWindowHeightMinimumRemembered {
+		if state.Width < LWindowMinimumWidth || state.Height < LWindowMinimumHeight {
 			state.Width = LWindowWidthDefault
 			state.Height = LWindowHeightDefault
 		}

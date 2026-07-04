@@ -10,10 +10,10 @@ import (
 )
 
 func TestLibjxl519PreparationPromotesStaticDefineToPkgConfigCflags(t *testing.T) {
-	recipePlan := shared.NewLibraryPreparationPlan("5.1.9", "libjxl", "versions/5.1.9/libjxl.go")
+	recipePlan := shared.LPreparationPlanCreate("5.1.9", "libjxl", "versions/5.1.9/libjxl.go")
 	version519.LLibraryLibjxlPrepare(recipePlan)
 
-	preparation := planning.LPreparationFromVersionLibraryPlan(*recipePlan, planning.LLibrarySourcePin{
+	preparation := planning.LPreparationPlanResolve(*recipePlan, planning.LLibrarySourcePin{
 		Version: "0.8.2",
 		Url:     "https://example.test/libjxl.tar.gz",
 		Sha256:  strings.Repeat("0", 64),

@@ -1,6 +1,6 @@
 package planning
 
-func LPackageDefaultList(windowsShellProfileName string) []string {
+func LPackageDefaultGet(windowsShellProfileName string) []string {
 	packagePrefix := LPackageProfileResolve(windowsShellProfileName)
 	return []string{
 		"base-devel",

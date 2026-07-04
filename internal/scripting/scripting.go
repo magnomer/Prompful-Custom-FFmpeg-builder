@@ -119,12 +119,12 @@ func LScriptFileWrite(scriptFilePlan LPlanScript) (LScriptFile, error) {
 // mirror failure cannot affect ??or appear in ??the build.
 var LRepoMingwNames = []string{"mingw32", "mingw64", "ucrt64", "clang64", "clangarm64"}
 
-// LMirrorMsysList are the upstream package servers pacman tries in order. The first two
+// LMSYSMirrorCatalog are the upstream package servers pacman tries in order. The first two
 // are MSYS2's own origin and CDN; the rest are long-lived independent mirrors. Listing
 // several lets a per-file 404 fall through to the next server when one mirror has not
 // yet propagated a just-published package (mirror/CDN skew) instead of failing the
 // build. The list is fixed and ordered so the generated, hash-pinned script is stable.
-var LMirrorMsysList = []string{
+var LMSYSMirrorCatalog = []string{
 	"https://repo.msys2.org",
 	"https://mirror.msys2.org",
 	"https://mirrors.tuna.tsinghua.edu.cn/msys2",
@@ -145,14 +145,14 @@ var LRepoMirrorlistMsys = []struct {
 	{"clangarm64", "/mingw/clangarm64/"},
 }
 
-// LScriptMirrorLinesCreate writes every pacman mirrorlist with the full ordered mirror set
+// LMirrorScriptCreate writes every pacman mirrorlist with the full ordered mirror set
 // so pacman retries the next server on a per-file 404. Shared by the toolchain install
 // and the FFmpeg library/build-dependency package install so both gain the same fallback.
-func LScriptMirrorLinesCreate() []string {
+func LMirrorScriptCreate() []string {
 	lines := []string{}
 	for _, repo := range LRepoMirrorlistMsys {
 		lines = append(lines, "cat > /etc/pacman.d/mirrorlist."+repo.mirrorlistName+" <<'EOF'")
-		for _, mirror := range LMirrorMsysList {
+		for _, mirror := range LMSYSMirrorCatalog {
 			lines = append(lines, "Server = "+mirror+repo.repoPath)
 		}
 		lines = append(lines, "EOF")
@@ -160,7 +160,7 @@ func LScriptMirrorLinesCreate() []string {
 	return lines
 }
 
-func LProfileRepoNameResolve(windowsShellProfileName string) string {
+func LRepositoryNameResolve(windowsShellProfileName string) string {
 	for _, repoName := range LRepoMingwNames {
 		if repoName == windowsShellProfileName {
 			return repoName
@@ -175,14 +175,14 @@ func LScriptPacmanBuild(packageNames []string, windowsShellProfileName string) (
 		if err := LPackageMsysValidate(packageName); err != nil {
 			return nil, err
 		}
-		quotedPackageNames = append(quotedPackageNames, LTextShellQuote(packageName))
+		quotedPackageNames = append(quotedPackageNames, LShellTextQuote(packageName))
 	}
 
 	// Disable every mingw-family repo except the selected profile's, so `pacman -Syy`
 	// only refreshes the databases this build actually uses (the profile repo plus
 	// the always-needed `msys` repo). This keeps a build that chose mingw64 from
 	// touching clang64/ucrt64/etc. databases.
-	selectedRepoName := LProfileRepoNameResolve(windowsShellProfileName)
+	selectedRepoName := LRepositoryNameResolve(windowsShellProfileName)
 	disableUnusedRepoLines := []string{"echo 'Limiting package databases to the selected profile and the msys repository.'"}
 	for _, repoName := range LRepoMingwNames {
 		if repoName == selectedRepoName {
@@ -197,7 +197,7 @@ func LScriptPacmanBuild(packageNames []string, windowsShellProfileName string) (
 		"set -euo pipefail",
 		"echo 'Using the official MSYS2 package servers (with fallback mirrors) for this private toolchain.'",
 	}
-	scriptLines = append(scriptLines, LScriptMirrorLinesCreate()...)
+	scriptLines = append(scriptLines, LMirrorScriptCreate()...)
 	scriptLines = append(scriptLines,
 		"echo 'Initializing the private MSYS2 package keyring.'",
 		"pacman-key --init 2>&1",
@@ -230,13 +230,13 @@ func LScriptPacmanBuild(packageNames []string, windowsShellProfileName string) (
 	return scriptLines, nil
 }
 
-func LScriptPackageLinesCreate(packageNames []string) ([]string, error) {
+func LPackageScriptCreate(packageNames []string) ([]string, error) {
 	quotedPackageNames := make([]string, 0, len(packageNames))
 	for _, packageName := range packageNames {
 		if err := LPackageMsysValidate(packageName); err != nil {
 			return nil, err
 		}
-		quotedPackageNames = append(quotedPackageNames, LTextShellQuote(packageName))
+		quotedPackageNames = append(quotedPackageNames, LShellTextQuote(packageName))
 	}
 	if len(quotedPackageNames) == 0 {
 		return []string{
@@ -250,7 +250,7 @@ func LScriptPackageLinesCreate(packageNames []string) ([]string, error) {
 		"set -euo pipefail",
 		"echo 'Using the official MSYS2 package servers (with fallback mirrors) for FFmpeg library packages.'",
 	}
-	scriptLines = append(scriptLines, LScriptMirrorLinesCreate()...)
+	scriptLines = append(scriptLines, LMirrorScriptCreate()...)
 	scriptLines = append(scriptLines,
 		"sed -i -E 's/^SigLevel[[:space:]]*=.*/SigLevel = Required DatabaseOptional/' /etc/pacman.conf",
 		"echo 'Clearing half-downloaded package files before installing FFmpeg library packages.'",
@@ -269,12 +269,12 @@ func LScriptPackageLinesCreate(packageNames []string) ([]string, error) {
 		// Install ordering re-runs the prep afterward, so the prep-provided files win in the end.
 		"pacman -S --noconfirm --overwrite '*' "+strings.Join(quotedPackageNames, " "),
 	)
-	scriptLines = append(scriptLines, LScriptRabbitmqSanitize()...)
-	scriptLines = append(scriptLines, LScriptOapvPkgConfigRepair()...)
+	scriptLines = append(scriptLines, LRabbitMQScriptClean()...)
+	scriptLines = append(scriptLines, LOAPVPackageRepair()...)
 	return scriptLines, nil
 }
 
-// LScriptRabbitmqSanitize repairs the MSYS2 librabbitmq.pc. The rabbitmq-c
+// LRabbitMQScriptClean repairs the MSYS2 librabbitmq.pc. The rabbitmq-c
 // CMake build composes Libs.private by looping its socket libraries as "-l<lib>"; an
 // empty list element leaves a stray, name-less "-l" token (the shipped 0.15 .pc reads
 // "Libs.private: ... -lws2_32 -l -lssl -lcrypto"). With the build's default
@@ -282,7 +282,7 @@ func LScriptPackageLinesCreate(packageNames []string) ([]string, error) {
 // gcc, the link fails, and configure reports "librabbitmq >= 0.7.1 not found".
 // Stripping the empty "-l" namespec from the Libs lines makes the static link valid.
 // Guarded by file existence, so it is a no-op when rabbitmq-c was not installed.
-func LScriptRabbitmqSanitize() []string {
+func LRabbitMQScriptClean() []string {
 	return []string{
 		`rabbitmq_pc="${MSYSTEM_PREFIX:-/ucrt64}/lib/pkgconfig/librabbitmq.pc"`,
 		`if [ -f "${rabbitmq_pc}" ]; then`,
@@ -293,7 +293,7 @@ func LScriptRabbitmqSanitize() []string {
 	}
 }
 
-// LScriptOapvPkgConfigRepair repairs the MSYS2 openapv pkg-config file.
+// LOAPVPackageRepair repairs the MSYS2 openapv pkg-config file.
 // The current MSYS2 package installs the archives under lib/oapv/ (and the import
 // library under lib/oapv/import/) while the pkg-config file can advertise the
 // ordinary profile lib directory. FFmpeg's configure then sees the oapv module
@@ -304,7 +304,7 @@ func LScriptRabbitmqSanitize() []string {
 // probe does not request private cflags; without that define the header declares
 // dllimport symbols and the static link fails with __imp_oapve_encode unresolved.
 // Guarded by file existence, so it is a no-op when openapv was not selected/installed.
-func LScriptOapvPkgConfigRepair() []string {
+func LOAPVPackageRepair() []string {
 	return []string{
 		`oapv_pc="${MSYSTEM_PREFIX:-/ucrt64}/lib/pkgconfig/oapv.pc"`,
 		`if [ -f "${oapv_pc}" ]; then`,
@@ -320,7 +320,7 @@ func LScriptOapvPkgConfigRepair() []string {
 	}
 }
 
-// LScriptOpencvLegacyCreate makes FFmpeg's libopencv detection work against MSYS2's
+// LOpenCVScriptCreate makes FFmpeg's libopencv detection work against MSYS2's
 // OpenCV 4 package on FFmpeg releases <= 8.0. Those configure scripts probe the legacy
 // pkg-config module name "opencv" (OpenCV 2.x) and run a bare `check_headers
 // opencv2/core/core_c.h` (no pkg-config cflags) before any pkg-config branch. MSYS2 ships the
@@ -341,7 +341,7 @@ func LScriptOapvPkgConfigRepair() []string {
 // `require libopencv ... -lopencv_core -lopencv_imgproc` branch links and libopencv enables.
 // Both steps are guarded so they are no-ops when OpenCV 4 is absent (or an opencv.pc already
 // exists), which also keeps them harmless on FFmpeg 8.1+.
-func LScriptOpencvLegacyCreate() []string {
+func LOpenCVScriptCreate() []string {
 	return []string{
 		`opencv4_pc="${MSYSTEM_PREFIX:-/ucrt64}/lib/pkgconfig/opencv4.pc"`,
 		`opencv_pc="${MSYSTEM_PREFIX:-/ucrt64}/lib/pkgconfig/opencv.pc"`,
@@ -357,7 +357,7 @@ func LScriptOpencvLegacyCreate() []string {
 	}
 }
 
-// LScriptConfigureLinesCreate builds the FFmpeg configure script. privatePkgConfigDirs are the
+// LConfigureScriptCreate builds the FFmpeg configure script. privatePkgConfigDirs are the
 // pkgconfig directories of any privately-installed libraries (e.g. libtls); they are
 // prepended to the script's exported PKG_CONFIG_PATH/PKG_CONFIG_LIBDIR so pkg-config finds
 // those isolated modules (and their private libssl/libcrypto) ahead of the shared prefix.
@@ -365,23 +365,23 @@ func LScriptOpencvLegacyCreate() []string {
 // version floors are resolved from that release's support release-support manifest, so an older FFmpeg gets
 // its own (usually lower) floors rather than a single hardcoded set. A snapshot/unknown
 // version resolves no floors and the build relies on FFmpeg configure as the backstop.
-func LScriptConfigureLinesCreate(configureFlags []string, privatePkgConfigDirs []string, ffmpegVersion string) ([]string, error) {
+func LConfigureScriptCreate(configureFlags []string, privatePkgConfigDirs []string, ffmpegVersion string) ([]string, error) {
 	quotedConfigureFlags := make([]string, 0, len(configureFlags))
 	for _, configureFlag := range configureFlags {
 		if err := LFlagConfigureValidate(configureFlag); err != nil {
 			return nil, err
 		}
-		quotedConfigureFlags = append(quotedConfigureFlags, LTextShellQuote(configureFlag))
+		quotedConfigureFlags = append(quotedConfigureFlags, LShellTextQuote(configureFlag))
 	}
 	quotedConfigureFlagArray := strings.Join(quotedConfigureFlags, " ")
 
-	LModulePkgconfigs := LModulePkgconfigList(configureFlags, ffmpegVersion)
+	LModulePkgconfigs := LPackageModuleList(configureFlags, ffmpegVersion)
 
 	// Prepend any private pkgconfig dirs to the shared prefix search path. Each is a unix
-	// path under the profile prefix produced by LLibraryPrivatePkgconfigDirGet.
+	// path under the profile prefix produced by LPrivateDirectoryGet.
 	privatePkgConfigPrefix := ""
 	for _, privateDir := range privatePkgConfigDirs {
-		if !LPatternPkgconfigDirSafe.MatchString(privateDir) {
+		if !LPackageDirectoryPattern.MatchString(privateDir) {
 			return nil, fmt.Errorf("private pkgconfig dir is unsafe: %s", privateDir)
 		}
 		privatePkgConfigPrefix += privateDir + ":"
@@ -635,12 +635,12 @@ int main(void){return 0;}
 		scriptLines = append(scriptLines, "if ! try_enable_vapoursynth; then vapoursynth_disabled=1; remove_configure_flag --enable-vapoursynth; fi")
 	}
 	if LFlagConfigureCheck(configureFlags, "--enable-libopencv") {
-		scriptLines = append(scriptLines, LScriptOpencvLegacyCreate()...)
+		scriptLines = append(scriptLines, LOpenCVScriptCreate()...)
 	}
 	if len(LModulePkgconfigs) > 0 {
 		scriptLines = append(scriptLines, "echo 'Diagnosing selected pkg-config libraries before FFmpeg configure.'")
 		for _, mod := range LModulePkgconfigs {
-			diagnosticLine := fmt.Sprintf("diagnose_pkg_config_module %s %s", LTextShellQuote(mod.Name), LTextShellQuote(mod.MinVersion))
+			diagnosticLine := fmt.Sprintf("diagnose_pkg_config_module %s %s", LShellTextQuote(mod.Name), LShellTextQuote(mod.MinVersion))
 			if mod.Name == "SvtJpegxs" {
 				diagnosticLine = "if [ \"${svtjpegxs_disabled}\" -eq 0 ]; then " + diagnosticLine + "; else echo 'SVT JPEG XS pkg-config diagnostic skipped because --enable-libsvtjpegxs was disabled after compatibility checks.'; fi"
 			}
@@ -683,7 +683,7 @@ type LModulePkgconfig struct {
 	MinVersion string // empty means no version check beyond existence
 }
 
-func LModulePkgconfigList(configureFlags []string, ffmpegVersion string) []LModulePkgconfig {
+func LPackageModuleList(configureFlags []string, ffmpegVersion string) []LModulePkgconfig {
 	// Only list libraries that are expected to provide a pkg-config module in MSYS2.
 	// Some valid FFmpeg options, such as --enable-libgsm, are probed by FFmpeg
 	// through headers/libraries instead of a .pc file. Pre-checking those with
@@ -696,11 +696,11 @@ func LModulePkgconfigList(configureFlags []string, ffmpegVersion string) []LModu
 	// floor and an older package that satisfies it is no longer falsely rejected before
 	// configure. A flag with no LLibraryId, an unsupported/snapshot version, or a library the
 	// release pins no minimum for, carries no floor and is only checked for existence.
-	type entry struct {
+	type LScriptEntry struct {
 		name       string
 		LLibraryId string
 	}
-	moduleByFlag := map[string]entry{
+	moduleByFlag := map[string]LScriptEntry{
 		"--enable-libaom":            {name: "aom", LLibraryId: "aom"},
 		"--enable-libass":            {name: "libass", LLibraryId: "ass"},
 		"--enable-libbluray":         {name: "libbluray", LLibraryId: "bluray"},
@@ -767,12 +767,12 @@ func LModulePkgconfigList(configureFlags []string, ffmpegVersion string) []LModu
 		"--enable-opencl":            {name: "OpenCL", LLibraryId: "opencl"},
 		"--enable-whisper":           {name: "whisper", LLibraryId: "whisper"},
 	}
-	release, releaseSupported := catalogfacts.ReleaseSupportResolve(ffmpegVersion)
+	release, releaseSupported := catalogfacts.LReleaseSupportResolve(ffmpegVersion)
 	floorFor := func(LLibraryId string) string {
 		if !releaseSupported || LLibraryId == "" {
 			return ""
 		}
-		support, supported := release.LibrarySupportGet(LLibraryId)
+		support, supported := release.LLibrarySupportGet(LLibraryId)
 		if !supported {
 			return ""
 		}
@@ -814,7 +814,7 @@ type LLibraryBuildSpec struct {
 	BuildSystem string
 	// CFlags are extra C compiler flags exported as CFLAGS for the build (e.g. demoting a GCC-14
 	// hard error to a warning for an older C library that predates it). Honored by the meson
-	// generator. Each is validated against LPatternCompilerFlagSafe.
+	// generator. Each is validated against LCompilerFlagPattern.
 	CFlags             []string
 	CMakeOptions       []string
 	CMakeBuildTargets  []string
@@ -854,9 +854,9 @@ type LLibraryBuildSpec struct {
 	PkgConfigLibsLine string
 	// PkgConfigLibsLinePatches applies the same Libs-line override to additional
 	// installed modules, for libraries whose FFmpeg configure checks more than one .pc.
-	PkgConfigLibsLinePatches []LPkgConfigLibsLinePatch
+	PkgConfigLibsLinePatches []LLibraryPatchEntry
 	// PrivatePrefixInstall installs the library into its own per-library prefix
-	// (<profile>/LLibraryPrivateInstallSubdirGet/<PkgConfigName>) instead of the shared MSYS2
+	// (<profile>/LPrivateInstallSubdirectory/<PkgConfigName>) instead of the shared MSYS2
 	// prefix, and strips the installed .pc's Requires/Requires.private so no transitive
 	// module re-adds a shared-prefix archive. Used to isolate a library whose archive base
 	// names collide with another package's (e.g. LibreSSL libtls vs the openssl package).
@@ -880,23 +880,23 @@ type LFileGenerated struct {
 	Lines []string
 }
 
-type LPkgConfigLibsLinePatch struct {
+type LLibraryPatchEntry struct {
 	Module   string
 	LibsLine string
 }
 
-// LLibraryPrivateInstallSubdirGet is the prefix-relative directory under the MSYS2 profile
+// LPrivateInstallSubdirectory is the prefix-relative directory under the MSYS2 profile
 // prefix that holds per-library private installs (see LLibraryBuildSpec.PrivatePrefixInstall).
-// A library installs into <profile>/LLibraryPrivateInstallSubdirGet/<PkgConfigName>. Shared by
+// A library installs into <profile>/LPrivateInstallSubdirectory/<PkgConfigName>. Shared by
 // the build-script generator (which installs there) and the program (which prepends that
 // prefix's pkgconfig dir to the FFmpeg configure PKG_CONFIG_PATH); keep the two in sync.
-const LLibraryPrivateInstallSubdirGet = "opt/customffmpeg"
+const LPrivateInstallSubdirectory = "opt/customffmpeg"
 
-// LLibraryPrivatePkgconfigDirGet returns the unix pkgconfig directory of a privately-installed
+// LPrivateDirectoryGet returns the unix pkgconfig directory of a privately-installed
 // library, given the MSYS2 profile's unix prefix (e.g. "/ucrt64") and the library's
 // pkg-config module name. The configure step adds this to PKG_CONFIG_PATH.
-func LLibraryPrivatePkgconfigDirGet(profileUnixPrefix string, LNamePkgconfig string) string {
-	return profileUnixPrefix + "/" + LLibraryPrivateInstallSubdirGet + "/" + LNamePkgconfig + "/lib/pkgconfig"
+func LPrivateDirectoryGet(profileUnixPrefix string, LNamePkgconfig string) string {
+	return profileUnixPrefix + "/" + LPrivateInstallSubdirectory + "/" + LNamePkgconfig + "/lib/pkgconfig"
 }
 
 // LSourcePatch is one exact full-line replacement applied to the extracted source
@@ -910,49 +910,49 @@ type LSourcePatch struct {
 	Replace string
 }
 
-var LPatternLibraryPathSafe = regexp.MustCompile(`^[A-Za-z0-9_+-]+$`)
-var LPatternLibraryHeaderSafe = regexp.MustCompile(`^[A-Za-z0-9_./+-]+$`)
-var LPatternCmakeOptionSafe = regexp.MustCompile(`^-D[A-Za-z0-9_]+=[A-Za-z0-9_./:+-]*$`)
-var LPatternCmakeTargetSafe = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
-var LPatternConfigureOptionSafe = regexp.MustCompile(`^--[A-Za-z0-9][A-Za-z0-9=._/+-]*$`)
+var LLibraryPathPattern = regexp.MustCompile(`^[A-Za-z0-9_+-]+$`)
+var LLibraryHeaderPattern = regexp.MustCompile(`^[A-Za-z0-9_./+-]+$`)
+var LCMakeOptionPattern = regexp.MustCompile(`^-D[A-Za-z0-9_]+=[A-Za-z0-9_./:+-]*$`)
+var LCMakeTargetPattern = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
+var LConfigureOptionPattern = regexp.MustCompile(`^--[A-Za-z0-9][A-Za-z0-9=._/+-]*$`)
 
-// LPatternCompilerFlagSafe matches a single C compiler flag exported as CFLAGS (e.g.
+// LCompilerFlagPattern matches a single C compiler flag exported as CFLAGS (e.g.
 // -Wno-error=implicit-function-declaration). No spaces or shell metacharacters, so the joined
 // flags are safe to LTextInterpolate into the CFLAGS= assignment in the generated script.
-var LPatternCompilerFlagSafe = regexp.MustCompile(`^-[A-Za-z0-9][A-Za-z0-9=._+-]*$`)
-var LPatternMakeTargetSafe = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
-var LPatternMakeVariableSafe = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*=[A-Za-z0-9_./:= +-]*$`)
-var LPatternPkgconfigLibsLineSafe = regexp.MustCompile(`^[A-Za-z0-9_:./${} +-]+$`)
+var LCompilerFlagPattern = regexp.MustCompile(`^-[A-Za-z0-9][A-Za-z0-9=._+-]*$`)
+var LMakeTargetPattern = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
+var LMakeVariablePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*=[A-Za-z0-9_./:= +-]*$`)
+var LPackageLinePattern = regexp.MustCompile(`^[A-Za-z0-9_:./${} +-]+$`)
 
-// LPatternPkgconfigDirSafe matches a unix pkgconfig directory under the MSYS2 profile prefix
+// LPackageDirectoryPattern matches a unix pkgconfig directory under the MSYS2 profile prefix
 // (e.g. /ucrt64/opt/customffmpeg/libtls/lib/pkgconfig). No spaces, no shell metacharacters,
 // so it is safe to LTextInterpolate into the exported PKG_CONFIG_PATH.
-var LPatternPkgconfigDirSafe = regexp.MustCompile(`^/[A-Za-z0-9_./-]+$`)
+var LPackageDirectoryPattern = regexp.MustCompile(`^/[A-Za-z0-9_./-]+$`)
 
-func LSpecLibraryBuildValidate(spec LLibraryBuildSpec, requireImportSubdirs bool) error {
-	if !LPatternLibraryPathSafe.MatchString(spec.LibraryId) {
+func LLibrarySpecValidate(spec LLibraryBuildSpec, requireImportSubdirs bool) error {
+	if !LLibraryPathPattern.MatchString(spec.LibraryId) {
 		return fmt.Errorf("library preparation id contains unsafe characters: %s", spec.LibraryId)
 	}
-	if spec.VerifyLibStem != "" && !LPatternLibraryPathSafe.MatchString(spec.VerifyLibStem) {
+	if spec.VerifyLibStem != "" && !LLibraryPathPattern.MatchString(spec.VerifyLibStem) {
 		return fmt.Errorf("library preparation lib stem contains unsafe characters: %s", spec.VerifyLibStem)
 	}
 	if spec.VerifyHeaderRelativePath == "" {
 		return errors.New("library preparation verify header path is empty")
 	}
-	if !LPatternLibraryHeaderSafe.MatchString(spec.VerifyHeaderRelativePath) || strings.Contains(spec.VerifyHeaderRelativePath, "..") {
+	if !LLibraryHeaderPattern.MatchString(spec.VerifyHeaderRelativePath) || strings.Contains(spec.VerifyHeaderRelativePath, "..") {
 		return fmt.Errorf("library preparation verify header path is unsafe: %s", spec.VerifyHeaderRelativePath)
 	}
 	for _, cmakeOption := range spec.CMakeOptions {
-		if !LPatternCmakeOptionSafe.MatchString(cmakeOption) {
+		if !LCMakeOptionPattern.MatchString(cmakeOption) {
 			return fmt.Errorf("library preparation cmake option is unsafe: %s", cmakeOption)
 		}
 	}
 	for _, buildTarget := range spec.CMakeBuildTargets {
-		if !LPatternCmakeTargetSafe.MatchString(buildTarget) {
+		if !LCMakeTargetPattern.MatchString(buildTarget) {
 			return fmt.Errorf("library preparation cmake build target is unsafe: %s", buildTarget)
 		}
 	}
-	if spec.PkgConfigName != "" && !LPatternLibraryPathSafe.MatchString(spec.PkgConfigName) {
+	if spec.PkgConfigName != "" && !LLibraryPathPattern.MatchString(spec.PkgConfigName) {
 		return fmt.Errorf("library preparation pkg-config name contains unsafe characters: %s", spec.PkgConfigName)
 	}
 	if spec.PrivatePrefixInstall {
@@ -966,7 +966,7 @@ func LSpecLibraryBuildValidate(spec LLibraryBuildSpec, requireImportSubdirs bool
 		}
 	}
 	for _, patch := range spec.SourcePatches {
-		if patch.File == "" || !LPatternLibraryHeaderSafe.MatchString(patch.File) || strings.Contains(patch.File, "..") {
+		if patch.File == "" || !LLibraryHeaderPattern.MatchString(patch.File) || strings.Contains(patch.File, "..") {
 			return fmt.Errorf("library preparation source patch file is unsafe: %q", patch.File)
 		}
 		if patch.Find == "" {
@@ -977,7 +977,7 @@ func LSpecLibraryBuildValidate(spec LLibraryBuildSpec, requireImportSubdirs bool
 		}
 	}
 	for _, generated := range spec.GeneratedSourceFiles {
-		if generated.Path == "" || !LPatternLibraryHeaderSafe.MatchString(generated.Path) || strings.Contains(generated.Path, "..") {
+		if generated.Path == "" || !LLibraryHeaderPattern.MatchString(generated.Path) || strings.Contains(generated.Path, "..") {
 			return fmt.Errorf("library preparation generated source file path is unsafe: %q", generated.Path)
 		}
 		for _, line := range generated.Lines {
@@ -987,60 +987,60 @@ func LSpecLibraryBuildValidate(spec LLibraryBuildSpec, requireImportSubdirs bool
 		}
 	}
 	for _, appendLib := range spec.PkgConfigAppendLibs {
-		if !LPatternLibraryPathSafe.MatchString(appendLib) {
+		if !LLibraryPathPattern.MatchString(appendLib) {
 			return fmt.Errorf("library preparation pkg-config append lib is unsafe: %s", appendLib)
 		}
 	}
 	for _, appendCFlag := range spec.PkgConfigAppendCFlags {
-		if !LPatternCompilerFlagSafe.MatchString(appendCFlag) {
+		if !LCompilerFlagPattern.MatchString(appendCFlag) {
 			return fmt.Errorf("library preparation pkg-config append cflag is unsafe: %s", appendCFlag)
 		}
 	}
-	if spec.PkgConfigLibsLine != "" && !LPatternPkgconfigLibsLineSafe.MatchString(spec.PkgConfigLibsLine) {
+	if spec.PkgConfigLibsLine != "" && !LPackageLinePattern.MatchString(spec.PkgConfigLibsLine) {
 		return fmt.Errorf("library preparation pkg-config Libs override is unsafe: %s", spec.PkgConfigLibsLine)
 	}
 	for _, patch := range spec.PkgConfigLibsLinePatches {
-		if patch.Module == "" || !LPatternLibraryPathSafe.MatchString(patch.Module) {
+		if patch.Module == "" || !LLibraryPathPattern.MatchString(patch.Module) {
 			return fmt.Errorf("library preparation pkg-config override module is unsafe: %s", patch.Module)
 		}
-		if patch.LibsLine == "" || !LPatternPkgconfigLibsLineSafe.MatchString(patch.LibsLine) {
+		if patch.LibsLine == "" || !LPackageLinePattern.MatchString(patch.LibsLine) {
 			return fmt.Errorf("library preparation pkg-config Libs override is unsafe for %s: %s", patch.Module, patch.LibsLine)
 		}
 	}
-	if spec.ConfigureSubdir != "" && (!LPatternLibraryHeaderSafe.MatchString(spec.ConfigureSubdir) || strings.Contains(spec.ConfigureSubdir, "..")) {
+	if spec.ConfigureSubdir != "" && (!LLibraryHeaderPattern.MatchString(spec.ConfigureSubdir) || strings.Contains(spec.ConfigureSubdir, "..")) {
 		return fmt.Errorf("library preparation configure subdir is unsafe: %s", spec.ConfigureSubdir)
 	}
 	for _, configureOption := range spec.ConfigureOptions {
-		if !LPatternConfigureOptionSafe.MatchString(configureOption) {
+		if !LConfigureOptionPattern.MatchString(configureOption) {
 			return fmt.Errorf("library preparation configure option is unsafe: %s", configureOption)
 		}
 	}
 	for _, compilerFlag := range spec.CFlags {
-		if !LPatternCompilerFlagSafe.MatchString(compilerFlag) {
+		if !LCompilerFlagPattern.MatchString(compilerFlag) {
 			return fmt.Errorf("library preparation cflag is unsafe: %s", compilerFlag)
 		}
 	}
 	for _, makeTarget := range append(append([]string{}, spec.MakeBuildTargets...), spec.MakeInstallTargets...) {
-		if !LPatternMakeTargetSafe.MatchString(makeTarget) {
+		if !LMakeTargetPattern.MatchString(makeTarget) {
 			return fmt.Errorf("library preparation make target is unsafe: %s", makeTarget)
 		}
 	}
 	for _, headerFile := range spec.MakeInstallHeaderFiles {
-		if headerFile == "" || !LPatternLibraryHeaderSafe.MatchString(headerFile) || strings.Contains(headerFile, "..") {
+		if headerFile == "" || !LLibraryHeaderPattern.MatchString(headerFile) || strings.Contains(headerFile, "..") {
 			return fmt.Errorf("library preparation make install header file is unsafe: %q", headerFile)
 		}
 	}
-	if spec.MakeStaticLibFile != "" && (!LPatternLibraryHeaderSafe.MatchString(spec.MakeStaticLibFile) || strings.Contains(spec.MakeStaticLibFile, "..")) {
+	if spec.MakeStaticLibFile != "" && (!LLibraryHeaderPattern.MatchString(spec.MakeStaticLibFile) || strings.Contains(spec.MakeStaticLibFile, "..")) {
 		return fmt.Errorf("library preparation make static lib file is unsafe: %q", spec.MakeStaticLibFile)
 	}
 	for _, makeVariable := range spec.MakeVariables {
-		if !LPatternMakeVariableSafe.MatchString(makeVariable) {
+		if !LMakeVariablePattern.MatchString(makeVariable) {
 			return fmt.Errorf("library preparation make variable is unsafe: %q", makeVariable)
 		}
 	}
 	if requireImportSubdirs {
 		for _, subdir := range []string{spec.ImportIncludeSubdir, spec.ImportLibSubdir} {
-			if subdir == "" || !LPatternLibraryHeaderSafe.MatchString(subdir) || strings.Contains(subdir, "..") {
+			if subdir == "" || !LLibraryHeaderPattern.MatchString(subdir) || strings.Contains(subdir, "..") {
 				return fmt.Errorf("library preparation import subdir is unsafe: %q", subdir)
 			}
 		}
@@ -1048,27 +1048,27 @@ func LSpecLibraryBuildValidate(spec LLibraryBuildSpec, requireImportSubdirs bool
 	return nil
 }
 
-// LScriptLibraryInternalCreate builds an Internal-track library from its
+// LScriptInternalCreate builds an Internal-track library from its
 // verified, already-extracted upstream source (the script working directory) and
 // installs it into the selected MSYS2 profile prefix, then verifies the installed
 // header and link library exist. It dispatches on the recipe's build system so a new
 // build system is added in exactly one place without touching existing recipes.
-func LScriptLibraryInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
+func LScriptInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 	switch spec.BuildSystem {
 	case "", "cmake":
-		return LScriptCmakeInternalCreate(spec)
+		return LCMakeScriptCreate(spec)
 	case "configure-make":
-		return LScriptConfigureMakeInternalCreate(spec)
+		return LConfigureMakeCreate(spec)
 	case "make":
-		return LScriptMakeInternalCreate(spec)
+		return LMakeScriptCreate(spec)
 	case "meson":
-		return LScriptMesonInternalCreate(spec)
+		return LMesonScriptCreate(spec)
 	default:
 		return nil, fmt.Errorf("unknown internal-track build system %q for %s", spec.BuildSystem, spec.LibraryId)
 	}
 }
 
-// LScriptMesonInternalCreate builds a library configured with `meson setup` and built
+// LMesonScriptCreate builds a library configured with `meson setup` and built
 // with ninja (e.g. libvmaf), installing into the selected MSYS2 profile prefix. The meson
 // `-Dname=value` project options reuse the spec's CMakeOptions field (same option syntax,
 // same validation); --buildtype=release and --default-library=static are intrinsic to how
@@ -1077,13 +1077,13 @@ func LScriptLibraryInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 // Like the CMake path, meson here is the native mingw tool, so a unix prefix such as /ucrt64
 // would install to the literal drive-root; the prefix is converted to its Windows form with
 // cygpath (and excluded from MSYS2 path mangling) so meson installs into the real prefix.
-func LScriptMesonInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
-	if err := LSpecLibraryBuildValidate(spec, false); err != nil {
+func LMesonScriptCreate(spec LLibraryBuildSpec) ([]string, error) {
+	if err := LLibrarySpecValidate(spec, false); err != nil {
 		return nil, err
 	}
 	mesonOptionArray := make([]string, 0, len(spec.CMakeOptions))
 	for _, mesonOption := range spec.CMakeOptions {
-		mesonOptionArray = append(mesonOptionArray, LTextShellQuote(mesonOption))
+		mesonOptionArray = append(mesonOptionArray, LShellTextQuote(mesonOption))
 	}
 	mesonSourceDir := `"${src_dir}"`
 	if spec.ConfigureSubdir != "" {
@@ -1095,17 +1095,17 @@ func LScriptMesonInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 	// meson invocation so it does not leak into later steps. Each flag is validated above.
 	mesonCFlagsExport := ""
 	if len(spec.CFlags) > 0 {
-		mesonCFlagsExport = `CFLAGS=` + LTextShellQuote(strings.Join(spec.CFlags, " ")) + ` `
+		mesonCFlagsExport = `CFLAGS=` + LShellTextQuote(strings.Join(spec.CFlags, " ")) + ` `
 	}
 	scriptLines := []string{
 		"#!/usr/bin/env bash",
 		"set -euo pipefail",
 		`profile_prefix="${MSYSTEM_PREFIX:-/ucrt64}"`,
 		// The meson path installs into the shared prefix only (PrivatePrefixInstall is gated
-		// to cmake by LSpecLibraryBuildValidate), so install_prefix is always the shared prefix
+		// to cmake by LLibrarySpecValidate), so install_prefix is always the shared prefix
 		// and the pkg-config patch and verification helpers resolve against it.
 		`install_prefix="${profile_prefix}"`,
-		"echo " + LTextShellQuote("Preparing internal-track library from source: "+spec.DisplayName),
+		"echo " + LShellTextQuote("Preparing internal-track library from source: "+spec.DisplayName),
 		`src_dir="$(pwd)"`,
 		`echo "Source directory: ${src_dir}"`,
 		`build_dir="${src_dir}/customffmpeg-internal-build"`,
@@ -1119,7 +1119,7 @@ func LScriptMesonInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 	}
 	// Write recipe-generated source files, then apply source patches, before configure. No-op
 	// when none. Generated files come first so a later patch could target one if ever needed.
-	scriptLines = append(scriptLines, LScriptGeneratedSourceCreate(spec)...)
+	scriptLines = append(scriptLines, LSourceScriptCreate(spec)...)
 	scriptLines = append(scriptLines, LScriptPatchCreate(spec)...)
 	scriptLines = append(scriptLines,
 		mesonCFlagsExport+`MSYS2_ARG_CONV_EXCL="--prefix=" meson setup "${build_dir}" `+mesonSourceDir+` --prefix="${install_prefix_win}" --buildtype=release --default-library=static "${meson_options[@]}" 2>&1`,
@@ -1131,28 +1131,28 @@ func LScriptMesonInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 		// target compiles; the installed legacy libvmaf (exports compute_vmaf) never references it.
 		`ninja -C "${build_dir}" install 2>&1`,
 	)
-	scriptLines = append(scriptLines, LScriptPkgconfigOverrideCreate(spec)...)
-	scriptLines = append(scriptLines, LScriptPkgconfigAppendCreate(spec)...)
-	scriptLines = append(scriptLines, LScriptPkgconfigCFlagsAppendCreate(spec)...)
-	scriptLines = append(scriptLines, LScriptPkgconfigStripCreate(spec)...)
-	scriptLines = append(scriptLines, LScriptLibraryVerifyCreate(spec)...)
-	scriptLines = append(scriptLines, "echo "+LTextShellQuote("Internal-track library prepared: "+spec.DisplayName))
+	scriptLines = append(scriptLines, LOverrideScriptCreate(spec)...)
+	scriptLines = append(scriptLines, LAppendScriptCreate(spec)...)
+	scriptLines = append(scriptLines, LCompilerFlagCreate(spec)...)
+	scriptLines = append(scriptLines, LStripScriptCreate(spec)...)
+	scriptLines = append(scriptLines, LScriptVerifyCreate(spec)...)
+	scriptLines = append(scriptLines, "echo "+LShellTextQuote("Internal-track library prepared: "+spec.DisplayName))
 	return scriptLines, nil
 }
 
-func LScriptCmakeInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
-	if err := LSpecLibraryBuildValidate(spec, false); err != nil {
+func LCMakeScriptCreate(spec LLibraryBuildSpec) ([]string, error) {
+	if err := LLibrarySpecValidate(spec, false); err != nil {
 		return nil, err
 	}
 	cmakeOptionArray := make([]string, 0, len(spec.CMakeOptions))
 	for _, cmakeOption := range spec.CMakeOptions {
-		cmakeOptionArray = append(cmakeOptionArray, LTextShellQuote(cmakeOption))
+		cmakeOptionArray = append(cmakeOptionArray, LShellTextQuote(cmakeOption))
 	}
 	scriptLines := []string{
 		"#!/usr/bin/env bash",
 		"set -euo pipefail",
 		`profile_prefix="${MSYSTEM_PREFIX:-/ucrt64}"`,
-		"echo " + LTextShellQuote("Preparing internal-track library from source: "+spec.DisplayName),
+		"echo " + LShellTextQuote("Preparing internal-track library from source: "+spec.DisplayName),
 		`src_dir="$(pwd)"`,
 		`echo "Source directory: ${src_dir}"`,
 		`build_dir="${src_dir}/customffmpeg-internal-build"`,
@@ -1178,7 +1178,7 @@ func LScriptCmakeInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 	}
 	// Write recipe-generated source files, then apply source patches, before configure (e.g.
 	// to work around an upstream portability bug that no CMake flag can fix). No-op when none.
-	scriptLines = append(scriptLines, LScriptGeneratedSourceCreate(spec)...)
+	scriptLines = append(scriptLines, LSourceScriptCreate(spec)...)
 	scriptLines = append(scriptLines, LScriptPatchCreate(spec)...)
 	scriptLines = append(scriptLines, `cmake -S "${src_dir}" -B "${build_dir}" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${install_prefix_win}" -DCMAKE_POLICY_VERSION_MINIMUM=3.5.0 "${cmake_options[@]}" -Wno-dev 2>&1`)
 	// Build either the named targets a recipe requests (e.g. a header-only project whose
@@ -1186,26 +1186,26 @@ func LScriptCmakeInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 	// default, the default target.
 	if len(spec.CMakeBuildTargets) > 0 {
 		for _, buildTarget := range spec.CMakeBuildTargets {
-			scriptLines = append(scriptLines, `cmake --build "${build_dir}" --target `+LTextShellQuote(buildTarget)+` 2>&1`)
+			scriptLines = append(scriptLines, `cmake --build "${build_dir}" --target `+LShellTextQuote(buildTarget)+` 2>&1`)
 		}
 	} else {
 		scriptLines = append(scriptLines, `cmake --build "${build_dir}" 2>&1`)
 	}
 	scriptLines = append(scriptLines, `cmake --install "${build_dir}" 2>&1`)
-	scriptLines = append(scriptLines, LScriptPkgconfigOverrideCreate(spec)...)
-	scriptLines = append(scriptLines, LScriptPkgconfigAppendCreate(spec)...)
-	scriptLines = append(scriptLines, LScriptPkgconfigCFlagsAppendCreate(spec)...)
-	scriptLines = append(scriptLines, LScriptPkgconfigStripCreate(spec)...)
-	scriptLines = append(scriptLines, LScriptLibraryVerifyCreate(spec)...)
-	scriptLines = append(scriptLines, "echo "+LTextShellQuote("Internal-track library prepared: "+spec.DisplayName))
+	scriptLines = append(scriptLines, LOverrideScriptCreate(spec)...)
+	scriptLines = append(scriptLines, LAppendScriptCreate(spec)...)
+	scriptLines = append(scriptLines, LCompilerFlagCreate(spec)...)
+	scriptLines = append(scriptLines, LStripScriptCreate(spec)...)
+	scriptLines = append(scriptLines, LScriptVerifyCreate(spec)...)
+	scriptLines = append(scriptLines, "echo "+LShellTextQuote("Internal-track library prepared: "+spec.DisplayName))
 	return scriptLines, nil
 }
 
-// LScriptPkgconfigAppendCreate patches the installed pkg-config module so its Libs line ends
+// LAppendScriptCreate patches the installed pkg-config module so its Libs line ends
 // with the recipe's extra link libraries. Used to repair a static .pc that lists the
 // C++/math runtime before its own static archives, which breaks GNU static link order.
 // The pkg-config name and lib names are validated as safe path segments by
-// LSpecLibraryBuildValidate, so they are safe to LTextInterpolate into the script. Returns no
+// LLibrarySpecValidate, so they are safe to LTextInterpolate into the script. Returns no
 // lines when the recipe declares no fixup.
 // LScriptPatchCreate emits shell that applies each recipe source patch to the
 // extracted tree. Each patch replaces an exact full line (Find) with Replace in File
@@ -1218,21 +1218,21 @@ func LScriptPatchCreate(spec LLibraryBuildSpec) []string {
 	for _, patch := range spec.SourcePatches {
 		lines = append(lines,
 			`patch_file="${src_dir}/`+patch.File+`"`,
-			`if ! grep -qxF -- `+LTextShellQuote(patch.Find)+` "${patch_file}"; then echo "ERROR: source patch target line not found in `+patch.File+`; the pinned upstream release may have changed."; exit 1; fi`,
-			`awk -v patch_find=`+LTextShellQuote(patch.Find)+` -v patch_repl=`+LTextShellQuote(patch.Replace)+` '{ if ($0 == patch_find) { print patch_repl } else { print } }' "${patch_file}" > "${patch_file}.patched" && mv "${patch_file}.patched" "${patch_file}"`,
+			`if ! grep -qxF -- `+LShellTextQuote(patch.Find)+` "${patch_file}"; then echo "ERROR: source patch target line not found in `+patch.File+`; the pinned upstream release may have changed."; exit 1; fi`,
+			`awk -v patch_find=`+LShellTextQuote(patch.Find)+` -v patch_repl=`+LShellTextQuote(patch.Replace)+` '{ if ($0 == patch_find) { print patch_repl } else { print } }' "${patch_file}" > "${patch_file}.patched" && mv "${patch_file}.patched" "${patch_file}"`,
 			`echo "Applied source patch to `+patch.File+`"`,
 		)
 	}
 	return lines
 }
 
-// LScriptGeneratedSourceCreate emits shell that writes each recipe-declared source file
+// LSourceScriptCreate emits shell that writes each recipe-declared source file
 // into the extracted tree before configure, for a file a release tarball omits because
 // upstream generates it from a .git checkout (e.g. libvmaf's vcs_version.h). Each file's
 // parent directory is created first; lines are written verbatim via single-quoted printf
 // arguments (validated to contain no single quote or newline). Returns no lines when the
 // recipe declares none.
-func LScriptGeneratedSourceCreate(spec LLibraryBuildSpec) []string {
+func LSourceScriptCreate(spec LLibraryBuildSpec) []string {
 	lines := []string{}
 	for _, generated := range spec.GeneratedSourceFiles {
 		target := `"${src_dir}/` + generated.Path + `"`
@@ -1249,13 +1249,13 @@ func LScriptGeneratedSourceCreate(spec LLibraryBuildSpec) []string {
 	return lines
 }
 
-// LScriptPkgconfigOverrideCreate replaces the installed .pc's whole "Libs:" line value with
+// LOverrideScriptCreate replaces the installed .pc's whole "Libs:" line value with
 // the recipe's PkgConfigLibsLine. A static archive and a shared import library can share a
 // base name (e.g. LibreSSL's static libcrypto.a next to a leftover OpenSSL libcrypto.dll.a in
 // the same prefix); GNU ld prefers the .dll.a for a bare -lcrypto, so the link picks the wrong
 // crypto and fails with undefined references. Forcing -l:lib<name>.a (or an absolute archive
 // path) in the Libs line makes the link select this recipe's own static archives. The pc name
-// is a validated path segment and the libs line is validated against LPatternPkgconfigLibsLineSafe,
+// is a validated path segment and the libs line is validated against LPackageLinePattern,
 // so both are safe to LTextInterpolate. Returns no lines when the recipe declares no override.
 // LScriptPrefixCreate emits the shell that defines ${install_prefix}. For a normal
 // recipe it is the shared MSYS2 profile prefix. For a PrivatePrefixInstall recipe it is a
@@ -1263,23 +1263,23 @@ func LScriptGeneratedSourceCreate(spec LLibraryBuildSpec) []string {
 // the library's archives never share a directory with a same-named package's.
 func LScriptPrefixCreate(spec LLibraryBuildSpec) string {
 	if spec.PrivatePrefixInstall {
-		privatePrefix := `${profile_prefix}/` + LLibraryPrivateInstallSubdirGet + `/` + spec.PkgConfigName
+		privatePrefix := `${profile_prefix}/` + LPrivateInstallSubdirectory + `/` + spec.PkgConfigName
 		return `install_prefix="` + privatePrefix + `"; rm -rf "${install_prefix}"; mkdir -p "${install_prefix}"`
 	}
 	return `install_prefix="${profile_prefix}"`
 }
 
-// LScriptPkgconfigStripCreate removes the Requires and Requires.private lines from a
+// LStripScriptCreate removes the Requires and Requires.private lines from a
 // privately-installed library's .pc. The private install lists every needed archive by
 // absolute path in its Libs line, so leaving Requires.private would only let pkg-config
 // re-add bare -l<name> flags that resolve back to a same-named archive in the shared
 // prefix ??exactly the collision the private install exists to avoid. No-op otherwise.
-func LScriptPkgconfigStripCreate(spec LLibraryBuildSpec) []string {
+func LStripScriptCreate(spec LLibraryBuildSpec) []string {
 	if !spec.PrivatePrefixInstall || spec.PkgConfigName == "" {
 		return nil
 	}
 	return []string{
-		"echo " + LTextShellQuote("Stripping Requires/Requires.private from "+spec.PkgConfigName+".pc so its absolute-path Libs line is the sole source of link libraries."),
+		"echo " + LShellTextQuote("Stripping Requires/Requires.private from "+spec.PkgConfigName+".pc so its absolute-path Libs line is the sole source of link libraries."),
 		`pc_file="${install_prefix}/lib/pkgconfig/` + spec.PkgConfigName + `.pc"`,
 		`if [ ! -f "${pc_file}" ]; then pc_file="${install_prefix}/share/pkgconfig/` + spec.PkgConfigName + `.pc"; fi`,
 		`if [ ! -f "${pc_file}" ]; then echo "ERROR: ` + spec.PkgConfigName + `.pc not found in lib/pkgconfig or share/pkgconfig under ${install_prefix}."; exit 1; fi`,
@@ -1287,10 +1287,10 @@ func LScriptPkgconfigStripCreate(spec LLibraryBuildSpec) []string {
 	}
 }
 
-func LScriptPkgconfigOverrideCreate(spec LLibraryBuildSpec) []string {
-	patches := []LPkgConfigLibsLinePatch{}
+func LOverrideScriptCreate(spec LLibraryBuildSpec) []string {
+	patches := []LLibraryPatchEntry{}
 	if spec.PkgConfigName != "" && spec.PkgConfigLibsLine != "" {
-		patches = append(patches, LPkgConfigLibsLinePatch{Module: spec.PkgConfigName, LibsLine: spec.PkgConfigLibsLine})
+		patches = append(patches, LLibraryPatchEntry{Module: spec.PkgConfigName, LibsLine: spec.PkgConfigLibsLine})
 	}
 	patches = append(patches, spec.PkgConfigLibsLinePatches...)
 	if len(patches) == 0 {
@@ -1299,22 +1299,22 @@ func LScriptPkgconfigOverrideCreate(spec LLibraryBuildSpec) []string {
 	lines := []string{}
 	for _, patch := range patches {
 		// '#' delimiter so the path slashes in the replacement need no escaping; the validated
-		// libs line cannot contain '#'. Single-quoted via LTextShellQuote, so ${libdir} stays literal
+		// libs line cannot contain '#'. Single-quoted via LShellTextQuote, so ${libdir} stays literal
 		// in the .pc for pkg-config to expand.
 		sedProgram := "s#^Libs:.*#Libs: " + patch.LibsLine + "#"
 		lines = append(lines,
-			"echo "+LTextShellQuote("Overriding "+patch.Module+".pc Libs line to force this library's own static archives ahead of any same-named shared import library in the prefix."),
+			"echo "+LShellTextQuote("Overriding "+patch.Module+".pc Libs line to force this library's own static archives ahead of any same-named shared import library in the prefix."),
 			`pc_file="${install_prefix}/lib/pkgconfig/`+patch.Module+`.pc"`,
 			`if [ ! -f "${pc_file}" ]; then pc_file="${install_prefix}/share/pkgconfig/`+patch.Module+`.pc"; fi`,
 			`if [ ! -f "${pc_file}" ]; then echo "ERROR: `+patch.Module+`.pc not found in lib/pkgconfig or share/pkgconfig under ${install_prefix}."; exit 1; fi`,
-			`sed -i -E `+LTextShellQuote(sedProgram)+` "${pc_file}"`,
+			`sed -i -E `+LShellTextQuote(sedProgram)+` "${pc_file}"`,
 			`echo "Patched pkg-config Libs: $(grep '^Libs:' "${pc_file}")"`,
 		)
 	}
 	return lines
 }
 
-func LScriptPkgconfigAppendCreate(spec LLibraryBuildSpec) []string {
+func LAppendScriptCreate(spec LLibraryBuildSpec) []string {
 	if spec.PkgConfigName == "" || len(spec.PkgConfigAppendLibs) == 0 {
 		return nil
 	}
@@ -1331,25 +1331,25 @@ func LScriptPkgconfigAppendCreate(spec LLibraryBuildSpec) []string {
 	}
 	sedProgram := "/^Libs:/{ " + stripCommands + "s/$/" + appendFlags + "/ }"
 	return []string{
-		"echo " + LTextShellQuote("Patching "+spec.PkgConfigName+".pc: moving runtime libraries ("+strings.TrimSpace(appendFlags)+") after the static archives for correct GNU static link order."),
+		"echo " + LShellTextQuote("Patching "+spec.PkgConfigName+".pc: moving runtime libraries ("+strings.TrimSpace(appendFlags)+") after the static archives for correct GNU static link order."),
 		// CMake projects install the .pc under either lib/pkgconfig (LIBDIR) or
 		// share/pkgconfig (DATAROOTDIR, e.g. mpeghdec); pkg-config searches both, so accept
 		// whichever the project used instead of assuming lib/pkgconfig.
 		`pc_file="${install_prefix}/lib/pkgconfig/` + spec.PkgConfigName + `.pc"`,
 		`if [ ! -f "${pc_file}" ]; then pc_file="${install_prefix}/share/pkgconfig/` + spec.PkgConfigName + `.pc"; fi`,
 		`if [ ! -f "${pc_file}" ]; then echo "ERROR: ` + spec.PkgConfigName + `.pc not found in lib/pkgconfig or share/pkgconfig under ${install_prefix}."; exit 1; fi`,
-		`sed -i -E ` + LTextShellQuote(sedProgram) + ` "${pc_file}"`,
+		`sed -i -E ` + LShellTextQuote(sedProgram) + ` "${pc_file}"`,
 		`echo "Patched pkg-config Libs: $(grep '^Libs:' "${pc_file}")"`,
 	}
 }
 
-func LScriptPkgconfigCFlagsAppendCreate(spec LLibraryBuildSpec) []string {
+func LCompilerFlagCreate(spec LLibraryBuildSpec) []string {
 	if spec.PkgConfigName == "" || len(spec.PkgConfigAppendCFlags) == 0 {
 		return nil
 	}
 	appendFlags := strings.Join(spec.PkgConfigAppendCFlags, " ")
 	lines := []string{
-		"echo " + LTextShellQuote("Patching "+spec.PkgConfigName+".pc Cflags: appending "+appendFlags+"."),
+		"echo " + LShellTextQuote("Patching "+spec.PkgConfigName+".pc Cflags: appending "+appendFlags+"."),
 		`pc_file="${install_prefix}/lib/pkgconfig/` + spec.PkgConfigName + `.pc"`,
 		`if [ ! -f "${pc_file}" ]; then pc_file="${install_prefix}/share/pkgconfig/` + spec.PkgConfigName + `.pc"; fi`,
 		`if [ ! -f "${pc_file}" ]; then echo "ERROR: ` + spec.PkgConfigName + `.pc not found in lib/pkgconfig or share/pkgconfig under ${install_prefix}."; exit 1; fi`,
@@ -1357,29 +1357,29 @@ func LScriptPkgconfigCFlagsAppendCreate(spec LLibraryBuildSpec) []string {
 	}
 	for _, appendCFlag := range spec.PkgConfigAppendCFlags {
 		sedProgram := `/^Cflags:/ { /(^|[[:space:]])` + appendCFlag + `([[:space:]]|$)/! s|$| ` + appendCFlag + `|; }`
-		lines = append(lines, `sed -i -E `+LTextShellQuote(sedProgram)+` "${pc_file}"`)
+		lines = append(lines, `sed -i -E `+LShellTextQuote(sedProgram)+` "${pc_file}"`)
 	}
 	lines = append(lines, `echo "Patched pkg-config Cflags: $(grep '^Cflags:' "${pc_file}")"`)
 	return lines
 }
 
-// LScriptConfigureMakeInternalCreate builds a library with a ./configure script
+// LConfigureMakeCreate builds a library with a ./configure script
 // (standard autotools or an x264/davs2-style custom configure in a subdirectory)
 // followed by make and make install, inside the MSYS2 environment. Unlike the native
 // cmake path, the whole build runs under MSYS2, so the install prefix is the unix
 // /ucrt64 path (the standard MSYS2 layout); the generated .pc then matches every other
 // MSYS2 package and pkg-config/gcc resolve it during FFmpeg configure.
-func LScriptConfigureMakeInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
-	if err := LSpecLibraryBuildValidate(spec, false); err != nil {
+func LConfigureMakeCreate(spec LLibraryBuildSpec) ([]string, error) {
+	if err := LLibrarySpecValidate(spec, false); err != nil {
 		return nil, err
 	}
 	configureOptionArray := make([]string, 0, len(spec.ConfigureOptions))
 	for _, configureOption := range spec.ConfigureOptions {
-		configureOptionArray = append(configureOptionArray, LTextShellQuote(configureOption))
+		configureOptionArray = append(configureOptionArray, LShellTextQuote(configureOption))
 	}
 	buildTargetArray := make([]string, 0, len(spec.MakeBuildTargets))
 	for _, buildTarget := range spec.MakeBuildTargets {
-		buildTargetArray = append(buildTargetArray, LTextShellQuote(buildTarget))
+		buildTargetArray = append(buildTargetArray, LShellTextQuote(buildTarget))
 	}
 	installTargets := spec.MakeInstallTargets
 	if len(installTargets) == 0 {
@@ -1393,7 +1393,7 @@ func LScriptConfigureMakeInternalCreate(spec LLibraryBuildSpec) ([]string, error
 		// Only the CMake path supports PrivatePrefixInstall; here install_prefix is always the
 		// shared prefix so the pkg-config patch and verification helpers resolve correctly.
 		`install_prefix="${profile_prefix}"`,
-		"echo " + LTextShellQuote("Preparing internal-track library from source: "+spec.DisplayName),
+		"echo " + LShellTextQuote("Preparing internal-track library from source: "+spec.DisplayName),
 		`src_dir="$(pwd)"`,
 		`echo "Source directory: ${src_dir}"`,
 		`for required_tool in make gcc; do`,
@@ -1402,7 +1402,7 @@ func LScriptConfigureMakeInternalCreate(spec LLibraryBuildSpec) ([]string, error
 	}
 	// Write recipe-generated source files, then apply source patches, before configure. No-op
 	// when none.
-	scriptLines = append(scriptLines, LScriptGeneratedSourceCreate(spec)...)
+	scriptLines = append(scriptLines, LSourceScriptCreate(spec)...)
 	scriptLines = append(scriptLines, LScriptPatchCreate(spec)...)
 	// Bootstrap autotools build files for projects that ship no generated ./configure.
 	// Prefer autoreconf -fiv: it regenerates ./configure from configure.ac and does
@@ -1430,7 +1430,7 @@ func LScriptConfigureMakeInternalCreate(spec LLibraryBuildSpec) ([]string, error
 	// subdirectory and skips sibling tools/ that need deps absent on the Windows toolchain.
 	makeVariableSuffix := ""
 	for _, makeVariable := range spec.MakeVariables {
-		makeVariableSuffix += " " + LTextShellQuote(makeVariable)
+		makeVariableSuffix += " " + LShellTextQuote(makeVariable)
 	}
 	buildLine := `make -j"$(nproc)"` + makeVariableSuffix
 	if len(buildTargetArray) > 0 {
@@ -1438,22 +1438,22 @@ func LScriptConfigureMakeInternalCreate(spec LLibraryBuildSpec) ([]string, error
 	}
 	scriptLines = append(scriptLines, buildLine+" 2>&1")
 	for _, installTarget := range installTargets {
-		scriptLines = append(scriptLines, `make `+LTextShellQuote(installTarget)+makeVariableSuffix+` 2>&1`)
+		scriptLines = append(scriptLines, `make `+LShellTextQuote(installTarget)+makeVariableSuffix+` 2>&1`)
 	}
-	scriptLines = append(scriptLines, LScriptLibraryVerifyCreate(spec)...)
-	scriptLines = append(scriptLines, "echo "+LTextShellQuote("Internal-track library prepared: "+spec.DisplayName))
+	scriptLines = append(scriptLines, LScriptVerifyCreate(spec)...)
+	scriptLines = append(scriptLines, "echo "+LShellTextQuote("Internal-track library prepared: "+spec.DisplayName))
 	return scriptLines, nil
 }
 
-// LScriptMakeInternalCreate builds a library that ships only a plain Makefile (no
+// LMakeScriptCreate builds a library that ships only a plain Makefile (no
 // configure, no cmake) inside the MSYS2 environment. Such projects (e.g. quirc) usually
 // have no lib-only install target ??their `make install` also builds demos that pull
 // extra deps ??so the generator builds just the requested targets (typically the static
 // archive) and installs by copying the recipe's declared header files and static archive
 // into the selected profile prefix, then verifies them. Headers are copied flat into
 // include/ by basename, so a recipe's VerifyHeaderRelativePath must match that basename.
-func LScriptMakeInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
-	if err := LSpecLibraryBuildValidate(spec, false); err != nil {
+func LMakeScriptCreate(spec LLibraryBuildSpec) ([]string, error) {
+	if err := LLibrarySpecValidate(spec, false); err != nil {
 		return nil, err
 	}
 	if len(spec.MakeInstallHeaderFiles) == 0 {
@@ -1464,7 +1464,7 @@ func LScriptMakeInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 	}
 	buildTargetArray := make([]string, 0, len(spec.MakeBuildTargets))
 	for _, buildTarget := range spec.MakeBuildTargets {
-		buildTargetArray = append(buildTargetArray, LTextShellQuote(buildTarget))
+		buildTargetArray = append(buildTargetArray, LShellTextQuote(buildTarget))
 	}
 	scriptLines := []string{
 		"#!/usr/bin/env bash",
@@ -1473,7 +1473,7 @@ func LScriptMakeInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 		// Only the CMake path supports PrivatePrefixInstall; here install_prefix is always the
 		// shared prefix so the pkg-config patch and verification helpers resolve correctly.
 		`install_prefix="${profile_prefix}"`,
-		"echo " + LTextShellQuote("Preparing internal-track library from source: "+spec.DisplayName),
+		"echo " + LShellTextQuote("Preparing internal-track library from source: "+spec.DisplayName),
 		`src_dir="$(pwd)"`,
 		`echo "Source directory: ${src_dir}"`,
 		`for required_tool in make gcc; do`,
@@ -1482,13 +1482,13 @@ func LScriptMakeInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 	}
 	// Write recipe-generated source files, then apply source patches, before the build. No-op
 	// when none.
-	scriptLines = append(scriptLines, LScriptGeneratedSourceCreate(spec)...)
+	scriptLines = append(scriptLines, LSourceScriptCreate(spec)...)
 	scriptLines = append(scriptLines, LScriptPatchCreate(spec)...)
 	buildLine := `make -j"$(nproc)"`
 	// Command-line variable assignments (e.g. SDL_CFLAGS=) come before the targets so they
 	// override and skip the makefile's own $(shell pkg-config ...) assignments.
 	for _, makeVariable := range spec.MakeVariables {
-		buildLine += " " + LTextShellQuote(makeVariable)
+		buildLine += " " + LShellTextQuote(makeVariable)
 	}
 	if len(buildTargetArray) > 0 {
 		buildLine += " " + strings.Join(buildTargetArray, " ")
@@ -1511,25 +1511,25 @@ func LScriptMakeInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 		`cp "${built_lib}" "${profile_prefix}/lib/"`,
 		`echo "Installed static library: $(basename "${built_lib}")"`,
 	)
-	scriptLines = append(scriptLines, LScriptLibraryVerifyCreate(spec)...)
-	scriptLines = append(scriptLines, "echo "+LTextShellQuote("Internal-track library prepared: "+spec.DisplayName))
+	scriptLines = append(scriptLines, LScriptVerifyCreate(spec)...)
+	scriptLines = append(scriptLines, "echo "+LShellTextQuote("Internal-track library prepared: "+spec.DisplayName))
 	return scriptLines, nil
 }
 
-// LScriptLibraryExternalCreate imports a verified, already-extracted vendor
+// LScriptExternalCreate imports a verified, already-extracted vendor
 // binary archive (the script working directory) into the selected MSYS2 profile
 // prefix: headers and link libraries into include/ and lib/, runtime DLLs into bin/,
 // generating a MinGW import library from a bundled DLL when needed so that the
 // FFmpeg link step (-l<stem>) resolves. It then verifies the imported header.
-func LScriptLibraryExternalCreate(spec LLibraryBuildSpec) ([]string, error) {
-	if err := LSpecLibraryBuildValidate(spec, true); err != nil {
+func LScriptExternalCreate(spec LLibraryBuildSpec) ([]string, error) {
+	if err := LLibrarySpecValidate(spec, true); err != nil {
 		return nil, err
 	}
 	scriptLines := []string{
 		"#!/usr/bin/env bash",
 		"set -euo pipefail",
 		`profile_prefix="${MSYSTEM_PREFIX:-/ucrt64}"`,
-		"echo " + LTextShellQuote("Importing external-track library: "+spec.DisplayName),
+		"echo " + LShellTextQuote("Importing external-track library: "+spec.DisplayName),
 		`import_root="$(pwd)"`,
 		`include_src="${import_root}/` + spec.ImportIncludeSubdir + `"`,
 		`lib_src="${import_root}/` + spec.ImportLibSubdir + `"`,
@@ -1576,15 +1576,15 @@ func LScriptLibraryExternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 			`if [ -f "${mingw_import_lib}" ]; then echo "Import library ready: ${mingw_import_lib}"; else echo "WARNING: no import library for `+stem+` could be prepared; the FFmpeg link step may fail."; fi`,
 		)
 	}
-	scriptLines = append(scriptLines, LScriptLibraryVerifyCreate(spec)...)
-	scriptLines = append(scriptLines, "echo "+LTextShellQuote("External-track library imported: "+spec.DisplayName))
+	scriptLines = append(scriptLines, LScriptVerifyCreate(spec)...)
+	scriptLines = append(scriptLines, "echo "+LShellTextQuote("External-track library imported: "+spec.DisplayName))
 	return scriptLines, nil
 }
 
-// LScriptLibraryVerifyCreate confirms the installed header (always) and link
+// LScriptVerifyCreate confirms the installed header (always) and link
 // library (when a stem is given) actually landed in the prefix, so a silent no-op
 // install or import is turned into a hard failure instead of a later configure error.
-func LScriptLibraryVerifyCreate(spec LLibraryBuildSpec) []string {
+func LScriptVerifyCreate(spec LLibraryBuildSpec) []string {
 	lines := []string{
 		`installed_header="${install_prefix}/include/` + spec.VerifyHeaderRelativePath + `"`,
 		`if [ ! -f "${installed_header}" ]; then echo "ERROR: expected header was not installed: ${installed_header}"; exit 1; fi`,
@@ -1603,7 +1603,7 @@ func LScriptLibraryVerifyCreate(spec LLibraryBuildSpec) []string {
 	return lines
 }
 
-func LScriptMakeLinesCreate(parallelJobCount int) ([]string, error) {
+func LMakeLinesCreate(parallelJobCount int) ([]string, error) {
 	if parallelJobCount < 1 || parallelJobCount > 256 {
 		return nil, errors.New("parallel job count must be between 1 and 256")
 	}
@@ -1728,6 +1728,6 @@ func LScriptMakeLinesCreate(parallelJobCount int) ([]string, error) {
 	return scriptLines, nil
 }
 
-func LTextShellQuote(value string) string {
+func LShellTextQuote(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
 }

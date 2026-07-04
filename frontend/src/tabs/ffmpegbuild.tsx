@@ -1,12 +1,12 @@
 import React from "react";
-import { PHeaderPageRender, PProgressBuildLiveRender, PTextDescriptionRender } from "./shared";
+import { PHeaderPageRender, PProgressLiveRender, PTextDescriptionRender } from "./shared";
 import { LPipelineFFmpegGet } from "./logutils";
 import { LLocaleTextGet } from "../i18n";
-import { LOptionTextGet, LLibraryLicenseLabelGet, LLibraryTextGet } from "../catalogText";
+import { LOptionTextGet, LLicenseLabelGet, LLibraryTextGet } from "../catalogText";
 import type { LProgressLive } from "./logs";
 import emptyStateBlueIcon from "../assets/empty-card-icons/EmptyStateBlue.svg";
 
-export type PBuildProps = {
+export type LBuildProperties = {
   ffmpegBuildPlanReview: LReviewFFmpeg | null;
   ffmpegLogEntries: { timestamp: string; level: "info" | "warn" | "error"; message: string }[];
   approvedActionPhase: "toolchain" | "ffmpeg" | null;
@@ -15,11 +15,11 @@ export type PBuildProps = {
   canCancelFfmpeg: boolean;
   approveFfmpegBuildPlan: () => Promise<void>;
   cancelApprovedAction: () => Promise<void>;
-  clearApprovedAction: () => void;
+  LActionApprovedClear: () => void;
   onGoToOptions: () => void;
 };
 
-type PBuildPlanTabId = "libraries" | "packages" | "options" | "flags" | "operations";
+type LBuildPlanIdentifier = "libraries" | "packages" | "options" | "flags" | "operations";
 
 function LListEmptyNormalize<T>(items: T[] | null | undefined): T[] {
   return Array.isArray(items) ? items : [];
@@ -42,23 +42,23 @@ function PCardPlanRender(props: { onGoToOptions: () => void }) {
   );
 }
 
-function LWarningPlanTextGet(warning: LWarningPlan): string {
+function LWarningTextGet(warning: LWarningPlan): string {
   if (warning.messageKey) return LLocaleTextGet(warning.messageKey, warning.messageValues ?? {});
   return warning.message ?? "";
 }
 
-function LOperationPlanTextGet(operation: LOperationPlan): string {
+function LOperationTextGet(operation: LOperationPlan): string {
   if (operation.summaryKey) return LLocaleTextGet(operation.summaryKey, operation.summaryValues ?? {});
   return operation.summary ?? operation.operationName ?? "";
 }
 
-function LLibraryPlanLabelGet(library: LLibraryChoice): string {
+function LLibraryLabelGet(library: LLibraryChoice): string {
   const flags = LListEmptyNormalize(library.configureFlags).join(" ");
   const flagText = flags.length > 0 ? ` — ${flags}` : "";
-  return `${LLibraryTextGet(library, "displayName")} · ${LLibraryLicenseLabelGet(library.licenseEffectName)}${flagText}`;
+  return `${LLibraryTextGet(library, "displayName")} · ${LLicenseLabelGet(library.licenseEffectName)}${flagText}`;
 }
 
-function LPreparationPlanLabelGet(preparation: LLibraryPreparation): string {
+function LPreparationLabelGet(preparation: LLibraryPreparation): string {
   const name = preparation.version ? `${preparation.displayName} ${preparation.version}` : preparation.displayName;
   const buildDependencyPackages = LListEmptyNormalize(preparation.buildDependencyPackages);
   const dependencyText = buildDependencyPackages.length > 0
@@ -67,7 +67,7 @@ function LPreparationPlanLabelGet(preparation: LLibraryPreparation): string {
   return `${name} · ${LLocaleTextGet(`approval.preparation.method.${preparation.method}`)} · ${preparation.allowedDownloadHost}${dependencyText}`;
 }
 
-function LOptionPlanLabelGet(option: LOptionChoice): string {
+function LOptionLabelGet(option: LOptionChoice): string {
   const flags = LListEmptyNormalize(option.configureFlags).join(" ");
   const flagText = flags.length > 0 ? ` — ${flags}` : "";
   return `${LOptionTextGet(option, "displayName")}${flagText}`;
@@ -107,7 +107,7 @@ function PListWarningRender(props: { warnings: LWarningPlan[] }) {
           return (
             <article className={`build-plan-warning build-plan-warning--${warning.riskLevelName} ${nonRedistributable ? "build-plan-warning--danger" : ""}`} key={`${warning.riskLevelName}-${index}`}>
               <span className="build-plan-warning__icon" aria-hidden="true" />
-              <p className="build-plan-warning__text">{LWarningPlanTextGet(warning)}</p>
+              <p className="build-plan-warning__text">{LWarningTextGet(warning)}</p>
             </article>
           );
         })}
@@ -132,7 +132,7 @@ function PPanelConfirmationRender(props: { planHash: string; expectedLConsentTex
 }
 
 function PCardBuildRender(props: { review: LReviewFFmpeg }) {
-  const [activeTabId, setActiveTabId] = React.useState<PBuildPlanTabId>("libraries");
+  const [activeTabId, setActiveTabId] = React.useState<LBuildPlanIdentifier>("libraries");
   const plan = props.review.plan;
   const selectedLibraries = LListEmptyNormalize(plan.selectedLibraries);
   const requiredMsys2PackageNames = LListEmptyNormalize(plan.requiredMsys2PackageNames);
@@ -143,18 +143,18 @@ function PCardBuildRender(props: { review: LReviewFFmpeg }) {
   const configureFlags = LListEmptyNormalize(plan.configureFlags);
   const operationsRaw = LListEmptyNormalize(plan.operations);
   const warnings = LListEmptyNormalize(plan.warnings);
-  const libraries = React.useMemo(() => selectedLibraries.map(LLibraryPlanLabelGet), [selectedLibraries]);
+  const libraries = React.useMemo(() => selectedLibraries.map(LLibraryLabelGet), [selectedLibraries]);
   const packages = React.useMemo(() => [
     ...requiredMsys2PackageNames,
-    ...libraryPreparations.map(LPreparationPlanLabelGet),
+    ...libraryPreparations.map(LPreparationLabelGet),
   ], [requiredMsys2PackageNames, libraryPreparations]);
   const options = React.useMemo(() => [
-    ...selectedConfigureOptions.map(LOptionPlanLabelGet),
+    ...selectedConfigureOptions.map(LOptionLabelGet),
     ...generatedOptionFlags,
     ...extraConfigureFlags,
   ], [selectedConfigureOptions, generatedOptionFlags, extraConfigureFlags]);
-  const operations = React.useMemo(() => operationsRaw.map(LOperationPlanTextGet), [operationsRaw]);
-  const tabs: { id: PBuildPlanTabId; label: string; count: number; code?: boolean }[] = [
+  const operations = React.useMemo(() => operationsRaw.map(LOperationTextGet), [operationsRaw]);
+  const tabs: { id: LBuildPlanIdentifier; label: string; count: number; code?: boolean }[] = [
     { id: "libraries", label: LLocaleTextGet("ffmpegBuild.plan.tabs.libraries"), count: libraries.length },
     { id: "packages", label: LLocaleTextGet("ffmpegBuild.plan.tabs.packages"), count: packages.length },
     { id: "options", label: LLocaleTextGet("ffmpegBuild.plan.tabs.options"), count: options.length },
@@ -195,7 +195,7 @@ function PCardBuildRender(props: { review: LReviewFFmpeg }) {
   );
 }
 
-export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approvedActionPhase, approvedActionStatus, ffmpegProgress, canCancelFfmpeg, cancelApprovedAction, clearApprovedAction, onGoToOptions }: PBuildProps) {
+export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approvedActionPhase, approvedActionStatus, ffmpegProgress, canCancelFfmpeg, cancelApprovedAction, LActionApprovedClear, onGoToOptions }: LBuildProperties) {
   // A running FFmpeg build takes priority: show live progress, hide the plan.
   const isFfmpegRunning = approvedActionPhase === "ffmpeg";
   const showProgress = isFfmpegRunning || ffmpegLogEntries.length > 0;
@@ -208,7 +208,7 @@ export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approved
         <PCardPlanRender onGoToOptions={onGoToOptions} />
       )}
       {showProgress && (
-        <PProgressBuildLiveRender
+        <PProgressLiveRender
           isActive={isFfmpegRunning}
           approvedActionStatus={approvedActionStatus}
           progress={ffmpegProgress}
@@ -216,7 +216,7 @@ export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approved
           completionLabel={LLocaleTextGet("ffmpegBuild.progress.completionLabel")}
           onCancel={cancelApprovedAction}
           canCancel={canCancelFfmpeg}
-          onClear={clearApprovedAction}
+          onClear={LActionApprovedClear}
         />
       )}
     </section>

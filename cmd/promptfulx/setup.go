@@ -10,29 +10,29 @@ import (
 	"promptfulcustomffmpegbuilder/internal/program"
 )
 
-// cmdSetup prepares the MSYS2 build environment (toolchain) in a workspace so a
+// LCommandSetupRun prepares the MSYS2 build environment (toolchain) in a workspace so a
 // later `build` can run. It runs synchronously and maps the outcome to an exit
-// code. Reuses buildReporter to capture the final status.
-func cmdSetup(args []string) int {
-	parsed, err := argsParse(args)
+// code. Reuses LReporterBuild to capture the final status.
+func LCommandSetupRun(args []string) int {
+	parsed, err := LArgumentParse(args)
 	if err != nil {
-		return exitFor(err)
+		return LCommandExitGet(err)
 	}
-	settings, err := toolchainSettingsResolve(parsed)
+	settings, err := LSettingsToolchainResolve(parsed)
 	if err != nil {
-		return exitFor(err)
+		return LCommandExitGet(err)
 	}
 
 	driver := program.LProgramCreate()
-	reporter := &buildReporter{}
+	reporter := &LReporterBuild{}
 	driver.LReporter = reporter
 	driver.LConfirmer = LConfirmerConsole{assumeYes: parsed.yes, noInput: parsed.noInput}
 
 	review, err := driver.LPlanToolchainRequest(settings)
 	if err != nil {
-		return exitFor(unsupported("could not resolve setup plan: %v", err))
+		return LCommandExitGet(LErrorSupportCreate("could not resolve setup plan: %v", err))
 	}
-	printToolchainPlan(review.Plan)
+	LCommandToolchainPrint(review.Plan)
 	if !review.Plan.IsExecutable {
 		fmt.Fprintln(os.Stderr, "promptfulx: setup plan is blocked by the warnings above; cannot prepare")
 		return 4
@@ -43,7 +43,7 @@ func cmdSetup(args []string) int {
 		ApprovedPlanHash:   review.Plan.PlanHash,
 		LConsentText:       review.ExpectedLConsentText,
 	}
-	if _, err := driver.LPlanToolchainApproveSync(review.ReviewSessionId, approval); err != nil {
+	if _, err := driver.LToolchainApproveSync(review.ReviewSessionId, approval); err != nil {
 		fmt.Fprintln(os.Stderr, "promptfulx:", err.Error())
 		if strings.Contains(err.Error(), "rejected") {
 			return 10 // user cancelled at the confirmation gate
@@ -57,7 +57,7 @@ func cmdSetup(args []string) int {
 	return 6
 }
 
-func printToolchainPlan(plan planning.LPlanToolchain) {
+func LCommandToolchainPrint(plan planning.LPlanToolchain) {
 	fmt.Println("MSYS2 toolchain setup plan")
 	fmt.Println("  workspace:  ", plan.WorkspaceDirectory)
 	fmt.Println("  profile:    ", plan.WindowsShellProfileName)

@@ -87,7 +87,7 @@ type LOptionChoice struct {
 	RiskLevelName    string   `json:"riskLevelName"`
 }
 
-type LSettingsBuild struct {
+type LSettingsToolchain struct {
 	WorkspaceDirectory       string   `json:"workspaceDirectory"`
 	Msys2ArchiveUrl          string   `json:"msys2ArchiveUrl"`
 	Msys2ArchiveSha256Hash   string   `json:"msys2ArchiveSha256Hash"`
@@ -147,7 +147,7 @@ type LPlanFFmpeg struct {
 	SelectedInternalLibraries  []LLibraryChoice         `json:"selectedInternalLibraries"`
 	SelectedExternalLibraries  []LLibraryChoice         `json:"selectedExternalLibraries"`
 	SelectedLibrariesByTrack   []LLibraryTrackSelection `json:"selectedLibrariesByTrack"`
-	LLibraryPreparationList    []LLibraryPreparation    `json:"libraryPreparations"`
+	LPreparationCatalog        []LLibraryPreparation    `json:"libraryPreparations"`
 	RequiredMsys2PackageNames  []string                 `json:"requiredMsys2PackageNames"`
 	GeneratedConfigureFlags    []string                 `json:"generatedConfigureFlags"`
 	SelectedConfigureOptions   []LOptionChoice          `json:"selectedConfigureOptions"`

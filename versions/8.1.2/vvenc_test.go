@@ -10,7 +10,7 @@ import (
 )
 
 func TestLibraryVvencPrepareAppendsCxxRuntimeToPkgConfigLibs(t *testing.T) {
-	plan := shared.NewLibraryPreparationPlan("8.1.2", "vvenc", "versions/8.1.2/vvenc.go")
+	plan := shared.LPreparationPlanCreate("8.1.2", "vvenc", "versions/8.1.2/vvenc.go")
 
 	LLibraryVvencPrepare(plan)
 
@@ -23,10 +23,10 @@ func TestLibraryVvencPrepareAppendsCxxRuntimeToPkgConfigLibs(t *testing.T) {
 }
 
 func TestLibraryVvencPrepareScriptPatchesPkgConfigLibsForSharedFfmpeg(t *testing.T) {
-	plan := shared.NewLibraryPreparationPlan("8.1.2", "vvenc", "versions/8.1.2/vvenc.go")
+	plan := shared.LPreparationPlanCreate("8.1.2", "vvenc", "versions/8.1.2/vvenc.go")
 	LLibraryVvencPrepare(plan)
 
-	lines, err := scripting.LScriptLibraryInternalCreate(scripting.LLibraryBuildSpec{
+	lines, err := scripting.LScriptInternalCreate(scripting.LLibraryBuildSpec{
 		LibraryId:                plan.LibraryId,
 		DisplayName:              plan.DisplayName,
 		BuildSystem:              plan.BuildSystem,
@@ -37,7 +37,7 @@ func TestLibraryVvencPrepareScriptPatchesPkgConfigLibsForSharedFfmpeg(t *testing
 		VerifyLibStem:            plan.VerifyLibStem,
 	})
 	if err != nil {
-		t.Fatalf("LScriptLibraryInternalCreate returned error: %v", err)
+		t.Fatalf("LScriptInternalCreate returned error: %v", err)
 	}
 
 	script := strings.Join(lines, "\n")

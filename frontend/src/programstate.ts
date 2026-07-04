@@ -5,11 +5,11 @@ import type { LPresetLibraryId } from "./tabs/libraries";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type PTabId = "source" | "buildConfig" | "prep" | "library" | "options" | "buildFfmpeg" | "result" | "logs" | "about";
+export type LTabIdentifier = "source" | "buildConfig" | "prep" | "library" | "options" | "buildFfmpeg" | "result" | "logs" | "about";
 
 export type LStateUiSaved = {
-  activeTabId?: PTabId;
-  buildConfigSettings?: LSettingsBuild;
+  activeTabId?: LTabIdentifier;
+  buildConfigSettings?: LSettingsToolchain;
   ffmpegBuildSettings?: LSettingsFFmpeg;
   msys2PackageText?: string;
   extraConfigureFlagText?: string;
@@ -31,10 +31,10 @@ export type LStateWindowSaved = {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-export const LStateUiSavedKey = "customffmpeg.builder.uiState.v1";
+export const LStateUiKey = "customffmpeg.builder.uiState.v1";
 export const LStateWindowKey = "customffmpeg.builder.windowState.v1";
 
-export const LSettingsBuildEmpty: LSettingsBuild = {
+export const LSettingsBuildEmpty: LSettingsToolchain = {
   workspaceDirectory: "",
   msys2ArchiveUrl: "",
   msys2ArchiveSha256Hash: "",
@@ -78,7 +78,7 @@ export function LTextLineSplit(value: string): string[] {
 
 // MSYS2 package prefix per shell profile. Mirrors LPackageProfileResolve in
 // internal/planning/library catalog.go — keep both in sync.
-export const LPackageProfilePrefixMap: Record<string, string> = {
+export const LPackagePrefixTable: Record<string, string> = {
   ucrt64: "mingw-w64-ucrt-x86_64",
   mingw64: "mingw-w64-x86_64",
   clang64: "mingw-w64-clang-x86_64",
@@ -87,16 +87,16 @@ export const LPackageProfilePrefixMap: Record<string, string> = {
 // Matches any of the three known MSYS2 prefixes at the start of a package line.
 // ucrt-x86_64 / clang-x86_64 must precede the bare x86_64 alternative so the
 // longer match wins.
-const LPackagePrefixKnownPattern = /^mingw-w64-(?:ucrt-x86_64|clang-x86_64|x86_64)-/;
+const LPackagePrefixPattern = /^mingw-w64-(?:ucrt-x86_64|clang-x86_64|x86_64)-/;
 
-// LPackagePrefixRemap rewrites the MSYS2 prefix of every prefixed package
+// LPackagePrefixUpdate rewrites the MSYS2 prefix of every prefixed package
 // line to the target profile's prefix, leaving unprefixed packages (base-devel,
 // git, ...) and any custom lines untouched. Used when the shell profile changes
 // so the toolchain and library packages target the selected environment.
-export function LPackagePrefixRemap(text: string, targetProfileName: string): string {
-  const targetPrefix = LPackageProfilePrefixMap[targetProfileName] ?? LPackageProfilePrefixMap.ucrt64;
+export function LPackagePrefixUpdate(text: string, targetProfileName: string): string {
+  const targetPrefix = LPackagePrefixTable[targetProfileName] ?? LPackagePrefixTable.ucrt64;
   return text.split(/\r?\n/).map((line) => {
-    const match = line.match(LPackagePrefixKnownPattern);
+    const match = line.match(LPackagePrefixPattern);
     if (!match) return line;
     return targetPrefix + "-" + line.slice(match[0].length);
   }).join("\n");
@@ -107,7 +107,7 @@ export function LLogLevelNormalize(value: string): "info" | "warn" | "error" {
   return "info";
 }
 
-export function LTabIdValidate(value: unknown): value is PTabId {
+export function LTabIdValidate(value: unknown): value is LTabIdentifier {
   return value === "source" || value === "buildConfig" || value === "prep" || value === "library" || value === "options" || value === "buildFfmpeg" || value === "result" || value === "logs" || value === "about";
 }
 
@@ -131,7 +131,7 @@ function LNumberValueGet(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
-function LStringArrayValueGet(value: unknown, fallback: string[]): string[] {
+function LStringArrayGet(value: unknown, fallback: string[]): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : fallback;
 }
 
@@ -139,14 +139,14 @@ function LArrayValueGet<T>(value: unknown, fallback: T[] = []): T[] {
   return Array.isArray(value) ? value as T[] : fallback;
 }
 
-export function LSettingsBuildNormalize(value: unknown, fallback: LSettingsBuild = LSettingsBuildEmpty): LSettingsBuild {
-  const source = value && typeof value === "object" ? value as Partial<LSettingsBuild> : {};
+export function LSettingsBuildNormalize(value: unknown, fallback: LSettingsToolchain = LSettingsBuildEmpty): LSettingsToolchain {
+  const source = value && typeof value === "object" ? value as Partial<LSettingsToolchain> : {};
   return {
     workspaceDirectory: LStringValueGet(source.workspaceDirectory, fallback.workspaceDirectory),
     msys2ArchiveUrl: LStringValueGet(source.msys2ArchiveUrl, fallback.msys2ArchiveUrl),
     msys2ArchiveSha256Hash: LStringValueGet(source.msys2ArchiveSha256Hash, fallback.msys2ArchiveSha256Hash),
     msys2ArchiveSignatureUrl: LStringValueGet(source.msys2ArchiveSignatureUrl, fallback.msys2ArchiveSignatureUrl),
-    msys2PackageNames: LStringArrayValueGet(source.msys2PackageNames, fallback.msys2PackageNames),
+    msys2PackageNames: LStringArrayGet(source.msys2PackageNames, fallback.msys2PackageNames),
     windowsShellProfileName: LStringValueGet(source.windowsShellProfileName, fallback.windowsShellProfileName),
   };
 }
@@ -158,10 +158,10 @@ export function LSettingsFFmpegNormalize(value: unknown, fallback: LSettingsFFmp
     ffmpegSourceArchiveUrl: LStringValueGet(source.ffmpegSourceArchiveUrl, fallback.ffmpegSourceArchiveUrl),
     ffmpegSourceSignatureUrl: LStringValueGet(source.ffmpegSourceSignatureUrl, fallback.ffmpegSourceSignatureUrl),
     ffmpegSourceSha256Hash: LStringValueGet(source.ffmpegSourceSha256Hash, fallback.ffmpegSourceSha256Hash),
-    selectedLibraryIds: LStringArrayValueGet(source.selectedLibraryIds, fallback.selectedLibraryIds),
-    selectedConfigureOptionIds: LStringArrayValueGet(source.selectedConfigureOptionIds, fallback.selectedConfigureOptionIds),
-    extraConfigureFlags: LStringArrayValueGet(source.extraConfigureFlags, fallback.extraConfigureFlags),
-    configureFlags: LStringArrayValueGet(source.configureFlags, fallback.configureFlags),
+    selectedLibraryIds: LStringArrayGet(source.selectedLibraryIds, fallback.selectedLibraryIds),
+    selectedConfigureOptionIds: LStringArrayGet(source.selectedConfigureOptionIds, fallback.selectedConfigureOptionIds),
+    extraConfigureFlags: LStringArrayGet(source.extraConfigureFlags, fallback.extraConfigureFlags),
+    configureFlags: LStringArrayGet(source.configureFlags, fallback.configureFlags),
     parallelJobCount: LNumberValueGet(source.parallelJobCount, fallback.parallelJobCount),
     windowsShellProfileName: LStringValueGet(source.windowsShellProfileName, fallback.windowsShellProfileName),
     licenseProfileName: LStringValueGet(source.licenseProfileName, fallback.licenseProfileName),

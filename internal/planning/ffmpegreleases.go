@@ -18,11 +18,11 @@ func LReleaseArchiveResolve(version string) string {
 	return "https://www.ffmpeg.org/releases/ffmpeg-" + version + ".tar.xz"
 }
 
-// LReleaseSupportedListGet lists every recommended FFmpeg source release, newest first, with
+// LReleaseSupportedGet lists every recommended FFmpeg source release, newest first, with
 // the archive and matching .asc signature URLs. This is the single source of truth for the
 // source-version dropdown.
-func LReleaseSupportedListGet() []LReleaseChoice {
-	versions := LReleaseRecommendedList()
+func LReleaseSupportedGet() []LReleaseChoice {
+	versions := LReleaseRecommendList()
 	choices := make([]LReleaseChoice, 0, len(versions))
 	for _, version := range versions {
 		archiveUrl := LReleaseArchiveResolve(version)
@@ -41,13 +41,13 @@ func LReleaseSupportedListGet() []LReleaseChoice {
 // major and minor component (e.g. a git snapshot), so callers skip release advisories. It
 // uses the embedded catalog release-line parser so planning no longer links the retired release-support package.
 func LReleaseLineResolve(version string) string {
-	return LReleaseLineKeyGet(version)
+	return LReleaseKeyGet(version)
 }
 
-// LReleaseRecommendedList lists every recommended patch release, newest first.
+// LReleaseRecommendList lists every recommended patch release, newest first.
 // Used for the supported-versions advisory message and to find the newest known release.
-func LReleaseRecommendedList() []string {
-	releases := LReleaseRecommendedRawListGet()
+func LReleaseRecommendList() []string {
+	releases := LReleaseRawGet()
 	sort.Slice(releases, func(left, right int) bool {
 		comparison, _ := LVersionCompare(releases[left], releases[right])
 		return comparison > 0
@@ -55,7 +55,7 @@ func LReleaseRecommendedList() []string {
 	return releases
 }
 
-func LReleaseRecommendedRawListGet() []string {
+func LReleaseRawGet() []string {
 	resolver, _, err := LCatalogResolverLoad()
 	if err != nil {
 		return []string{}
@@ -77,11 +77,11 @@ func LReleaseCodenameResolve(version string) string {
 		return ""
 	}
 	ffmpeg, _ := versionRecord["ffmpeg"].(map[string]any)
-	return LCatalogStringField(ffmpeg, "codename")
+	return LCatalogFieldGet(ffmpeg, "codename")
 }
 
 func LReleaseHighestGet() string {
-	releases := LReleaseRecommendedList()
+	releases := LReleaseRecommendList()
 	if len(releases) == 0 {
 		return ""
 	}

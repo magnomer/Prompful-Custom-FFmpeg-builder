@@ -24,7 +24,7 @@ func LPkgconfigVersionRead(configureText string, LModulePkgconfig string) (strin
 	return match[1], true
 }
 
-// lLibraryVersionValidate is a preflight that catches the case where the
+// LLibraryVersionValidate is a preflight that catches the case where the
 // version pinned for a prepared library is older than the minimum the selected FFmpeg
 // release requires (a newer FFmpeg can raise a library's required floor). It reads the
 // already-extracted FFmpeg configure, compares each prepared library's resolved version
@@ -35,8 +35,8 @@ func LPkgconfigVersionRead(configureText string, LModulePkgconfig string) (strin
 // It only constrains libraries that declare a pkg-config module and pin a dotted-numeric
 // version; header-only (avisynth) and vendor-imported (tensorflow) libraries, and moving
 // refs like "master", are skipped because there is nothing decidable to compare.
-func (program *LProgram) lLibraryVersionValidate(plan planning.LPlanFFmpeg, ffmpegSourceDirectory string, emitProgress func(string, string)) error {
-	if len(plan.LLibraryPreparationList) == 0 {
+func (program *LProgram) LLibraryVersionValidate(plan planning.LPlanFFmpeg, ffmpegSourceDirectory string, emitProgress func(string, string)) error {
+	if len(plan.LPreparationCatalog) == 0 {
 		return nil
 	}
 	configureBytes, err := os.ReadFile(filepath.Join(ffmpegSourceDirectory, "configure"))
@@ -47,7 +47,7 @@ func (program *LProgram) lLibraryVersionValidate(plan planning.LPlanFFmpeg, ffmp
 		return nil
 	}
 	configureText := string(configureBytes)
-	for _, preparation := range plan.LLibraryPreparationList {
+	for _, preparation := range plan.LPreparationCatalog {
 		if preparation.PkgConfigName == "" {
 			continue
 		}

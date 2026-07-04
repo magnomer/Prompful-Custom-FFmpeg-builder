@@ -1,5 +1,5 @@
 import React from "react";
-import { PHeaderPageRender, PApprovalPanelRender, PProgressBuildLiveRender, PListReviewRender, PTextDescriptionRender } from "./shared";
+import { PHeaderPageRender, PApprovalPanelRender, PProgressLiveRender, PListReviewRender, PTextDescriptionRender } from "./shared";
 import { LPipelineToolchainGet } from "./logutils";
 import { LLocaleTextGet } from "../i18n";
 import notPreparedIcon from "../assets/prep-card-icons/NotPrepared.svg";
@@ -7,7 +7,7 @@ import planToImplementIcon from "../assets/prep-card-icons/PlanToImplement.svg";
 import planReadyIcon from "../assets/prep-card-icons/PlanReady.svg";
 import type { LProgressLive } from "./logs";
 
-export type PPrepProps = {
+export type LPreparationProperties = {
   toolchainPreparationPlanReview: LReviewToolchain | null;
   toolchainLogEntries: { timestamp: string; level: "info" | "warn" | "error"; message: string }[];
   approvedActionPhase: "toolchain" | "ffmpeg" | null;
@@ -22,9 +22,9 @@ export type PPrepProps = {
   currentShellProfileName: string;
   configuredMsys2PackageNames: string[];
   approveToolchainPreparationPlan: () => Promise<void>;
-  cancelToolchainPreparationPlan: () => void;
+  LPlanToolchainCancel: () => void;
   cancelApprovedAction: () => Promise<void>;
-  clearApprovedAction: () => void;
+  LActionApprovedClear: () => void;
   onVerifyToolchain: () => void;
   onReuseToolchain: () => void;
   onReinstallToolchain: () => void;
@@ -95,7 +95,7 @@ function PNoticeToolchainRender(props: { onShowExisting: () => void }) {
 
 // Set difference of package lists: what the current config adds vs what the
 // prepared toolchain has but the config no longer lists.
-function LPackageDriftCompute(configured: string[], prepared: string[]): { added: string[]; removed: string[] } {
+function LPackageDriftGet(configured: string[], prepared: string[]): { added: string[]; removed: string[] } {
   const configuredSet = new Set(configured);
   const preparedSet = new Set(prepared);
   return {
@@ -117,7 +117,7 @@ function PCardRecoveryRender(props: {
   const installedDate = status.createdAt ? new Date(status.createdAt).toLocaleString() : "";
   const hasManifest = status.packageCount > 0;
   // Drift is only meaningful when the prepared profile recorded its package list.
-  const drift = hasManifest ? LPackageDriftCompute(configuredPackageNames, status.packageNames) : { added: [], removed: [] };
+  const drift = hasManifest ? LPackageDriftGet(configuredPackageNames, status.packageNames) : { added: [], removed: [] };
   const hasDrift = drift.added.length > 0 || drift.removed.length > 0;
 
   return (
@@ -164,7 +164,7 @@ function PCardRecoveryRender(props: {
   );
 }
 
-export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntries, approvedActionPhase, approvedActionStatus, toolchainProgress, canCancelToolchain, toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain, isApprovedActionRunning, currentShellProfileName, configuredMsys2PackageNames, approveToolchainPreparationPlan, cancelToolchainPreparationPlan, cancelApprovedAction, clearApprovedAction, onVerifyToolchain, onReuseToolchain, onReinstallToolchain, onGoToBuildConfig, onClearBuildEnvironments }: PPrepProps) {
+export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntries, approvedActionPhase, approvedActionStatus, toolchainProgress, canCancelToolchain, toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain, isApprovedActionRunning, currentShellProfileName, configuredMsys2PackageNames, approveToolchainPreparationPlan, LPlanToolchainCancel, cancelApprovedAction, LActionApprovedClear, onVerifyToolchain, onReuseToolchain, onReinstallToolchain, onGoToBuildConfig, onClearBuildEnvironments }: LPreparationProperties) {
   // A running toolchain action takes priority: show its live progress and hide
   // the approval panel, so a refused/duplicate confirm can never strand the UI on
   // the plan while the install is actually progressing.
@@ -181,7 +181,7 @@ export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntrie
         <PPanelProfileRender profiles={installedToolchainProfiles} currentShellProfileName={currentShellProfileName} onClearBuildEnvironments={onClearBuildEnvironments} />
       )}
       {showApproval && toolchainStatus?.installed && (
-        <PNoticeToolchainRender onShowExisting={cancelToolchainPreparationPlan} />
+        <PNoticeToolchainRender onShowExisting={LPlanToolchainCancel} />
       )}
       {showApproval && (
         <PApprovalPanelRender
@@ -194,7 +194,7 @@ export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntrie
           operations={toolchainPreparationPlanReview.plan.operations}
           warnings={toolchainPreparationPlanReview.plan.warnings}
           isExecutable={toolchainPreparationPlanReview.plan.isExecutable}
-          onCancelPlan={cancelToolchainPreparationPlan}
+          onCancelPlan={LPlanToolchainCancel}
           onRequestBackendConfirmation={approveToolchainPreparationPlan}
           isConfirmationBusy={isApprovedActionRunning}
         />
@@ -214,7 +214,7 @@ export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntrie
         <PCardToolchainRender onGoToBuildConfig={onGoToBuildConfig} />
       )}
       {showProgress && (
-        <PProgressBuildLiveRender
+        <PProgressLiveRender
           isActive={isToolchainRunning}
           approvedActionStatus={approvedActionStatus}
           progress={toolchainProgress}
@@ -222,7 +222,7 @@ export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntrie
           completionLabel={LLocaleTextGet("prep.progress.completionLabel")}
           onCancel={cancelApprovedAction}
           canCancel={canCancelToolchain}
-          onClear={clearApprovedAction}
+          onClear={LActionApprovedClear}
         />
       )}
     </section>

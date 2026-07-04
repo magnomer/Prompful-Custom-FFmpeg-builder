@@ -64,7 +64,7 @@ func LDirectoryChildFind(parentDirectory string) (string, error) {
 }
 
 func LArtifactFFmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace.LWorkspaceLayout, plan planning.LPlanFFmpeg, emitProgress func(string, string)) error {
-	if err := LArtifactFFmpegEmpty(workspaceLayout, emitProgress); err != nil {
+	if err := LFFmpegArtifactCheck(workspaceLayout, emitProgress); err != nil {
 		return err
 	}
 
@@ -234,7 +234,7 @@ func LDllFFmpegCheck(fileName string) bool {
 	return false
 }
 
-func LArtifactFFmpegEmpty(workspaceLayout workspace.LWorkspaceLayout, emitProgress func(string, string)) error {
+func LFFmpegArtifactCheck(workspaceLayout workspace.LWorkspaceLayout, emitProgress func(string, string)) error {
 	if workspaceLayout.ArtifactsDirectory == "" {
 		return errors.New("FFmpeg artifact directory is empty")
 	}
@@ -459,7 +459,7 @@ func LReportArtifactWrite(workspaceLayout workspace.LWorkspaceLayout, LRunId str
 	reportPath := filepath.Join(workspaceLayout.ArtifactsDirectory, "build-report-"+LRunId+".json")
 	ffmpegExecutablePath := filepath.Join(workspaceLayout.ArtifactsDirectory, "ffmpeg.exe")
 	ffprobeExecutablePath := filepath.Join(workspaceLayout.ArtifactsDirectory, "ffprobe.exe")
-	report := map[string]interface{}{"runId": LRunId, "createdAt": time.Now().UTC().Format(time.RFC3339), "approvedPlanHash": plan.PlanHash, "ffmpegVersion": planning.LVersionArchiveParse(plan.FfmpegSourceArchiveUrl), "ffmpegSourceArchiveUrl": plan.FfmpegSourceArchiveUrl, "ffmpegSourceSignatureUrl": plan.FfmpegSourceSignatureUrl, "ffmpegSourceSha256Hash": plan.FfmpegSourceSha256Hash, "selectedLibraries": plan.SelectedLibraries, "selectedConfigureOptions": plan.SelectedConfigureOptions, "requiredMsys2PackageNames": plan.RequiredMsys2PackageNames, "generatedConfigureFlags": plan.GeneratedConfigureFlags, "generatedOptionFlags": plan.GeneratedOptionFlags, "extraConfigureFlags": plan.ExtraConfigureFlags, "configureFlags": plan.ConfigureFlags, "licenseProfileName": plan.LicenseProfileName, "ffmpegExecutablePath": ffmpegExecutablePath, "ffmpegExecutableSha256Hash": LHashFileCreate(ffmpegExecutablePath), "ffmpegExecutableSizeBytes": LFileSizeRead(ffmpegExecutablePath), "ffprobeExecutablePath": ffprobeExecutablePath, "ffprobeExecutableSha256Hash": LHashFileCreate(ffprobeExecutablePath), "ffprobeExecutableSizeBytes": LFileSizeRead(ffprobeExecutablePath), "artifactFiles": LFileArtifactList(workspaceLayout)}
+	report := map[string]interface{}{"runId": LRunId, "createdAt": time.Now().UTC().Format(time.RFC3339), "approvedPlanHash": plan.PlanHash, "ffmpegVersion": planning.LVersionArchiveParse(plan.FfmpegSourceArchiveUrl), "ffmpegSourceArchiveUrl": plan.FfmpegSourceArchiveUrl, "ffmpegSourceSignatureUrl": plan.FfmpegSourceSignatureUrl, "ffmpegSourceSha256Hash": plan.FfmpegSourceSha256Hash, "selectedLibraries": plan.SelectedLibraries, "selectedConfigureOptions": plan.SelectedConfigureOptions, "requiredMsys2PackageNames": plan.RequiredMsys2PackageNames, "generatedConfigureFlags": plan.GeneratedConfigureFlags, "generatedOptionFlags": plan.GeneratedOptionFlags, "extraConfigureFlags": plan.ExtraConfigureFlags, "configureFlags": plan.ConfigureFlags, "licenseProfileName": plan.LicenseProfileName, "ffmpegExecutablePath": ffmpegExecutablePath, "ffmpegExecutableSha256Hash": LHashFileCreate(ffmpegExecutablePath), "ffmpegExecutableSizeBytes": LFileSizeRead(ffmpegExecutablePath), "ffprobeExecutablePath": ffprobeExecutablePath, "ffprobeExecutableSha256Hash": LHashFileCreate(ffprobeExecutablePath), "ffprobeExecutableSizeBytes": LFileSizeRead(ffprobeExecutablePath), "artifactFiles": LArtifactFileList(workspaceLayout)}
 	reportBytes, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
 		return err
@@ -488,14 +488,14 @@ func LArtifactVersionRead(workspaceLayout workspace.LWorkspaceLayout) string {
 	return LVersionFFmpegParse(versionOutput)
 }
 
-// LArtifactLatestLayoutFind returns the workspace layout whose ArtifactsDirectory
+// LArtifactLayoutFind returns the workspace layout whose ArtifactsDirectory
 // holds the most recently written build report. Builds are stored per FFmpeg
 // version under <workspace>/FFmpeg/<version>/, so this scans each version
 // subdirectory (and, for backward compatibility with pre-versioning builds, the
 // FFmpeg base directory itself) and selects the directory with the newest
 // build-report-*.json. When no report exists anywhere it returns the base layout,
 // so callers still get a valid (empty) artifacts directory to report on.
-func LArtifactLatestLayoutFind(workspaceDirectory string) workspace.LWorkspaceLayout {
+func LArtifactLayoutFind(workspaceDirectory string) workspace.LWorkspaceLayout {
 	baseLayout := workspace.LWorkspaceLayoutResolve(workspaceDirectory)
 	candidateDirectories := []string{baseLayout.ArtifactsBaseDirectory}
 	if baseEntries, err := os.ReadDir(baseLayout.ArtifactsBaseDirectory); err == nil {
@@ -579,7 +579,7 @@ func LFileSizeRead(filePath string) int64 {
 	return fileInfo.Size()
 }
 
-func LFileArtifactList(workspaceLayout workspace.LWorkspaceLayout) []LFileResult {
+func LArtifactFileList(workspaceLayout workspace.LWorkspaceLayout) []LFileResult {
 	artifactFiles := []LFileResult{}
 	entries, err := os.ReadDir(workspaceLayout.ArtifactsDirectory)
 	if err != nil {

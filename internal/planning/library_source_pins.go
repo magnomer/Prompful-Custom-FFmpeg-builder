@@ -20,24 +20,24 @@ type LLibrarySourcePin struct {
 }
 
 type LLibrarySourceCatalog struct {
-	SchemaVersion   int                                     `json:"schemaVersion"`
-	LReleaseFFmpegs map[string]LLibrarySourceCatalogRelease `json:"LReleaseFFmpegs"`
+	SchemaVersion   int                              `json:"schemaVersion"`
+	LReleaseFFmpegs map[string]LSourceCatalogRelease `json:"LReleaseFFmpegs"`
 }
 
-type LLibrarySourceCatalogRelease struct {
+type LSourceCatalogRelease struct {
 	Libraries map[string]LLibrarySourcePin `json:"libraries"`
 }
 
-func LLibraryPreparationSourceResolve(ffmpegVersion string, libraryId string) (LLibrarySourcePin, bool) {
-	catalog, err := LLibrarySourceCatalogLoad()
+func LSourceSpecificResolve(ffmpegVersion string, libraryId string) (LLibrarySourcePin, bool) {
+	catalog, err := LLibrarySourceLoad()
 	if err != nil {
 		return LLibrarySourcePin{}, false
 	}
 	return catalog.LSourceResolve(ffmpegVersion, libraryId)
 }
 
-func LLibrarySourceCatalogLoad() (LLibrarySourceCatalog, error) {
-	rawContent, err := catalogfacts.CatalogDataFileRead("catalogdata/librarysources/library-sources.json")
+func LLibrarySourceLoad() (LLibrarySourceCatalog, error) {
+	rawContent, err := catalogfacts.LCatalogFileRead("catalogdata/librarysources/library-sources.json")
 	if err != nil {
 		return LLibrarySourceCatalog{}, fmt.Errorf("read embedded library source catalog: %w", err)
 	}
@@ -51,17 +51,17 @@ func LLibrarySourceCatalogLoad() (LLibrarySourceCatalog, error) {
 func (catalog LLibrarySourceCatalog) LSourceResolve(ffmpegVersion string, libraryId string) (LLibrarySourcePin, bool) {
 	ffmpegVersion = strings.TrimSpace(ffmpegVersion)
 	libraryId = strings.TrimSpace(libraryId)
-	if source, exists := catalog.LSourceResolveExact(ffmpegVersion, libraryId); exists {
+	if source, exists := catalog.LSourceExactResolve(ffmpegVersion, libraryId); exists {
 		return source, true
 	}
-	fallbackVersion := catalog.LHighestReleaseKey()
+	fallbackVersion := catalog.LReleasePinnedGet()
 	if fallbackVersion == "" || fallbackVersion == ffmpegVersion {
 		return LLibrarySourcePin{}, false
 	}
-	return catalog.LSourceResolveExact(fallbackVersion, libraryId)
+	return catalog.LSourceExactResolve(fallbackVersion, libraryId)
 }
 
-func (catalog LLibrarySourceCatalog) LSourceResolveExact(ffmpegVersion string, libraryId string) (LLibrarySourcePin, bool) {
+func (catalog LLibrarySourceCatalog) LSourceExactResolve(ffmpegVersion string, libraryId string) (LLibrarySourcePin, bool) {
 	release, exists := catalog.LReleaseFFmpegs[ffmpegVersion]
 	if !exists {
 		return LLibrarySourcePin{}, false
@@ -73,7 +73,7 @@ func (catalog LLibrarySourceCatalog) LSourceResolveExact(ffmpegVersion string, l
 	return source, strings.TrimSpace(source.Url) != "" && strings.TrimSpace(source.Sha256) != ""
 }
 
-func (catalog LLibrarySourceCatalog) LHighestReleaseKey() string {
+func (catalog LLibrarySourceCatalog) LReleasePinnedGet() string {
 	highest := ""
 	for version := range catalog.LReleaseFFmpegs {
 		if highest == "" || LVersionKeyCompare(version, highest) > 0 {
@@ -87,8 +87,8 @@ func LVersionKeyCompare(left string, right string) int {
 	leftParts := strings.Split(left, ".")
 	rightParts := strings.Split(right, ".")
 	for index := 0; index < len(leftParts) || index < len(rightParts); index++ {
-		leftValue := LVersionKeyPartNumber(leftParts, index)
-		rightValue := LVersionKeyPartNumber(rightParts, index)
+		leftValue := LVersionPartGet(leftParts, index)
+		rightValue := LVersionPartGet(rightParts, index)
 		if leftValue < rightValue {
 			return -1
 		}
@@ -99,7 +99,7 @@ func LVersionKeyCompare(left string, right string) int {
 	return 0
 }
 
-func LVersionKeyPartNumber(parts []string, index int) int {
+func LVersionPartGet(parts []string, index int) int {
 	if index >= len(parts) {
 		return 0
 	}

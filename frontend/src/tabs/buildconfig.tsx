@@ -5,9 +5,9 @@ import technicalDetailsIcon from "../assets/button-icons/TechnicalDetails.svg";
 import buildToolsIcon from "../assets/build-config-card-icons/BuildTools.svg";
 import buildShellIcon from "../assets/build-config-card-icons/BuildShell.svg";
 
-export type PConfigProps = {
-  buildConfigSettings: LSettingsBuild;
-  changeShellProfile: (profileName: string) => void;
+export type LConfigurationProperties = {
+  buildConfigSettings: LSettingsToolchain;
+  LProfileShellUpdate: (profileName: string) => void;
   msys2PackageText: string;
   onMsys2PackageTextChange: (text: string) => void;
 };
@@ -49,7 +49,7 @@ const LToolchainGlossaryIds = [
   "cmake", "ninja", "nasm", "yasm",
 ];
 
-export function PConfigRender({ buildConfigSettings, changeShellProfile, msys2PackageText, onMsys2PackageTextChange }: PConfigProps) {
+export function PConfigRender({ buildConfigSettings, LProfileShellUpdate, msys2PackageText, onMsys2PackageTextChange }: LConfigurationProperties) {
   const [isShellTechnicalOpen, setIsShellTechnicalOpen] = React.useState(false);
   const [isPackagesTechnicalOpen, setIsPackagesTechnicalOpen] = React.useState(false);
 
@@ -74,7 +74,7 @@ export function PConfigRender({ buildConfigSettings, changeShellProfile, msys2Pa
           <PTextDescriptionRender text={LLocaleTextGet("buildConfig.shell.hint")} />
         </div>
         <div className="card__control">
-          <select className="card__input" value={buildConfigSettings.windowsShellProfileName} onChange={(event) => changeShellProfile(event.target.value)}>
+          <select className="card__input" value={buildConfigSettings.windowsShellProfileName} onChange={(event) => LProfileShellUpdate(event.target.value)}>
             <option value="ucrt64">{LLocaleTextGet("buildConfig.shell.ucrt64")}</option>
             <option value="mingw64">{LLocaleTextGet("buildConfig.shell.mingw64")}</option>
             <option value="clang64">{LLocaleTextGet("buildConfig.shell.clang64")}</option>

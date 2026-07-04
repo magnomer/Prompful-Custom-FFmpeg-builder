@@ -26,7 +26,7 @@ func LSessionReviewCreate(actionName string, planHash string, lifetime time.Dura
 	if planHash == "" {
 		return LSessionReview{}, errors.New("review session plan hash is empty")
 	}
-	reviewSessionId, err := LSessionReviewIdCreate()
+	reviewSessionId, err := LReviewIdentifierCreate()
 	if err != nil {
 		return LSessionReview{}, err
 	}
@@ -56,7 +56,7 @@ func LReviewApprovalCheck(reviewSession LSessionReview, approvedActionName strin
 	return nil
 }
 
-func LSessionReviewIdCreate() (string, error) {
+func LReviewIdentifierCreate() (string, error) {
 	randomBytes := make([]byte, 16)
 	if _, err := rand.Read(randomBytes); err != nil {
 		return "", err

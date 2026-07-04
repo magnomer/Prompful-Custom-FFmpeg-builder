@@ -32,7 +32,7 @@ type LCatalogEmbedded struct {
 func LCatalogEmbeddedLoad() (LCatalogEmbedded, error) {
 	catalog := LCatalogEmbedded{}
 	for _, domainName := range []LCatalogDomainName{LCatalogDomainLibraries, LCatalogDomainVersions, LCatalogDomainPresets} {
-		files, err := LCatalogEmbeddedDomainLoad(domainName)
+		files, err := LCatalogDomainRead(domainName)
 		if err != nil {
 			return LCatalogEmbedded{}, err
 		}
@@ -48,13 +48,13 @@ func LCatalogEmbeddedLoad() (LCatalogEmbedded, error) {
 	return catalog, nil
 }
 
-// LCatalogEmbeddedDomainLoad reads one embedded catalog domain.
-func LCatalogEmbeddedDomainLoad(domainName LCatalogDomainName) ([]LCatalogEmbeddedFile, error) {
-	directoryName, err := LCatalogEmbeddedDomainDirectoryName(domainName)
+// LCatalogDomainRead reads one embedded catalog domain.
+func LCatalogDomainRead(domainName LCatalogDomainName) ([]LCatalogEmbeddedFile, error) {
+	directoryName, err := LCatalogDirectoryGet(domainName)
 	if err != nil {
 		return nil, err
 	}
-	sharedFiles, err := catalogfacts.CatalogDataDomainFilesLoad(directoryName)
+	sharedFiles, err := catalogfacts.LCatalogDomainLoad(directoryName)
 	if err != nil {
 		return nil, fmt.Errorf("read embedded catalog domain %q: %w", domainName, err)
 	}
@@ -63,7 +63,7 @@ func LCatalogEmbeddedDomainLoad(domainName LCatalogDomainName) ([]LCatalogEmbedd
 		files = append(files, LCatalogEmbeddedFile{
 			DomainName: domainName,
 			PathName:   sharedFile.Path,
-			FileName:   LCatalogEmbeddedFileNameRead(sharedFile.Path),
+			FileName:   LFileNameGet(sharedFile.Path),
 			BaseName:   sharedFile.Base,
 			RawContent: sharedFile.RawContent,
 		})
@@ -71,7 +71,7 @@ func LCatalogEmbeddedDomainLoad(domainName LCatalogDomainName) ([]LCatalogEmbedd
 	return files, nil
 }
 
-func LCatalogEmbeddedFileNameRead(pathName string) string {
+func LFileNameGet(pathName string) string {
 	pathName = strings.ReplaceAll(pathName, "\\", "/")
 	lastSlashIndex := strings.LastIndex(pathName, "/")
 	if lastSlashIndex < 0 {
@@ -80,7 +80,7 @@ func LCatalogEmbeddedFileNameRead(pathName string) string {
 	return pathName[lastSlashIndex+1:]
 }
 
-func LCatalogEmbeddedDomainDirectoryName(domainName LCatalogDomainName) (string, error) {
+func LCatalogDirectoryGet(domainName LCatalogDomainName) (string, error) {
 	switch domainName {
 	case LCatalogDomainLibraries:
 		return LCatalogEmbeddedRoot + "/libraries", nil

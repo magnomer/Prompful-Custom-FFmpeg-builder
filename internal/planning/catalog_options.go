@@ -22,7 +22,7 @@ func LCatalogOptionBuild() []LOptionChoice {
 	}
 }
 
-func LOptionDefaultList() []string {
+func LOptionDefaultGet() []string {
 	return []string{"default-static", "default-programs", "default-ffmpeg", "default-ffprobe", "pkg-config-static", "disable-doc"}
 }
 

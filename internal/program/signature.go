@@ -10,7 +10,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 )
 
-func LSignatureDetachedPublicVerify(signaturePath string, archivePath string, publicKeyPath string, expectedPrimaryFingerprint string, signatureLabel string, emitProgress func(string, string)) error {
+func LSignatureDetachedVerify(signaturePath string, archivePath string, publicKeyPath string, expectedPrimaryFingerprint string, signatureLabel string, emitProgress func(string, string)) error {
 	publicKeyBytes, err := os.ReadFile(publicKeyPath)
 	if err != nil {
 		return fmt.Errorf("could not read public signing key: %w", err)

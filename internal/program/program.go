@@ -24,18 +24,18 @@ import (
 )
 
 type LProgram struct {
-	LContext                     context.Context
-	LContextAction               context.Context
-	LFunctionActionCancel        context.CancelFunc
-	LMutexAction                 sync.Mutex
-	LMutexReviewSession          sync.Mutex
-	LStoreReviewSessionToolchain map[string]LReviewToolchainStored
-	LStoreReviewSessionFFmpeg    map[string]LReviewFFmpegStored
-	LStateWindowStartup          LStateWindow
-	LLocaleUi                    string
-	LMutexLocaleUi               sync.RWMutex
-	LReporter                    reporting.LReporter
-	LConfirmer                   reporting.LConfirmer
+	LContext                context.Context
+	LContextAction          context.Context
+	LActionCancelFunction   context.CancelFunc
+	LMutexAction            sync.Mutex
+	LMutexReviewSession     sync.Mutex
+	LToolchainReviewStorage map[string]LReviewToolchainStored
+	LFFmpegReviewStorage    map[string]LReviewFFmpegStored
+	LStateWindowStartup     LStateWindow
+	LLocaleUi               string
+	LMutexLocaleUi          sync.RWMutex
+	LReporter               reporting.LReporter
+	LConfirmer              reporting.LConfirmer
 }
 
 type LReviewToolchainStored struct {
@@ -53,12 +53,12 @@ type LStateInitial struct {
 	KindExplanation               string                          `json:"kindExplanation"`
 	SecurityRuleSummary           string                          `json:"securityRuleSummary"`
 	NamingRuleSummary             string                          `json:"namingRuleSummary"`
-	LSettingsBuildCreate          planning.LSettingsBuild         `json:"defaultBuildConfigSettings"`
-	LSettingsFFmpegCreate         planning.LSettingsFFmpeg        `json:"defaultFfmpegBuildSettings"`
+	LBuildSettingsDefault         planning.LSettingsToolchain     `json:"defaultBuildConfigSettings"`
+	LFFmpegSettingsDefault        planning.LSettingsFFmpeg        `json:"defaultFfmpegBuildSettings"`
 	DefaultLibraryCatalog         []planning.LLibraryChoice       `json:"defaultLibraryCatalog"`
 	DefaultLibraryPresetCatalog   []planning.LPresetLibraryChoice `json:"defaultLibraryPresetCatalog"`
 	DefaultConfigureOptionCatalog []planning.LOptionChoice        `json:"defaultConfigureOptionCatalog"`
-	LReleaseSupportedListGet      []planning.LReleaseChoice       `json:"supportedFfmpegReleases"`
+	LReleaseSupportedCatalog      []planning.LReleaseChoice       `json:"supportedFfmpegReleases"`
 }
 
 type LResultAction struct {
@@ -73,7 +73,7 @@ type LFileResult struct {
 	Sha256Hash string `json:"sha256Hash"`
 }
 
-type LResultBuild struct {
+type LResultState struct {
 	ArtifactsDirectory        string        `json:"artifactsDirectory"`
 	ReportPath                string        `json:"reportPath"`
 	FfmpegVersion             string        `json:"ffmpegVersion"`
@@ -98,7 +98,7 @@ type LReportArtifact struct {
 }
 
 func LProgramCreate() *LProgram {
-	return &LProgram{LStateWindowStartup: LStateWindowLoad(), LStoreReviewSessionToolchain: map[string]LReviewToolchainStored{}, LStoreReviewSessionFFmpeg: map[string]LReviewFFmpegStored{}}
+	return &LProgram{LStateWindowStartup: LStateWindowLoad(), LToolchainReviewStorage: map[string]LReviewToolchainStored{}, LFFmpegReviewStorage: map[string]LReviewFFmpegStored{}}
 }
 
 func LWindowInitialRead(program *LProgram) (int, int) {
@@ -113,13 +113,13 @@ func (program *LProgram) LProgramStart(LContext context.Context) {
 	program.LContext = LContext
 	program.LReporter = LReporterWails{program: program}
 	program.LConfirmer = LConfirmerWails{program: program}
-	program.lWindowGeometryRestore()
+	program.LWindowGeometryRestore()
 }
 
 // LWindowCloseCheck runs while the window still exists, so it is the safe place to
 // read window geometry. Returning false allows the close to proceed.
 func (program *LProgram) LWindowCloseCheck(LContext context.Context) bool {
-	program.lWindowGeometrySave(LContext)
+	program.LWindowGeometrySave(LContext)
 	return false
 }
 
@@ -155,38 +155,38 @@ func (program *LProgram) LStateInitialGet() LStateInitial {
 		KindExplanation:               LLocaleTextGetInternal("initial.kindExplanation", nil),
 		SecurityRuleSummary:           LLocaleTextGetInternal("initial.securityRuleSummary", nil),
 		NamingRuleSummary:             LLocaleTextGetInternal("initial.namingRuleSummary", nil),
-		LSettingsBuildCreate:          planning.LSettingsBuildCreate(),
-		LSettingsFFmpegCreate:         planning.LSettingsFFmpegCreate(),
-		DefaultLibraryCatalog:         planning.LCatalogSourceBuildResolved(planning.LSettingsFFmpegCreate().FfmpegSourceArchiveUrl, planning.LSettingsFFmpegCreate().WindowsShellProfileName),
-		DefaultLibraryPresetCatalog:   planning.LCatalogPresetSourceBuildResolved(planning.LSettingsFFmpegCreate().FfmpegSourceArchiveUrl, planning.LSettingsFFmpegCreate().WindowsShellProfileName),
+		LBuildSettingsDefault:         planning.LSettingsBuildCreate(),
+		LFFmpegSettingsDefault:        planning.LSettingsFFmpegCreate(),
+		DefaultLibraryCatalog:         planning.LCatalogLibraryGet(planning.LSettingsFFmpegCreate().FfmpegSourceArchiveUrl, planning.LSettingsFFmpegCreate().WindowsShellProfileName),
+		DefaultLibraryPresetCatalog:   planning.LCatalogPresetGet(planning.LSettingsFFmpegCreate().FfmpegSourceArchiveUrl, planning.LSettingsFFmpegCreate().WindowsShellProfileName),
 		DefaultConfigureOptionCatalog: planning.LCatalogOptionBuild(),
-		LReleaseSupportedListGet:      planning.LReleaseSupportedListGet(),
+		LReleaseSupportedCatalog:      planning.LReleaseSupportedGet(),
 	}
 }
 
 func (program *LProgram) LCatalogSourceGet(ffmpegSourceArchiveUrl string, windowsShellProfileName string) []planning.LLibraryChoice {
-	return planning.LCatalogSourceBuildResolved(ffmpegSourceArchiveUrl, windowsShellProfileName)
+	return planning.LCatalogLibraryGet(ffmpegSourceArchiveUrl, windowsShellProfileName)
 }
 
-func (program *LProgram) LCatalogPresetSourceGet(ffmpegSourceArchiveUrl string, windowsShellProfileName string) []planning.LPresetLibraryChoice {
-	return planning.LCatalogPresetSourceBuildResolved(ffmpegSourceArchiveUrl, windowsShellProfileName)
+func (program *LProgram) LPresetSourceGet(ffmpegSourceArchiveUrl string, windowsShellProfileName string) []planning.LPresetLibraryChoice {
+	return planning.LCatalogPresetGet(ffmpegSourceArchiveUrl, windowsShellProfileName)
 }
 
-func (program *LProgram) LResultBuildGet(workspaceDirectory string) (LResultBuild, error) {
-	workspaceLayout := LArtifactLatestLayoutFind(workspaceDirectory)
+func (program *LProgram) LResultBuildGet(workspaceDirectory string) (LResultState, error) {
+	workspaceLayout := LArtifactLayoutFind(workspaceDirectory)
 	if err := workspace.LPathRealCheck(workspaceLayout.WorkspaceDirectory, workspaceLayout.ArtifactsDirectory); err != nil {
-		return LResultBuild{}, err
+		return LResultState{}, err
 	}
 	if err := os.MkdirAll(workspaceLayout.ArtifactsDirectory, 0o755); err != nil {
-		return LResultBuild{}, err
+		return LResultState{}, err
 	}
 	if err := workspace.LPathRealCheck(workspaceLayout.WorkspaceDirectory, workspaceLayout.ArtifactsDirectory); err != nil {
-		return LResultBuild{}, err
+		return LResultState{}, err
 	}
-	result := LResultBuild{ArtifactsDirectory: workspaceLayout.ArtifactsDirectory, Files: []LFileResult{}, SelectedLibraries: []string{}, SelectedConfigureOptions: []string{}, RequiredMsys2PackageNames: []string{}, ConfigureFlags: []string{}}
+	result := LResultState{ArtifactsDirectory: workspaceLayout.ArtifactsDirectory, Files: []LFileResult{}, SelectedLibraries: []string{}, SelectedConfigureOptions: []string{}, RequiredMsys2PackageNames: []string{}, ConfigureFlags: []string{}}
 	artifactEntries, err := os.ReadDir(workspaceLayout.ArtifactsDirectory)
 	if err != nil {
-		return LResultBuild{}, err
+		return LResultState{}, err
 	}
 	for _, artifactEntry := range artifactEntries {
 		if artifactEntry.IsDir() {
@@ -199,11 +199,11 @@ func (program *LProgram) LResultBuildGet(workspaceDirectory string) (LResultBuil
 		}
 		artifactPath := filepath.Join(workspaceLayout.ArtifactsDirectory, artifactName)
 		if err := workspace.LPathRealCheck(workspaceLayout.WorkspaceDirectory, artifactPath); err != nil {
-			return LResultBuild{}, err
+			return LResultState{}, err
 		}
 		fileInfo, err := os.Stat(artifactPath)
 		if err != nil {
-			return LResultBuild{}, err
+			return LResultState{}, err
 		}
 		result.Files = append(result.Files, LFileResult{Name: artifactName, Path: artifactPath, SizeBytes: fileInfo.Size(), Sha256Hash: LHashFileCreate(artifactPath)})
 	}
@@ -246,7 +246,7 @@ func (program *LProgram) LResultBuildGet(workspaceDirectory string) (LResultBuil
 }
 
 func (program *LProgram) LDirectoryResultOpen(workspaceDirectory string) error {
-	workspaceLayout := LArtifactLatestLayoutFind(workspaceDirectory)
+	workspaceLayout := LArtifactLayoutFind(workspaceDirectory)
 	if err := os.MkdirAll(workspaceLayout.ArtifactsDirectory, 0o755); err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func (program *LProgram) LDirectoryResultOpen(workspaceDirectory string) error {
 }
 
 func (program *LProgram) LReportResultOpen(workspaceDirectory string) error {
-	workspaceLayout := LArtifactLatestLayoutFind(workspaceDirectory)
+	workspaceLayout := LArtifactLayoutFind(workspaceDirectory)
 	reportPath, _, err := LReportLatestRead(workspaceLayout)
 	if err != nil {
 		return err
@@ -295,7 +295,7 @@ func (program *LProgram) LWorkspaceSelect() (string, error) {
 	return selection, nil
 }
 
-func (program *LProgram) LPlanToolchainRequest(buildConfigSettings planning.LSettingsBuild) (planning.LReviewToolchain, error) {
+func (program *LProgram) LPlanToolchainRequest(buildConfigSettings planning.LSettingsToolchain) (planning.LReviewToolchain, error) {
 	plan, err := planning.LPlanToolchainCreate(buildConfigSettings)
 	if err != nil {
 		return planning.LReviewToolchain{}, err
@@ -305,7 +305,7 @@ func (program *LProgram) LPlanToolchainRequest(buildConfigSettings planning.LSet
 		return planning.LReviewToolchain{}, err
 	}
 	program.LMutexReviewSession.Lock()
-	program.LStoreReviewSessionToolchain[reviewSession.ReviewSessionId] = LReviewToolchainStored{ReviewSession: reviewSession, Plan: plan}
+	program.LToolchainReviewStorage[reviewSession.ReviewSessionId] = LReviewToolchainStored{ReviewSession: reviewSession, Plan: plan}
 	program.LMutexReviewSession.Unlock()
 	return planning.LReviewToolchain{ReviewSessionId: reviewSession.ReviewSessionId, ExpectedLConsentText: reviewSession.ExpectedLConsentText, ExpectedLConsentTextHash: reviewSession.ExpectedLConsentTextHash, ExpiresAtUnixTime: reviewSession.ExpiresAtUnixTime, Plan: plan}, nil
 }
@@ -320,7 +320,7 @@ func (program *LProgram) LPlanFFmpegRequest(ffmpegBuildSettings planning.LSettin
 		return planning.LReviewFFmpeg{}, err
 	}
 	program.LMutexReviewSession.Lock()
-	program.LStoreReviewSessionFFmpeg[reviewSession.ReviewSessionId] = LReviewFFmpegStored{ReviewSession: reviewSession, Plan: plan}
+	program.LFFmpegReviewStorage[reviewSession.ReviewSessionId] = LReviewFFmpegStored{ReviewSession: reviewSession, Plan: plan}
 	program.LMutexReviewSession.Unlock()
 	return planning.LReviewFFmpeg{ReviewSessionId: reviewSession.ReviewSessionId, ExpectedLConsentText: reviewSession.ExpectedLConsentText, ExpectedLConsentTextHash: reviewSession.ExpectedLConsentTextHash, ExpiresAtUnixTime: reviewSession.ExpiresAtUnixTime, Plan: plan}, nil
 }
@@ -328,28 +328,28 @@ func (program *LProgram) LPlanFFmpegRequest(ffmpegBuildSettings planning.LSettin
 // LPlanToolchainApprove validates the review, confirms, and prepares the
 // toolchain asynchronously (GUI behavior).
 func (program *LProgram) LPlanToolchainApprove(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
-	plan, err := program.lToolchainApproveValidate(reviewSessionId, approval)
+	plan, err := program.LToolchainApproveValidate(reviewSessionId, approval)
 	if err != nil {
 		return LResultAction{}, err
 	}
-	return program.lToolchainPrepareLaunch(plan, approval, false)
+	return program.LToolchainPrepareLaunch(plan, approval, false)
 }
 
-// LPlanToolchainApproveSync is the CLI counterpart: it prepares the toolchain
+// LToolchainApproveSync is the CLI counterpart: it prepares the toolchain
 // inline and returns only after preparation finishes, so the caller can map the
 // outcome to an exit code. The final status arrives through the reporter.
-func (program *LProgram) LPlanToolchainApproveSync(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
-	plan, err := program.lToolchainApproveValidate(reviewSessionId, approval)
+func (program *LProgram) LToolchainApproveSync(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
+	plan, err := program.LToolchainApproveValidate(reviewSessionId, approval)
 	if err != nil {
 		return LResultAction{}, err
 	}
-	return program.lToolchainPrepareLaunch(plan, approval, true)
+	return program.LToolchainPrepareLaunch(plan, approval, true)
 }
 
-// lToolchainApproveValidate performs the shared validation for both toolchain
+// LToolchainApproveValidate performs the shared validation for both toolchain
 // approve paths and consumes the single-use session only after confirmation.
-func (program *LProgram) lToolchainApproveValidate(reviewSessionId string, approval consent.LRequestApproval) (planning.LPlanToolchain, error) {
-	storedReviewSession, err := program.lReviewToolchainValidate(reviewSessionId, approval)
+func (program *LProgram) LToolchainApproveValidate(reviewSessionId string, approval consent.LRequestApproval) (planning.LPlanToolchain, error) {
+	storedReviewSession, err := program.LToolchainReviewValidate(reviewSessionId, approval)
 	if err != nil {
 		return planning.LPlanToolchain{}, err
 	}
@@ -360,21 +360,21 @@ func (program *LProgram) lToolchainApproveValidate(reviewSessionId string, appro
 	if err := LHashToolchainVerify(plan); err != nil {
 		return planning.LPlanToolchain{}, err
 	}
-	confirmed, err := program.lConsentNativeAsk(plan.ActionName, plan.PlanHash)
+	confirmed, err := program.LNativeConsentAsk(plan.ActionName, plan.PlanHash)
 	if err != nil {
 		return planning.LPlanToolchain{}, err
 	}
 	if !confirmed {
 		return planning.LPlanToolchain{}, errors.New("user rejected approval in backend-owned confirmation")
 	}
-	program.lReviewToolchainConsume(reviewSessionId)
+	program.LToolchainReviewConsume(reviewSessionId)
 	return plan, nil
 }
 
-// lToolchainPrepareLaunch builds the per-action consents and starts the
+// LToolchainPrepareLaunch builds the per-action consents and starts the
 // toolchain worker, inline when runInline is true (CLI) or on a goroutine
 // otherwise (GUI).
-func (program *LProgram) lToolchainPrepareLaunch(plan planning.LPlanToolchain, approval consent.LRequestApproval, runInline bool) (LResultAction, error) {
+func (program *LProgram) LToolchainPrepareLaunch(plan planning.LPlanToolchain, approval consent.LRequestApproval, runInline bool) (LResultAction, error) {
 	userLConsentMsys, err := consent.LConsentMsysCreate(approval)
 	if err != nil {
 		return LResultAction{}, err
@@ -387,14 +387,14 @@ func (program *LProgram) lToolchainPrepareLaunch(plan planning.LPlanToolchain, a
 	if err != nil {
 		return LResultAction{}, err
 	}
-	LRunId, LContextAction, err := program.lActionApprovedStart()
+	LRunId, LContextAction, err := program.LActionApprovedStart()
 	if err != nil {
 		return LResultAction{}, err
 	}
 	if runInline {
-		program.lToolchainPrepare(LContextAction, LRunId, plan, userLConsentMsys, userLConsentArchive, userPacmanPackageInstallLConsent)
+		program.LToolchainPrepare(LContextAction, LRunId, plan, userLConsentMsys, userLConsentArchive, userPacmanPackageInstallLConsent)
 	} else {
-		go program.lToolchainPrepare(LContextAction, LRunId, plan, userLConsentMsys, userLConsentArchive, userPacmanPackageInstallLConsent)
+		go program.LToolchainPrepare(LContextAction, LRunId, plan, userLConsentMsys, userLConsentArchive, userPacmanPackageInstallLConsent)
 	}
 	return LResultAction{RunId: LRunId, StartedAt: time.Now().UTC().Format(time.RFC3339)}, nil
 }
@@ -403,31 +403,31 @@ func (program *LProgram) lToolchainPrepareLaunch(plan planning.LPlanToolchain, a
 // asynchronously (GUI behavior: returns a RunId immediately, progress arrives
 // through the reporter).
 func (program *LProgram) LPlanFFmpegApprove(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
-	plan, err := program.lFFmpegApproveValidate(reviewSessionId, approval)
+	plan, err := program.LFFmpegApproveValidate(reviewSessionId, approval)
 	if err != nil {
 		return LResultAction{}, err
 	}
-	return program.lFFmpegBuildLaunch(plan, approval, false)
+	return program.LFFmpegCompilationLaunch(plan, approval, false)
 }
 
-// LPlanFFmpegApproveSync is the CLI counterpart of LPlanFFmpegApprove: it runs
+// LFFmpegApproveSync is the CLI counterpart of LPlanFFmpegApprove: it runs
 // the build inline and returns only after the build finishes, so the caller can
 // map the outcome to an exit code. The final status is delivered through the
 // reporter, exactly as in the async path.
-func (program *LProgram) LPlanFFmpegApproveSync(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
-	plan, err := program.lFFmpegApproveValidate(reviewSessionId, approval)
+func (program *LProgram) LFFmpegApproveSync(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
+	plan, err := program.LFFmpegApproveValidate(reviewSessionId, approval)
 	if err != nil {
 		return LResultAction{}, err
 	}
-	return program.lFFmpegBuildLaunch(plan, approval, true)
+	return program.LFFmpegCompilationLaunch(plan, approval, true)
 }
 
-// lFFmpegApproveValidate performs the shared, side-effect-ordered validation for
+// LFFmpegApproveValidate performs the shared, side-effect-ordered validation for
 // both approve paths: session check, executability, hash, toolchain readiness,
 // and the backend-owned confirmation. It consumes the single-use session only
 // after confirmation succeeds, so a rejected confirmation leaves it retryable.
-func (program *LProgram) lFFmpegApproveValidate(reviewSessionId string, approval consent.LRequestApproval) (planning.LPlanFFmpeg, error) {
-	storedReviewSession, err := program.lReviewFFmpegValidate(reviewSessionId, approval)
+func (program *LProgram) LFFmpegApproveValidate(reviewSessionId string, approval consent.LRequestApproval) (planning.LPlanFFmpeg, error) {
+	storedReviewSession, err := program.LFFmpegReviewValidate(reviewSessionId, approval)
 	if err != nil {
 		return planning.LPlanFFmpeg{}, err
 	}
@@ -438,23 +438,23 @@ func (program *LProgram) lFFmpegApproveValidate(reviewSessionId string, approval
 	if err := LHashFFmpegVerify(plan); err != nil {
 		return planning.LPlanFFmpeg{}, err
 	}
-	if err := LToolchainBuildPreparedCheck(plan.WorkspaceDirectory, plan.WindowsShellProfileName); err != nil {
+	if err := LToolchainPreparedCheck(plan.WorkspaceDirectory, plan.WindowsShellProfileName); err != nil {
 		return planning.LPlanFFmpeg{}, err
 	}
-	confirmed, err := program.lConsentNativeAsk(plan.ActionName, plan.PlanHash)
+	confirmed, err := program.LNativeConsentAsk(plan.ActionName, plan.PlanHash)
 	if err != nil {
 		return planning.LPlanFFmpeg{}, err
 	}
 	if !confirmed {
 		return planning.LPlanFFmpeg{}, errors.New("user rejected approval in backend-owned confirmation")
 	}
-	program.lReviewFFmpegConsume(reviewSessionId)
+	program.LFFmpegReviewConsume(reviewSessionId)
 	return plan, nil
 }
 
-// lFFmpegBuildLaunch builds the per-action consents and starts the build worker,
+// LFFmpegCompilationLaunch builds the per-action consents and starts the build worker,
 // inline when runInline is true (CLI) or on a goroutine otherwise (GUI).
-func (program *LProgram) lFFmpegBuildLaunch(plan planning.LPlanFFmpeg, approval consent.LRequestApproval, runInline bool) (LResultAction, error) {
+func (program *LProgram) LFFmpegCompilationLaunch(plan planning.LPlanFFmpeg, approval consent.LRequestApproval, runInline bool) (LResultAction, error) {
 	userLConsentFFmpeg, err := consent.LConsentFFmpegCreate(approval)
 	if err != nil {
 		return LResultAction{}, err
@@ -471,26 +471,26 @@ func (program *LProgram) lFFmpegBuildLaunch(plan planning.LPlanFFmpeg, approval 
 	if err != nil {
 		return LResultAction{}, err
 	}
-	LRunId, LContextAction, err := program.lActionApprovedStart()
+	LRunId, LContextAction, err := program.LActionApprovedStart()
 	if err != nil {
 		return LResultAction{}, err
 	}
 	if runInline {
-		program.lFFmpegBuild(LContextAction, LRunId, plan, userLConsentFFmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
+		program.LFFmpegCompile(LContextAction, LRunId, plan, userLConsentFFmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
 	} else {
-		go program.lFFmpegBuild(LContextAction, LRunId, plan, userLConsentFFmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
+		go program.LFFmpegCompile(LContextAction, LRunId, plan, userLConsentFFmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
 	}
 	return LResultAction{RunId: LRunId, StartedAt: time.Now().UTC().Format(time.RFC3339)}, nil
 }
 
-// lReviewToolchainValidate checks the session without consuming it, so a
+// LToolchainReviewValidate checks the session without consuming it, so a
 // later step (the native confirmation dialog) can still be cancelled or retried.
-// The session is only removed by lReviewToolchainConsume once the user has
+// The session is only removed by LToolchainReviewConsume once the user has
 // confirmed, which keeps it single-use without losing it on a rejected dialog.
-func (program *LProgram) lReviewToolchainValidate(reviewSessionId string, approval consent.LRequestApproval) (LReviewToolchainStored, error) {
+func (program *LProgram) LToolchainReviewValidate(reviewSessionId string, approval consent.LRequestApproval) (LReviewToolchainStored, error) {
 	program.LMutexReviewSession.Lock()
 	defer program.LMutexReviewSession.Unlock()
-	storedReviewSession, exists := program.LStoreReviewSessionToolchain[reviewSessionId]
+	storedReviewSession, exists := program.LToolchainReviewStorage[reviewSessionId]
 	if !exists {
 		return LReviewToolchainStored{}, errors.New("toolchain review session was not found")
 	}
@@ -500,16 +500,16 @@ func (program *LProgram) lReviewToolchainValidate(reviewSessionId string, approv
 	return storedReviewSession, nil
 }
 
-func (program *LProgram) lReviewToolchainConsume(reviewSessionId string) {
+func (program *LProgram) LToolchainReviewConsume(reviewSessionId string) {
 	program.LMutexReviewSession.Lock()
 	defer program.LMutexReviewSession.Unlock()
-	delete(program.LStoreReviewSessionToolchain, reviewSessionId)
+	delete(program.LToolchainReviewStorage, reviewSessionId)
 }
 
-func (program *LProgram) lReviewFFmpegValidate(reviewSessionId string, approval consent.LRequestApproval) (LReviewFFmpegStored, error) {
+func (program *LProgram) LFFmpegReviewValidate(reviewSessionId string, approval consent.LRequestApproval) (LReviewFFmpegStored, error) {
 	program.LMutexReviewSession.Lock()
 	defer program.LMutexReviewSession.Unlock()
-	storedReviewSession, exists := program.LStoreReviewSessionFFmpeg[reviewSessionId]
+	storedReviewSession, exists := program.LFFmpegReviewStorage[reviewSessionId]
 	if !exists {
 		return LReviewFFmpegStored{}, errors.New("FFmpeg review session was not found")
 	}
@@ -519,13 +519,13 @@ func (program *LProgram) lReviewFFmpegValidate(reviewSessionId string, approval 
 	return storedReviewSession, nil
 }
 
-func (program *LProgram) lReviewFFmpegConsume(reviewSessionId string) {
+func (program *LProgram) LFFmpegReviewConsume(reviewSessionId string) {
 	program.LMutexReviewSession.Lock()
 	defer program.LMutexReviewSession.Unlock()
-	delete(program.LStoreReviewSessionFFmpeg, reviewSessionId)
+	delete(program.LFFmpegReviewStorage, reviewSessionId)
 }
 
-func (program *LProgram) lConsentNativeAsk(actionName string, planHash string) (bool, error) {
+func (program *LProgram) LNativeConsentAsk(actionName string, planHash string) (bool, error) {
 	if program.LConfirmer == nil {
 		return false, errors.New("no approval confirmer is configured")
 	}
@@ -535,70 +535,70 @@ func (program *LProgram) lConsentNativeAsk(actionName string, planHash string) (
 func (program *LProgram) LActionApprovedCancel() bool {
 	program.LMutexAction.Lock()
 	defer program.LMutexAction.Unlock()
-	if program.LFunctionActionCancel == nil {
+	if program.LActionCancelFunction == nil {
 		return false
 	}
-	program.LFunctionActionCancel()
-	program.lLogEmit("warn", LLocaleTextGetInternal("logs.system.cancellationRequested", nil))
+	program.LActionCancelFunction()
+	program.LLogEmit("warn", LLocaleTextGetInternal("logs.system.cancellationRequested", nil))
 	return true
 }
 
-func (program *LProgram) lActionApprovedStart() (string, context.Context, error) {
+func (program *LProgram) LActionApprovedStart() (string, context.Context, error) {
 	program.LMutexAction.Lock()
 	defer program.LMutexAction.Unlock()
-	if program.LFunctionActionCancel != nil {
+	if program.LActionCancelFunction != nil {
 		return "", nil, errors.New("an approved action is already running")
 	}
-	LContextAction, LFunctionActionCancel := context.WithCancel(context.Background())
+	LContextAction, LActionCancelFunction := context.WithCancel(context.Background())
 	program.LContextAction = LContextAction
-	program.LFunctionActionCancel = LFunctionActionCancel
+	program.LActionCancelFunction = LActionCancelFunction
 	LRunId := time.Now().UTC().Format("20060102T150405Z")
 	return LRunId, LContextAction, nil
 }
 
-func (program *LProgram) lActionApprovedFinish(status string) {
+func (program *LProgram) LActionApprovedFinish(status string) {
 	program.LMutexAction.Lock()
-	program.LFunctionActionCancel = nil
+	program.LActionCancelFunction = nil
 	program.LContextAction = nil
 	program.LMutexAction.Unlock()
-	program.lStatusEmit(status)
+	program.LStatusEmit(status)
 }
 
-func (program *LProgram) lAuditProgressCreate(auditWriter *audit.LAuditWriter, actionName string, planHash string) func(string, string) {
+func (program *LProgram) LAuditProgressCreate(auditWriter *audit.LAuditWriter, actionName string, planHash string) func(string, string) {
 	return func(level string, message string) {
 		_ = auditWriter.LAuditEventWrite("log", actionName, planHash, level, message)
-		program.lLogEmit(level, message)
+		program.LLogEmit(level, message)
 	}
 }
 
-func (program *LProgram) lStatusEmit(status string) {
+func (program *LProgram) LStatusEmit(status string) {
 	if program.LReporter != nil {
 		program.LReporter.LReporterStatusEmit(status)
 	}
 }
 
-func (program *LProgram) lLogEmit(level string, message string) {
+func (program *LProgram) LLogEmit(level string, message string) {
 	if program.LReporter != nil {
 		program.LReporter.LReporterLogEmit(level, message)
 	}
 }
 
-func (program *LProgram) lStatusFailureEmit(message string, err error) {
-	program.lLogEmit("error", message+": "+err.Error())
-	program.lStatusEmit("failed")
+func (program *LProgram) LStatusFailureEmit(message string, err error) {
+	program.LLogEmit("error", message+": "+err.Error())
+	program.LStatusEmit("failed")
 }
 
-func (program *LProgram) lErrorLocalizedEmit(messageKey string, fallback string, err error) {
+func (program *LProgram) LErrorLocalizedEmit(messageKey string, fallback string, err error) {
 	message := LLocaleTextGetInternal(messageKey, nil)
 	if message == messageKey {
 		message = fallback
 	}
-	program.lStatusFailureEmit(message, err)
+	program.LStatusFailureEmit(message, err)
 }
 
 func LPolicyHashResolve(expectedSha256Hash string) download.LPolicyFile {
 	if expectedSha256Hash == "" {
 		return download.LPolicyFileOverwrite
 	}
-	return download.LPolicyFileHashReuse
+	return download.LHashReusePolicy
 }

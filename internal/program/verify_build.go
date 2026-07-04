@@ -34,9 +34,9 @@ type LVerificationLibrary struct {
 	Status        string   `json:"status"` // "ok" | "missing" | "builtin"
 }
 
-// LVerificationBuild is the Method A result: compare the build plan's libraries
+// LVerificationState is the Method A result: compare the build plan's libraries
 // against the configuration string the built ffmpeg.exe reports for itself.
-type LVerificationBuild struct {
+type LVerificationState struct {
 	FfmpegPath            string                 `json:"ffmpegPath"`
 	FfmpegVersion         string                 `json:"ffmpegVersion"`
 	Libraries             []LVerificationLibrary `json:"libraries"`
@@ -50,20 +50,20 @@ type LVerificationBuild struct {
 
 // LVerificationBuildRun runs the built ffmpeg.exe, reads the configure flags it was
 // compiled with, and checks each planned library's enable flag is present.
-func (program *LProgram) LVerificationBuildRun(workspaceDirectory string) (LVerificationBuild, error) {
+func (program *LProgram) LVerificationBuildRun(workspaceDirectory string) (LVerificationState, error) {
 	if workspaceDirectory == "" {
-		return LVerificationBuild{}, errors.New("workspace directory is required")
+		return LVerificationState{}, errors.New("workspace directory is required")
 	}
-	layout := LArtifactLatestLayoutFind(workspaceDirectory)
+	layout := LArtifactLayoutFind(workspaceDirectory)
 	if err := workspace.LPathRealCheck(layout.WorkspaceDirectory, layout.ArtifactsDirectory); err != nil {
-		return LVerificationBuild{}, err
+		return LVerificationState{}, err
 	}
 	ffmpegPath := filepath.Join(layout.ArtifactsDirectory, "ffmpeg.exe")
 	if err := workspace.LPathRealCheck(layout.WorkspaceDirectory, ffmpegPath); err != nil {
-		return LVerificationBuild{}, err
+		return LVerificationState{}, err
 	}
 
-	verification := LVerificationBuild{
+	verification := LVerificationState{
 		FfmpegPath:            ffmpegPath,
 		Libraries:             []LVerificationLibrary{},
 		UnexpectedEnableFlags: []string{},
@@ -103,7 +103,7 @@ func (program *LProgram) LVerificationBuildRun(workspaceDirectory string) (LVeri
 	componentNamesLoaded := false
 	ensureComponentNames := func() map[string]bool {
 		if !componentNamesLoaded {
-			componentNames = LFFmpegComponentProbe(ffmpegPath)
+			componentNames = LFFmpegComponentGet(ffmpegPath)
 			componentNamesLoaded = true
 		}
 		return componentNames
@@ -206,7 +206,7 @@ func LCatalogLibraryRead(ffmpegVersion string) map[string]bool {
 	if versionName == "" {
 		return flags
 	}
-	resolvedPlan, err := planning.LCatalogEmbeddedVersionResolve(planning.LCatalogResolutionSettings{
+	resolvedPlan, err := planning.LCatalogEmbeddedResolve(planning.LCatalogResolutionSettings{
 		FfmpegVersion:           versionName,
 		WindowsShellProfileName: planning.LSettingsFFmpegCreate().WindowsShellProfileName,
 	})
@@ -214,15 +214,15 @@ func LCatalogLibraryRead(ffmpegVersion string) map[string]bool {
 		return flags
 	}
 	for _, library := range resolvedPlan.VisibleLibraries {
-		LCatalogLibraryFlagsAdd(flags, library.ConfigureFlags)
+		LLibraryFlagsAdd(flags, library.ConfigureFlags)
 	}
 	for _, library := range resolvedPlan.UnsupportedLibraries {
-		LCatalogLibraryFlagsAdd(flags, library.ConfigureFlags)
+		LLibraryFlagsAdd(flags, library.ConfigureFlags)
 	}
 	return flags
 }
 
-func LCatalogLibraryFlagsAdd(flags map[string]bool, configureFlags []string) {
+func LLibraryFlagsAdd(flags map[string]bool, configureFlags []string) {
 	for _, flag := range configureFlags {
 		flag = strings.TrimSpace(flag)
 		if strings.HasPrefix(flag, "--enable-") {
@@ -231,10 +231,10 @@ func LCatalogLibraryFlagsAdd(flags map[string]bool, configureFlags []string) {
 	}
 }
 
-// LFFmpegComponentProbe runs the built ffmpeg and collects the names of every
+// LFFmpegComponentGet runs the built ffmpeg and collects the names of every
 // decoder/encoder/demuxer/muxer it reports, so flagless libraries can be checked
 // by the component they provide (e.g. the "png" decoder).
-func LFFmpegComponentProbe(ffmpegPath string) map[string]bool {
+func LFFmpegComponentGet(ffmpegPath string) map[string]bool {
 	names := map[string]bool{}
 	for _, listArg := range []string{"-decoders", "-encoders", "-demuxers", "-muxers"} {
 		output, err := LFFmpegListRun(ffmpegPath, listArg)

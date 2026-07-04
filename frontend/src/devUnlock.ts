@@ -20,10 +20,10 @@
 
 const LUnlockKeyBasic = "ffbuilder.devUnlockUnavailable";
 const LUnlockKeySudo = "ffbuilder.sudoDevUnlock";
-const LUnlockClickRequiredCount = 12;
+const LUnlockClickTarget = 12;
 
-let LUnlockVersionClickCount = 0;
-let LUnlockIndicatorClickCount = 0;
+let LUnlockVersionCount = 0;
+let LUnlockIndicatorCount = 0;
 
 export function LUnlockBasicCheck(): boolean {
   try {
@@ -75,32 +75,32 @@ function LUnlockSudoSet(enabled: boolean): boolean {
   return enabled && LUnlockBasicCheck();
 }
 
-// LUnlockVersionClickRegister records one click on the version number and returns the
+// LUnlockVersionAdd records one click on the version number and returns the
 // current basic developer-unlock state. Every twelve clicks toggle the state: locked
 // -> unlocked, then unlocked -> locked, and so on.
-export function LUnlockVersionClickRegister(): boolean {
-  LUnlockVersionClickCount += 1;
-  if (LUnlockVersionClickCount < LUnlockClickRequiredCount) {
+export function LUnlockVersionAdd(): boolean {
+  LUnlockVersionCount += 1;
+  if (LUnlockVersionCount < LUnlockClickTarget) {
     return LUnlockBasicCheck();
   }
 
-  LUnlockVersionClickCount = 0;
+  LUnlockVersionCount = 0;
   return LUnlockBasicSet(!LUnlockBasicCheck());
 }
 
-// LUnlockIndicatorClickRegister records one click on the "Developer mode ..."
+// LUnlockIndicatorAdd records one click on the "Developer mode ..."
 // indicator and returns the current sudo state. Every twelve clicks toggle sudo, but
 // only while basic dev is on; with basic off it is a no-op that stays un-sudoed.
-export function LUnlockIndicatorClickRegister(): boolean {
+export function LUnlockIndicatorAdd(): boolean {
   if (!LUnlockBasicCheck()) {
-    LUnlockIndicatorClickCount = 0;
+    LUnlockIndicatorCount = 0;
     return false;
   }
-  LUnlockIndicatorClickCount += 1;
-  if (LUnlockIndicatorClickCount < LUnlockClickRequiredCount) {
+  LUnlockIndicatorCount += 1;
+  if (LUnlockIndicatorCount < LUnlockClickTarget) {
     return LUnlockSudoCheck();
   }
 
-  LUnlockIndicatorClickCount = 0;
+  LUnlockIndicatorCount = 0;
   return LUnlockSudoSet(!LUnlockSudoCheck());
 }

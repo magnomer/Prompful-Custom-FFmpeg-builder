@@ -11,25 +11,25 @@ import (
 	"promptfulcustomffmpegbuilder/internal/scripting"
 )
 
-func LSettingsBuildCreate() LSettingsBuild {
-	return LSettingsBuild{
-		WorkspaceDirectory:       filepath.Join(LDirectoryUserDefaultResolve(), "CustomFFmpegBuilder", "workspace"),
+func LSettingsBuildCreate() LSettingsToolchain {
+	return LSettingsToolchain{
+		WorkspaceDirectory:       filepath.Join(LUserDirectoryResolve(), "CustomFFmpegBuilder", "workspace"),
 		Msys2ArchiveUrl:          "https://repo.msys2.org/distrib/msys2-x86_64-latest.tar.zst",
 		Msys2ArchiveSha256Hash:   "",
 		Msys2ArchiveSignatureUrl: "https://repo.msys2.org/distrib/msys2-x86_64-latest.tar.zst.sig",
-		Msys2PackageNames:        LPackageDefaultList("ucrt64"),
+		Msys2PackageNames:        LPackageDefaultGet("ucrt64"),
 		WindowsShellProfileName:  "ucrt64",
 	}
 }
 
 func LSettingsFFmpegCreate() LSettingsFFmpeg {
 	return LSettingsFFmpeg{
-		WorkspaceDirectory:         filepath.Join(LDirectoryUserDefaultResolve(), "CustomFFmpegBuilder", "workspace"),
+		WorkspaceDirectory:         filepath.Join(LUserDirectoryResolve(), "CustomFFmpegBuilder", "workspace"),
 		FfmpegSourceArchiveUrl:     "",
 		FfmpegSourceSignatureUrl:   "",
 		FfmpegSourceSha256Hash:     "",
 		SelectedLibraryIds:         []string{},
-		SelectedConfigureOptionIds: LOptionDefaultList(),
+		SelectedConfigureOptionIds: LOptionDefaultGet(),
 		ExtraConfigureFlags:        []string{},
 		ConfigureFlags:             []string{},
 		ParallelJobCount:           LNumberMaxGet(1, runtime.NumCPU()),
@@ -50,8 +50,8 @@ func LOperationLocalizedCreate(operationName string, fallback string) LOperation
 // libraries that do not have an implemented preparation recipe yet. Libraries with a
 // recipe are prepared before configure and do not block.
 func LWarningTrackAppend(warnings []LWarningPlan, blockedLibraries []LLibraryChoice) ([]LWarningPlan, bool) {
-	blockedInternal := LLibraryTrackFilterInternal(blockedLibraries, LLibraryTrackInternal)
-	blockedExternal := LLibraryTrackFilterInternal(blockedLibraries, LLibraryTrackExternal)
+	blockedInternal := LTrackFilterGet(blockedLibraries, LLibraryTrackInternal)
+	blockedExternal := LTrackFilterGet(blockedLibraries, LLibraryTrackExternal)
 	hasBlockedWarning := false
 	if len(blockedInternal) > 0 {
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskBlocked, "plan.warnings.internalTrackNotPrepared", "Internal-track libraries are selected, but MSYS2-internal source-build preparation is not implemented yet for them. The build is blocked so configure flags are not approved before those libraries are prepared: "+LLibraryNameJoin(blockedInternal)+".", map[string]string{"libraries": LLibraryNameJoin(blockedInternal)}))
@@ -97,7 +97,7 @@ func LOperationFFmpegBuild(hasInternalLibraries bool, hasExternalLibraries bool)
 	return operations
 }
 
-func LPlanToolchainCreate(buildConfigSettings LSettingsBuild) (LPlanToolchain, error) {
+func LPlanToolchainCreate(buildConfigSettings LSettingsToolchain) (LPlanToolchain, error) {
 	buildConfigSettings = LSettingsBuildClean(buildConfigSettings)
 	warnings := LWorkspaceWindowsValidate(buildConfigSettings.WorkspaceDirectory)
 	isExecutable := !LWarningBlockedCheck(warnings)
@@ -124,7 +124,7 @@ func LPlanToolchainCreate(buildConfigSettings LSettingsBuild) (LPlanToolchain, e
 	} else if buildConfigSettings.Msys2ArchiveUrl != "" && buildConfigSettings.Msys2ArchiveSignatureUrl != buildConfigSettings.Msys2ArchiveUrl+".sig" {
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskWarning, "plan.warnings.msys2SignatureMismatch", "MSYS2 signature URL does not exactly match the archive URL plus .sig. This may be intentional, but usually the signature URL should be the archive URL followed by .sig.", nil))
 	}
-	if buildConfigSettings.Msys2ArchiveSha256Hash != "" && !LHashSha256Check(buildConfigSettings.Msys2ArchiveSha256Hash) {
+	if buildConfigSettings.Msys2ArchiveSha256Hash != "" && !LHashSHA256Check(buildConfigSettings.Msys2ArchiveSha256Hash) {
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskBlocked, "plan.warnings.msys2ShaBad", "MSYS2 SHA-256 must be exactly 64 hexadecimal characters. If you pasted a .sig file, remove it; .sig is a signature file, not a hash.", nil))
 		isExecutable = false
 	}
@@ -178,7 +178,7 @@ func LPlanToolchainCreate(buildConfigSettings LSettingsBuild) (LPlanToolchain, e
 
 func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error) {
 	ffmpegBuildSettings = LSettingsFFmpegClean(ffmpegBuildSettings)
-	resolvedVersionPlan, hasResolvedVersionPlan, err := LCatalogResolvedPlanFromFFmpegSettings(ffmpegBuildSettings)
+	resolvedVersionPlan, hasResolvedVersionPlan, err := LCatalogPlanResolve(ffmpegBuildSettings)
 	if err != nil {
 		return LPlanFFmpeg{}, err
 	}
@@ -187,17 +187,17 @@ func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error)
 	if hasResolvedVersionPlan {
 		resolvedVersionPlanCopy := resolvedVersionPlan
 		resolvedVersionPlanPointer = &resolvedVersionPlanCopy
-		resolvedBuildPlan := LCatalogResolvedBuildPlanFromFFmpegSettings(ffmpegBuildSettings, resolvedVersionPlan)
+		resolvedBuildPlan := LCatalogBuildResolve(ffmpegBuildSettings, resolvedVersionPlan)
 		resolvedBuildPlanPointer = &resolvedBuildPlan
 	}
 	warnings := LWorkspaceWindowsValidate(ffmpegBuildSettings.WorkspaceDirectory)
 	isExecutable := !LWarningBlockedCheck(warnings)
-	ffmpegVersion := LVersionArchiveUrlParse(ffmpegBuildSettings.FfmpegSourceArchiveUrl)
+	ffmpegVersion := LArchiveURLParse(ffmpegBuildSettings.FfmpegSourceArchiveUrl)
 	compatibilityFfmpegVersion := ffmpegVersion
 	if hasResolvedVersionPlan {
 		compatibilityFfmpegVersion = resolvedVersionPlan.FfmpegVersion
 	}
-	selectedLibraryIdsForPlan := LCatalogStringsUniqueSortedStable(ffmpegBuildSettings.SelectedLibraryIds)
+	selectedLibraryIdsForPlan := LStringsSortedGet(ffmpegBuildSettings.SelectedLibraryIds)
 	selectedLibraries := []LLibraryChoice{}
 	unknownLibraryIds := []string{}
 	extraLibraries := []LLibraryChoice{}
@@ -206,9 +206,9 @@ func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error)
 		// authoritative build input. The legacy catalog is no longer allowed to
 		// recalculate selected libraries, tracks, package names, or library flags.
 		selectedLibraryIdsForPlan = append([]string{}, resolvedVersionPlan.NormalizedLibraryIds...)
-		selectedLibraries = LResolvedLibraryChoicesCreate(resolvedBuildPlanPointer.SelectedLibraries)
-		resolvedVisibleLibraryChoices := LResolvedLibraryChoicesCreate(resolvedVersionPlan.VisibleLibraries)
-		extraLibraries = LLibraryConfigureFlagMatchFromChoices(resolvedVisibleLibraryChoices, ffmpegBuildSettings.ExtraConfigureFlags, selectedLibraries)
+		selectedLibraries = LLibraryChoicesCreate(resolvedBuildPlanPointer.SelectedLibraries)
+		resolvedVisibleLibraryChoices := LLibraryChoicesCreate(resolvedVersionPlan.VisibleLibraries)
+		extraLibraries = LLibraryFlagMatch(resolvedVisibleLibraryChoices, ffmpegBuildSettings.ExtraConfigureFlags, selectedLibraries)
 		warnings = append(warnings, resolvedBuildPlanPointer.Warnings...)
 		if LWarningBlockedCheck(resolvedBuildPlanPointer.Warnings) {
 			isExecutable = false
@@ -222,19 +222,19 @@ func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error)
 		isExecutable = false
 	}
 	allEffectiveLibraries := append(append([]LLibraryChoice{}, selectedLibraries...), extraLibraries...)
-	selectedNativeLibraries := LLibraryTrackFilterInternal(selectedLibraries, LLibraryTrackNative)
-	selectedInternalLibraries := LLibraryTrackFilterInternal(selectedLibraries, LLibraryTrackInternal)
-	selectedExternalLibraries := LLibraryTrackFilterInternal(selectedLibraries, LLibraryTrackExternal)
-	selectedLibrariesByTrack := LLibraryTrackGroup(selectedLibraries)
+	selectedNativeLibraries := LTrackFilterGet(selectedLibraries, LLibraryTrackNative)
+	selectedInternalLibraries := LTrackFilterGet(selectedLibraries, LLibraryTrackInternal)
+	selectedExternalLibraries := LTrackFilterGet(selectedLibraries, LLibraryTrackExternal)
+	selectedLibrariesByTrack := LTrackGroupCreate(selectedLibraries)
 	// Track gate and prep operations key off every internal/external library that ends up
 	// in the build, including extra-flag ones, so a raw flag cannot bypass the gate.
 	// Libraries with an implemented prep recipe are prepared before configure; libraries
 	// without one yet still block the build.
-	gatedInternalLibraries := LLibraryTrackFilterInternal(allEffectiveLibraries, LLibraryTrackInternal)
-	gatedExternalLibraries := LLibraryTrackFilterInternal(allEffectiveLibraries, LLibraryTrackExternal)
+	gatedInternalLibraries := LTrackFilterGet(allEffectiveLibraries, LLibraryTrackInternal)
+	gatedExternalLibraries := LTrackFilterGet(allEffectiveLibraries, LLibraryTrackExternal)
 	gatedNonNativeLibraries := append(append([]LLibraryChoice{}, gatedInternalLibraries...), gatedExternalLibraries...)
-	libraryPreparations, blockedNonNativeLibraries := LLibraryNonnativePartition(gatedNonNativeLibraries, compatibilityFfmpegVersion)
-	LPackageDependencyPrefix(libraryPreparations, ffmpegBuildSettings.WindowsShellProfileName)
+	libraryPreparations, blockedNonNativeLibraries := LLibraryPartitionCreate(gatedNonNativeLibraries, compatibilityFfmpegVersion)
+	LDependencyPrefixGet(libraryPreparations, ffmpegBuildSettings.WindowsShellProfileName)
 	warnings, hasNonNativeBlockedWarning := LWarningTrackAppend(warnings, blockedNonNativeLibraries)
 	if hasNonNativeBlockedWarning {
 		isExecutable = false
@@ -247,23 +247,23 @@ func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error)
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskBlocked, "plan.warnings.unknownLibraryId", "Unknown library id: "+unknownLibraryId, map[string]string{"id": unknownLibraryId}))
 		isExecutable = false
 	}
-	libraryPackages := LPackageLibraryUniqueGet(selectedLibraries)
-	libraryFlags := LFlagLibraryUniqueGet(selectedLibraries)
+	libraryPackages := LLibraryPackageGet(selectedLibraries)
+	libraryFlags := LLibraryFlagGet(selectedLibraries)
 	selectedConfigureOptions, unknownConfigureOptionIds := LOptionConfigureSelect(ffmpegBuildSettings.SelectedConfigureOptionIds)
 	for _, unknownConfigureOptionId := range unknownConfigureOptionIds {
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskBlocked, "plan.warnings.unknownOptionId", "Unknown FFmpeg option id: "+unknownConfigureOptionId, map[string]string{"id": unknownConfigureOptionId}))
 		isExecutable = false
 	}
-	optionFlags := LFlagOptionUniqueGet(selectedConfigureOptions)
+	optionFlags := LOptionFlagGet(selectedConfigureOptions)
 	finalConfigureFlags := LTextUniqueMerge(libraryFlags, optionFlags)
 	finalConfigureFlags = LTextUniqueMerge(finalConfigureFlags, ffmpegBuildSettings.ExtraConfigureFlags)
-	libraryPackages = LTextUniqueMerge(libraryPackages, LPackageLibraryUniqueGet(extraLibraries))
-	derivedLicenseProfileName := LLicenseProfileDerive(allEffectiveLibraries, finalConfigureFlags)
+	libraryPackages = LTextUniqueMerge(libraryPackages, LLibraryPackageGet(extraLibraries))
+	derivedLicenseProfileName := LLicenseProfileGet(allEffectiveLibraries, finalConfigureFlags)
 	finalConfigureFlags = LLicenseFlagAdd(finalConfigureFlags, derivedLicenseProfileName, allEffectiveLibraries)
 	// Force the Windows-only base flags on (e.g. --disable-vaapi) regardless of selection, but
 	// judge "did the user select anything" before adding them so the no-flags hint still fires.
 	userSelectedAnyConfigureFlags := len(finalConfigureFlags) > 0
-	finalConfigureFlags = LTextUniqueMerge(LFlagHardwareList(), finalConfigureFlags)
+	finalConfigureFlags = LTextUniqueMerge(LHardwareFlagList(), finalConfigureFlags)
 
 	if runtime.GOOS != "windows" {
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskBlocked, "plan.warnings.windowsOnly", "This project profile is Windows-only.", nil))
@@ -282,7 +282,7 @@ func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error)
 	}
 	if ffmpegBuildSettings.FfmpegSourceSha256Hash == "" {
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskInfo, "plan.warnings.ffmpegShaMissing", "No FFmpeg SHA-256 was supplied. This is normal for the official release page: the program will verify the .asc PGP signature and calculate SHA-256 for the log.", nil))
-	} else if !LHashSha256Check(ffmpegBuildSettings.FfmpegSourceSha256Hash) {
+	} else if !LHashSHA256Check(ffmpegBuildSettings.FfmpegSourceSha256Hash) {
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskBlocked, "plan.warnings.ffmpegShaBad", "FFmpeg SHA-256 must be exactly 64 hexadecimal characters. If you have a .asc or .sig file, do not paste it into this field; it is a signature file, not a hash.", nil))
 		isExecutable = false
 	}
@@ -316,7 +316,7 @@ func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error)
 	}
 	licenseWarnings, licenseBlocked := LLicenseProfileValidate(derivedLicenseProfileName, allEffectiveLibraries, finalConfigureFlags)
 	warnings = append(warnings, licenseWarnings...)
-	if LLibraryVersion3Check(allEffectiveLibraries) {
+	if LVersionMajorCheck(allEffectiveLibraries) {
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskInfo, "plan.warnings.version3Added", "FFmpeg version-3 license switch was added because a selected library requires --enable-version3.", nil))
 	}
 	if licenseBlocked {
@@ -338,7 +338,7 @@ func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error)
 		SelectedInternalLibraries:  selectedInternalLibraries,
 		SelectedExternalLibraries:  selectedExternalLibraries,
 		SelectedLibrariesByTrack:   selectedLibrariesByTrack,
-		LLibraryPreparationList:    libraryPreparations,
+		LPreparationCatalog:        libraryPreparations,
 		RequiredMsys2PackageNames:  libraryPackages,
 		GeneratedConfigureFlags:    libraryFlags,
 		SelectedConfigureOptions:   selectedConfigureOptions,
@@ -378,7 +378,7 @@ func LPlanRunCheck(isExecutable bool) error {
 	return nil
 }
 
-func LSettingsBuildClean(buildConfigSettings LSettingsBuild) LSettingsBuild {
+func LSettingsBuildClean(buildConfigSettings LSettingsToolchain) LSettingsToolchain {
 	defaults := LSettingsBuildCreate()
 	if buildConfigSettings.WorkspaceDirectory == "" {
 		buildConfigSettings.WorkspaceDirectory = defaults.WorkspaceDirectory
@@ -566,14 +566,14 @@ func LLicenseProfileValidate(licenseProfileName string, selectedLibraries []LLib
 	return warnings, blocked
 }
 
-func LDirectoryUserDefaultResolve() string {
-	if localAppData := LEnvironmentGet("LOCALAPPDATA"); localAppData != "" {
+func LUserDirectoryResolve() string {
+	if localAppData := LEnvironmentVariable("LOCALAPPDATA"); localAppData != "" {
 		return localAppData
 	}
 	return "."
 }
 
-var LEnvironmentGet = os.Getenv
+var LEnvironmentVariable = os.Getenv
 
 func LTextSpaceCheck(value string) bool {
 	for _, valueRune := range value {
@@ -591,7 +591,7 @@ func LNumberMaxGet(left int, right int) int {
 	return right
 }
 
-func LHashSha256Check(value string) bool {
+func LHashSHA256Check(value string) bool {
 	if len(value) != 64 {
 		return false
 	}

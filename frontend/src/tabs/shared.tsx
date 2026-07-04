@@ -2,26 +2,26 @@ import React from "react";
 import { LLocaleTextGet, LLocaleFallbackGet, LLocaleStatusGet } from "../i18n";
 import type { LProgressLive, LPhaseLogId } from "./logs";
 import { LPhaseLabelGet, LLogRuntimeBuild } from "./logutils";
-import { LOptionTextGet, LLibraryLicenseLabelGet, LLibraryTextGet } from "../catalogText";
+import { LOptionTextGet, LLicenseLabelGet, LLibraryTextGet } from "../catalogText";
 
 
-function LWarningPlanTextGet(warning: LWarningPlan): string {
+function LWarningTextGet(warning: LWarningPlan): string {
   if (warning.messageKey) return LLocaleTextGet(warning.messageKey, warning.messageValues ?? {});
   return warning.message;
 }
 
-function LOperationPlanTextGet(operation: LOperationPlan): string {
+function LOperationTextGet(operation: LOperationPlan): string {
   if (operation.summaryKey) return LLocaleTextGet(operation.summaryKey, operation.summaryValues ?? {});
   return operation.summary;
 }
 
-function LActionNameLabelGet(actionName: string): string {
+function LActionLabelGet(actionName: string): string {
   return LLocaleFallbackGet(`approval.action.${actionName}`, actionName);
 }
 
 export function PTextDescriptionRender(props: { text: string; className?: string; groupSentences?: boolean }) {
   const sentences = props.text.split(/(?<=[.!?。])\s+/).filter((sentence) => sentence.trim().length > 0);
-  const isSubordinate = (sentence: string) => sentence.trim().startsWith("(");
+  const LSentenceSubordinateCheck = (sentence: string) => sentence.trim().startsWith("(");
 
   let lines: { text: string; sub: boolean }[];
   if (props.groupSentences) {
@@ -29,7 +29,7 @@ export function PTextDescriptionRender(props: { text: string; className?: string
     lines = [];
     let buffer: string[] = [];
     for (const sentence of sentences) {
-      if (isSubordinate(sentence)) {
+      if (LSentenceSubordinateCheck(sentence)) {
         if (buffer.length > 0) { lines.push({ text: buffer.join(" "), sub: false }); buffer = []; }
         lines.push({ text: sentence, sub: true });
       } else {
@@ -39,7 +39,7 @@ export function PTextDescriptionRender(props: { text: string; className?: string
     if (buffer.length > 0) lines.push({ text: buffer.join(" "), sub: false });
   } else {
     // One sentence per line.
-    lines = sentences.map((sentence) => ({ text: sentence, sub: isSubordinate(sentence) }));
+    lines = sentences.map((sentence) => ({ text: sentence, sub: LSentenceSubordinateCheck(sentence) }));
   }
 
   return (
@@ -69,7 +69,7 @@ export function PBoxInfoRender(props: { title?: string; children: React.ReactNod
   );
 }
 
-export function PButtonLinkExternalRender(props: { label: string; url: string; onOpen: (urlToOpen: string) => Promise<void> }) {
+export function PLinkExternalRender(props: { label: string; url: string; onOpen: (urlToOpen: string) => Promise<void> }) {
   return (
     <button className="button button--link" type="button" onClick={() => props.onOpen(props.url)}>
       {props.label}
@@ -125,13 +125,13 @@ export function PListWarningRender(props: { warnings: LWarningPlan[] }) {
     <section className="review-list">
       <h3 className="review-list__title">{LLocaleTextGet("review.warnings.title")}</h3>
       <ul className="review-list__items">
-        {props.warnings.map((warning, index) => <li className={`review-list__item review-list__item--${warning.riskLevelName}`} key={`${warning.riskLevelName}-${index}`}>{LWarningPlanTextGet(warning)}</li>)}
+        {props.warnings.map((warning, index) => <li className={`review-list__item review-list__item--${warning.riskLevelName}`} key={`${warning.riskLevelName}-${index}`}>{LWarningTextGet(warning)}</li>)}
       </ul>
     </section>
   );
 }
 
-export type PApprovalPanelProps = {
+export type LApprovalProperties = {
   title: string;
   actionName: string;
   planHash: string;
@@ -154,19 +154,19 @@ export type PApprovalPanelProps = {
   isConfirmationBusy?: boolean;
 };
 
-function PApprovalBodyRender(props: PApprovalPanelProps) {
+function PApprovalBodyRender(props: LApprovalProperties) {
   return (
     <>
       <dl className="metadata">
         <dt className="metadata__label--plain">{LLocaleTextGet("approval.metadata.action")}</dt>
-        <dd className="metadata__value metadata__value--plain">{LActionNameLabelGet(props.actionName)}</dd>
+        <dd className="metadata__value metadata__value--plain">{LActionLabelGet(props.actionName)}</dd>
         <dt>{LLocaleTextGet("approval.metadata.planHash")}</dt>
         <dd><PFieldCopyableRender value={props.planHash} ariaLabel={LLocaleTextGet("approval.metadata.planHash")} /></dd>
         <dt>{LLocaleTextGet("approval.metadata.backendPhrase")}</dt>
         <dd><PFieldCopyableRender value={props.expectedLConsentText} ariaLabel={LLocaleTextGet("approval.metadata.backendPhrase")} /></dd>
       </dl>
       {props.selectedLibraries && props.selectedLibraries.length > 0 && (
-        <PListReviewRender title={LLocaleTextGet("approval.review.selectedLibraries")} items={props.selectedLibraries.map((library) => `${LLibraryTextGet(library, "displayName")} | ${LLibraryLicenseLabelGet(library.licenseEffectName)} | ${library.configureFlags.join(" ")}`)} />
+        <PListReviewRender title={LLocaleTextGet("approval.review.selectedLibraries")} items={props.selectedLibraries.map((library) => `${LLibraryTextGet(library, "displayName")} | ${LLicenseLabelGet(library.licenseEffectName)} | ${library.configureFlags.join(" ")}`)} />
       )}
       {props.libraryPreparations && props.libraryPreparations.length > 0 && (
         <PListReviewRender title={LLocaleTextGet("approval.review.libraryPreparations")} items={props.libraryPreparations.map((preparation) => {
@@ -183,13 +183,13 @@ function PApprovalBodyRender(props: PApprovalPanelProps) {
       {props.generatedOptionFlags && props.generatedOptionFlags.length > 0 && <PListReviewRender title={LLocaleTextGet("approval.review.generatedOptionFlags")} items={props.generatedOptionFlags} />}
       {props.extraConfigureFlags && props.extraConfigureFlags.length > 0 && <PListReviewRender title={LLocaleTextGet("approval.review.advancedManualFlags")} items={props.extraConfigureFlags} />}
       {props.finalConfigureFlags && props.finalConfigureFlags.length > 0 && <PListReviewRender title={LLocaleTextGet("approval.review.finalConfigureFlags")} items={props.finalConfigureFlags} />}
-      <PListReviewRender title={LLocaleTextGet("approval.review.operations")} items={props.operations.map((operation) => LOperationPlanTextGet(operation))} dense />
+      <PListReviewRender title={LLocaleTextGet("approval.review.operations")} items={props.operations.map((operation) => LOperationTextGet(operation))} dense />
       {props.warnings.length > 0 && <PListWarningRender warnings={props.warnings} />}
     </>
   );
 }
 
-function PApprovalActionsRender(props: PApprovalPanelProps) {
+function PApprovalActionsRender(props: LApprovalProperties) {
   return (
     <div className="approval-card__actions">
       {props.onCancelPlan && <button className="button" type="button" onClick={props.onCancelPlan}>{LLocaleTextGet("actions.cancel")}</button>}
@@ -198,7 +198,7 @@ function PApprovalActionsRender(props: PApprovalPanelProps) {
   );
 }
 
-export function PApprovalPanelRender(props: PApprovalPanelProps) {
+export function PApprovalPanelRender(props: LApprovalProperties) {
   // Card variant borrows the Source tab card design (colored accent + badge +
   // card head). The plain variant keeps the original review-panel look.
   if (props.variant) {
@@ -226,7 +226,7 @@ export function PApprovalPanelRender(props: PApprovalPanelProps) {
   );
 }
 
-export function PProgressBuildLiveRender(props: {
+export function PProgressLiveRender(props: {
   isActive: boolean;
   approvedActionStatus: string;
   progress: LProgressLive;

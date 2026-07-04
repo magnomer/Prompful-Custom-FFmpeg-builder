@@ -4,7 +4,7 @@ export function LLibraryTextGet(library: LLibraryChoice, field: "displayName" | 
   return LLocaleFallbackGet(`catalog.libraries.${library.libraryId}.${field}`, library[field] ?? "");
 }
 
-export function LLibraryLicenseLabelGet(licenseEffectName: string): string {
+export function LLicenseLabelGet(licenseEffectName: string): string {
   return LLocaleFallbackGet(`libraries.row.license.${licenseEffectName}`, licenseEffectName);
 }
 
@@ -12,6 +12,6 @@ export function LOptionTextGet(option: LOptionChoice, field: "displayName" | "ca
   return LLocaleFallbackGet(`catalog.options.${option.optionId}.${field}`, option[field] ?? "");
 }
 
-export function LCatalogOptionNameGet(optionId: string): string {
+export function LOptionNameGet(optionId: string): string {
   return LLocaleTextGet(`catalog.options.${optionId}.displayName`);
 }

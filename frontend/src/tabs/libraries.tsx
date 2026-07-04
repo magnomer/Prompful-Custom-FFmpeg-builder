@@ -1,7 +1,7 @@
 import React from "react";
 import { PTextDescriptionRender, PHeaderPageRender } from "./shared";
 import { LLocaleTextGet } from "../i18n";
-import { LLibraryLicenseLabelGet, LLibraryTextGet } from "../catalogText";
+import { LLicenseLabelGet, LLibraryTextGet } from "../catalogText";
 import { LUnlockBasicCheck, LUnlockSudoCheck } from "../devUnlock";
 import libraryMinimalIcon from "../assets/library-preset-icons/LibraryMinimal.svg";
 import libraryDefaultIcon from "../assets/library-preset-icons/LibraryDefault.svg";
@@ -33,7 +33,7 @@ export type LPresetLibrary = {
 
 // ─── Preset data ─────────────────────────────────────────────────────────────
 
-export function LPresetLibraryListSanitize(presets: LPresetLibraryChoice[] | undefined): LPresetLibrary[] {
+export function LPresetLibraryClean(presets: LPresetLibraryChoice[] | undefined): LPresetLibrary[] {
   return (presets ?? [])
     .filter((preset): preset is LPresetLibraryChoice & { presetId: LPresetLibraryId } => LPresetLibraryValidate(preset.presetId))
     .map((preset) => ({
@@ -50,15 +50,15 @@ export function LPresetLibraryResolve(preset: LPresetLibrary, extendedLibraries:
   return preset.libraryIds;
 }
 
-// LLibraryMaximumTestIdsGet returns every selectable library from the backend-resolved
+// LLibraryTestGet returns every selectable library from the backend-resolved
 // catalog. LLibrarySelectionNormalize then resolves mutually-exclusive groups and drops
 // rows that the backend marked unavailable for the active FFmpeg version/profile.
-export function LLibraryMaximumTestIdsGet(LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName?: string): string[] {
+export function LLibraryTestGet(LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName?: string): string[] {
   const candidateIds = LCatalogLibrarySource
     .map((library) => library.libraryId)
     .filter((libraryId) => {
       const library = LCatalogLibrarySource.find((item) => item.libraryId === libraryId);
-      return library && !LLibraryUiUnavailableCheck(library, windowsShellProfileName ?? "");
+      return library && !LLibraryUnavailableCheck(library, windowsShellProfileName ?? "");
     });
   return LLibrarySelectionNormalize(candidateIds, windowsShellProfileName, LCatalogLibrarySource);
 }
@@ -68,24 +68,24 @@ export function LLibraryMaximumTestIdsGet(LCatalogLibrarySource: LLibraryChoice[
 // TLS backends form a pick-one group in normal AND basic dev mode (rendered as radio
 // buttons). Only the sudo dev tier relaxes this so every backend can be selected at once
 // for build testing, so the mutual-exclusion pruning below is skipped only when sudo.
-export const LLibraryTlsBackendIds = new Set(["openssl", "gnutls", "mbedtls", "libtls"]);
+export const LLibraryTlsBackend = new Set(["openssl", "gnutls", "mbedtls", "libtls"]);
 
 // shaderc/glslang are a pick-one shader-compiler group. They are not a radio group (zero
 // may be selected), but they share the TLS group's shortened-divider visual so the two
 // rows read as one "choose at most one" block.
-export const LLibraryShaderCompilerIds = new Set(["shaderc", "glslang"]);
+export const LLibraryShaderCompiler = new Set(["shaderc", "glslang"]);
 
 // xevd/xevdb and xeve/xeveb are EVC full-profile and baseline-profile bindings.
 // FFmpeg configure rejects enabling both members of either pair, so they share the
 // same pick-one radio + divider treatment with separate radio groups.
-export const LLibraryEvcDecoderIds = new Set(["xevd", "xevdb"]);
-export const LLibraryEvcEncoderIds = new Set(["xeve", "xeveb"]);
+export const LLibraryEvcDecoder = new Set(["xevd", "xevdb"]);
+export const LLibraryEvcEncoder = new Set(["xeve", "xeveb"]);
 
 // libvpl (Intel oneVPL, --enable-libvpl) and libmfx (legacy Intel Media SDK, --enable-libmfx)
 // are the two Intel Hardware Acceleration backends. FFmpeg configure rejects enabling both ("can
 // not use libmfx and libvpl together"), so they are a pick-one radio group with the same divider
 // treatment as the EVC pairs. They are adjacent in the library catalog so the two rows read as one block.
-export const LLibraryIntelBackendIds = new Set(["libvpl", "libmfx"]);
+export const LLibraryIntelBackend = new Set(["libvpl", "libmfx"]);
 
 export function LLibrarySelectionNormalize(selectedLibraryIds: string[], windowsShellProfileName?: string, LCatalogLibrarySource?: LLibraryChoice[]): string[] {
   const baseLibraryIds = LCatalogLibrarySource ? LCatalogLibrarySource.filter((library) => library.defaultChecked).map((library) => library.libraryId) : [];
@@ -118,10 +118,10 @@ export function LLibrarySelectionNormalize(selectedLibraryIds: string[], windows
     selectedSet.delete("xeveb");
   }
   if (LCatalogLibrarySource) {
-    const LCatalogLibrarySourceById = new Map(LCatalogLibrarySource.map((library) => [library.libraryId, library]));
+    const LLibrarySourceTable = new Map(LCatalogLibrarySource.map((library) => [library.libraryId, library]));
     for (const libraryId of [...selectedSet]) {
-      const library = LCatalogLibrarySourceById.get(libraryId);
-      if (library && LLibraryUiUnavailableCheck(library, windowsShellProfileName ?? "")) {
+      const library = LLibrarySourceTable.get(libraryId);
+      if (library && LLibraryUnavailableCheck(library, windowsShellProfileName ?? "")) {
         selectedSet.delete(libraryId);
       }
     }
@@ -139,32 +139,32 @@ export function LLibrarySelectionNormalize(selectedLibraryIds: string[], windows
   return Array.from(selectedSet);
 }
 
-function LLibrarySetSameCheck(a: string[], b: string[]): boolean {
+function LLibrarySelectionCheck(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((libraryId, index) => libraryId === b[index]);
 }
 
-function LPresetNormalizedIdsGet(preset: LPresetLibrary, windowsShellProfileName?: string, LCatalogLibrarySource?: LLibraryChoice[], extendedLibraries = false): string[] {
+function LPresetIdentifiersGet(preset: LPresetLibrary, windowsShellProfileName?: string, LCatalogLibrarySource?: LLibraryChoice[], extendedLibraries = false): string[] {
   return LLibrarySelectionNormalize(LPresetLibraryResolve(preset, extendedLibraries), windowsShellProfileName, LCatalogLibrarySource).slice().sort();
 }
 
 export function LPresetLibraryMatch(selectedLibraryIds: string[], presets: LPresetLibrary[], windowsShellProfileName?: string, LCatalogLibrarySource?: LLibraryChoice[], extendedLibraries = false, preferredPresetId?: LPresetLibraryId): LPresetLibraryId {
   const normalizedSelection = LLibrarySelectionNormalize(selectedLibraryIds, windowsShellProfileName, LCatalogLibrarySource).slice().sort();
   const preferredPreset = presets.find((preset) => preset.presetId === preferredPresetId && preset.presetId !== "custom");
-  if (preferredPreset && !preferredPreset.hidden && !preferredPreset.dev && LLibrarySetSameCheck(normalizedSelection, LPresetNormalizedIdsGet(preferredPreset, windowsShellProfileName, LCatalogLibrarySource, extendedLibraries))) {
+  if (preferredPreset && !preferredPreset.hidden && !preferredPreset.dev && LLibrarySelectionCheck(normalizedSelection, LPresetIdentifiersGet(preferredPreset, windowsShellProfileName, LCatalogLibrarySource, extendedLibraries))) {
     return preferredPreset.presetId;
   }
   for (const preset of presets) {
     if (preset.presetId === "custom" || preset.hidden || preset.dev) continue;
-    const normalizedPreset = LPresetNormalizedIdsGet(preset, windowsShellProfileName, LCatalogLibrarySource, extendedLibraries);
-    if (LLibrarySetSameCheck(normalizedSelection, normalizedPreset)) {
+    const normalizedPreset = LPresetIdentifiersGet(preset, windowsShellProfileName, LCatalogLibrarySource, extendedLibraries);
+    if (LLibrarySelectionCheck(normalizedSelection, normalizedPreset)) {
       return preset.presetId;
     }
   }
   // Maximum test is library catalog-derived, so it can only be matched when the library catalog is
   // available. Checked last so a narrower named preset always wins.
   if (LCatalogLibrarySource && LUnlockBasicCheck()) {
-    const maxTest = LLibraryMaximumTestIdsGet(LCatalogLibrarySource, windowsShellProfileName).slice().sort();
-    if (LLibrarySetSameCheck(normalizedSelection, maxTest)) return "maxtest";
+    const maxTest = LLibraryTestGet(LCatalogLibrarySource, windowsShellProfileName).slice().sort();
+    if (LLibrarySelectionCheck(normalizedSelection, maxTest)) return "maxtest";
   }
   return "custom";
 }
@@ -177,7 +177,7 @@ export function LPresetLibraryValidate(value: unknown): value is LPresetLibraryI
 // extended-libraries toggle is on. Only the broadening presets get the prefix.
 const LPresetNonextendedIds = new Set<LPresetLibraryId>(["minimal", "default", "maxtest", "custom"]);
 
-const LPresetLibraryIconMap: Partial<Record<LPresetLibraryId, string>> = {
+const LPresetIconTable: Partial<Record<LPresetLibraryId, string>> = {
   minimal: libraryMinimalIcon,
   default: libraryDefaultIcon,
   efficiency: libraryMaximumEfficiencyIcon,
@@ -189,14 +189,14 @@ const LPresetLibraryIconMap: Partial<Record<LPresetLibraryId, string>> = {
 
 // Resolves the localized preset name, prepending the "Extended" prefix when the
 // extended-libraries toggle is on (descriptions are left unchanged).
-function LPresetLibraryNameGet(presetId: LPresetLibraryId, extendedLibraries: boolean): string {
+function LPresetNameGet(presetId: LPresetLibraryId, extendedLibraries: boolean): string {
   const baseName = LLocaleTextGet(`libraries.presets.${presetId}.name`);
   if (!extendedLibraries || LPresetNonextendedIds.has(presetId)) return baseName;
   return LLocaleTextGet("libraries.extended.presetPrefix") + baseName;
 }
 
 function PIconPresetRender(props: { presetId: LPresetLibraryId; className?: string }) {
-  const icon = LPresetLibraryIconMap[props.presetId];
+  const icon = LPresetIconTable[props.presetId];
   if (!icon) return null;
   return <img className={props.className ?? ""} src={icon} alt="" aria-hidden="true" />;
 }
@@ -230,7 +230,7 @@ export function LLibraryExclusiveRemove(selectedLibraryIds: string[], selectedLi
 }
 
 
-export function LLicenseBoundaryDerive(selectedLibraryIds: string[], LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName: string): string {
+export function LLicenseBoundaryGet(selectedLibraryIds: string[], LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName: string): string {
   const selectedLibraries = LLibraryVisibleFilter(LCatalogLibrarySource, windowsShellProfileName).filter((library) => selectedLibraryIds.includes(library.libraryId));
   if (selectedLibraries.some((library) => library.licenseEffectName === "nonfree")) return "nonfree-local";
   if (selectedLibraries.some((library) => library.licenseEffectName === "gpl")) return "gpl-local";
@@ -257,36 +257,36 @@ function PNoteRichRender(text: string): React.ReactNode {
 // Library availability is now driven by the backend resolved catalog. The frontend
 // must not carry hardcoded unimplemented-library or profile-unavailable lists: those
 // are version/profile facts in internal/catalogfacts/catalogdata/libraries/*.json.
-function LLibraryUnavailableReasonCheck(library: LLibraryChoice, reason: string): boolean {
+function LLibraryReasonCheck(library: LLibraryChoice, reason: string): boolean {
   return (library.unavailableReasons ?? []).includes(reason);
 }
 
-function LLibraryCurrentV4DisabledCheck(library: LLibraryChoice): boolean {
-  return LLibraryUnavailableReasonCheck(library, "disabled-in-current-v4-ui") || library.supportState === "ui-disabled";
+function LLibraryDisabledCheck(library: LLibraryChoice): boolean {
+  return LLibraryReasonCheck(library, "disabled-in-current-v4-ui") || library.supportState === "ui-disabled";
 }
 
-function LLibraryPreparationUnimplementedCheck(library: LLibraryChoice): boolean {
+function LLibraryPrepCheck(library: LLibraryChoice): boolean {
   return Boolean(library.preparationStatus?.required) && library.preparationStatus?.implemented !== true;
 }
 
-function LLibraryProfileAvailableCheck(library: LLibraryChoice, windowsShellProfileName: string): boolean {
+function LLibraryProfileCheck(library: LLibraryChoice, windowsShellProfileName: string): boolean {
   return !(library.unavailableProfiles ?? []).includes(windowsShellProfileName);
 }
 
-function LLibraryFFmpegSupportedCheck(library: LLibraryChoice): boolean {
+function LLibrarySupportedCheck(library: LLibraryChoice): boolean {
   return library.versionCompatibility?.supported !== false;
 }
 
 // Available means FFmpeg has the switch for the chosen release AND the package this builder
 // can supply can satisfy it on that release. It is false for a release-support-unavailable row
 // (e.g. lensfun, whose package FFmpeg cannot use) even though the switch nominally exists, so
-// it is a stricter gate than LLibraryFFmpegSupportedCheck. Both are per-FFmpeg-version,
+// it is a stricter gate than LLibrarySupportedCheck. Both are per-FFmpeg-version,
 // driven by the backend release-support manifest annotation, never a global list.
-function LLibraryFFmpegAvailableCheck(library: LLibraryChoice): boolean {
+function LLibraryAvailableCheck(library: LLibraryChoice): boolean {
   return library.versionCompatibility?.available !== false;
 }
 
-function LLibraryTrackLabelGet(trackName: string): string {
+function LLibraryTrackGet(trackName: string): string {
   return LLocaleTextGet(`libraries.row.track.${trackName || "native"}`);
 }
 
@@ -295,33 +295,33 @@ function LLibraryVisibleFilter(LCatalogLibrarySource: LLibraryChoice[], windowsS
   return LCatalogLibrarySource;
 }
 
-function LLibraryUiUnavailableCheck(library: LLibraryChoice, windowsShellProfileName: string): boolean {
-  return LLibraryCurrentV4DisabledCheck(library) || LLibraryPreparationUnimplementedCheck(library) || !LLibraryProfileAvailableCheck(library, windowsShellProfileName) || !LLibraryFFmpegSupportedCheck(library) || !LLibraryFFmpegAvailableCheck(library);
+function LLibraryUnavailableCheck(library: LLibraryChoice, windowsShellProfileName: string): boolean {
+  return LLibraryDisabledCheck(library) || LLibraryPrepCheck(library) || !LLibraryProfileCheck(library, windowsShellProfileName) || !LLibrarySupportedCheck(library) || !LLibraryAvailableCheck(library);
 }
 
 // Whether the checkbox is actually locked. Same as UI-unavailable, except the hidden
 // About-tab developer unlock makes otherwise-unavailable libraries checkable for testing.
 // The unavailable styling still shows regardless of unlock.
-function LLibraryCheckboxLockedCheck(library: LLibraryChoice, windowsShellProfileName: string): boolean {
-  if (!LLibraryFFmpegSupportedCheck(library)) return true;
-  if (!LLibraryFFmpegAvailableCheck(library)) return true;
-  return LLibraryUiUnavailableCheck(library, windowsShellProfileName) && !LUnlockBasicCheck();
+function LLibraryLockedCheck(library: LLibraryChoice, windowsShellProfileName: string): boolean {
+  if (!LLibrarySupportedCheck(library)) return true;
+  if (!LLibraryAvailableCheck(library)) return true;
+  return LLibraryUnavailableCheck(library, windowsShellProfileName) && !LUnlockBasicCheck();
 }
 
 // Returns the localization key suffix for an unavailable row's note, or "" when no
 // note should be shown. The reason comes from the backend-resolved catalog state; the
 // frontend does not own library-specific build-preparation facts.
-function LLibraryUiUnavailableReasonKeyGet(library: LLibraryChoice, windowsShellProfileName: string): string {
+function LLibraryReasonGet(library: LLibraryChoice, windowsShellProfileName: string): string {
   const libraryId = library.libraryId;
-  if (!LLibraryFFmpegSupportedCheck(library)) return "ffmpegVersionUnsupported";
-  if (!LLibraryProfileAvailableCheck(library, windowsShellProfileName)) return "profileUnavailable";
-  if (LLibraryPreparationUnimplementedCheck(library)) return "preparationUnimplemented";
-  if (LLibraryCurrentV4DisabledCheck(library)) return libraryId;
-  if (!LLibraryFFmpegAvailableCheck(library)) return libraryId;
+  if (!LLibrarySupportedCheck(library)) return "ffmpegVersionUnsupported";
+  if (!LLibraryProfileCheck(library, windowsShellProfileName)) return "profileUnavailable";
+  if (LLibraryPrepCheck(library)) return "preparationUnimplemented";
+  if (LLibraryDisabledCheck(library)) return libraryId;
+  if (!LLibraryAvailableCheck(library)) return libraryId;
   return "";
 }
 
-function LLibraryCategoryGroup(LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName: string) {
+function LLibraryCategoryCreate(LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName: string) {
   return LLibraryVisibleFilter(LCatalogLibrarySource, windowsShellProfileName).reduce<Record<string, LLibraryChoice[]>>((groups, library) => {
     const categoryName = LLibraryTextGet(library, "categoryName") || LLocaleTextGet("common.other");
     groups[categoryName] = groups[categoryName] || [];
@@ -331,14 +331,14 @@ function LLibraryCategoryGroup(LCatalogLibrarySource: LLibraryChoice[], windowsS
 }
 
 
-function LPresetLibrarySelectableList(presets: LPresetLibrary[]): Array<LPresetLibrary & { presetId: Exclude<LPresetLibraryId, "custom"> }> {
+function LPresetLibraryList(presets: LPresetLibrary[]): Array<LPresetLibrary & { presetId: Exclude<LPresetLibraryId, "custom"> }> {
   return presets.filter((preset): preset is LPresetLibrary & { presetId: Exclude<LPresetLibraryId, "custom"> } =>
     preset.presetId !== "custom" && !preset.hidden && (!preset.dev || LUnlockBasicCheck())
   );
 }
 
 function PCardPresetRender(props: { presets: LPresetLibrary[]; selectedPresetId: LPresetLibraryId; onApplyPreset: (presetId: LPresetLibraryId) => void; extendedLibraries: boolean }) {
-  const presets = LPresetLibrarySelectableList(props.presets);
+  const presets = LPresetLibraryList(props.presets);
   const selectedPreset = presets.find((preset) => preset.presetId === props.selectedPresetId);
   const selectedPresetDescription = selectedPreset
     ? LLocaleTextGet(`libraries.presets.${selectedPreset.presetId}.plain`)
@@ -359,7 +359,7 @@ function PCardPresetRender(props: { presets: LPresetLibrary[]; selectedPresetId:
           {props.selectedPresetId === "custom" && <option value="custom">{LLocaleTextGet("libraries.presets.custom.name")}</option>}
           {presets.map((preset) => (
             <option value={preset.presetId} key={preset.presetId}>
-              {LPresetLibraryNameGet(preset.presetId, props.extendedLibraries)}
+              {LPresetNameGet(preset.presetId, props.extendedLibraries)}
             </option>
           ))}
         </select>
@@ -378,9 +378,9 @@ function PCardLibraryRender(props: {
   windowsShellProfileName: string;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
-  sectionFilters: LLibrarySectionFilter[];
+  sectionFilters: LSectionState[];
   sectionOptions: string[];
-  onSectionFiltersChange: (value: LLibrarySectionFilter[]) => void;
+  onSectionFiltersChange: (value: LSectionState[]) => void;
   onOpenOfficialWebpage: (url: string) => void;
 }) {
   return (
@@ -424,11 +424,11 @@ function PSelectorPresetRender(props: { presets: LPresetLibrary[]; selectedPrese
   return (
     <section className="preset-panel">
       <div className="preset-grid">
-        {props.presets.filter((preset): preset is LPresetLibrary & { presetId: Exclude<LPresetLibraryId, "custom"> } => LPresetLibrarySelectableList(props.presets).some((selectablePreset) => selectablePreset.presetId === preset.presetId)).map((preset) => (
+        {props.presets.filter((preset): preset is LPresetLibrary & { presetId: Exclude<LPresetLibraryId, "custom"> } => LPresetLibraryList(props.presets).some((selectablePreset) => selectablePreset.presetId === preset.presetId)).map((preset) => (
           <button className={`preset-card ${preset.dev ? "preset-card--dev" : ""} ${props.selectedPresetId === preset.presetId ? "preset-card--active" : ""}`} type="button" key={preset.presetId} onClick={() => props.onApplyPreset(preset.presetId)}>
             <PIconPresetRender presetId={preset.presetId} className="preset-card__icon" />
             <span>
-              <span className="preset-card__name">{LPresetLibraryNameGet(preset.presetId, props.extendedLibraries)}</span>
+              <span className="preset-card__name">{LPresetNameGet(preset.presetId, props.extendedLibraries)}</span>
               <span className="preset-card__plain">{LLocaleTextGet(`libraries.presets.${preset.presetId}.plain`)}</span>
             </span>
             {props.selectedPresetId === preset.presetId && <span className="preset-card__check" aria-hidden="true">✓</span>}
@@ -439,7 +439,7 @@ function PSelectorPresetRender(props: { presets: LPresetLibrary[]; selectedPrese
         <section className="preset-technical-card" aria-label={LLocaleTextGet("libraries.technical.show")}>
           <div className="preset-technical-card__header">
             <span className="preset-technical-card__title">
-              <strong>{LPresetLibraryNameGet(selectedPreset.presetId, props.extendedLibraries)}</strong>
+              <strong>{LPresetNameGet(selectedPreset.presetId, props.extendedLibraries)}</strong>
               <span>{LLocaleTextGet("libraries.technical.show")}</span>
             </span>
           </div>
@@ -453,13 +453,13 @@ function PSelectorPresetRender(props: { presets: LPresetLibrary[]; selectedPrese
 function PSummaryLibraryRender(props: { LCatalogLibrarySource: LLibraryChoice[]; selectedLibraryIds: string[]; selectedPresetId: LPresetLibraryId; windowsShellProfileName: string; extendedLibraries: boolean }) {
   const normalizedSelection = LLibrarySelectionNormalize(props.selectedLibraryIds, props.windowsShellProfileName, props.LCatalogLibrarySource);
   const visibleCatalog = LLibraryVisibleFilter(props.LCatalogLibrarySource, props.windowsShellProfileName);
-  const licenseBoundary = LLicenseBoundaryDerive(normalizedSelection, props.LCatalogLibrarySource, props.windowsShellProfileName);
+  const licenseBoundary = LLicenseBoundaryGet(normalizedSelection, props.LCatalogLibrarySource, props.windowsShellProfileName);
   const selectedOptionalCount = visibleCatalog.filter((library) => normalizedSelection.includes(library.libraryId) && !library.defaultChecked).length;
   const selectedInternalCount = visibleCatalog.filter((library) => normalizedSelection.includes(library.libraryId) && library.trackName === "internal").length;
   const selectedExternalCount = visibleCatalog.filter((library) => normalizedSelection.includes(library.libraryId) && library.trackName === "external").length;
   const includedCount = visibleCatalog.filter((library) => library.defaultChecked).length;
 
-  const selectedPresetName = LPresetLibraryNameGet(props.selectedPresetId, props.extendedLibraries);
+  const selectedPresetName = LPresetNameGet(props.selectedPresetId, props.extendedLibraries);
   const selectionMessage = props.selectedPresetId === "custom"
     ? LLocaleTextGet("libraries.presetSelector.custom")
     : LLocaleTextGet("libraries.summary.currentPreset", { preset: selectedPresetName });
@@ -509,41 +509,41 @@ function PSummaryLibraryRender(props: { LCatalogLibrarySource: LLibraryChoice[];
   );
 }
 
-type LLibrarySectionFilter = string;
+type LSectionState = string;
 
-function LLibraryCategoryNameGet(library: LLibraryChoice): string {
+function LLibraryCategoryGet(library: LLibraryChoice): string {
   return LLibraryTextGet(library, "categoryName") || LLocaleTextGet("common.other");
 }
 
-function LLibraryCategoryDefaultCheck(categoryName: string): boolean {
+function LLibraryCategoryCheck(categoryName: string): boolean {
   const normalizedCategoryName = categoryName.toLocaleLowerCase();
   return normalizedCategoryName.includes("included by default") || normalizedCategoryName.includes("기본 포함");
 }
 
-function LLibrarySectionFilterLabelGet(categoryName: LLibrarySectionFilter): string {
-  if (LLibraryCategoryDefaultCheck(categoryName)) return LLocaleTextGet("libraries.categoryFilter.default");
+function LSectionLabelGet(categoryName: LSectionState): string {
+  if (LLibraryCategoryCheck(categoryName)) return LLocaleTextGet("libraries.categoryFilter.default");
   return categoryName;
 }
 
-function LLibrarySectionFilterSummaryGet(selectedSections: LLibrarySectionFilter[]): string {
+function LSectionSummaryGet(selectedSections: LSectionState[]): string {
   if (selectedSections.length === 0) return LLocaleTextGet("libraries.categoryFilter.all");
-  if (selectedSections.length === 1) return LLibrarySectionFilterLabelGet(selectedSections[0]);
+  if (selectedSections.length === 1) return LSectionLabelGet(selectedSections[0]);
   return LLocaleTextGet("libraries.categoryFilter.selectedCount").replace("{count}", String(selectedSections.length));
 }
 
-function LLibrarySectionOptionsGet(LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName: string): string[] {
+function LSectionOptionsGet(LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName: string): string[] {
   const categoryNames: string[] = [];
   for (const library of LLibraryVisibleFilter(LCatalogLibrarySource, windowsShellProfileName)) {
-    const categoryName = LLibraryCategoryNameGet(library);
+    const categoryName = LLibraryCategoryGet(library);
     if (!categoryNames.includes(categoryName)) categoryNames.push(categoryName);
   }
   return categoryNames;
 }
 
-function LLibraryFilter(LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName: string, searchQuery: string, sectionFilters: LLibrarySectionFilter[]): LLibraryChoice[] {
+function LLibraryFilter(LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName: string, searchQuery: string, sectionFilters: LSectionState[]): LLibraryChoice[] {
   const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
   return LLibraryVisibleFilter(LCatalogLibrarySource, windowsShellProfileName).filter((library) => {
-    const categoryName = LLibraryCategoryNameGet(library);
+    const categoryName = LLibraryCategoryGet(library);
     if (sectionFilters.length > 0 && !sectionFilters.includes(categoryName)) return false;
     if (!normalizedQuery) return true;
     const searchableText = [
@@ -567,10 +567,10 @@ function LLibraryNameSplit(displayName: string): { buildName: string; featureNam
     return { buildName: displayName, featureName: "" };
   }
   const [buildName, ...featureParts] = displayName.split(separator);
-  return { buildName: buildName.trim(), featureName: LLibraryFeatureNameClean(featureParts.join(separator).trim()) };
+  return { buildName: buildName.trim(), featureName: LLibraryFeatureClean(featureParts.join(separator).trim()) };
 }
 
-function LLibraryFeatureNameClean(featureName: string): string {
+function LLibraryFeatureClean(featureName: string): string {
   const suffixes = [
     " encoding",
     " decoding",
@@ -591,18 +591,18 @@ function LLibraryFeatureNameClean(featureName: string): string {
   return featureName;
 }
 
-function LLibraryFilteredGroup(libraries: LLibraryChoice[]) {
+function LLibraryFilterCreate(libraries: LLibraryChoice[]) {
   return libraries.reduce<Record<string, LLibraryChoice[]>>((groups, library) => {
-    const categoryName = LLibraryCategoryNameGet(library);
+    const categoryName = LLibraryCategoryGet(library);
     groups[categoryName] = groups[categoryName] || [];
     groups[categoryName].push(library);
     return groups;
   }, {});
 }
 
-function PListLibraryRender(props: { LCatalogLibrarySource: LLibraryChoice[]; selectedLibraryIds: string[]; onToggleLibrary: (libraryId: string) => void; showTechnicalDetails: boolean; windowsShellProfileName: string; searchQuery: string; sectionFilters: LLibrarySectionFilter[]; onOpenOfficialWebpage: (url: string) => void }) {
+function PListLibraryRender(props: { LCatalogLibrarySource: LLibraryChoice[]; selectedLibraryIds: string[]; onToggleLibrary: (libraryId: string) => void; showTechnicalDetails: boolean; windowsShellProfileName: string; searchQuery: string; sectionFilters: LSectionState[]; onOpenOfficialWebpage: (url: string) => void }) {
   const filteredLibraries = LLibraryFilter(props.LCatalogLibrarySource, props.windowsShellProfileName, props.searchQuery, props.sectionFilters);
-  const groupedLibraries = LLibraryFilteredGroup(filteredLibraries);
+  const groupedLibraries = LLibraryFilterCreate(filteredLibraries);
   return (
     <div className="library-list">
       {filteredLibraries.length === 0 && <p className="library-list__empty">{LLocaleTextGet("libraries.list.empty")}</p>}
@@ -610,9 +610,9 @@ function PListLibraryRender(props: { LCatalogLibrarySource: LLibraryChoice[]; se
         <section className="library-group" key={categoryName}>
           <h2 className="library-group__title">{categoryName}</h2>
           {libraries.map((library) => {
-            const isUiUnavailable = LLibraryUiUnavailableCheck(library, props.windowsShellProfileName);
-            const unavailableReasonKey = LLibraryUiUnavailableReasonKeyGet(library, props.windowsShellProfileName);
-            const isCheckboxLocked = LLibraryCheckboxLockedCheck(library, props.windowsShellProfileName);
+            const isUiUnavailable = LLibraryUnavailableCheck(library, props.windowsShellProfileName);
+            const unavailableReasonKey = LLibraryReasonGet(library, props.windowsShellProfileName);
+            const isCheckboxLocked = LLibraryLockedCheck(library, props.windowsShellProfileName);
             const isChecked = (props.selectedLibraryIds.includes(library.libraryId) || library.defaultChecked) && !isCheckboxLocked;
             // TLS backends, shaderc/glslang, and the EVC binding pairs each render as a
             // radio group (pick one) in normal and basic dev mode; clicking the selected
@@ -621,15 +621,15 @@ function PListLibraryRender(props: { LCatalogLibrarySource: LLibraryChoice[]; se
             // its own radio `name` so unrelated groups do not clear each other.
             const radioGroupName = LUnlockSudoCheck()
               ? undefined
-              : LLibraryTlsBackendIds.has(library.libraryId)
+              : LLibraryTlsBackend.has(library.libraryId)
                 ? "tls-backend"
-                : LLibraryShaderCompilerIds.has(library.libraryId)
+                : LLibraryShaderCompiler.has(library.libraryId)
                   ? "shader-compiler"
-                  : LLibraryEvcDecoderIds.has(library.libraryId)
+                  : LLibraryEvcDecoder.has(library.libraryId)
                     ? "evc-decoder"
-                    : LLibraryEvcEncoderIds.has(library.libraryId)
+                    : LLibraryEvcEncoder.has(library.libraryId)
                       ? "evc-encoder"
-                      : LLibraryIntelBackendIds.has(library.libraryId)
+                      : LLibraryIntelBackend.has(library.libraryId)
                         ? "intel-hwaccel-backend"
                         : undefined;
             const isExclusiveRadio = radioGroupName !== undefined;
@@ -641,7 +641,7 @@ function PListLibraryRender(props: { LCatalogLibrarySource: LLibraryChoice[]; se
             const hasTechnicalMetadata = library.configureFlags.length > 0 || showsOfficialWebpage || showsPackageNames;
             const displayName = LLibraryTextGet(library, "displayName");
             const { buildName, featureName } = LLibraryNameSplit(displayName);
-            const statusLabel = library.defaultChecked ? LLocaleTextGet("libraries.row.included") : LLibraryLicenseLabelGet(library.licenseEffectName);
+            const statusLabel = library.defaultChecked ? LLocaleTextGet("libraries.row.included") : LLicenseLabelGet(library.licenseEffectName);
             return (
               <label className={`library-row library-row--track-${trackName} ${props.showTechnicalDetails ? "library-row--technical-open" : ""} ${library.locked ? "library-row--locked" : ""} ${isUiUnavailable ? "library-row--unavailable" : ""} ${isExclusiveRadio ? "library-row--tls" : ""}`} key={library.libraryId}>
                 <input
@@ -655,7 +655,7 @@ function PListLibraryRender(props: { LCatalogLibrarySource: LLibraryChoice[]; se
                 <span className="library-row__main">
                   <span className="library-row__heading">
                     <span className="library-row__name">{buildName}</span>
-                    {!isNativeTrack && <span className={`library-row__track library-row__track--${trackName}`}>{LLibraryTrackLabelGet(trackName)}</span>}
+                    {!isNativeTrack && <span className={`library-row__track library-row__track--${trackName}`}>{LLibraryTrackGet(trackName)}</span>}
                   </span>
                   <span className="library-row__copy">
                     {featureName && <span className="library-row__feature">{featureName}</span>}
@@ -717,22 +717,22 @@ function PListLibraryRender(props: { LCatalogLibrarySource: LLibraryChoice[]; se
 
 
 
-function PDropdownSectionRender(props: { selectedSections: LLibrarySectionFilter[]; sectionOptions: string[]; onChangeSections: (value: LLibrarySectionFilter[]) => void }) {
+function PDropdownSectionRender(props: { selectedSections: LSectionState[]; sectionOptions: string[]; onChangeSections: (value: LSectionState[]) => void }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (!isOpen) return;
-    function handlePointerDown(event: PointerEvent) {
+    function PDropdownClose(event: PointerEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("pointerdown", PDropdownClose);
+    return () => document.removeEventListener("pointerdown", PDropdownClose);
   }, [isOpen]);
 
-  function toggleSection(sectionName: LLibrarySectionFilter) {
+  function LSectionToggle(sectionName: LSectionState) {
     const nextSections = props.selectedSections.includes(sectionName)
       ? props.selectedSections.filter((selectedSection) => selectedSection !== sectionName)
       : [...props.selectedSections, sectionName];
@@ -748,7 +748,7 @@ function PDropdownSectionRender(props: { selectedSections: LLibrarySectionFilter
         aria-expanded={isOpen}
         onClick={() => setIsOpen((value) => !value)}
       >
-        <strong className="libraries-section-dropdown__value">{LLibrarySectionFilterSummaryGet(props.selectedSections)}</strong>
+        <strong className="libraries-section-dropdown__value">{LSectionSummaryGet(props.selectedSections)}</strong>
         <span className="libraries-section-dropdown__chevron" aria-hidden="true" />
       </button>
       {isOpen && (
@@ -775,9 +775,9 @@ function PDropdownSectionRender(props: { selectedSections: LLibrarySectionFilter
                 role="option"
                 aria-selected={isSelected}
                 key={sectionName}
-                onClick={() => toggleSection(sectionName)}
+                onClick={() => LSectionToggle(sectionName)}
               >
-                <span>{LLibrarySectionFilterLabelGet(sectionName)}</span>
+                <span>{LSectionLabelGet(sectionName)}</span>
                 {isSelected
                   ? <span className="libraries-section-dropdown__check" aria-hidden="true">✓</span>
                   : <span className="libraries-section-dropdown__check-placeholder" aria-hidden="true" />
@@ -796,9 +796,9 @@ function PToolbarLibraryRender(props: {
   onToggleTechnicalDetails: () => void;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
-  sectionFilters: LLibrarySectionFilter[];
+  sectionFilters: LSectionState[];
   sectionOptions: string[];
-  onSectionFiltersChange: (value: LLibrarySectionFilter[]) => void;
+  onSectionFiltersChange: (value: LSectionState[]) => void;
   onResetFilters: () => void;
 }) {
   return (
@@ -826,7 +826,7 @@ function PToolbarLibraryRender(props: {
 
 // ─── PLibraryRender ─────────────────────────────────────────────────────────────
 
-export type PLibraryProps = {
+export type LLibraryProperties = {
   initialProgramState: LStateInitial;
   libraryCatalog: LLibraryChoice[];
   ffmpegBuildSettings: LSettingsFFmpeg;
@@ -837,11 +837,11 @@ export type PLibraryProps = {
   setLibraryDetailedView: (value: boolean) => void;
   showTechnicalDetails: boolean;
   setShowTechnicalDetails: (value: boolean) => void;
-  sectionFilters: LLibrarySectionFilter[];
-  setSectionFilters: (value: LLibrarySectionFilter[]) => void;
-  toggleLibrary: (libraryId: string) => void;
-  applyLibraryPreset: (presetId: LPresetLibraryId) => void;
-  setExtendedLibraries: (value: boolean) => void;
+  sectionFilters: LSectionState[];
+  setSectionFilters: (value: LSectionState[]) => void;
+  LLibraryToggle: (libraryId: string) => void;
+  LPresetLibraryApply: (presetId: LPresetLibraryId) => void;
+  LLibraryExtendedUpdate: (value: boolean) => void;
   openInUserBrowser: (url: string) => Promise<void>;
 };
 
@@ -849,7 +849,7 @@ function LArrayEnsure<T>(value: T[] | null | undefined): T[] {
   return Array.isArray(value) ? value : [];
 }
 
-export function PLibraryRender({ initialProgramState, libraryCatalog, ffmpegBuildSettings, libraryPresetCatalog, libraryPresetId, extendedLibraries, libraryDetailedView, setLibraryDetailedView, showTechnicalDetails, setShowTechnicalDetails, sectionFilters, setSectionFilters, toggleLibrary, applyLibraryPreset, setExtendedLibraries, openInUserBrowser }: PLibraryProps) {
+export function PLibraryRender({ initialProgramState, libraryCatalog, ffmpegBuildSettings, libraryPresetCatalog, libraryPresetId, extendedLibraries, libraryDetailedView, setLibraryDetailedView, showTechnicalDetails, setShowTechnicalDetails, sectionFilters, setSectionFilters, LLibraryToggle, LPresetLibraryApply, LLibraryExtendedUpdate, openInUserBrowser }: LLibraryProperties) {
   const [searchQuery, setSearchQuery] = React.useState("");
   const safeLibraryCatalog = LArrayEnsure(libraryCatalog);
   const safeInitialLibraryCatalog = LArrayEnsure(initialProgramState?.defaultLibraryCatalog);
@@ -858,7 +858,7 @@ export function PLibraryRender({ initialProgramState, libraryCatalog, ffmpegBuil
   const safeSectionFilters = LArrayEnsure(sectionFilters);
   const safeShellProfileName = ffmpegBuildSettings?.windowsShellProfileName ?? "ucrt64";
   const LCatalogLibrarySource = safeLibraryCatalog.length > 0 ? safeLibraryCatalog : safeInitialLibraryCatalog;
-  const sectionOptions = LLibrarySectionOptionsGet(LCatalogLibrarySource, safeShellProfileName);
+  const sectionOptions = LSectionOptionsGet(LCatalogLibrarySource, safeShellProfileName);
 
   React.useEffect(() => {
     const prunedSections = safeSectionFilters.filter((sectionName) => sectionOptions.includes(sectionName));
@@ -878,11 +878,11 @@ export function PLibraryRender({ initialProgramState, libraryCatalog, ffmpegBuil
 
       {!libraryDetailedView && (
         <div className="libraries-simple-layout">
-          <PCardPresetRender presets={safeLibraryPresetCatalog} selectedPresetId={libraryPresetId} onApplyPreset={applyLibraryPreset} extendedLibraries={extendedLibraries} />
+          <PCardPresetRender presets={safeLibraryPresetCatalog} selectedPresetId={libraryPresetId} onApplyPreset={LPresetLibraryApply} extendedLibraries={extendedLibraries} />
           <PCardLibraryRender
             LCatalogLibrarySource={LCatalogLibrarySource}
             selectedLibraryIds={safeSelectedLibraryIds}
-            onToggleLibrary={toggleLibrary}
+            onToggleLibrary={LLibraryToggle}
             windowsShellProfileName={safeShellProfileName}
             searchQuery={searchQuery}
             onSearchQueryChange={setSearchQuery}
@@ -896,9 +896,9 @@ export function PLibraryRender({ initialProgramState, libraryCatalog, ffmpegBuil
 
       {libraryDetailedView && (
         <>
-          <PSelectorPresetRender presets={safeLibraryPresetCatalog} selectedPresetId={libraryPresetId} onApplyPreset={applyLibraryPreset} showTechnicalDetails={showTechnicalDetails} extendedLibraries={extendedLibraries} />
+          <PSelectorPresetRender presets={safeLibraryPresetCatalog} selectedPresetId={libraryPresetId} onApplyPreset={LPresetLibraryApply} showTechnicalDetails={showTechnicalDetails} extendedLibraries={extendedLibraries} />
           <label className="library-extended-toggle">
-            <input type="checkbox" checked={extendedLibraries} onChange={(event) => setExtendedLibraries(event.target.checked)} />
+            <input type="checkbox" checked={extendedLibraries} onChange={(event) => LLibraryExtendedUpdate(event.target.checked)} />
             <span className="library-extended-toggle__label">{LLocaleTextGet("libraries.extended.label")}</span>
           </label>
           <PSummaryLibraryRender LCatalogLibrarySource={LCatalogLibrarySource} selectedLibraryIds={safeSelectedLibraryIds} selectedPresetId={libraryPresetId} windowsShellProfileName={safeShellProfileName} extendedLibraries={extendedLibraries} />
@@ -938,7 +938,7 @@ export function PLibraryRender({ initialProgramState, libraryCatalog, ffmpegBuil
               </div>
             </section>
           )}
-          <PListLibraryRender LCatalogLibrarySource={LCatalogLibrarySource} selectedLibraryIds={safeSelectedLibraryIds} onToggleLibrary={toggleLibrary} showTechnicalDetails={showTechnicalDetails} windowsShellProfileName={safeShellProfileName} searchQuery={searchQuery} sectionFilters={safeSectionFilters} onOpenOfficialWebpage={openInUserBrowser} />
+          <PListLibraryRender LCatalogLibrarySource={LCatalogLibrarySource} selectedLibraryIds={safeSelectedLibraryIds} onToggleLibrary={LLibraryToggle} showTechnicalDetails={showTechnicalDetails} windowsShellProfileName={safeShellProfileName} searchQuery={searchQuery} sectionFilters={safeSectionFilters} onOpenOfficialWebpage={openInUserBrowser} />
         </>
       )}
     </section>

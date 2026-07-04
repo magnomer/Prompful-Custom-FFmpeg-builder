@@ -8,7 +8,7 @@ import "promptfulcustomffmpegbuilder/versions/shared"
 //	    archive to download and verify; they do not describe build manipulation.
 //	(2) Version/library manipulation is executable Go code under /versions/x.x.x/.
 //	    Those hooks change the build plan by calling explicit operations such as
-//	    AddCMakeOptions, PatchSource, OverridePkgConfigLibsLine, or UsePrivatePrefixInstall.
+//	    LCMakeOptionAdd, LPreparationModificationAdd, LLibraryLineOverride, or LInstallPrivateUse.
 //	(3) This package only dispatches the hook and projects the result into the
 //	    script-facing LLibraryPreparation structure.
 
@@ -47,9 +47,9 @@ type LFileGenerated struct {
 	Lines []string `json:"lines"`
 }
 
-// LPkgConfigLibsLinePatch replaces the Libs line in an installed pkg-config module
+// LLibraryPatchEntry replaces the Libs line in an installed pkg-config module
 // that is not the recipe's primary module.
-type LPkgConfigLibsLinePatch struct {
+type LLibraryPatchEntry struct {
 	Module   string `json:"module"`
 	LibsLine string `json:"libsLine"`
 }
@@ -61,10 +61,10 @@ type LLibraryBuildsystem string
 
 const (
 	LBuildSystemCmake LLibraryBuildsystem = "cmake"
-	// LBuildSystemConfigureMake covers projects with a ./configure script (standard
+	// LConfigureMakeSystem covers projects with a ./configure script (standard
 	// autotools or x264/davs2-style custom configure) followed by make + make install.
-	LBuildSystemConfigureMake LLibraryBuildsystem = "configure-make"
-	LBuildSystemMake          LLibraryBuildsystem = "make"
+	LConfigureMakeSystem LLibraryBuildsystem = "configure-make"
+	LMakeBuildSystem     LLibraryBuildsystem = "make"
 	// LBuildSystemMeson covers projects configured with `meson setup` and built with ninja
 	// (e.g. libvmaf). The meson `-Dname=value` options reuse the CMakeOptions field, since
 	// both build systems share that option syntax and the same safe-option validation.
@@ -85,12 +85,12 @@ type LLibrarySpec struct {
 	// so the recipe stays profile-independent. Most recipes need none.
 	LPackagesBuildDependency []string
 
-	// LPackagesMsysBuildDependency lists MSYS2 base ("msys" repo) package names installed
+	// LMSYSBuildDependency lists MSYS2 base ("msys" repo) package names installed
 	// verbatim ??not profile-prefixed ??before the build runs. These are build-time tools
 	// that live in /usr/bin rather than the mingw prefix, e.g. the autotools an autogen
 	// recipe needs (autoconf-wrapper, automake-wrapper, libtool); modern base-devel no longer
 	// pulls them. Most recipes need none.
-	LPackagesMsysBuildDependency []string
+	LMSYSBuildDependency []string
 
 	// LFlagsC are extra C compiler flags exported as CFLAGS for the build. Used to demote a
 	// GCC-14 hard error back to a warning for an older C library that predates it (e.g. libvmaf
@@ -101,25 +101,25 @@ type LLibrarySpec struct {
 	// internal source build (cmake)
 	LBuildSystem       LLibraryBuildsystem
 	LOptionsCmake      []string // intrinsic to the library, not to a version
-	LTargetsCmakeBuild []string // named targets to build; empty = the default target
+	LCMakeBuildTargets []string // named targets to build; empty = the default target
 
 	// internal source build (configure-make)
 	LSubdirConfigure    string   // dir holding ./configure, relative to source root (e.g. "build/linux")
 	LOptionsConfigure   []string // intrinsic configure flags (--prefix is added automatically)
-	LTargetsMakeBuild   []string // make targets for the build step; empty = default target
-	LTargetsMakeInstall []string // make targets for the install step; empty = "install"
-	// LAutogenRun bootstraps an autotools project whose tag tarball ships no generated
+	LMakeBuildTargets   []string // make targets for the build step; empty = default target
+	LMakeInstallTargets []string // make targets for the install step; empty = "install"
+	// LAutogenCommand bootstraps an autotools project whose tag tarball ships no generated
 	// ./configure (only configure.ac + autogen.sh). The generator runs autogen.sh (or
 	// autoreconf -fiv) at the source root before ./configure.
-	LAutogenRun bool
+	LAutogenCommand bool
 
 	// internal source build (plain make): a Makefile-only project with no lib-only install
 	// target installs by copying these source-relative artifacts into the prefix ??each
-	// header into include/ (by basename) and the static archive into lib/. LVariablesMake are
+	// header into include/ (by basename) and the static archive into lib/. LMakeVariables are
 	// NAME=VALUE command-line overrides that skip the makefile's own (e.g. SDL_CFLAGS=).
-	LVariablesMake          []string
-	LFilesMakeInstallHeader []string
-	LFileMakeStaticLib      string
+	LMakeVariables      []string
+	LMakeInstallHeaders []string
+	LStaticLibraryFile  string
 
 	// external vendor import
 	LSubdirImportInclude string
@@ -127,16 +127,16 @@ type LLibrarySpec struct {
 
 	// LNamePkgconfig is the installed pkg-config module (e.g. "lcevc_dec", "libvvenc") ??	// the same module FFmpeg's require_pkg_config looks up. It is used both to validate
 	// the pinned version against FFmpeg's required minimum (the preflight safety net) and,
-	// when LLibsPkgconfigAppend is set, to patch that .pc. LLibsPkgconfigAppend lists bare
+	// when LLibrariesAppendLine is set, to patch that .pc. LLibrariesAppendLine lists bare
 	// link libraries (e.g. "stdc++", "m") appended to the .pc's Libs line after install:
 	// some CMake projects emit a static .pc that lists the C++/math runtime BEFORE their
 	// own static archives, so GNU ld discards it too early and the link fails with
 	// undefined std::/operator new references; appending the runtime at the END fixes the
 	// static link order. Leave LNamePkgconfig empty for libraries FFmpeg does not
 	// version-check via pkg-config (header-only or vendor-imported).
-	LNamePkgconfig         string
-	LLibsPkgconfigAppend   []string
-	LCFlagsPkgconfigAppend []string
+	LNamePkgconfig       string
+	LLibrariesAppendLine []string
+	LCompilerFlagLine    []string
 
 	// LLinePkgconfigLibs, when set, replaces the installed .pc's whole "Libs:" line value.
 	// Needed when a bare -l<name> in the .pc would resolve to a same-named shared import
@@ -145,7 +145,7 @@ type LLibrarySpec struct {
 	// archive. May reference ${libdir}.
 	LLinePkgconfigLibs string
 
-	// LPrefixPrivateInstall installs this library into its own per-library prefix
+	// LPrivateInstallPrefix installs this library into its own per-library prefix
 	// (<profile>/opt/customffmpeg/<LNamePkgconfig>) instead of the shared MSYS2 prefix,
 	// and the configure step prepends that prefix's pkgconfig dir to PKG_CONFIG_PATH.
 	// Needed when a library ships archives whose base names collide with a different
@@ -155,7 +155,7 @@ type LLibrarySpec struct {
 	// archive paths so the link binds this prefix's archives regardless of -L ordering;
 	// the installed .pc's Requires/Requires.private are stripped so no bare -l<name> from a
 	// transitive module re-introduces the shared-prefix archive.
-	LPrefixPrivateInstall bool
+	LPrivateInstallPrefix bool
 
 	// LPatchesSource are exact full-line edits applied to the extracted source before the
 	// build runs, for upstream portability bugs no build flag can fix. Most recipes need none.
@@ -167,8 +167,8 @@ type LLibrarySpec struct {
 	LFilesGeneratedSource []LFileGenerated
 
 	// verification (both methods)
-	LPathVerifyHeaderRelative string
-	LStemVerifyLib            string
+	LHeaderPathRelative string
+	LStemVerifyLib      string
 }
 
 // LLibraryPreparation is the flattened, plan-facing projection of an item paired with its
@@ -203,7 +203,7 @@ type LLibraryPreparation struct {
 	ArchiveUrl          string `json:"archiveUrl"`
 	ArchiveSha256Hash   string `json:"archiveSha256Hash"`
 	AllowedDownloadHost string `json:"allowedDownloadHost"`
-	LArchiveFormat      string `json:"archiveFormat"`
+	LArchiveKind        string `json:"archiveFormat"`
 
 	CMakeOptions      []string `json:"cmakeOptions,omitempty"`
 	CMakeBuildTargets []string `json:"cmakeBuildTargets,omitempty"`
@@ -221,12 +221,12 @@ type LLibraryPreparation struct {
 	ImportIncludeSubdir string `json:"importIncludeSubdir,omitempty"`
 	ImportLibSubdir     string `json:"importLibSubdir,omitempty"`
 
-	PkgConfigName            string                    `json:"pkgConfigName,omitempty"`
-	PkgConfigAppendLibs      []string                  `json:"pkgConfigAppendLibs,omitempty"`
-	PkgConfigAppendCFlags    []string                  `json:"pkgConfigAppendCFlags,omitempty"`
-	PkgConfigLibsLine        string                    `json:"pkgConfigLibsLine,omitempty"`
-	PkgConfigLibsLinePatches []LPkgConfigLibsLinePatch `json:"pkgConfigLibsLinePatches,omitempty"`
-	PrivatePrefixInstall     bool                      `json:"privatePrefixInstall,omitempty"`
+	PkgConfigName            string               `json:"pkgConfigName,omitempty"`
+	PkgConfigAppendLibs      []string             `json:"pkgConfigAppendLibs,omitempty"`
+	PkgConfigAppendCFlags    []string             `json:"pkgConfigAppendCFlags,omitempty"`
+	PkgConfigLibsLine        string               `json:"pkgConfigLibsLine,omitempty"`
+	PkgConfigLibsLinePatches []LLibraryPatchEntry `json:"pkgConfigLibsLinePatches,omitempty"`
+	PrivatePrefixInstall     bool                 `json:"privatePrefixInstall,omitempty"`
 
 	VerifyHeaderRelativePath string `json:"verifyHeaderRelativePath"`
 	VerifyLibStem            string `json:"verifyLibStem"`
@@ -252,30 +252,30 @@ func LPreparationBuildCreate(item LLibrarySpec, source LLibrarySourcePin) LLibra
 		CFlags:                      append([]string{}, item.LFlagsC...),
 		Version:                     source.Version,
 		BuildDependencyPackages:     append([]string{}, item.LPackagesBuildDependency...),
-		MsysBuildDependencyPackages: append([]string{}, item.LPackagesMsysBuildDependency...),
+		MsysBuildDependencyPackages: append([]string{}, item.LMSYSBuildDependency...),
 		ArchiveUrl:                  source.Url,
 		ArchiveSha256Hash:           source.Sha256,
 		AllowedDownloadHost:         source.Host,
-		LArchiveFormat:              source.Format,
+		LArchiveKind:                source.Format,
 		CMakeOptions:                LOptionsCmake,
-		CMakeBuildTargets:           item.LTargetsCmakeBuild,
+		CMakeBuildTargets:           item.LCMakeBuildTargets,
 		ConfigureSubdir:             item.LSubdirConfigure,
 		ConfigureOptions:            item.LOptionsConfigure,
-		MakeBuildTargets:            item.LTargetsMakeBuild,
-		MakeInstallTargets:          item.LTargetsMakeInstall,
-		RunAutogen:                  item.LAutogenRun,
-		MakeVariables:               append([]string{}, item.LVariablesMake...),
-		MakeInstallHeaderFiles:      append([]string{}, item.LFilesMakeInstallHeader...),
-		MakeStaticLibFile:           item.LFileMakeStaticLib,
+		MakeBuildTargets:            item.LMakeBuildTargets,
+		MakeInstallTargets:          item.LMakeInstallTargets,
+		RunAutogen:                  item.LAutogenCommand,
+		MakeVariables:               append([]string{}, item.LMakeVariables...),
+		MakeInstallHeaderFiles:      append([]string{}, item.LMakeInstallHeaders...),
+		MakeStaticLibFile:           item.LStaticLibraryFile,
 		ImportIncludeSubdir:         item.LSubdirImportInclude,
 		ImportLibSubdir:             item.LSubdirImportLib,
 		PkgConfigName:               item.LNamePkgconfig,
-		PkgConfigAppendLibs:         append([]string{}, item.LLibsPkgconfigAppend...),
-		PkgConfigAppendCFlags:       append([]string{}, item.LCFlagsPkgconfigAppend...),
+		PkgConfigAppendLibs:         append([]string{}, item.LLibrariesAppendLine...),
+		PkgConfigAppendCFlags:       append([]string{}, item.LCompilerFlagLine...),
 		PkgConfigLibsLine:           item.LLinePkgconfigLibs,
 		PkgConfigLibsLinePatches:    nil,
-		PrivatePrefixInstall:        item.LPrefixPrivateInstall,
-		VerifyHeaderRelativePath:    item.LPathVerifyHeaderRelative,
+		PrivatePrefixInstall:        item.LPrivateInstallPrefix,
+		VerifyHeaderRelativePath:    item.LHeaderPathRelative,
 		VerifyLibStem:               item.LStemVerifyLib,
 		SourcePatches:               append([]LSourcePatch{}, item.LPatchesSource...),
 		GeneratedSourceFiles:        append([]LFileGenerated{}, item.LFilesGeneratedSource...),
@@ -292,24 +292,24 @@ func LLibraryPreparationBuild(library LLibraryChoice, ffmpegVersion string) (LLi
 	if library.TrackName == LLibraryTrackNative {
 		return LLibraryPreparation{}, false
 	}
-	source, sourceResolved := LLibraryPreparationSourceResolve(ffmpegVersion, library.LibraryId)
+	source, sourceResolved := LSourceSpecificResolve(ffmpegVersion, library.LibraryId)
 	if !sourceResolved {
 		return LLibraryPreparation{}, false
 	}
-	registry, err := LVersionLibraryWorkRegistryLoad()
+	registry, err := LWorkRegistryLoad()
 	if err != nil {
 		return LLibraryPreparation{}, false
 	}
-	implementation, exists := registry.LWorkResolveByVersionAndLibrary(ffmpegVersion, library.LibraryId)
+	implementation, exists := registry.LWorkLibraryResolve(ffmpegVersion, library.LibraryId)
 	if !exists || implementation.Manipulator == nil {
 		return LLibraryPreparation{}, false
 	}
-	plan := shared.NewLibraryPreparationPlan(ffmpegVersion, library.LibraryId, implementation.Work.GoFilePath)
+	plan := shared.LPreparationPlanCreate(ffmpegVersion, library.LibraryId, implementation.Work.GoFilePath)
 	implementation.Manipulator(plan)
-	return LPreparationFromVersionLibraryPlan(*plan, source), true
+	return LPreparationPlanResolve(*plan, source), true
 }
 
-func LPreparationFromVersionLibraryPlan(plan shared.LibraryPreparationPlan, source LLibrarySourcePin) LLibraryPreparation {
+func LPreparationPlanResolve(plan shared.LPreparationPlan, source LLibrarySourcePin) LLibraryPreparation {
 	cmakeOptions := append([]string{}, plan.CMakeOptions...)
 	cmakeOptions = append(cmakeOptions, source.ExtraCMakeOptions...)
 	if len(cmakeOptions) == 0 {
@@ -328,7 +328,7 @@ func LPreparationFromVersionLibraryPlan(plan shared.LibraryPreparationPlan, sour
 		ArchiveUrl:                  source.Url,
 		ArchiveSha256Hash:           source.Sha256,
 		AllowedDownloadHost:         source.Host,
-		LArchiveFormat:              source.Format,
+		LArchiveKind:                source.Format,
 		CMakeOptions:                cmakeOptions,
 		CMakeBuildTargets:           append([]string{}, plan.CMakeBuildTargets...),
 		ConfigureSubdir:             plan.ConfigureSubdir,
@@ -345,16 +345,16 @@ func LPreparationFromVersionLibraryPlan(plan shared.LibraryPreparationPlan, sour
 		PkgConfigAppendLibs:         append([]string{}, plan.PkgConfigAppendLibs...),
 		PkgConfigAppendCFlags:       append([]string{}, plan.PkgConfigAppendCFlags...),
 		PkgConfigLibsLine:           plan.PkgConfigLibsLine,
-		PkgConfigLibsLinePatches:    LPkgConfigLibsLinePatchesFromShared(plan.PkgConfigLibsLinePatches),
+		PkgConfigLibsLinePatches:    LLineModificationRead(plan.PkgConfigLibsLinePatches),
 		PrivatePrefixInstall:        plan.PrivatePrefixInstall,
 		VerifyHeaderRelativePath:    plan.VerifyHeaderRelativePath,
 		VerifyLibStem:               plan.VerifyLibStem,
-		SourcePatches:               LSourcePatchesFromShared(plan.SourcePatches),
-		GeneratedSourceFiles:        LGeneratedFilesFromShared(plan.GeneratedSourceFiles),
+		SourcePatches:               LSourceModificationRead(plan.SourcePatches),
+		GeneratedSourceFiles:        LGeneratedFileRead(plan.GeneratedSourceFiles),
 	}
 }
 
-func LSourcePatchesFromShared(patches []shared.SourcePatch) []LSourcePatch {
+func LSourceModificationRead(patches []shared.LSourcePatchEntry) []LSourcePatch {
 	converted := make([]LSourcePatch, 0, len(patches))
 	for _, patch := range patches {
 		converted = append(converted, LSourcePatch{File: patch.File, Find: patch.Find, Replace: patch.Replace})
@@ -362,15 +362,15 @@ func LSourcePatchesFromShared(patches []shared.SourcePatch) []LSourcePatch {
 	return converted
 }
 
-func LPkgConfigLibsLinePatchesFromShared(patches []shared.PkgConfigLibsLinePatch) []LPkgConfigLibsLinePatch {
-	converted := make([]LPkgConfigLibsLinePatch, 0, len(patches))
+func LLineModificationRead(patches []shared.LPackagePatchEntry) []LLibraryPatchEntry {
+	converted := make([]LLibraryPatchEntry, 0, len(patches))
 	for _, patch := range patches {
-		converted = append(converted, LPkgConfigLibsLinePatch{Module: patch.Module, LibsLine: patch.LibsLine})
+		converted = append(converted, LLibraryPatchEntry{Module: patch.Module, LibsLine: patch.LibsLine})
 	}
 	return converted
 }
 
-func LGeneratedFilesFromShared(files []shared.GeneratedFile) []LFileGenerated {
+func LGeneratedFileRead(files []shared.LGeneratedFile) []LFileGenerated {
 	converted := make([]LFileGenerated, 0, len(files))
 	for _, file := range files {
 		converted = append(converted, LFileGenerated{Path: file.Path, Lines: append([]string{}, file.Lines...)})
@@ -378,10 +378,10 @@ func LGeneratedFilesFromShared(files []shared.GeneratedFile) []LFileGenerated {
 	return converted
 }
 
-// LLibraryNonnativePartition splits selected non-Native libraries into those that have
+// LLibraryPartitionCreate splits selected non-Native libraries into those that have
 // an implemented recipe with a resolvable version (preparable) and those that do not
 // (still blocked), for the FFmpeg release being built.
-func LLibraryNonnativePartition(libraries []LLibraryChoice, ffmpegVersion string) (preparable []LLibraryPreparation, blocked []LLibraryChoice) {
+func LLibraryPartitionCreate(libraries []LLibraryChoice, ffmpegVersion string) (preparable []LLibraryPreparation, blocked []LLibraryChoice) {
 	for _, library := range libraries {
 		if library.TrackName == LLibraryTrackNative {
 			continue
@@ -395,11 +395,11 @@ func LLibraryNonnativePartition(libraries []LLibraryChoice, ffmpegVersion string
 	return preparable, blocked
 }
 
-// LPackageDependencyPrefix turns each recipe's profile-independent build
+// LDependencyPrefixGet turns each recipe's profile-independent build
 // dependency suffixes (e.g. "python") into fully qualified MSYS2 mingw package names for
 // the selected shell profile (e.g. "mingw-w64-ucrt-x86_64-python"), in place. A recipe
 // with no build dependencies is left untouched.
-func LPackageDependencyPrefix(preparations []LLibraryPreparation, windowsShellProfileName string) {
+func LDependencyPrefixGet(preparations []LLibraryPreparation, windowsShellProfileName string) {
 	packagePrefix := LPackageProfileResolve(windowsShellProfileName)
 	for i := range preparations {
 		if len(preparations[i].BuildDependencyPackages) == 0 {

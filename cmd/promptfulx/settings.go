@@ -8,26 +8,26 @@ import (
 	"promptfulcustomffmpegbuilder/internal/planning"
 )
 
-// usageError carries a process exit code so the caller can distinguish a bad
+// LErrorUsage carries a process exit code so the caller can distinguish a bad
 // invocation (exit 2) from an unsupported version/library/preset value (exit 4),
 // per docs/internal/PlanCLI.md §38.
-type usageError struct {
+type LErrorUsage struct {
 	message string
 	code    int
 }
 
-func (e usageError) Error() string { return e.message }
+func (e LErrorUsage) Error() string { return e.message }
 
-func badArgs(format string, args ...any) usageError {
-	return usageError{message: fmt.Sprintf(format, args...), code: 2}
+func LErrorArgumentCreate(format string, args ...any) LErrorUsage {
+	return LErrorUsage{message: fmt.Sprintf(format, args...), code: 2}
 }
 
-func unsupported(format string, args ...any) usageError {
-	return usageError{message: fmt.Sprintf(format, args...), code: 4}
+func LErrorSupportCreate(format string, args ...any) LErrorUsage {
+	return LErrorUsage{message: fmt.Sprintf(format, args...), code: 4}
 }
 
-// cliBuildArgs holds the raw, pre-resolution CLI selections.
-type cliBuildArgs struct {
+// LArgumentBuild holds the raw, pre-resolution CLI selections.
+type LArgumentBuild struct {
 	version   string
 	preset    string
 	noPreset  bool
@@ -45,17 +45,17 @@ type cliBuildArgs struct {
 	msys2SignatureURL string
 }
 
-// argsParse scans build-shaped CLI arguments. Dynamic --enable-lib*/--disable-lib*
+// LArgumentParse scans build-shaped CLI arguments. Dynamic --enable-lib*/--disable-lib*
 // flags rule out the standard flag package, so this hand-rolls the scan.
-func argsParse(args []string) (cliBuildArgs, error) {
-	parsed := cliBuildArgs{}
+func LArgumentParse(args []string) (LArgumentBuild, error) {
+	parsed := LArgumentBuild{}
 	index := 0
 	takeValue := func(name, inline string, hasInline bool) (string, error) {
 		if hasInline {
 			return inline, nil
 		}
 		if index+1 >= len(args) {
-			return "", badArgs("flag %s needs a value", name)
+			return "", LErrorArgumentCreate("flag %s needs a value", name)
 		}
 		index++
 		return args[index], nil
@@ -96,7 +96,7 @@ func argsParse(args []string) (cliBuildArgs, error) {
 			}
 			jobs, convErr := strconv.Atoi(strings.TrimSpace(value))
 			if convErr != nil || jobs < 0 {
-				return parsed, badArgs("--jobs needs a non-negative integer, got %q", value)
+				return parsed, LErrorArgumentCreate("--jobs needs a non-negative integer, got %q", value)
 			}
 			parsed.jobs = jobs
 		case name == "--msys2-url":
@@ -130,30 +130,30 @@ func argsParse(args []string) (cliBuildArgs, error) {
 		case strings.HasPrefix(name, "--disable-lib"):
 			parsed.disable = append(parsed.disable, name)
 		default:
-			return parsed, badArgs("unknown flag: %s", name)
+			return parsed, LErrorArgumentCreate("unknown flag: %s", name)
 		}
 	}
 	return parsed, nil
 }
 
-// settingsResolve turns parsed CLI arguments into the planner's LSettingsFFmpeg,
+// LSettingsFFmpegResolve turns parsed CLI arguments into the planner's LSettingsFFmpeg,
 // using the shared Step 2 resolvers. It leaves WindowsShellProfileName empty so
 // the planner defaults it to ucrt64.
-func settingsResolve(parsed cliBuildArgs) (planning.LSettingsFFmpeg, error) {
+func LSettingsFFmpegResolve(parsed LArgumentBuild) (planning.LSettingsFFmpeg, error) {
 	if strings.TrimSpace(parsed.version) == "" {
-		return planning.LSettingsFFmpeg{}, badArgs("--ffmpeg-version is required")
+		return planning.LSettingsFFmpeg{}, LErrorArgumentCreate("--ffmpeg-version is required")
 	}
 	release, ok := planning.LReleaseVersionResolve(parsed.version)
 	if !ok {
-		return planning.LSettingsFFmpeg{}, unsupported("unsupported FFmpeg version: %s", parsed.version)
+		return planning.LSettingsFFmpeg{}, LErrorSupportCreate("unsupported FFmpeg version: %s", parsed.version)
 	}
 	url := release.ArchiveUrl
 
 	libraryIds := []string{}
 	if parsed.preset != "" && !parsed.noPreset {
-		ids, ok := planning.LPresetLibraryIdsResolve(url, "", parsed.preset, parsed.extended)
+		ids, ok := planning.LPresetIdentifiersResolve(url, "", parsed.preset, parsed.extended)
 		if !ok {
-			return planning.LSettingsFFmpeg{}, unsupported("unknown preset %q for FFmpeg %s", parsed.preset, release.Version)
+			return planning.LSettingsFFmpeg{}, LErrorSupportCreate("unknown preset %q for FFmpeg %s", parsed.preset, release.Version)
 		}
 		libraryIds = ids
 	}
@@ -161,17 +161,17 @@ func settingsResolve(parsed cliBuildArgs) (planning.LSettingsFFmpeg, error) {
 	for _, flag := range parsed.enable {
 		id, ok := planning.LLibraryFlagResolve(url, "", flag)
 		if !ok {
-			return planning.LSettingsFFmpeg{}, unsupported("unknown library flag %q for FFmpeg %s", flag, release.Version)
+			return planning.LSettingsFFmpeg{}, LErrorSupportCreate("unknown library flag %q for FFmpeg %s", flag, release.Version)
 		}
-		libraryIds = idAppendUnique(libraryIds, id)
+		libraryIds = LIdentifierAppend(libraryIds, id)
 	}
 	for _, flag := range parsed.disable {
 		enableForm := strings.Replace(flag, "--disable-", "--enable-", 1)
 		id, ok := planning.LLibraryFlagResolve(url, "", enableForm)
 		if !ok {
-			return planning.LSettingsFFmpeg{}, unsupported("unknown library flag %q for FFmpeg %s", flag, release.Version)
+			return planning.LSettingsFFmpeg{}, LErrorSupportCreate("unknown library flag %q for FFmpeg %s", flag, release.Version)
 		}
-		libraryIds = idRemove(libraryIds, id)
+		libraryIds = LIdentifierRemove(libraryIds, id)
 	}
 
 	return planning.LSettingsFFmpeg{
@@ -183,12 +183,12 @@ func settingsResolve(parsed cliBuildArgs) (planning.LSettingsFFmpeg, error) {
 	}, nil
 }
 
-// toolchainSettingsResolve builds the MSYS2 toolchain settings for `setup`,
+// LSettingsToolchainResolve builds the MSYS2 toolchain settings for `setup`,
 // starting from the embedded defaults (archive URL, signature URL, package set,
 // ucrt64 profile) and applying any --msys2-* overrides.
-func toolchainSettingsResolve(parsed cliBuildArgs) (planning.LSettingsBuild, error) {
+func LSettingsToolchainResolve(parsed LArgumentBuild) (planning.LSettingsToolchain, error) {
 	if strings.TrimSpace(parsed.workspace) == "" {
-		return planning.LSettingsBuild{}, badArgs("--workspace is required")
+		return planning.LSettingsToolchain{}, LErrorArgumentCreate("--workspace is required")
 	}
 	settings := planning.LSettingsBuildCreate()
 	settings.WorkspaceDirectory = strings.TrimSpace(parsed.workspace)
@@ -204,7 +204,7 @@ func toolchainSettingsResolve(parsed cliBuildArgs) (planning.LSettingsBuild, err
 	return settings, nil
 }
 
-func idAppendUnique(ids []string, id string) []string {
+func LIdentifierAppend(ids []string, id string) []string {
 	for _, existing := range ids {
 		if existing == id {
 			return ids
@@ -213,7 +213,7 @@ func idAppendUnique(ids []string, id string) []string {
 	return append(ids, id)
 }
 
-func idRemove(ids []string, id string) []string {
+func LIdentifierRemove(ids []string, id string) []string {
 	filtered := ids[:0]
 	for _, existing := range ids {
 		if existing != id {

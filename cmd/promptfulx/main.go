@@ -10,27 +10,27 @@ import (
 	"os"
 )
 
-func main() { os.Exit(run(os.Args[1:])) }
+func main() { os.Exit(LCommandRun(os.Args[1:])) }
 
-// run dispatches CLI arguments and returns a process exit code. Exit codes
+// LCommandRun dispatches CLI arguments and returns a process exit code. Exit codes
 // follow docs/internal/PlanCLI.md (2 = invalid arguments).
-func run(args []string) int {
+func LCommandRun(args []string) int {
 	if len(args) == 0 {
-		printUsage()
+		LCommandUsagePrint()
 		return 0
 	}
 	switch args[0] {
 	case "-h", "--help", "help":
-		printUsage()
+		LCommandUsagePrint()
 		return 0
 	case "list":
-		return cmdList(args[1:])
+		return LCommandListRun(args[1:])
 	case "plan":
-		return cmdPlan(args[1:])
+		return LCommandPlanRun(args[1:])
 	case "setup":
-		return cmdSetup(args[1:])
+		return LCommandSetupRun(args[1:])
 	case "build":
-		return cmdBuild(args[1:])
+		return LCommandBuildRun(args[1:])
 	default:
 		fmt.Fprintln(os.Stderr, "promptfulx: unknown command:", args[0])
 		fmt.Fprintln(os.Stderr, "run 'promptfulx --help' for usage")
@@ -38,7 +38,7 @@ func run(args []string) int {
 	}
 }
 
-func printUsage() {
+func LCommandUsagePrint() {
 	fmt.Println(`PromptfulX - Promptful CLI
 
 Usage:

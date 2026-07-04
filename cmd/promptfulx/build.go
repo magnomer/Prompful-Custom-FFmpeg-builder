@@ -9,47 +9,47 @@ import (
 	"promptfulcustomffmpegbuilder/internal/program"
 )
 
-// buildReporter wraps the console reporter and records the last status so the
+// LReporterBuild wraps the console reporter and records the last status so the
 // build command can map the final outcome to an exit code after the synchronous
 // build returns. A pointer receiver keeps the captured status.
-type buildReporter struct {
+type LReporterBuild struct {
 	console LReporterConsole
 	status  string
 }
 
-func (r *buildReporter) LReporterStatusEmit(status string) {
+func (r *LReporterBuild) LReporterStatusEmit(status string) {
 	r.status = status
 	r.console.LReporterStatusEmit(status)
 }
 
-func (r *buildReporter) LReporterLogEmit(level string, message string) {
+func (r *LReporterBuild) LReporterLogEmit(level string, message string) {
 	r.console.LReporterLogEmit(level, message)
 }
 
-// cmdBuild resolves the plan, confirms, and runs the build synchronously,
+// LCommandBuildRun resolves the plan, confirms, and runs the build synchronously,
 // mapping the outcome to an exit code. It assumes the workspace's MSYS2
 // toolchain is already prepared (there is no CLI `setup` yet); an unprepared
 // workspace fails the toolchain-readiness check with a clear message.
-func cmdBuild(args []string) int {
-	parsed, err := argsParse(args)
+func LCommandBuildRun(args []string) int {
+	parsed, err := LArgumentParse(args)
 	if err != nil {
-		return exitFor(err)
+		return LCommandExitGet(err)
 	}
-	settings, err := settingsResolve(parsed)
+	settings, err := LSettingsFFmpegResolve(parsed)
 	if err != nil {
-		return exitFor(err)
+		return LCommandExitGet(err)
 	}
 
 	driver := program.LProgramCreate()
-	reporter := &buildReporter{}
+	reporter := &LReporterBuild{}
 	driver.LReporter = reporter
 	driver.LConfirmer = LConfirmerConsole{assumeYes: parsed.yes, noInput: parsed.noInput}
 
 	review, err := driver.LPlanFFmpegRequest(settings)
 	if err != nil {
-		return exitFor(unsupported("could not resolve plan: %v", err))
+		return LCommandExitGet(LErrorSupportCreate("could not resolve plan: %v", err))
 	}
-	printPlan(review.Plan)
+	LCommandPlanPrint(review.Plan)
 	if !review.Plan.IsExecutable {
 		fmt.Fprintln(os.Stderr, "promptfulx: plan is blocked by the warnings above; cannot build")
 		return 4
@@ -62,7 +62,7 @@ func cmdBuild(args []string) int {
 	if profile == "" {
 		profile = "ucrt64"
 	}
-	if err := program.LToolchainBuildPreparedCheck(review.Plan.WorkspaceDirectory, profile); err != nil {
+	if err := program.LToolchainPreparedCheck(review.Plan.WorkspaceDirectory, profile); err != nil {
 		fmt.Fprintf(os.Stderr, "promptfulx: build environment is not prepared for profile %s in %s\n", profile, review.Plan.WorkspaceDirectory)
 		fmt.Fprintf(os.Stderr, "  prepare it first: promptfulx setup --workspace %s --yes\n", review.Plan.WorkspaceDirectory)
 		return 6
@@ -73,7 +73,7 @@ func cmdBuild(args []string) int {
 		ApprovedPlanHash:   review.Plan.PlanHash,
 		LConsentText:       review.ExpectedLConsentText,
 	}
-	if _, err := driver.LPlanFFmpegApproveSync(review.ReviewSessionId, approval); err != nil {
+	if _, err := driver.LFFmpegApproveSync(review.ReviewSessionId, approval); err != nil {
 		fmt.Fprintln(os.Stderr, "promptfulx:", err.Error())
 		if strings.Contains(err.Error(), "rejected") {
 			return 10 // user cancelled at the confirmation gate

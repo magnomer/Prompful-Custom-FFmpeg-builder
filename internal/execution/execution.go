@@ -29,17 +29,17 @@ import (
 // command is retried before its failure is treated as real.
 const (
 	LCommandAttemptMax         = 10
-	LCommandRetryInitialDelay  = 5 * time.Second
+	LCommandInitialDelay       = 5 * time.Second
 	LCommandRetryBackoffFactor = 2
-	LCommandRetryMaxDelay      = 60 * time.Second
+	LCommandMaximumDelay       = 60 * time.Second
 )
 
 type LScriptKind string
 
 const (
-	LScriptPacmanInstall      LScriptKind = "pacman-install"
+	LPacmanInstallScript      LScriptKind = "pacman-install"
 	LScriptFFmpegConfigure    LScriptKind = "ffmpeg-configure"
-	LScriptFFmpegMake         LScriptKind = "ffmpeg-make"
+	LFFmpegMakeScript         LScriptKind = "ffmpeg-make"
 	LScriptLibraryPreparation LScriptKind = "library-preparation"
 )
 
@@ -100,7 +100,7 @@ func LCommandRun(LContext context.Context, commandPlan LPlanCommand, emitProgres
 		defer stderrLogFile.Close()
 	}
 
-	retryDelay := LCommandRetryInitialDelay
+	retryDelay := LCommandInitialDelay
 	for attemptNumber := 1; ; attemptNumber++ {
 		transientFailureSeen, runErr := LCommandAttemptRun(LContext, commandPlan, scriptBytes, stdoutLogFile, stderrLogFile, emitProgress)
 		if runErr == nil {
@@ -119,8 +119,8 @@ func LCommandRun(LContext context.Context, commandPlan LPlanCommand, emitProgres
 			return runErr
 		case <-time.After(retryDelay):
 		}
-		if retryDelay *= LCommandRetryBackoffFactor; retryDelay > LCommandRetryMaxDelay {
-			retryDelay = LCommandRetryMaxDelay
+		if retryDelay *= LCommandRetryBackoffFactor; retryDelay > LCommandMaximumDelay {
+			retryDelay = LCommandMaximumDelay
 		}
 	}
 }
@@ -245,7 +245,7 @@ func LScriptStdinPrepare(commandPlan LPlanCommand) ([]byte, []string, error) {
 	if err := workspace.LPathRealCheck(commandPlan.WorkspaceDirectory, commandPlan.ApprovedScriptFilePath); err != nil {
 		return nil, nil, err
 	}
-	updatedArgumentValues, foundScriptArgument := LFlagStdinReplace(commandPlan.ArgumentValues, commandPlan.ApprovedScriptFilePath)
+	updatedArgumentValues, foundScriptArgument := LStdinFlagReplace(commandPlan.ArgumentValues, commandPlan.ApprovedScriptFilePath)
 	if !foundScriptArgument {
 		return nil, nil, errors.New("approved script path is not present in command arguments")
 	}
@@ -385,7 +385,7 @@ func LProgramAllowedCheck(executableBasename string, allowedExecutableBasenames 
 	return false
 }
 
-func LFlagStdinReplace(argumentValues []string, scriptFilePath string) ([]string, bool) {
+func LStdinFlagReplace(argumentValues []string, scriptFilePath string) ([]string, bool) {
 	updatedArgumentValues := make([]string, len(argumentValues))
 	copy(updatedArgumentValues, argumentValues)
 	for index, argumentValue := range updatedArgumentValues {
@@ -408,10 +408,10 @@ func LLogCommandCopy(pipeReader interface{ Read([]byte) (int, error) }, logFile 
 		if transientFailureSeen != nil && LLogNetworkCheck(line) {
 			transientFailureSeen.Store(true)
 		}
-		classifiedLevel := LLogLineClassify(level, line)
+		classifiedLevel := LLogLineGet(level, line)
 		if lastErrorLine != nil && classifiedLevel == "error" {
 			capturedLine := strings.TrimSpace(line)
-			if !LLogLineGenericMakeFailure(capturedLine) || lastErrorLine.Load() == nil {
+			if !LLogFailureGet(capturedLine) || lastErrorLine.Load() == nil {
 				lastErrorLine.Store(&capturedLine)
 			}
 		}
@@ -421,13 +421,13 @@ func LLogCommandCopy(pipeReader interface{ Read([]byte) (int, error) }, logFile 
 	}
 }
 
-// LErrorNetworkTransientMarkers are substrings (matched case-insensitively)
+// LErrorNetworkMarkers are substrings (matched case-insensitively)
 // that signal a download or connection failed for a transient reason rather
 // than a real build/install error: a stalled transfer, a dropped or refused
 // connection, DNS failure, or a 5xx from a mirror. A line carrying any of these
 // makes the whole command eligible for retry. Markers are kept specific so a
 // genuine compile/link error is never mistaken for a network blip.
-var LErrorNetworkTransientMarkers = []string{
+var LErrorNetworkMarkers = []string{
 	"operation too slow",
 	"failed retrieving file",
 	"could not resolve host",
@@ -452,7 +452,7 @@ var LErrorNetworkTransientMarkers = []string{
 // a transient network failure that warrants retrying the command.
 func LLogNetworkCheck(line string) bool {
 	lower := strings.ToLower(line)
-	for _, marker := range LErrorNetworkTransientMarkers {
+	for _, marker := range LErrorNetworkMarkers {
 		if strings.Contains(lower, marker) {
 			return true
 		}
@@ -460,19 +460,19 @@ func LLogNetworkCheck(line string) bool {
 	return false
 }
 
-// LPatternCompilerSourceEcho matches the source-echo and caret lines GCC prints
+// LCompilerEchoPattern matches the source-echo and caret lines GCC prints
 // beneath a diagnostic, such as "297 |     memmove(...)" and "    | ^~~~". These
 // arrive on stderr but are continuation context, not warnings of their own.
-var LPatternCompilerSourceEcho = regexp.MustCompile(`^\s*(?:\d+\s*)?\|`)
+var LCompilerEchoPattern = regexp.MustCompile(`^\s*(?:\d+\s*)?\|`)
 
-// LLogLineClassify refines the severity of a streamed build-output line from its
+// LLogLineGet refines the severity of a streamed build-output line from its
 // content. The raw pipe gives only a coarse default: every stderr line would
 // otherwise be a "warn", burying genuine warnings under compiler notes,
 // source-echo lines, "#pragma message" output, and pacman reinstall notices.
 // This promotes real errors and demotes known-benign noise so the UI's warning
 // level reflects lines that actually warrant attention. The full raw line is
 // still written verbatim to the on-disk log regardless of level.
-func LLogLineClassify(defaultLevel string, line string) string {
+func LLogLineGet(defaultLevel string, line string) string {
 	trimmed := strings.TrimSpace(line)
 	if trimmed == "" {
 		return defaultLevel
@@ -527,7 +527,7 @@ func LLogLineClassify(defaultLevel string, line string) string {
 		strings.HasPrefix(trimmed, "inlined from") ||
 		strings.Contains(line, ": In function") ||
 		LWarningThirdpartyCheck(lower) ||
-		LPatternCompilerSourceEcho.MatchString(line) {
+		LCompilerEchoPattern.MatchString(line) {
 		return "info"
 	}
 
@@ -564,7 +564,7 @@ func LWarningThirdpartyCheck(lower string) bool {
 	return false
 }
 
-func LLogLineGenericMakeFailure(line string) bool {
+func LLogFailureGet(line string) bool {
 	trimmed := strings.TrimSpace(line)
 	lower := strings.ToLower(trimmed)
 	return strings.HasPrefix(lower, "make: ***") || strings.Contains(trimmed, "] Error ")

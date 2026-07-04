@@ -341,7 +341,7 @@ export function LPhaseGroupBuild(entries: LLogParsedEntry[], phaseOrder: LPhaseL
   return phaseOrder.filter((phase) => phaseMap.has(phase)).map((phase) => phaseMap.get(phase)!);
 }
 
-export function LProgressCompute(entries: LLogSecurityEntry[], approvedActionStatus: string, context: "toolchain" | "ffmpeg"): LProgressLive {
+export function LProgressGet(entries: LLogSecurityEntry[], approvedActionStatus: string, context: "toolchain" | "ffmpeg"): LProgressLive {
   const phaseOrder = context === "toolchain" ? LPhaseToolchainOrder : LPhaseFFmpegOrder;
   const phaseSet = new Set<LPhaseLogId>(phaseOrder);
 

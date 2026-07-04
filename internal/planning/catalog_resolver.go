@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	LCatalogDefaultPresetModeName          = "normal"
+	LPresetModeName                        = "normal"
 	LCatalogDefaultWindowsShellProfileName = "ucrt64"
 )
 
@@ -31,7 +31,7 @@ type LCatalogResolver struct {
 }
 
 func LCatalogResolverLoad() (LCatalogResolver, LCatalogValidationReport, error) {
-	catalog, report, err := LCatalogEmbeddedLoadAndValidate()
+	catalog, report, err := LCatalogLoadValidate()
 	if err != nil {
 		return LCatalogResolver{}, report, err
 	}
@@ -50,36 +50,36 @@ func LCatalogResolverCreate(catalog LCatalogEmbedded) (LCatalogResolver, error) 
 		PresetFilesById:  map[string]LCatalogEmbeddedFile{},
 	}
 	for _, file := range catalog.LibraryFiles {
-		record, err := LCatalogJsonObjectRead(file)
+		record, err := LJsonObjectRead(file)
 		if err != nil {
 			return LCatalogResolver{}, err
 		}
-		libraryId := LCatalogStringField(record, "libraryId")
+		libraryId := LCatalogFieldGet(record, "libraryId")
 		resolver.LibraryRecords[libraryId] = record
 		resolver.LibraryFilesById[libraryId] = file
 	}
 	for _, file := range catalog.VersionFiles {
-		record, err := LCatalogJsonObjectRead(file)
+		record, err := LJsonObjectRead(file)
 		if err != nil {
 			return LCatalogResolver{}, err
 		}
-		versionId := LCatalogVersionIdRead(record)
+		versionId := LVersionIdentifierRead(record)
 		resolver.VersionRecords[versionId] = record
 		resolver.VersionFilesById[versionId] = file
 	}
 	for _, file := range catalog.PresetFiles {
-		record, err := LCatalogJsonObjectRead(file)
+		record, err := LJsonObjectRead(file)
 		if err != nil {
 			return LCatalogResolver{}, err
 		}
-		presetId := LCatalogStringField(record, "presetId")
+		presetId := LCatalogFieldGet(record, "presetId")
 		resolver.PresetRecords[presetId] = record
 		resolver.PresetFilesById[presetId] = file
 	}
 	return resolver, nil
 }
 
-func LCatalogEmbeddedVersionResolve(settings LCatalogResolutionSettings) (LResolvedVersionPlan, error) {
+func LCatalogEmbeddedResolve(settings LCatalogResolutionSettings) (LResolvedVersionPlan, error) {
 	resolver, _, err := LCatalogResolverLoad()
 	if err != nil {
 		return LResolvedVersionPlan{}, err
@@ -88,13 +88,13 @@ func LCatalogEmbeddedVersionResolve(settings LCatalogResolutionSettings) (LResol
 }
 
 func (resolver LCatalogResolver) LVersionResolve(settings LCatalogResolutionSettings) (LResolvedVersionPlan, error) {
-	settings = LCatalogResolutionSettingsNormalize(settings)
-	catalogFfmpegVersion, exists := resolver.LCatalogVersionForRequestedResolve(settings.FfmpegVersion)
+	settings = LCatalogSettingsNormalize(settings)
+	catalogFfmpegVersion, exists := resolver.LCatalogVersionResolve(settings.FfmpegVersion)
 	if !exists {
 		return LResolvedVersionPlan{}, fmt.Errorf("unknown FFmpeg version %q", settings.FfmpegVersion)
 	}
 	versionRecord := resolver.VersionRecords[catalogFfmpegVersion]
-	libraryOrder := LCatalogVersionLibraryOrderRead(versionRecord)
+	libraryOrder := LLibraryOrderRead(versionRecord)
 	resolvedById := map[string]LResolvedLibrary{}
 	visibleLibraries := []LResolvedLibrary{}
 	unsupportedLibraries := []LResolvedLibrary{}
@@ -116,9 +116,9 @@ func (resolver LCatalogResolver) LVersionResolve(settings LCatalogResolutionSett
 	}
 	selectedSettings := settings
 	selectedSettings.FfmpegVersion = catalogFfmpegVersion
-	selectedLibraryIds, _ := resolver.LSelectedLibraryIdsResolve(selectedSettings)
+	selectedLibraryIds, _ := resolver.LSelectionResolve(selectedSettings)
 	preserveInvalidSelectedLibraries := len(settings.SelectedLibraryIds) > 0 && settings.PresetId == ""
-	normalizedLibraryIds, warnings := LCatalogSelectedLibrariesNormalize(catalogFfmpegVersion, selectedLibraryIds, resolvedById, preserveInvalidSelectedLibraries)
+	normalizedLibraryIds, warnings := LLibrarySelectNormalize(catalogFfmpegVersion, selectedLibraryIds, resolvedById, preserveInvalidSelectedLibraries)
 	configureFlags := []string{}
 	requiredPackageNames := []string{}
 	requiredWorkIds := []string{}
@@ -131,16 +131,16 @@ func (resolver LCatalogResolver) LVersionResolve(settings LCatalogResolutionSett
 		requiredPackageNames = append(requiredPackageNames, resolvedLibrary.PackageNames...)
 		requiredWorkIds = append(requiredWorkIds, resolvedLibrary.WorkIds...)
 	}
-	configureFlags = LCatalogStringsUniqueSortedStable(configureFlags)
-	requiredPackageNames = LCatalogStringsUniqueSortedStable(requiredPackageNames)
-	requiredWorkIds = LCatalogStringsUniqueSortedStable(requiredWorkIds)
+	configureFlags = LStringsSortedGet(configureFlags)
+	requiredPackageNames = LStringsSortedGet(requiredPackageNames)
+	requiredWorkIds = LStringsSortedGet(requiredWorkIds)
 	return LResolvedVersionPlan{
 		FfmpegVersion:              catalogFfmpegVersion,
 		RequestedFfmpegVersion:     settings.FfmpegVersion,
 		CompatibilityFfmpegVersion: catalogFfmpegVersion,
 		VisibleLibraries:           visibleLibraries,
 		UnsupportedLibraries:       unsupportedLibraries,
-		SelectedLibraryIds:         LCatalogStringsUniqueSortedStable(selectedLibraryIds),
+		SelectedLibraryIds:         LStringsSortedGet(selectedLibraryIds),
 		NormalizedLibraryIds:       normalizedLibraryIds,
 		RequiredWorkIds:            requiredWorkIds,
 		ConfigureFlags:             configureFlags,
@@ -149,7 +149,7 @@ func (resolver LCatalogResolver) LVersionResolve(settings LCatalogResolutionSett
 	}, nil
 }
 
-func (resolver LCatalogResolver) LCatalogVersionForRequestedResolve(requestedVersion string) (string, bool) {
+func (resolver LCatalogResolver) LCatalogVersionResolve(requestedVersion string) (string, bool) {
 	requestedVersion = strings.TrimSpace(requestedVersion)
 	if requestedVersion == "" {
 		return "", false
@@ -157,18 +157,18 @@ func (resolver LCatalogResolver) LCatalogVersionForRequestedResolve(requestedVer
 	if _, exists := resolver.VersionRecords[requestedVersion]; exists {
 		return requestedVersion, true
 	}
-	lineKey := LReleaseLineKeyGet(requestedVersion)
+	lineKey := LReleaseKeyGet(requestedVersion)
 	if lineKey == "" {
 		return "", false
 	}
-	if recommendedVersion, found := resolver.LReleaseRecommendedForLineResolve(lineKey); found {
+	if recommendedVersion, found := resolver.LReleaseRecommendResolve(lineKey); found {
 		return recommendedVersion, true
 	}
 	requestedMajor, requestedMinor, ok := LReleaseLineSplit(lineKey)
 	if !ok {
 		return "", false
 	}
-	highestLineKey, highestVersion, found := resolver.LHighestKnownReleaseLineResolve()
+	highestLineKey, highestVersion, found := resolver.LReleaseHighestResolve()
 	if !found {
 		return "", false
 	}
@@ -182,11 +182,11 @@ func (resolver LCatalogResolver) LCatalogVersionForRequestedResolve(requestedVer
 	return "", false
 }
 
-func (resolver LCatalogResolver) LReleaseRecommendedForLineResolve(releaseLineKey string) (string, bool) {
+func (resolver LCatalogResolver) LReleaseRecommendResolve(releaseLineKey string) (string, bool) {
 	bestVersion := ""
 	for versionId, versionRecord := range resolver.VersionRecords {
 		ffmpeg, _ := versionRecord["ffmpeg"].(map[string]any)
-		if LCatalogStringField(ffmpeg, "releaseLine") != releaseLineKey {
+		if LCatalogFieldGet(ffmpeg, "releaseLine") != releaseLineKey {
 			continue
 		}
 		if bestVersion == "" || LVersionSemverCompare(versionId, bestVersion) > 0 {
@@ -196,13 +196,13 @@ func (resolver LCatalogResolver) LReleaseRecommendedForLineResolve(releaseLineKe
 	return bestVersion, bestVersion != ""
 }
 
-func (resolver LCatalogResolver) LHighestKnownReleaseLineResolve() (string, string, bool) {
+func (resolver LCatalogResolver) LReleaseHighestResolve() (string, string, bool) {
 	bestLineKey := ""
 	bestVersion := ""
 	bestMajor, bestMinor := -1, -1
 	for versionId, versionRecord := range resolver.VersionRecords {
 		ffmpeg, _ := versionRecord["ffmpeg"].(map[string]any)
-		lineKey := LCatalogStringField(ffmpeg, "releaseLine")
+		lineKey := LCatalogFieldGet(ffmpeg, "releaseLine")
 		major, minor, ok := LReleaseLineSplit(lineKey)
 		if !ok {
 			continue
@@ -215,18 +215,18 @@ func (resolver LCatalogResolver) LHighestKnownReleaseLineResolve() (string, stri
 	return bestLineKey, bestVersion, bestVersion != ""
 }
 
-func LCatalogResolutionSettingsNormalize(settings LCatalogResolutionSettings) LCatalogResolutionSettings {
+func LCatalogSettingsNormalize(settings LCatalogResolutionSettings) LCatalogResolutionSettings {
 	settings.FfmpegVersion = strings.TrimSpace(settings.FfmpegVersion)
 	settings.PresetId = strings.TrimSpace(settings.PresetId)
 	settings.PresetModeName = strings.TrimSpace(settings.PresetModeName)
 	settings.WindowsShellProfileName = strings.TrimSpace(settings.WindowsShellProfileName)
 	if settings.PresetModeName == "" {
-		settings.PresetModeName = LCatalogDefaultPresetModeName
+		settings.PresetModeName = LPresetModeName
 	}
 	if settings.WindowsShellProfileName == "" {
 		settings.WindowsShellProfileName = LCatalogDefaultWindowsShellProfileName
 	}
-	settings.SelectedLibraryIds = LCatalogStringsUniqueSortedStable(settings.SelectedLibraryIds)
+	settings.SelectedLibraryIds = LStringsSortedGet(settings.SelectedLibraryIds)
 	return settings
 }
 
@@ -235,66 +235,66 @@ func (resolver LCatalogResolver) LLibraryResolve(ffmpegVersion string, libraryId
 	if !exists {
 		return LResolvedLibrary{}, fmt.Errorf("library %q has no embedded library record", libraryId)
 	}
-	versionObject, exists := LCatalogLibraryVersionRecordRead(libraryRecord, ffmpegVersion)
+	versionObject, exists := LVersionRecordRead(libraryRecord, ffmpegVersion)
 	if !exists {
 		return LResolvedLibrary{}, fmt.Errorf("library %q has no record for FFmpeg %q", libraryId, ffmpegVersion)
 	}
 	preparationObject, _ := versionObject["preparation"].(map[string]any)
-	preparationStatus := LCatalogPreparationStatusRead(preparationObject)
+	preparationStatus := LPreparationStatusRead(preparationObject)
 	workIds := []string{}
 	if preparationStatus.Required && preparationStatus.Implemented {
-		workIds = append(workIds, LCatalogVersionLibraryWorkIdCreate(ffmpegVersion, libraryId))
+		workIds = append(workIds, LWorkIdentifierCreate(ffmpegVersion, libraryId))
 	}
-	profileUnavailable := LCatalogLibraryShellProfileUnavailableCheck(versionObject, shellProfileName)
-	packageNames := LCatalogPackageNamesForShellRead(versionObject, shellProfileName)
-	if preparationStatus.Required || LCatalogBoolField(versionObject, "sourceBuildRequiredByReleaseManifest") {
+	profileUnavailable := LShellProfileCheck(versionObject, shellProfileName)
+	packageNames := LShellPackageRead(versionObject, shellProfileName)
+	if preparationStatus.Required || LCatalogBooleanGet(versionObject, "sourceBuildRequiredByReleaseManifest") {
 		packageNames = nil
 	}
 	return LResolvedLibrary{
 		LibraryId:            libraryId,
-		DisplayName:          LCatalogStringFieldDefault(versionObject, "displayName", libraryId),
-		CategoryName:         LCatalogStringField(versionObject, "categoryName"),
-		TrackName:            LLibraryTrack(LCatalogStringField(versionObject, "trackName")),
-		SupportState:         LCatalogSupportStateResolve(versionObject, preparationStatus, profileUnavailable),
-		ConfigureFlags:       LCatalogStringArrayField(versionObject, "ffmpegConfigureFlags"),
+		DisplayName:          LStringDefaultGet(versionObject, "displayName", libraryId),
+		CategoryName:         LCatalogFieldGet(versionObject, "categoryName"),
+		TrackName:            LLibraryTrack(LCatalogFieldGet(versionObject, "trackName")),
+		SupportState:         LCatalogSupportResolve(versionObject, preparationStatus, profileUnavailable),
+		ConfigureFlags:       LArrayFieldGet(versionObject, "ffmpegConfigureFlags"),
 		PackageNames:         packageNames,
-		OfficialWebpageUrl:   LCatalogStringField(versionObject, "officialWebpageUrl"),
-		LicenseEffectName:    LCatalogStringField(versionObject, "licenseEffectName"),
-		PlainExplanation:     LCatalogStringField(versionObject, "plainExplanation"),
-		TechnicalExplanation: LCatalogStringField(versionObject, "technicalExplanation"),
-		DefaultChecked:       LCatalogBoolField(versionObject, "defaultChecked"),
-		Locked:               LCatalogBoolField(versionObject, "locked"),
+		OfficialWebpageUrl:   LCatalogFieldGet(versionObject, "officialWebpageUrl"),
+		LicenseEffectName:    LCatalogFieldGet(versionObject, "licenseEffectName"),
+		PlainExplanation:     LCatalogFieldGet(versionObject, "plainExplanation"),
+		TechnicalExplanation: LCatalogFieldGet(versionObject, "technicalExplanation"),
+		DefaultChecked:       LCatalogBooleanGet(versionObject, "defaultChecked"),
+		Locked:               LCatalogBooleanGet(versionObject, "locked"),
 		WorkIds:              workIds,
 		PreparationStatus:    preparationStatus,
-		UnavailableReasons:   LCatalogCurrentV4UiUnavailableReasonsRead(versionObject),
-		UnavailableProfiles:  LCatalogStringArrayField(versionObject, "unavailableShellProfiles"),
+		UnavailableReasons:   LCatalogReasonRead(versionObject),
+		UnavailableProfiles:  LArrayFieldGet(versionObject, "unavailableShellProfiles"),
 		VersionCompatibility: &LLibraryCompatibility{
-			Supported:  LCatalogBoolField(versionObject, "supportedByFfmpeg"),
-			Available:  LCatalogBoolField(versionObject, "availableInCurrentV4"),
-			MinVersion: LCatalogStringField(versionObject, "ffmpegPkgConfigMinimumVersion"),
+			Supported:  LCatalogBooleanGet(versionObject, "supportedByFfmpeg"),
+			Available:  LCatalogBooleanGet(versionObject, "availableInCurrentV4"),
+			MinVersion: LCatalogFieldGet(versionObject, "ffmpegPkgConfigMinimumVersion"),
 		},
 	}, nil
 }
 
-func LCatalogSupportStateResolve(versionObject map[string]any, preparationStatus *LLibraryPreparationStatus, profileUnavailable bool) LLibrarySupportState {
-	stateName := LCatalogStringField(versionObject, "state")
-	if strings.Contains(stateName, "unsupported") || !LCatalogBoolField(versionObject, "supportedByFfmpeg") {
+func LCatalogSupportResolve(versionObject map[string]any, preparationStatus *LLibraryPreparationStatus, profileUnavailable bool) LLibrarySupportState {
+	stateName := LCatalogFieldGet(versionObject, "state")
+	if strings.Contains(stateName, "unsupported") || !LCatalogBooleanGet(versionObject, "supportedByFfmpeg") {
 		return LLibrarySupportUnsupported
 	}
-	if profileUnavailable || strings.Contains(stateName, "unavailable") || !LCatalogBoolField(versionObject, "availableInCurrentV4") {
+	if profileUnavailable || strings.Contains(stateName, "unavailable") || !LCatalogBooleanGet(versionObject, "availableInCurrentV4") {
 		return LLibrarySupportUnavailable
 	}
-	if LCatalogCurrentV4UiUnavailableReasonCheck(versionObject, "disabled-in-current-v4-ui") {
-		return LLibrarySupportUiDisabled
+	if LCatalogReasonCheck(versionObject, "disabled-in-current-v4-ui") {
+		return LUIDisabledSupport
 	}
 	if preparationStatus != nil && preparationStatus.Required {
 		if !preparationStatus.Implemented {
-			return LLibrarySupportPreparationUnimplemented
+			return LPreparationMissing
 		}
-		return LLibrarySupportSourceBuildRequired
+		return LSourceBuildRequired
 	}
-	if LCatalogBoolField(versionObject, "sourceBuildRequiredByReleaseManifest") {
-		return LLibrarySupportSourceBuildRequired
+	if LCatalogBooleanGet(versionObject, "sourceBuildRequiredByReleaseManifest") {
+		return LSourceBuildRequired
 	}
 	if stateName == "compatible" {
 		return LLibrarySupportSupported
@@ -302,19 +302,19 @@ func LCatalogSupportStateResolve(versionObject map[string]any, preparationStatus
 	return LLibrarySupportUnknown
 }
 
-func LCatalogPreparationStatusRead(preparationObject map[string]any) *LLibraryPreparationStatus {
+func LPreparationStatusRead(preparationObject map[string]any) *LLibraryPreparationStatus {
 	if preparationObject == nil {
 		return nil
 	}
-	implementation := LCatalogStringField(preparationObject, "implementation")
-	required := LCatalogBoolField(preparationObject, "required")
+	implementation := LCatalogFieldGet(preparationObject, "implementation")
+	required := LCatalogBooleanGet(preparationObject, "required")
 	status := &LLibraryPreparationStatus{
 		Required:               required,
-		Kind:                   LCatalogStringField(preparationObject, "kind"),
+		Kind:                   LCatalogFieldGet(preparationObject, "kind"),
 		Implemented:            required && implementation != "",
 		Implementation:         implementation,
-		ImplementationLanguage: LCatalogStringField(preparationObject, "implementationLanguage"),
-		Reason:                 LCatalogStringField(preparationObject, "reason"),
+		ImplementationLanguage: LCatalogFieldGet(preparationObject, "implementationLanguage"),
+		Reason:                 LCatalogFieldGet(preparationObject, "reason"),
 	}
 	if !required && status.Kind == "" && status.Implementation == "" && status.Reason == "" {
 		return nil
@@ -322,16 +322,16 @@ func LCatalogPreparationStatusRead(preparationObject map[string]any) *LLibraryPr
 	return status
 }
 
-func LCatalogCurrentV4UiUnavailableReasonsRead(versionObject map[string]any) []string {
+func LCatalogReasonRead(versionObject map[string]any) []string {
 	uiState, ok := versionObject["currentV4UiState"].(map[string]any)
 	if !ok {
 		return nil
 	}
-	return LCatalogStringArrayField(uiState, "reasonsWhenUnavailable")
+	return LArrayFieldGet(uiState, "reasonsWhenUnavailable")
 }
 
-func LCatalogCurrentV4UiUnavailableReasonCheck(versionObject map[string]any, reason string) bool {
-	for _, unavailableReason := range LCatalogCurrentV4UiUnavailableReasonsRead(versionObject) {
+func LCatalogReasonCheck(versionObject map[string]any, reason string) bool {
+	for _, unavailableReason := range LCatalogReasonRead(versionObject) {
 		if unavailableReason == reason {
 			return true
 		}
@@ -339,7 +339,7 @@ func LCatalogCurrentV4UiUnavailableReasonCheck(versionObject map[string]any, rea
 	return false
 }
 
-func LCatalogLibraryVersionRecordRead(libraryRecord map[string]any, ffmpegVersion string) (map[string]any, bool) {
+func LVersionRecordRead(libraryRecord map[string]any, ffmpegVersion string) (map[string]any, bool) {
 	versionRecords, ok := libraryRecord["ffmpegVersions"].(map[string]any)
 	if !ok {
 		return nil, false
@@ -348,7 +348,7 @@ func LCatalogLibraryVersionRecordRead(libraryRecord map[string]any, ffmpegVersio
 	return versionRecord, ok
 }
 
-func LCatalogVersionLibraryOrderRead(versionRecord map[string]any) []string {
+func LLibraryOrderRead(versionRecord map[string]any) []string {
 	librariesObject, ok := versionRecord["libraries"].(map[string]any)
 	if !ok {
 		return nil
@@ -364,16 +364,16 @@ func LCatalogVersionLibraryOrderRead(versionRecord map[string]any) []string {
 			if !ok {
 				continue
 			}
-			libraryId := LCatalogStringField(itemObject, "libraryId")
+			libraryId := LCatalogFieldGet(itemObject, "libraryId")
 			if libraryId != "" {
 				libraryIds = append(libraryIds, libraryId)
 			}
 		}
 	}
-	return LCatalogStringsUniqueStable(libraryIds)
+	return LStringsUniqueGet(libraryIds)
 }
 
-func (resolver LCatalogResolver) LSelectedLibraryIdsResolve(settings LCatalogResolutionSettings) ([]string, []string) {
+func (resolver LCatalogResolver) LSelectionResolve(settings LCatalogResolutionSettings) ([]string, []string) {
 	if len(settings.SelectedLibraryIds) > 0 {
 		return settings.SelectedLibraryIds, nil
 	}
@@ -384,25 +384,25 @@ func (resolver LCatalogResolver) LSelectedLibraryIdsResolve(settings LCatalogRes
 	if !exists {
 		return nil, nil
 	}
-	versionRecord, exists := LCatalogPresetVersionRecordRead(presetRecord, settings.FfmpegVersion)
+	versionRecord, exists := LPresetRecordRead(presetRecord, settings.FfmpegVersion)
 	if !exists {
 		return nil, nil
 	}
-	selectedLibraryIds := LCatalogPresetLibraryIdsRead(versionRecord, settings.PresetModeName)
+	selectedLibraryIds := LPresetIdentifiersRead(versionRecord, settings.PresetModeName)
 	return selectedLibraryIds, selectedLibraryIds
 }
 
-func LCatalogPresetLibraryIdsRead(versionRecord map[string]any, modeName string) []string {
+func LPresetIdentifiersRead(versionRecord map[string]any, modeName string) []string {
 	// Flat preset shape: every preset/version directly owns its complete library
 	// list. The extended list is also direct data, not an inherited subgroup,
 	// mode, result cache, or composition of another preset.
 	if modeName == "extended" {
-		return LCatalogStringArrayField(versionRecord, "extendedLibraryIds")
+		return LArrayFieldGet(versionRecord, "extendedLibraryIds")
 	}
-	return LCatalogStringArrayField(versionRecord, "libraryIds")
+	return LArrayFieldGet(versionRecord, "libraryIds")
 }
 
-func LCatalogPresetVersionRecordRead(presetRecord map[string]any, ffmpegVersion string) (map[string]any, bool) {
+func LPresetRecordRead(presetRecord map[string]any, ffmpegVersion string) (map[string]any, bool) {
 	versionRecords, ok := presetRecord["ffmpegVersions"].(map[string]any)
 	if !ok {
 		return nil, false
@@ -411,7 +411,7 @@ func LCatalogPresetVersionRecordRead(presetRecord map[string]any, ffmpegVersion 
 	return versionRecord, ok
 }
 
-func LCatalogSelectedLibrariesNormalize(ffmpegVersion string, selectedLibraryIds []string, resolvedById map[string]LResolvedLibrary, preserveInvalidSelectedLibraries bool) ([]string, []LWarningPlan) {
+func LLibrarySelectNormalize(ffmpegVersion string, selectedLibraryIds []string, resolvedById map[string]LResolvedLibrary, preserveInvalidSelectedLibraries bool) ([]string, []LWarningPlan) {
 	normalizedLibraryIds := []string{}
 	warnings := []LWarningPlan{}
 	for _, libraryId := range selectedLibraryIds {
@@ -425,7 +425,7 @@ func LCatalogSelectedLibrariesNormalize(ffmpegVersion string, selectedLibraryIds
 		}
 		switch resolvedLibrary.SupportState {
 		case LLibrarySupportUnsupported, LLibrarySupportUnavailable:
-			if preserveInvalidSelectedLibraries && !LCatalogSelectedLibraryVersionReplacementCheck(libraryId, selectedLibraryIds) {
+			if preserveInvalidSelectedLibraries && !LVersionReplacementCheck(libraryId, selectedLibraryIds) {
 				normalizedLibraryIds = append(normalizedLibraryIds, libraryId)
 				continue
 			}
@@ -442,11 +442,11 @@ func LCatalogSelectedLibrariesNormalize(ffmpegVersion string, selectedLibraryIds
 			normalizedLibraryIds = append(normalizedLibraryIds, libraryId)
 		}
 	}
-	normalizedLibraryIds = LCatalogSelectedLibraryConflictGroupsNormalize(normalizedLibraryIds)
-	return LCatalogStringsUniqueSortedStable(normalizedLibraryIds), warnings
+	normalizedLibraryIds = LConflictGroupNormalize(normalizedLibraryIds)
+	return LStringsSortedGet(normalizedLibraryIds), warnings
 }
 
-func LCatalogSelectedLibraryConflictGroupsNormalize(selectedLibraryIds []string) []string {
+func LConflictGroupNormalize(selectedLibraryIds []string) []string {
 	selectedSet := map[string]bool{}
 	for _, libraryId := range selectedLibraryIds {
 		selectedSet[libraryId] = true
@@ -487,14 +487,14 @@ func LCatalogSelectedLibraryConflictGroupsNormalize(selectedLibraryIds []string)
 	return normalizedLibraryIds
 }
 
-func LCatalogSelectedLibraryVersionReplacementCheck(libraryId string, selectedLibraryIds []string) bool {
-	if libraryId == "libvpl" && LCatalogStringSliceContains(selectedLibraryIds, "libmfx") {
+func LVersionReplacementCheck(libraryId string, selectedLibraryIds []string) bool {
+	if libraryId == "libvpl" && LStringContainsCheck(selectedLibraryIds, "libmfx") {
 		return true
 	}
 	return false
 }
 
-func LCatalogStringSliceContains(values []string, target string) bool {
+func LStringContainsCheck(values []string, target string) bool {
 	for _, value := range values {
 		if value == target {
 			return true
@@ -503,16 +503,16 @@ func LCatalogStringSliceContains(values []string, target string) bool {
 	return false
 }
 
-func (resolver LCatalogResolver) LResolvedBuildPlanCreate(settings LCatalogResolutionSettings) (LResolvedBuildPlan, error) {
-	settings = LCatalogResolutionSettingsNormalize(settings)
+func (resolver LCatalogResolver) LBuildPlanCreate(settings LCatalogResolutionSettings) (LResolvedBuildPlan, error) {
+	settings = LCatalogSettingsNormalize(settings)
 	resolvedVersionPlan, err := resolver.LVersionResolve(settings)
 	if err != nil {
 		return LResolvedBuildPlan{}, err
 	}
 	versionRecord := resolver.VersionRecords[resolvedVersionPlan.FfmpegVersion]
 	ffmpegObject, _ := versionRecord["ffmpeg"].(map[string]any)
-	ffmpegSourceArchiveUrl := LResolvedBuildPlanArchiveUrlResolve(settings.FfmpegVersion, resolvedVersionPlan.FfmpegVersion, ffmpegObject)
-	ffmpegSourceSignatureUrl := LResolvedBuildPlanSignatureUrlResolve(settings.FfmpegVersion, resolvedVersionPlan.FfmpegVersion, ffmpegObject, ffmpegSourceArchiveUrl)
+	ffmpegSourceArchiveUrl := LArchiveURLResolve(settings.FfmpegVersion, resolvedVersionPlan.FfmpegVersion, ffmpegObject)
+	ffmpegSourceSignatureUrl := LSignatureURLResolve(settings.FfmpegVersion, resolvedVersionPlan.FfmpegVersion, ffmpegObject, ffmpegSourceArchiveUrl)
 	resolvedLibrariesById := map[string]LResolvedLibrary{}
 	for _, resolvedLibrary := range resolvedVersionPlan.VisibleLibraries {
 		resolvedLibrariesById[resolvedLibrary.LibraryId] = resolvedLibrary
@@ -551,23 +551,23 @@ func (resolver LCatalogResolver) LResolvedBuildPlanCreate(settings LCatalogResol
 	}, nil
 }
 
-func LResolvedBuildPlanArchiveUrlResolve(requestedVersion string, resolvedCatalogVersion string, ffmpegObject map[string]any) string {
+func LArchiveURLResolve(requestedVersion string, resolvedCatalogVersion string, ffmpegObject map[string]any) string {
 	requestedVersion = strings.TrimSpace(requestedVersion)
 	resolvedCatalogVersion = strings.TrimSpace(resolvedCatalogVersion)
 	if requestedVersion == "" || requestedVersion == resolvedCatalogVersion {
-		return LCatalogStringField(ffmpegObject, "archiveUrl")
+		return LCatalogFieldGet(ffmpegObject, "archiveUrl")
 	}
-	if LReleaseLineKeyGet(requestedVersion) == "" {
+	if LReleaseKeyGet(requestedVersion) == "" {
 		return ""
 	}
 	return LReleaseArchiveResolve(requestedVersion)
 }
 
-func LResolvedBuildPlanSignatureUrlResolve(requestedVersion string, resolvedCatalogVersion string, ffmpegObject map[string]any, archiveUrl string) string {
+func LSignatureURLResolve(requestedVersion string, resolvedCatalogVersion string, ffmpegObject map[string]any, archiveUrl string) string {
 	requestedVersion = strings.TrimSpace(requestedVersion)
 	resolvedCatalogVersion = strings.TrimSpace(resolvedCatalogVersion)
 	if requestedVersion == "" || requestedVersion == resolvedCatalogVersion {
-		return LCatalogStringField(ffmpegObject, "signatureUrl")
+		return LCatalogFieldGet(ffmpegObject, "signatureUrl")
 	}
 	if archiveUrl == "" {
 		return ""
@@ -575,15 +575,15 @@ func LResolvedBuildPlanSignatureUrlResolve(requestedVersion string, resolvedCata
 	return archiveUrl + ".asc"
 }
 
-func LCatalogStringFieldDefault(record map[string]any, fieldName string, defaultValue string) string {
-	value := LCatalogStringField(record, fieldName)
+func LStringDefaultGet(record map[string]any, fieldName string, defaultValue string) string {
+	value := LCatalogFieldGet(record, fieldName)
 	if value == "" {
 		return defaultValue
 	}
 	return value
 }
 
-func LCatalogBoolField(record map[string]any, fieldName string) bool {
+func LCatalogBooleanGet(record map[string]any, fieldName string) bool {
 	if record == nil {
 		return false
 	}
@@ -591,7 +591,7 @@ func LCatalogBoolField(record map[string]any, fieldName string) bool {
 	return ok && value
 }
 
-func LCatalogStringArrayField(record map[string]any, fieldName string) []string {
+func LArrayFieldGet(record map[string]any, fieldName string) []string {
 	values, ok := record[fieldName].([]any)
 	if !ok {
 		return nil
@@ -606,19 +606,19 @@ func LCatalogStringArrayField(record map[string]any, fieldName string) []string 
 	return result
 }
 
-func LCatalogPackageNamesForShellRead(versionObject map[string]any, shellProfileName string) []string {
-	if LCatalogLibraryShellProfileUnavailableCheck(versionObject, shellProfileName) {
+func LShellPackageRead(versionObject map[string]any, shellProfileName string) []string {
+	if LShellProfileCheck(versionObject, shellProfileName) {
 		return nil
 	}
 	packageNamesByShellProfile, ok := versionObject["packageNamesByShellProfile"].(map[string]any)
 	if !ok {
 		return nil
 	}
-	return LCatalogStringArrayField(packageNamesByShellProfile, shellProfileName)
+	return LArrayFieldGet(packageNamesByShellProfile, shellProfileName)
 }
 
-func LCatalogLibraryShellProfileUnavailableCheck(versionObject map[string]any, shellProfileName string) bool {
-	for _, unavailableShellProfileName := range LCatalogStringArrayField(versionObject, "unavailableShellProfiles") {
+func LShellProfileCheck(versionObject map[string]any, shellProfileName string) bool {
+	for _, unavailableShellProfileName := range LArrayFieldGet(versionObject, "unavailableShellProfiles") {
 		if unavailableShellProfileName == shellProfileName {
 			return true
 		}
@@ -626,11 +626,11 @@ func LCatalogLibraryShellProfileUnavailableCheck(versionObject map[string]any, s
 	return false
 }
 
-func LCatalogVersionLibraryWorkIdCreate(ffmpegVersion string, libraryId string) string {
+func LWorkIdentifierCreate(ffmpegVersion string, libraryId string) string {
 	return "ffmpeg-" + ffmpegVersion + "-" + libraryId + "-work"
 }
 
-func LCatalogStringsUniqueStable(values []string) []string {
+func LStringsUniqueGet(values []string) []string {
 	seen := map[string]bool{}
 	result := []string{}
 	for _, value := range values {
@@ -644,8 +644,8 @@ func LCatalogStringsUniqueStable(values []string) []string {
 	return result
 }
 
-func LCatalogStringsUniqueSortedStable(values []string) []string {
-	result := LCatalogStringsUniqueStable(values)
+func LStringsSortedGet(values []string) []string {
+	result := LStringsUniqueGet(values)
 	sort.Strings(result)
 	return result
 }

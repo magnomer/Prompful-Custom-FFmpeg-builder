@@ -38,7 +38,7 @@ const LOptionBaseIds = [
   "default-ffprobe",
 ];
 
-export const LPresetOptionList: LPresetOption[] = [
+export const LPresetOptionCatalog: LPresetOption[] = [
   { presetId: "none", optionIds: LOptionBaseIds },
   {
     presetId: "standard",
@@ -79,7 +79,7 @@ export function LPresetOptionMatch(
   selectedOptionIds: string[],
 ): LPresetOptionId {
   const normalizedSelection = Array.from(new Set(selectedOptionIds)).sort();
-  for (const preset of LPresetOptionList) {
+  for (const preset of LPresetOptionCatalog) {
     const normalizedPreset = Array.from(new Set(preset.optionIds)).sort();
     if (
       normalizedSelection.length === normalizedPreset.length &&
@@ -93,7 +93,7 @@ export function LPresetOptionMatch(
   return "custom";
 }
 
-const LOptionPresetIconMap: Partial<Record<LPresetOptionId, string>> = {
+const LPresetOptionIcons: Partial<Record<LPresetOptionId, string>> = {
   none: optionNoneIcon,
   standard: optionStandardIcon,
   compact: optionCompactIcon,
@@ -102,13 +102,13 @@ const LOptionPresetIconMap: Partial<Record<LPresetOptionId, string>> = {
 };
 
 function PIconOptionRender(props: { presetId: LPresetOptionId; className?: string }) {
-  const icon = LOptionPresetIconMap[props.presetId];
+  const icon = LPresetOptionIcons[props.presetId];
   if (!icon) return null;
   return <img className={props.className ?? ""} src={icon} alt="" aria-hidden="true" />;
 }
 
-function LPresetOptionSelectableList(): Array<LPresetOption & { presetId: Exclude<LPresetOptionId, "custom"> }> {
-  return LPresetOptionList.filter((preset): preset is LPresetOption & { presetId: Exclude<LPresetOptionId, "custom"> } => preset.presetId !== "custom");
+function LPresetSelectableList(): Array<LPresetOption & { presetId: Exclude<LPresetOptionId, "custom"> }> {
+  return LPresetOptionCatalog.filter((preset): preset is LPresetOption & { presetId: Exclude<LPresetOptionId, "custom"> } => preset.presetId !== "custom");
 }
 
 function PSelectorOptionRender(props: {
@@ -118,7 +118,7 @@ function PSelectorOptionRender(props: {
   return (
     <section className="preset-panel options-preset-panel">
       <div className="preset-grid options-preset-grid">
-        {LPresetOptionSelectableList().map((preset) => {
+        {LPresetSelectableList().map((preset) => {
           const active = props.selectedPresetId === preset.presetId;
           return (
             <button
@@ -157,11 +157,11 @@ function PSelectorOptionRender(props: {
   );
 }
 
-function PCardOptionPresetRender(props: {
+function POptionPresetRender(props: {
   selectedPresetId: LPresetOptionId;
   onApplyPreset: (presetId: LPresetOptionId) => void;
 }) {
-  const presets = LPresetOptionSelectableList();
+  const presets = LPresetSelectableList();
   const selectedPreset = presets.find((preset) => preset.presetId === props.selectedPresetId);
   const selectedPresetDescription = selectedPreset
     ? LLocaleTextGet(`options.presets.${selectedPreset.presetId}.plain`)
@@ -240,7 +240,7 @@ function LOptionRiskNormalize(riskLevelName: string): string {
     : "low";
 }
 
-function LOptionCategoryGroup(LCatalogLibrarySource: LOptionChoice[]) {
+function LOptionGroupCreate(LCatalogLibrarySource: LOptionChoice[]) {
   return LCatalogLibrarySource.reduce<Record<string, LOptionChoice[]>>(
     (groups, option) => {
       const categoryName =
@@ -265,7 +265,7 @@ export function LLicenseBoundaryResolve(licenseProfileName: string): string {
   }
 }
 
-export function LLicenseBoundaryLabelShortGet(licenseProfileName: string): string {
+export function LLicenseShortGet(licenseProfileName: string): string {
   switch (licenseProfileName) {
     case "gpl-local":
       return LLocaleTextGet("options.summary.license.gpl-local");
@@ -324,7 +324,7 @@ function PSummaryOptionRender(props: {
             className={`option-summary__value option-summary__license option-summary__license--${licenseBoundary}`}
             title={LLicenseBoundaryResolve(props.licenseProfileName)}
           >
-            {LLicenseBoundaryLabelShortGet(props.licenseProfileName)}
+            {LLicenseShortGet(props.licenseProfileName)}
           </strong>
         </div>
         <div className="option-summary__item">
@@ -405,7 +405,7 @@ function LOptionSearchMatch(
   ].some((value) => value.toLowerCase().includes(normalizedQuery));
 }
 
-function LOptionCategoryNamesGet(
+function LOptionCategoryList(
   LCatalogLibrarySource: LOptionChoice[],
 ): string[] {
   return Array.from(
@@ -508,7 +508,7 @@ function PListOptionRender(props: {
           props.selectedCategoryName) &&
       LOptionSearchMatch(option, props.searchQuery),
   );
-  const groupedOptions = LOptionCategoryGroup(filteredOptions);
+  const groupedOptions = LOptionGroupCreate(filteredOptions);
   return (
     <div className="option-list">
       {Object.keys(groupedOptions).length === 0 && (
@@ -592,7 +592,7 @@ function PSectionFlagRender(props: {
 
 function PSectionThreadRender(props: {
   parallelJobCount: number;
-  updateFfmpegBuildSettings: (partial: Partial<LSettingsFFmpeg>) => void;
+  LSettingsFFmpegUpdate: (partial: Partial<LSettingsFFmpeg>) => void;
 }) {
   return (
     <section className="options-section">
@@ -606,7 +606,7 @@ function PSectionThreadRender(props: {
           max="256"
           value={props.parallelJobCount}
           onChange={(event) =>
-            props.updateFfmpegBuildSettings({
+            props.LSettingsFFmpegUpdate({
               parallelJobCount: Number(event.target.value),
             })
           }
@@ -626,7 +626,7 @@ function PCardOptionRender(props: {
   onSelectCategory: (categoryName: string) => void;
   categoryDropdownOpen: boolean;
   onToggleCategoryDropdown: () => void;
-  LOptionCategoryNameGets: string[];
+  LOptionCategoryNames: string[];
 }) {
   return (
     <section className="card card--teal options-simple-card options-simple-options-card">
@@ -646,7 +646,7 @@ function PCardOptionRender(props: {
             />
           </label>
           <PDropdownCategoryRender
-            categories={props.LOptionCategoryNameGets}
+            categories={props.LOptionCategoryNames}
             selectedCategoryName={props.selectedCategoryName}
             open={props.categoryDropdownOpen}
             onToggleOpen={props.onToggleCategoryDropdown}
@@ -670,14 +670,14 @@ function PCardOptionRender(props: {
 
 // ─── POptionRender ───────────────────────────────────────────────────────────────
 
-export type POptionProps = {
+export type LOptionProperties = {
   ffmpegBuildSettings: LSettingsFFmpeg;
   initialProgramState: LStateInitial;
   extraConfigureFlagText: string;
   onExtraFlagTextChange: (text: string) => void;
-  updateFfmpegBuildSettings: (partial: Partial<LSettingsFFmpeg>) => void;
-  toggleConfigureOption: (optionId: string) => void;
-  applyOptionPreset: (presetId: LPresetOptionId) => void;
+  LSettingsFFmpegUpdate: (partial: Partial<LSettingsFFmpeg>) => void;
+  LOptionToggle: (optionId: string) => void;
+  LPresetOptionApply: (presetId: LPresetOptionId) => void;
   optionsDetailedView: boolean;
   setOptionsDetailedView: (value: boolean) => void;
   showTechnicalDetails: boolean;
@@ -689,23 +689,23 @@ export function POptionRender({
   initialProgramState,
   extraConfigureFlagText,
   onExtraFlagTextChange,
-  updateFfmpegBuildSettings,
-  toggleConfigureOption,
-  applyOptionPreset,
+  LSettingsFFmpegUpdate,
+  LOptionToggle,
+  LPresetOptionApply,
   optionsDetailedView,
   setOptionsDetailedView,
   showTechnicalDetails,
   setShowTechnicalDetails,
-}: POptionProps) {
+}: LOptionProperties) {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedCategoryName, setSelectedCategoryName] = React.useState("");
   const [categoryDropdownOpen, setCategoryDropdownOpen] = React.useState(false);
   const selectedPresetId = LPresetOptionMatch(
     ffmpegBuildSettings.selectedConfigureOptionIds,
   );
-  const LOptionCategoryNameGets = React.useMemo(
+  const LOptionCategoryNames = React.useMemo(
     () =>
-      LOptionCategoryNamesGet(
+      LOptionCategoryList(
         initialProgramState.defaultConfigureOptionCatalog,
       ),
     [initialProgramState.defaultConfigureOptionCatalog],
@@ -729,14 +729,14 @@ export function POptionRender({
 
       {!optionsDetailedView && (
         <div className="options-simple-layout">
-          <PCardOptionPresetRender
+          <POptionPresetRender
             selectedPresetId={selectedPresetId}
-            onApplyPreset={applyOptionPreset}
+            onApplyPreset={LPresetOptionApply}
           />
           <PCardOptionRender
             LCatalogLibrarySource={initialProgramState.defaultConfigureOptionCatalog}
             selectedOptionIds={ffmpegBuildSettings.selectedConfigureOptionIds}
-            onToggleOption={toggleConfigureOption}
+            onToggleOption={LOptionToggle}
             searchQuery={searchQuery}
             onSearchQueryChange={setSearchQuery}
             selectedCategoryName={selectedCategoryName}
@@ -746,7 +746,7 @@ export function POptionRender({
             }}
             categoryDropdownOpen={categoryDropdownOpen}
             onToggleCategoryDropdown={() => setCategoryDropdownOpen((value) => !value)}
-            LOptionCategoryNameGets={LOptionCategoryNameGets}
+            LOptionCategoryNames={LOptionCategoryNames}
           />
         </div>
       )}
@@ -755,7 +755,7 @@ export function POptionRender({
         <>
           <PSelectorOptionRender
             selectedPresetId={selectedPresetId}
-            onApplyPreset={applyOptionPreset}
+            onApplyPreset={LPresetOptionApply}
           />
 
           <PSummaryOptionRender
@@ -788,7 +788,7 @@ export function POptionRender({
               />
             </label>
             <PDropdownCategoryRender
-              categories={LOptionCategoryNameGets}
+              categories={LOptionCategoryNames}
               selectedCategoryName={selectedCategoryName}
               open={categoryDropdownOpen}
               onToggleOpen={() => setCategoryDropdownOpen((value) => !value)}
@@ -816,7 +816,7 @@ export function POptionRender({
           <PListOptionRender
             LCatalogLibrarySource={initialProgramState.defaultConfigureOptionCatalog}
             selectedOptionIds={ffmpegBuildSettings.selectedConfigureOptionIds}
-            onToggleOption={toggleConfigureOption}
+            onToggleOption={LOptionToggle}
             showTechnicalDetails={showTechnicalDetails}
             searchQuery={searchQuery}
             selectedCategoryName={selectedCategoryName}
@@ -829,7 +829,7 @@ export function POptionRender({
 
           <PSectionThreadRender
             parallelJobCount={ffmpegBuildSettings.parallelJobCount}
-            updateFfmpegBuildSettings={updateFfmpegBuildSettings}
+            LSettingsFFmpegUpdate={LSettingsFFmpegUpdate}
           />
         </>
       )}

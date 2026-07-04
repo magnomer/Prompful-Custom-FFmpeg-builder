@@ -8,18 +8,18 @@ import (
 	"strings"
 )
 
-type LCatalogValidationIssueLevel string
+type LValidationIssueLevel string
 
 const (
-	LCatalogValidationIssueError   LCatalogValidationIssueLevel = "error"
-	LCatalogValidationIssueWarning LCatalogValidationIssueLevel = "warning"
+	LValidationIssueError   LValidationIssueLevel = "error"
+	LValidationIssueWarning LValidationIssueLevel = "warning"
 )
 
 type LCatalogValidationIssue struct {
-	LevelName  LCatalogValidationIssueLevel `json:"levelName"`
-	DomainName LCatalogDomainName           `json:"domainName"`
-	PathName   string                       `json:"pathName,omitempty"`
-	Message    string                       `json:"message"`
+	LevelName  LValidationIssueLevel `json:"levelName"`
+	DomainName LCatalogDomainName    `json:"domainName"`
+	PathName   string                `json:"pathName,omitempty"`
+	Message    string                `json:"message"`
 }
 
 type LCatalogValidationReport struct {
@@ -35,7 +35,7 @@ type LCatalogValidationReport struct {
 func (report LCatalogValidationReport) LErrorCount() int {
 	count := 0
 	for _, issue := range report.Issues {
-		if issue.LevelName == LCatalogValidationIssueError {
+		if issue.LevelName == LValidationIssueError {
 			count++
 		}
 	}
@@ -45,7 +45,7 @@ func (report LCatalogValidationReport) LErrorCount() int {
 func (report LCatalogValidationReport) LWarningCount() int {
 	count := 0
 	for _, issue := range report.Issues {
-		if issue.LevelName == LCatalogValidationIssueWarning {
+		if issue.LevelName == LValidationIssueWarning {
 			count++
 		}
 	}
@@ -62,45 +62,45 @@ func LCatalogEmbeddedValidate(catalog LCatalogEmbedded) LCatalogValidationReport
 	versionIds := map[string]string{}
 	presetIds := map[string]string{}
 	for _, file := range catalog.LibraryFiles {
-		record, err := LCatalogJsonObjectRead(file)
+		record, err := LJsonObjectRead(file)
 		if err != nil {
-			report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, err.Error()))
+			report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, err.Error()))
 			continue
 		}
-		LCatalogRecordKindCheck(&report, file, record, "ffmpeg-version-aware-library")
-		libraryId := LCatalogStringField(record, "libraryId")
+		LRecordKindCheck(&report, file, record, "ffmpeg-version-aware-library")
+		libraryId := LCatalogFieldGet(record, "libraryId")
 		LCatalogIdRegister(&report, file, libraryIds, libraryId, file.BaseName, "libraryId")
-		LCatalogFfmpegVersionRecordMapCheck(&report, file, record)
+		LVersionRecordCheck(&report, file, record)
 	}
 	for _, file := range catalog.VersionFiles {
-		record, err := LCatalogJsonObjectRead(file)
+		record, err := LJsonObjectRead(file)
 		if err != nil {
-			report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, err.Error()))
+			report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, err.Error()))
 			continue
 		}
-		LCatalogRecordKindCheck(&report, file, record, "ffmpeg-version")
-		versionId := LCatalogVersionIdRead(record)
+		LRecordKindCheck(&report, file, record, "ffmpeg-version")
+		versionId := LVersionIdentifierRead(record)
 		LCatalogIdRegister(&report, file, versionIds, versionId, file.BaseName, "ffmpeg.version")
 	}
 	for _, file := range catalog.PresetFiles {
-		record, err := LCatalogJsonObjectRead(file)
+		record, err := LJsonObjectRead(file)
 		if err != nil {
-			report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, err.Error()))
+			report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, err.Error()))
 			continue
 		}
-		LCatalogRecordKindCheck(&report, file, record, "ffmpeg-preset")
-		presetId := LCatalogStringField(record, "presetId")
+		LRecordKindCheck(&report, file, record, "ffmpeg-preset")
+		presetId := LCatalogFieldGet(record, "presetId")
 		LCatalogIdRegister(&report, file, presetIds, presetId, file.BaseName, "presetId")
-		LCatalogFfmpegVersionRecordMapCheck(&report, file, record)
+		LVersionRecordCheck(&report, file, record)
 	}
-	report.LibraryIds = LCatalogMapKeysSorted(libraryIds)
-	report.VersionIds = LCatalogMapKeysSorted(versionIds)
-	report.PresetIds = LCatalogMapKeysSorted(presetIds)
-	LCatalogCrossReferenceCheck(&report, catalog, libraryIds, versionIds, presetIds)
+	report.LibraryIds = LMapKeysSort(libraryIds)
+	report.VersionIds = LMapKeysSort(versionIds)
+	report.PresetIds = LMapKeysSort(presetIds)
+	LCrossReferenceCheck(&report, catalog, libraryIds, versionIds, presetIds)
 	return report
 }
 
-func LCatalogEmbeddedLoadAndValidate() (LCatalogEmbedded, LCatalogValidationReport, error) {
+func LCatalogLoadValidate() (LCatalogEmbedded, LCatalogValidationReport, error) {
 	catalog, err := LCatalogEmbeddedLoad()
 	if err != nil {
 		return LCatalogEmbedded{}, LCatalogValidationReport{}, err
@@ -112,7 +112,7 @@ func LCatalogEmbeddedLoadAndValidate() (LCatalogEmbedded, LCatalogValidationRepo
 	return catalog, report, nil
 }
 
-func LCatalogJsonObjectRead(file LCatalogEmbeddedFile) (map[string]any, error) {
+func LJsonObjectRead(file LCatalogEmbeddedFile) (map[string]any, error) {
 	record := map[string]any{}
 	if err := json.Unmarshal(file.RawContent, &record); err != nil {
 		return nil, fmt.Errorf("decode embedded catalog file %q: %w", file.PathName, err)
@@ -120,97 +120,97 @@ func LCatalogJsonObjectRead(file LCatalogEmbeddedFile) (map[string]any, error) {
 	return record, nil
 }
 
-func LCatalogRecordKindCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, record map[string]any, expectedKind string) {
-	actualKind := LCatalogStringField(record, "recordKind")
+func LRecordKindCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, record map[string]any, expectedKind string) {
+	actualKind := LCatalogFieldGet(record, "recordKind")
 	if actualKind == "" {
-		report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, "missing recordKind"))
+		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, "missing recordKind"))
 		return
 	}
 	if actualKind != expectedKind {
-		report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("recordKind %q does not match expected %q", actualKind, expectedKind)))
+		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("recordKind %q does not match expected %q", actualKind, expectedKind)))
 	}
 }
 
 func LCatalogIdRegister(report *LCatalogValidationReport, file LCatalogEmbeddedFile, ids map[string]string, actualId string, expectedId string, fieldName string) {
 	if actualId == "" {
-		report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, "missing "+fieldName))
+		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, "missing "+fieldName))
 		return
 	}
 	if actualId != expectedId {
-		report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("%s %q does not match file basename %q", fieldName, actualId, expectedId)))
+		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("%s %q does not match file basename %q", fieldName, actualId, expectedId)))
 	}
 	if previousPathName, exists := ids[actualId]; exists {
-		report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("duplicate id %q already defined in %s", actualId, previousPathName)))
+		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("duplicate id %q already defined in %s", actualId, previousPathName)))
 		return
 	}
 	ids[actualId] = file.PathName
 }
 
-func LCatalogFfmpegVersionRecordMapCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, record map[string]any) {
+func LVersionRecordCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, record map[string]any) {
 	ffmpegVersions, ok := record["ffmpegVersions"].(map[string]any)
 	if !ok {
-		report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, "missing ffmpegVersions object"))
+		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, "missing ffmpegVersions object"))
 		return
 	}
 	if len(ffmpegVersions) == 0 {
-		report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, "ffmpegVersions object is empty"))
+		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, "ffmpegVersions object is empty"))
 	}
 	for versionId, versionRecord := range ffmpegVersions {
 		versionObject, ok := versionRecord.(map[string]any)
 		if !ok {
-			report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("ffmpegVersions.%s is not an object", versionId)))
+			report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("ffmpegVersions.%s is not an object", versionId)))
 			continue
 		}
-		actualVersion := LCatalogStringField(versionObject, "ffmpegVersion")
+		actualVersion := LCatalogFieldGet(versionObject, "ffmpegVersion")
 		if actualVersion != "" && actualVersion != versionId {
-			report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("ffmpegVersions key %q does not match embedded ffmpegVersion %q", versionId, actualVersion)))
+			report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("ffmpegVersions key %q does not match embedded ffmpegVersion %q", versionId, actualVersion)))
 		}
 	}
 }
 
-func LCatalogCrossReferenceCheck(report *LCatalogValidationReport, catalog LCatalogEmbedded, libraryIds map[string]string, versionIds map[string]string, presetIds map[string]string) {
+func LCrossReferenceCheck(report *LCatalogValidationReport, catalog LCatalogEmbedded, libraryIds map[string]string, versionIds map[string]string, presetIds map[string]string) {
 	for _, file := range catalog.LibraryFiles {
-		record, err := LCatalogJsonObjectRead(file)
+		record, err := LJsonObjectRead(file)
 		if err != nil {
 			continue
 		}
-		libraryId := LCatalogStringField(record, "libraryId")
+		libraryId := LCatalogFieldGet(record, "libraryId")
 		ffmpegVersions, _ := record["ffmpegVersions"].(map[string]any)
 		for versionId, versionRecord := range ffmpegVersions {
 			if _, exists := versionIds[versionId]; !exists {
-				report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("library %q references unknown FFmpeg version %q", libraryId, versionId)))
+				report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("library %q references unknown FFmpeg version %q", libraryId, versionId)))
 			}
 			versionObject, ok := versionRecord.(map[string]any)
 			if !ok {
 				continue
 			}
-			versionLibraryId := LCatalogStringField(versionObject, "libraryId")
+			versionLibraryId := LCatalogFieldGet(versionObject, "libraryId")
 			if versionLibraryId != "" && versionLibraryId != libraryId {
-				report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("ffmpegVersions.%s libraryId %q does not match top-level libraryId %q", versionId, versionLibraryId, libraryId)))
+				report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("ffmpegVersions.%s libraryId %q does not match top-level libraryId %q", versionId, versionLibraryId, libraryId)))
 			}
 		}
 	}
 	for _, file := range catalog.VersionFiles {
-		record, err := LCatalogJsonObjectRead(file)
+		record, err := LJsonObjectRead(file)
 		if err != nil {
 			continue
 		}
-		LCatalogVersionLibraryReferencesCheck(report, file, record, libraryIds)
+		LVersionReferenceCheck(report, file, record, libraryIds)
 	}
 	for _, file := range catalog.PresetFiles {
-		record, err := LCatalogJsonObjectRead(file)
+		record, err := LJsonObjectRead(file)
 		if err != nil {
 			continue
 		}
-		LCatalogPresetReferencesCheck(report, file, record, libraryIds, versionIds)
+		LPresetReferenceCheck(report, file, record, libraryIds, versionIds)
 	}
 	_ = presetIds
 }
 
-func LCatalogVersionLibraryReferencesCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, record map[string]any, libraryIds map[string]string) {
+func LVersionReferenceCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, record map[string]any, libraryIds map[string]string) {
 	libraries, ok := record["libraries"].(map[string]any)
 	if !ok {
-		report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, "missing libraries object"))
+		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, "missing libraries object"))
 		return
 	}
 	for _, sectionName := range []string{"includedByOfficialFfmpegSource", "compatible", "unsupported", "unavailable"} {
@@ -221,61 +221,61 @@ func LCatalogVersionLibraryReferencesCheck(report *LCatalogValidationReport, fil
 		for _, item := range items {
 			itemObject, ok := item.(map[string]any)
 			if !ok {
-				report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, "library reference in "+sectionName+" is not an object"))
+				report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, "library reference in "+sectionName+" is not an object"))
 				continue
 			}
-			libraryId := LCatalogStringField(itemObject, "libraryId")
+			libraryId := LCatalogFieldGet(itemObject, "libraryId")
 			if libraryId == "" {
-				report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, "library reference in "+sectionName+" is missing libraryId"))
+				report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, "library reference in "+sectionName+" is missing libraryId"))
 				continue
 			}
 			if _, exists := libraryIds[libraryId]; !exists {
-				report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("library reference %q in %s has no library metadata file", libraryId, sectionName)))
+				report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("library reference %q in %s has no library metadata file", libraryId, sectionName)))
 			}
-			metadataPath := LCatalogStringField(itemObject, "metadata")
+			metadataPath := LCatalogFieldGet(itemObject, "metadata")
 			if metadataPath != "" && metadataPath != "libraries/"+libraryId+".json" {
-				report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("library %q metadata path %q is not libraries/%s.json", libraryId, metadataPath, libraryId)))
+				report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("library %q metadata path %q is not libraries/%s.json", libraryId, metadataPath, libraryId)))
 			}
-			preparationPath := LCatalogStringField(itemObject, "preparation")
+			preparationPath := LCatalogFieldGet(itemObject, "preparation")
 			if preparationPath != "" {
-				LCatalogSourcePathCheck(report, file, preparationPath)
+				LSourcePathCheck(report, file, preparationPath)
 			}
 		}
 	}
 }
 
-func LCatalogPresetReferencesCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, record map[string]any, libraryIds map[string]string, versionIds map[string]string) {
+func LPresetReferenceCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, record map[string]any, libraryIds map[string]string, versionIds map[string]string) {
 	ffmpegVersions, ok := record["ffmpegVersions"].(map[string]any)
 	if !ok {
 		return
 	}
 	for versionId, versionRecord := range ffmpegVersions {
 		if _, exists := versionIds[versionId]; !exists {
-			report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("preset references unknown FFmpeg version %q", versionId)))
+			report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("preset references unknown FFmpeg version %q", versionId)))
 		}
 		versionObject, ok := versionRecord.(map[string]any)
 		if !ok {
 			continue
 		}
 		if _, hasModes := versionObject["modes"]; hasModes {
-			report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("preset %s must be flat and must not contain modes", versionId)))
+			report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("preset %s must be flat and must not contain modes", versionId)))
 		}
-		LCatalogPresetReferencesForFlatVersionCheck(report, file, versionId, versionObject, libraryIds)
+		LPresetFlatCheck(report, file, versionId, versionObject, libraryIds)
 	}
 }
 
-func LCatalogPresetReferencesForFlatVersionCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, versionId string, versionObject map[string]any, libraryIds map[string]string) {
+func LPresetFlatCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, versionId string, versionObject map[string]any, libraryIds map[string]string) {
 	for _, fieldName := range []string{"libraryIds", "extendedLibraryIds"} {
-		LCatalogLibraryIdArrayReferencesCheck(report, file, versionObject, fieldName, libraryIds)
+		LIdentifierArrayCheck(report, file, versionObject, fieldName, libraryIds)
 	}
 	for _, fieldName := range []string{"declaredLibraryIdsFromCurrentV4Preset", "selectedLibraryIdsForUcrt64", "selectedLibraryIdsForMingw64", "selectedLibraryIdsForClang64", "removedLibraryIdsForUcrt64", "removedLibraryIdsForMingw64", "removedLibraryIdsForClang64"} {
 		if _, exists := versionObject[fieldName]; exists {
-			report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("preset %s must not contain legacy/result field %s", versionId, fieldName)))
+			report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("preset %s must not contain legacy/result field %s", versionId, fieldName)))
 		}
 	}
 }
 
-func LCatalogLibraryIdArrayReferencesCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, record map[string]any, fieldName string, libraryIds map[string]string) {
+func LIdentifierArrayCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, record map[string]any, fieldName string, libraryIds map[string]string) {
 	values, ok := record[fieldName].([]any)
 	if !ok {
 		return
@@ -283,28 +283,28 @@ func LCatalogLibraryIdArrayReferencesCheck(report *LCatalogValidationReport, fil
 	for _, value := range values {
 		libraryId, ok := value.(string)
 		if !ok {
-			report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fieldName+" contains a non-string library id"))
+			report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fieldName+" contains a non-string library id"))
 			continue
 		}
-		LCatalogLibraryIdReferenceCheck(report, file, libraryId, libraryIds, fieldName)
+		LIdentifierReferenceCheck(report, file, libraryId, libraryIds, fieldName)
 	}
 }
 
-func LCatalogLibraryIdReferenceCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, libraryId string, libraryIds map[string]string, fieldName string) {
+func LIdentifierReferenceCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, libraryId string, libraryIds map[string]string, fieldName string) {
 	if _, exists := libraryIds[libraryId]; !exists {
-		report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("%s references unknown library %q", fieldName, libraryId)))
+		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("%s references unknown library %q", fieldName, libraryId)))
 	}
 }
 
-func LCatalogVersionIdRead(record map[string]any) string {
+func LVersionIdentifierRead(record map[string]any) string {
 	ffmpeg, ok := record["ffmpeg"].(map[string]any)
 	if !ok {
 		return ""
 	}
-	return LCatalogStringField(ffmpeg, "version")
+	return LCatalogFieldGet(ffmpeg, "version")
 }
 
-func LCatalogStringField(record map[string]any, fieldName string) string {
+func LCatalogFieldGet(record map[string]any, fieldName string) string {
 	value, ok := record[fieldName].(string)
 	if !ok {
 		return ""
@@ -312,19 +312,19 @@ func LCatalogStringField(record map[string]any, fieldName string) string {
 	return value
 }
 
-func LCatalogSourcePathCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, sourcePath string) {
+func LSourcePathCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, sourcePath string) {
 	cleanPath := filepath.ToSlash(filepath.Clean(sourcePath))
 	if strings.HasPrefix(cleanPath, "../") || strings.HasPrefix(cleanPath, "/") {
-		report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueError, file, fmt.Sprintf("unsafe source path %q", sourcePath)))
+		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("unsafe source path %q", sourcePath)))
 		return
 	}
 	if strings.HasPrefix(cleanPath, "versions/") && strings.HasSuffix(cleanPath, ".go") {
 		return
 	}
-	report.Issues = append(report.Issues, LCatalogValidationIssueCreate(LCatalogValidationIssueWarning, file, fmt.Sprintf("source path %q is not a recognized version work path", sourcePath)))
+	report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueWarning, file, fmt.Sprintf("source path %q is not a recognized version work path", sourcePath)))
 }
 
-func LCatalogValidationIssueCreate(levelName LCatalogValidationIssueLevel, file LCatalogEmbeddedFile, message string) LCatalogValidationIssue {
+func LValidationIssueCreate(levelName LValidationIssueLevel, file LCatalogEmbeddedFile, message string) LCatalogValidationIssue {
 	return LCatalogValidationIssue{
 		LevelName:  levelName,
 		DomainName: file.DomainName,
@@ -333,7 +333,7 @@ func LCatalogValidationIssueCreate(levelName LCatalogValidationIssueLevel, file 
 	}
 }
 
-func LCatalogMapKeysSorted(values map[string]string) []string {
+func LMapKeysSort(values map[string]string) []string {
 	keys := make([]string, 0, len(values))
 	for key := range values {
 		keys = append(keys, key)

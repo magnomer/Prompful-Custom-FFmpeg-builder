@@ -16,12 +16,12 @@ import (
 var LPatternArtifactVersion = regexp.MustCompile(`^\d+(?:\.\d+){0,2}$`)
 
 type LWorkspaceLayout struct {
-	WorkspaceDirectory  string `json:"workspaceDirectory"`
-	CacheDirectory      string `json:"cacheDirectory"`
-	DownloadsDirectory  string `json:"downloadsDirectory"`
-	SourcesDirectory    string `json:"sourcesDirectory"`
-	BuildDirectory      string `json:"buildDirectory"`
-	PrefixDirectory     string `json:"prefixDirectory"`
+	WorkspaceDirectory string `json:"workspaceDirectory"`
+	CacheDirectory     string `json:"cacheDirectory"`
+	DownloadsDirectory string `json:"downloadsDirectory"`
+	SourcesDirectory   string `json:"sourcesDirectory"`
+	BuildDirectory     string `json:"buildDirectory"`
+	PrefixDirectory    string `json:"prefixDirectory"`
 	// ArtifactsBaseDirectory is the parent that holds one per-version subdirectory
 	// per built FFmpeg release (e.g. <workspace>/FFmpeg). ArtifactsDirectory is the
 	// directory a specific build's files live in: the version subdirectory for a
@@ -48,13 +48,13 @@ func LWorkspaceLayoutResolve(workspaceDirectory string) LWorkspaceLayout {
 	}
 }
 
-// LWorkspaceLayoutResolveVersioned resolves a layout whose ArtifactsDirectory is
+// LLayoutVersionedGet resolves a layout whose ArtifactsDirectory is
 // the per-version subdirectory <workspace>/FFmpeg/<version>. A build stores its
 // executables, shared libraries, and build report there so releases no longer
 // overwrite one another. If the version is not a valid dotted-numeric release the
 // artifact path falls back to the base FFmpeg directory rather than risk an
 // unsafe subdirectory name.
-func LWorkspaceLayoutResolveVersioned(workspaceDirectory string, version string) LWorkspaceLayout {
+func LLayoutVersionedGet(workspaceDirectory string, version string) LWorkspaceLayout {
 	layout := LWorkspaceLayoutResolve(workspaceDirectory)
 	if LPatternArtifactVersion.MatchString(version) {
 		layout.ArtifactsDirectory = filepath.Join(layout.ArtifactsBaseDirectory, version)
@@ -131,14 +131,14 @@ func LPathRealCheck(workspaceDirectory string, candidatePath string) error {
 	if err != nil {
 		return err
 	}
-	if err := LPathSymlinkReject(workspaceRealPath, LPathParentFind); err != nil {
+	if err := LSymlinkPathReject(workspaceRealPath, LPathParentFind); err != nil {
 		return err
 	}
 	candidateRealPath, err := filepath.EvalSymlinks(LPathParentFind)
 	if err != nil {
 		return err
 	}
-	return LPathBaseInsideCheck(workspaceRealPath, candidateRealPath, "resolved path escapes selected workspace")
+	return LPathBaseCheck(workspaceRealPath, candidateRealPath, "resolved path escapes selected workspace")
 }
 
 func LDirectorySymlinkCheck(directoryPath string) error {
@@ -155,7 +155,7 @@ func LDirectorySymlinkCheck(directoryPath string) error {
 	return nil
 }
 
-func LPathSymlinkReject(basePath string, candidatePath string) error {
+func LSymlinkPathReject(basePath string, candidatePath string) error {
 	absoluteBasePath, err := filepath.Abs(basePath)
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func LPathSymlinkReject(basePath string, candidatePath string) error {
 	if err != nil {
 		return err
 	}
-	if err := LPathBaseInsideCheck(absoluteBasePath, absoluteCandidatePath, "path escapes selected workspace"); err != nil {
+	if err := LPathBaseCheck(absoluteBasePath, absoluteCandidatePath, "path escapes selected workspace"); err != nil {
 		return err
 	}
 	relativePath, err := filepath.Rel(absoluteBasePath, absoluteCandidatePath)
@@ -217,7 +217,7 @@ func LPathParentFind(candidatePath string) (string, error) {
 	}
 }
 
-func LPathBaseInsideCheck(basePath string, candidatePath string, errorMessage string) error {
+func LPathBaseCheck(basePath string, candidatePath string, errorMessage string) error {
 	absoluteBasePath, err := filepath.Abs(basePath)
 	if err != nil {
 		return err

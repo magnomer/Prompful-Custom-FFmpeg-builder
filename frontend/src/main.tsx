@@ -12,7 +12,7 @@ import { PResultRender } from "./tabs/result";
 import { PLogRender } from "./tabs/logs";
 import { PAboutRender } from "./tabs/about";
 import { LStateBuilderUse } from "./useBuilderState";
-import type { PTabId } from "./programstate";
+import type { LTabIdentifier } from "./programstate";
 import { LLocaleGet, LLocaleSet, LLocaleTextGet, LLocaleStatusGet, type LLocaleCode } from "./i18n";
 import sourceIcon from "./assets/tab-icons/Source.svg";
 import buildConfigurationIcon from "./assets/tab-icons/BuildConfiguration.svg";
@@ -26,14 +26,14 @@ import aboutIcon from "./assets/tab-icons/About.svg";
 import programIcon from "../../build/appicon.png";
 import nextStepIcon from "./assets/footer-icons/NextStep.svg";
 
-type PErrorBoundaryState = {
+type LErrorBoundaryState = {
   errorText: string;
 };
 
-class PErrorBoundary extends React.Component<React.PropsWithChildren, PErrorBoundaryState> {
-  state: PErrorBoundaryState = { errorText: "" };
+class PErrorBoundary extends React.Component<React.PropsWithChildren, LErrorBoundaryState> {
+  state: LErrorBoundaryState = { errorText: "" };
 
-  static getDerivedStateFromError(error: unknown): PErrorBoundaryState {
+  static getDerivedStateFromError(error: unknown): LErrorBoundaryState {
     return { errorText: LErrorTextFormat(error) };
   }
 
@@ -82,7 +82,7 @@ function PProgramRender() {
   const selectedLocaleLabel = localeItems.find((localeItem) => localeItem.id === locale)?.label ?? LLocaleTextGet("locale.english");
 
   const selectedLibraryCount = s.ffmpegBuildSettings.selectedLibraryIds.length;
-  const tabItems: { id: PTabId; label: string; description: string; icon: string }[] = [
+  const tabItems: { id: LTabIdentifier; label: string; description: string; icon: string }[] = [
     { id: "source",      label: LLocaleTextGet("nav.source.label"),      description: LLocaleTextGet("nav.source.description"), icon: sourceIcon },
     { id: "buildConfig",  label: LLocaleTextGet("nav.buildConfig.label"),  description: LLocaleTextGet("nav.buildConfig.description"), icon: buildConfigurationIcon },
     { id: "prep",        label: LLocaleTextGet("nav.prep.label"),        description: LLocaleTextGet("nav.prep.description"), icon: prepIcon },
@@ -163,9 +163,9 @@ function PProgramRender() {
               buildConfigSettings={s.buildConfigSettings}
               ffmpegBuildSettings={s.ffmpegBuildSettings}
               supportedFfmpegReleases={s.initialProgramState.supportedFfmpegReleases}
-              updateBuildConfigSettings={s.updateBuildConfigSettings}
-              updateFfmpegBuildSettings={s.updateFfmpegBuildSettings}
-              updateMsys2ArchiveUrl={s.updateMsys2ArchiveUrl}
+              LSettingsToolchainUpdate={s.LSettingsToolchainUpdate}
+              LSettingsFFmpegUpdate={s.LSettingsFFmpegUpdate}
+              LMSYSArchiveUpdate={s.LMSYSArchiveUpdate}
               chooseWorkspaceDirectory={s.chooseWorkspaceDirectory}
               openInUserBrowser={s.openInUserBrowser}
             />
@@ -173,9 +173,9 @@ function PProgramRender() {
           {s.activeTabId === "buildConfig" && (
             <PConfigRender
               buildConfigSettings={s.buildConfigSettings}
-              changeShellProfile={s.changeShellProfile}
+              LProfileShellUpdate={s.LProfileShellUpdate}
               msys2PackageText={s.msys2PackageText}
-              onMsys2PackageTextChange={s.handleMsys2PackageTextChange}
+              onMsys2PackageTextChange={s.LMSYSPackageUpdate}
             />
           )}
           {s.activeTabId === "prep" && (
@@ -194,9 +194,9 @@ function PProgramRender() {
               currentShellProfileName={s.buildConfigSettings.windowsShellProfileName}
               configuredMsys2PackageNames={s.configuredMsys2PackageNames}
               approveToolchainPreparationPlan={s.approveToolchainPreparationPlan}
-              cancelToolchainPreparationPlan={s.cancelToolchainPreparationPlan}
+              LPlanToolchainCancel={s.LPlanToolchainCancel}
               cancelApprovedAction={s.cancelApprovedAction}
-              clearApprovedAction={s.clearApprovedAction}
+              LActionApprovedClear={s.LActionApprovedClear}
               onVerifyToolchain={s.verifyToolchain}
               onReuseToolchain={() => s.setActiveTabId("library")}
               onReinstallToolchain={s.addBuildConfigPlanAndContinueToPrep}
@@ -218,9 +218,9 @@ function PProgramRender() {
               setShowTechnicalDetails={s.setLibraryTechnicalDetails}
               sectionFilters={s.librarySectionFilters}
               setSectionFilters={s.setLLibrarySectionFilters}
-              toggleLibrary={s.toggleLibrary}
-              applyLibraryPreset={s.applyLibraryPreset}
-              setExtendedLibraries={s.setExtendedLibraries}
+              LLibraryToggle={s.LLibraryToggle}
+              LPresetLibraryApply={s.LPresetLibraryApply}
+              LLibraryExtendedUpdate={s.LLibraryExtendedUpdate}
               openInUserBrowser={s.openInUserBrowser}
             />
           )}
@@ -229,10 +229,10 @@ function PProgramRender() {
               ffmpegBuildSettings={s.ffmpegBuildSettings}
               initialProgramState={s.initialProgramState}
               extraConfigureFlagText={s.extraConfigureFlagText}
-              onExtraFlagTextChange={s.handleExtraFlagTextChange}
-              updateFfmpegBuildSettings={s.updateFfmpegBuildSettings}
-              toggleConfigureOption={s.toggleConfigureOption}
-              applyOptionPreset={s.applyOptionPreset}
+              onExtraFlagTextChange={s.LFlagExtraUpdate}
+              LSettingsFFmpegUpdate={s.LSettingsFFmpegUpdate}
+              LOptionToggle={s.LOptionToggle}
+              LPresetOptionApply={s.LPresetOptionApply}
               optionsDetailedView={s.optionsDetailedView}
               setOptionsDetailedView={s.setOptionsDetailedView}
               showTechnicalDetails={s.optionsTechnicalDetails}
@@ -249,7 +249,7 @@ function PProgramRender() {
               canCancelFfmpeg={s.canCancelFfmpeg}
               approveFfmpegBuildPlan={s.approveFfmpegBuildPlan}
               cancelApprovedAction={s.cancelApprovedAction}
-              clearApprovedAction={s.clearApprovedAction}
+              LActionApprovedClear={s.LActionApprovedClear}
               onGoToOptions={() => s.setActiveTabId("options")}
             />
           )}
@@ -306,7 +306,7 @@ function PProgramRender() {
               {s.activeTabId === "buildConfig" && (
                 <>
                   <button className="button button--primary" type="button" onClick={s.addBuildConfigPlanAndContinueToPrep}>{LLocaleTextGet("actions.addBuildPlanAndContinue")}<span className="button__chevron" aria-hidden="true">›</span></button>
-                  <button className="button" type="button" onClick={s.restoreRecommendedToolchainPackages}>{LLocaleTextGet("actions.restoreRecommendedList")}</button>
+                  <button className="button" type="button" onClick={s.LPackageToolchainRestore}>{LLocaleTextGet("actions.restoreRecommendedList")}</button>
                 </>
               )}
               {s.activeTabId === "prep" && s.installedToolchainProfiles.length > 0 && s.approvedActionPhase !== "toolchain" && (
@@ -318,7 +318,7 @@ function PProgramRender() {
               {s.activeTabId === "options" && (
                 <>
                   <button className="button button--primary" type="button" onClick={s.reviewFfmpegPlans}>{LLocaleTextGet("actions.reviewPlan")}<span className="button__chevron" aria-hidden="true">›</span></button>
-                  <button className="button" type="button" onClick={s.restoreRecommendedExtraFlags}>{LLocaleTextGet("actions.restoreRecommendedOptions")}</button>
+                  <button className="button" type="button" onClick={s.LFlagExtraRestore}>{LLocaleTextGet("actions.restoreRecommendedOptions")}</button>
                 </>
               )}
               {s.activeTabId === "buildFfmpeg" && s.ffmpegBuildPlanReview && s.approvedActionPhase !== "ffmpeg" && (
@@ -338,12 +338,12 @@ function LProgramMount() {
   const rootElement = document.getElementById("root");
   if (!rootElement) return;
   const root = createRoot(rootElement);
-  const renderFatalError = (title: string, error: unknown) => {
+  const PErrorFatalRender = (title: string, error: unknown) => {
     root.render(<PFatalErrorRender title={title} text={LErrorTextFormat(error)} />);
   };
 
-  window.addEventListener("error", (event) => renderFatalError("Runtime failed", event.error ?? event.message));
-  window.addEventListener("unhandledrejection", (event) => renderFatalError("Async runtime failed", event.reason));
+  window.addEventListener("error", (event) => PErrorFatalRender("Runtime failed", event.error ?? event.message));
+  window.addEventListener("unhandledrejection", (event) => PErrorFatalRender("Async runtime failed", event.reason));
 
   root.render(
     <React.StrictMode>

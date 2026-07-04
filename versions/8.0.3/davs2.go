@@ -2,16 +2,16 @@ package version803
 
 import "promptfulcustomffmpegbuilder/versions/shared"
 
-// LLibraryDavs2Prepare performs the coded preparation manipulation for davs2 on FFmpeg 8.0.3.
-func LLibraryDavs2Prepare(plan *shared.LibraryPreparationPlan) {
+// LDavs2Prepare performs the coded preparation manipulation for davs2 on FFmpeg 8.0.3.
+func LDavs2Prepare(plan *shared.LPreparationPlan) {
 	plan.FfmpegVersion = "8.0.3"
 	plan.LibraryId = "davs2"
 	plan.VersionSpecificGoFile = "versions/8.0.3/davs2.go"
-	plan.UseInternalSourceBuild("libdavs2", "configure-make")
-	plan.ConfigureInSubdir("build/linux")
-	plan.AddConfigureOptions("--disable-cli", "--enable-pic")
-	plan.BuildMakeTargets("lib-static")
-	plan.InstallMakeTargets("install-lib-static")
-	plan.UsePkgConfig("davs2")
-	plan.Verify("davs2.h", "davs2")
+	plan.LSourceCompilationUse("libdavs2", "configure-make")
+	plan.LConfigureSubdirectoryUse("build/linux")
+	plan.LConfigureOptionAdd("--disable-cli", "--enable-pic")
+	plan.LMakeTargetAdd("lib-static")
+	plan.LMakeTargetInstall("install-lib-static")
+	plan.LPackageConfigurationUse("davs2")
+	plan.LCommandVerify("davs2.h", "davs2")
 }

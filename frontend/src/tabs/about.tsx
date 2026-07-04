@@ -1,24 +1,24 @@
 import React from "react";
 import { LLocaleTextGet } from "../i18n";
-import { PTextDescriptionRender, PButtonLinkExternalRender, PHeaderPageRender } from "./shared";
-import { LUnlockBasicCheck, LUnlockSudoCheck, LUnlockVersionClickRegister, LUnlockIndicatorClickRegister } from "../devUnlock";
+import { PTextDescriptionRender, PLinkExternalRender, PHeaderPageRender } from "./shared";
+import { LUnlockBasicCheck, LUnlockSudoCheck, LUnlockVersionAdd, LUnlockIndicatorAdd } from "../devUnlock";
 import aboutIcon from "../assets/about-card-icons/AboutInfo.svg";
 import workflowIcon from "../assets/about-card-icons/WhatThisProgramDoes.svg";
 import boundaryIcon from "../assets/about-card-icons/WhatThisProgramDoesNotInclude.svg";
 
 declare const __PROGRAM_VERSION__: string;
 
-export type PAboutProps = {
+export type LAboutProperties = {
   openInUserBrowser: (url: string) => Promise<void>;
 };
 
-const LLinkOfficialMap = {
+const LLinkOfficialTable = {
   projectRepository: "https://github.com/magnomer/Prompful-Custom-FFmpeg-builder",
   ffmpegWebsite: "https://ffmpeg.org",
   msys2Website: "https://www.msys2.org",
 };
 
-export function PAboutRender({ openInUserBrowser }: PAboutProps) {
+export function PAboutRender({ openInUserBrowser }: LAboutProperties) {
   // Hidden developer feature: twelve clicks on the version number toggle basic dev
   // unlock (UI-unavailable libraries become selectable); with basic on, twelve clicks
   // on the dev indicator below toggle the sudo tier (relaxes pick-one groups). See
@@ -27,8 +27,8 @@ export function PAboutRender({ openInUserBrowser }: PAboutProps) {
   const [sudoDevUnlocked, setSudoDevUnlocked] = React.useState(LUnlockSudoCheck());
 
   // Toggling basic dev off also clears sudo; keep the indicator's state in sync.
-  function handleVersionClick() {
-    const nextDevUnlocked = LUnlockVersionClickRegister();
+  function PAboutVersionUpdate() {
+    const nextDevUnlocked = LUnlockVersionAdd();
     setDevUnlocked(nextDevUnlocked);
     if (!nextDevUnlocked) {
       setSudoDevUnlocked(false);
@@ -48,23 +48,23 @@ export function PAboutRender({ openInUserBrowser }: PAboutProps) {
             <span className="about-version__label">{LLocaleTextGet("about.version.label")}</span>
             <strong
               className="about-version__value"
-              onClick={handleVersionClick}
+              onClick={PAboutVersionUpdate}
             >{LLocaleTextGet("about.version.value", { version: __PROGRAM_VERSION__ })}</strong>
             {devUnlocked && (
               <span
                 className={`about-version__dev-unlock ${sudoDevUnlocked ? "about-version__dev-unlock--sudo" : ""}`}
-                onClick={() => setSudoDevUnlocked(LUnlockIndicatorClickRegister())}
+                onClick={() => setSudoDevUnlocked(LUnlockIndicatorAdd())}
               >{LLocaleTextGet(sudoDevUnlocked ? "about.version.sudoDevUnlocked" : "about.version.devUnlocked")}</span>
             )}
           </div>
         </div>
         <div className="about-link-row">
           <div className="about-link-row__left">
-            <PButtonLinkExternalRender label={LLocaleTextGet("about.links.projectRepository")} url={LLinkOfficialMap.projectRepository} onOpen={openInUserBrowser} />
+            <PLinkExternalRender label={LLocaleTextGet("about.links.projectRepository")} url={LLinkOfficialTable.projectRepository} onOpen={openInUserBrowser} />
           </div>
           <div className="about-link-row__right">
-            <PButtonLinkExternalRender label={LLocaleTextGet("about.links.ffmpegWebsite")} url={LLinkOfficialMap.ffmpegWebsite} onOpen={openInUserBrowser} />
-            <PButtonLinkExternalRender label={LLocaleTextGet("about.links.msys2Website")} url={LLinkOfficialMap.msys2Website} onOpen={openInUserBrowser} />
+            <PLinkExternalRender label={LLocaleTextGet("about.links.ffmpegWebsite")} url={LLinkOfficialTable.ffmpegWebsite} onOpen={openInUserBrowser} />
+            <PLinkExternalRender label={LLocaleTextGet("about.links.msys2Website")} url={LLinkOfficialTable.msys2Website} onOpen={openInUserBrowser} />
           </div>
         </div>
       </section>

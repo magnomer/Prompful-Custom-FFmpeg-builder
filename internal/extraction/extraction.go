@@ -21,26 +21,26 @@ import (
 	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
-type LArchiveFormat string
+type LArchiveKind string
 
 type LPolicyExtraction string
 
 type LPolicyFilemode string
 
 const (
-	LArchiveTarBz2 LArchiveFormat = "tar-bz2"
-	LArchiveTarGz  LArchiveFormat = "tar-gz"
-	LArchiveTarXz  LArchiveFormat = "tar-xz"
-	LArchiveTarZst LArchiveFormat = "tar-zst"
-	LArchiveTar    LArchiveFormat = "tar"
-	LArchiveZip    LArchiveFormat = "zip"
+	LTarBzipArchive LArchiveKind = "tar-bz2"
+	LArchiveTarGz   LArchiveKind = "tar-gz"
+	LArchiveTarXz   LArchiveKind = "tar-xz"
+	LArchiveTarZst  LArchiveKind = "tar-zst"
+	LArchiveTar     LArchiveKind = "tar"
+	LArchiveZip     LArchiveKind = "zip"
 
-	LPolicyExtractionRequireNewDirectory LPolicyExtraction = "must-not-exist"
-	LPolicyExtractionDestinationEmpty    LPolicyExtraction = "must-be-empty"
-	LPolicyExtractionOverwrite           LPolicyExtraction = "overwrite-approved"
+	LNewDirectoryPolicy        LPolicyExtraction = "must-not-exist"
+	LEmptyDestinationPolicy    LPolicyExtraction = "must-be-empty"
+	LPolicyExtractionOverwrite LPolicyExtraction = "overwrite-approved"
 
-	LPolicyFilemodeExecutablePreserve LPolicyFilemode = "preserve-safe-executable-bits"
-	LPolicyFilemodeRegularOnly        LPolicyFilemode = "regular-files-not-executable"
+	LExecutablePreservePolicy LPolicyFilemode = "preserve-safe-executable-bits"
+	LRegularOnlyPolicy        LPolicyFilemode = "regular-files-not-executable"
 )
 
 type LPlanExtraction struct {
@@ -49,7 +49,7 @@ type LPlanExtraction struct {
 	ArchiveFilePath            string            `json:"archiveFilePath"`
 	DestinationDirectory       string            `json:"destinationDirectory"`
 	WorkspaceDirectory         string            `json:"workspaceDirectory"`
-	LArchiveFormat             LArchiveFormat    `json:"archiveFormatName"`
+	LArchiveKind               LArchiveKind      `json:"archiveFormatName"`
 	LPolicyExtraction          LPolicyExtraction `json:"extractionDestinationPolicyName"`
 	LPolicyFilemode            LPolicyFilemode   `json:"fileModePolicyName"`
 	MaximumFileCount           int               `json:"maximumFileCount"`
@@ -59,8 +59,8 @@ type LPlanExtraction struct {
 
 type LProgressFunc func(level string, message string)
 
-func LArchiveConsentExtract(LContext context.Context, userLConsentArchive consent.LConsentArchive, extractPlan LPlanExtraction, emitProgress LProgressFunc) error {
-	if err := consent.LConsentCheck(userLConsentArchive.LConsent, consent.LConsentKindArchive, extractPlan.ActionName, extractPlan.PlanHash); err != nil {
+func LArchiveConsentExtract(LContext context.Context, userLConsentArchive consent.LArchiveConsentState, extractPlan LPlanExtraction, emitProgress LProgressFunc) error {
+	if err := consent.LConsentCheck(userLConsentArchive.LConsent, consent.LArchiveConsentKind, extractPlan.ActionName, extractPlan.PlanHash); err != nil {
 		return err
 	}
 	extractPlan = LExtractionDefaultApply(extractPlan)
@@ -70,7 +70,7 @@ func LArchiveConsentExtract(LContext context.Context, userLConsentArchive consen
 	if emitProgress != nil {
 		emitProgress("info", "Extracting approved archive inside workspace.")
 	}
-	if extractPlan.LArchiveFormat == LArchiveZip {
+	if extractPlan.LArchiveKind == LArchiveZip {
 		return LArchiveZipExtract(LContext, extractPlan)
 	}
 	return LArchiveTarExtract(LContext, extractPlan)
@@ -78,10 +78,10 @@ func LArchiveConsentExtract(LContext context.Context, userLConsentArchive consen
 
 func LExtractionDefaultApply(extractPlan LPlanExtraction) LPlanExtraction {
 	if extractPlan.LPolicyExtraction == "" {
-		extractPlan.LPolicyExtraction = LPolicyExtractionRequireNewDirectory
+		extractPlan.LPolicyExtraction = LNewDirectoryPolicy
 	}
 	if extractPlan.LPolicyFilemode == "" {
-		extractPlan.LPolicyFilemode = LPolicyFilemodeExecutablePreserve
+		extractPlan.LPolicyFilemode = LExecutablePreservePolicy
 	}
 	if extractPlan.MaximumFileCount <= 0 {
 		extractPlan.MaximumFileCount = 250000
@@ -138,9 +138,9 @@ func LPolicyExtractionCheck(extractPlan LPlanExtraction) error {
 		return errors.New("archive extraction destination exists and is not a directory")
 	}
 	switch extractPlan.LPolicyExtraction {
-	case LPolicyExtractionRequireNewDirectory:
+	case LNewDirectoryPolicy:
 		return errors.New("archive extraction destination already exists")
-	case LPolicyExtractionDestinationEmpty:
+	case LEmptyDestinationPolicy:
 		entries, err := os.ReadDir(extractPlan.DestinationDirectory)
 		if err != nil {
 			return err
@@ -172,7 +172,7 @@ func LArchiveTarExtract(LContext context.Context, extractPlan LPlanExtraction) e
 	}
 	defer archiveFile.Close()
 
-	archiveReader, closeReader, err := LArchiveReaderOpen(archiveFile, extractPlan.LArchiveFormat)
+	archiveReader, closeReader, err := LArchiveReaderOpen(archiveFile, extractPlan.LArchiveKind)
 	if err != nil {
 		return err
 	}
@@ -407,9 +407,9 @@ func LArchiveEntryWrite(zipEntry *zip.File, targetPath string, entrySize int64, 
 	return closeErr
 }
 
-func LArchiveReaderOpen(archiveFile *os.File, archiveFormatName LArchiveFormat) (io.Reader, func(), error) {
+func LArchiveReaderOpen(archiveFile *os.File, archiveFormatName LArchiveKind) (io.Reader, func(), error) {
 	switch archiveFormatName {
-	case LArchiveTarBz2:
+	case LTarBzipArchive:
 		return bzip2.NewReader(archiveFile), nil, nil
 	case LArchiveTarGz:
 		gzipReader, err := gzip.NewReader(archiveFile)
@@ -508,9 +508,9 @@ func LTargetExtractionCheck(destinationDirectory string, targetPath string, orig
 
 func LModeFileResolve(fileMode os.FileMode, fileModePolicyName LPolicyFilemode) os.FileMode {
 	switch fileModePolicyName {
-	case LPolicyFilemodeRegularOnly:
+	case LRegularOnlyPolicy:
 		return fileMode & 0o644
-	case LPolicyFilemodeExecutablePreserve, "":
+	case LExecutablePreservePolicy, "":
 		return fileMode & 0o755
 	default:
 		return fileMode & 0o755

@@ -1,7 +1,7 @@
 import React from "react";
 import { LLocaleTextGet } from "../i18n";
-import { LCatalogOptionNameGet, LLibraryLicenseLabelGet } from "../catalogText";
-import { LLicenseBoundaryLabelShortGet } from "./options";
+import { LOptionNameGet, LLicenseLabelGet } from "../catalogText";
+import { LLicenseShortGet } from "./options";
 import { ClipboardSetText } from "../../wailsjs/runtime/runtime";
 import emptyStateBlueIcon from "../assets/empty-card-icons/EmptyStateBlue.svg";
 import emptyStatePurpleIcon from "../assets/empty-card-icons/EmptyStatePurple.svg";
@@ -44,13 +44,13 @@ function LTextLibraryBuild(raw: string): string {
   if (!match) return raw;
   const [, libraryId, licenseEffectName] = match;
   const name = LLocaleTextGet(`catalog.libraries.${libraryId}.displayName`);
-  return `${name} (${LLibraryLicenseLabelGet(licenseEffectName)})`;
+  return `${name} (${LLicenseLabelGet(licenseEffectName)})`;
 }
 
-function LResultOptionLabelGet(raw: string): string {
+function LOptionResultGet(raw: string): string {
   const match = raw.match(/^option:(.+)$/);
   if (!match) return raw;
-  return LCatalogOptionNameGet(match[1]);
+  return LOptionNameGet(match[1]);
 }
 
 function LFileKindGet(fileName: string): "exe" | "dll" | "other" {
@@ -67,20 +67,20 @@ function LDateTimeFormat(value: string): string {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
-function LBuildTypeLabelGet(_result: LResultBuild): string {
+function LBuildTypeGet(_result: LResultState): string {
   return LLocaleTextGet("result.summary.buildType.custom");
 }
 
 // ─── PPanelResultRender ─────────────────────────────────────────────────────────────
 
-function PSummaryResultRender(props: { result: LResultBuild }) {
+function PSummaryResultRender(props: { result: LResultState }) {
   const totalSizeBytes = props.result.files.reduce((sum, file) => sum + file.sizeBytes, 0);
   const stats: { label: string; value: string; unit: string; danger?: boolean }[] = [
     { label: LLocaleTextGet("result.summary.version"), value: props.result.ffmpegVersion || LLocaleTextGet("result.summary.latestBuild.unknown"), unit: "" },
     { label: LLocaleTextGet("result.summary.totalFiles"), value: String(props.result.files.length), unit: LLocaleTextGet("result.summary.filesUnit") },
     { label: LLocaleTextGet("result.summary.totalSize"), value: LTextByteFormat(totalSizeBytes), unit: "" },
-    { label: LLocaleTextGet("result.summary.buildType"), value: LBuildTypeLabelGet(props.result), unit: "" },
-    { label: LLocaleTextGet("result.summary.license"), value: LLicenseBoundaryLabelShortGet(props.result.licenseProfileName), unit: "", danger: props.result.licenseProfileName === "nonfree-local" },
+    { label: LLocaleTextGet("result.summary.buildType"), value: LBuildTypeGet(props.result), unit: "" },
+    { label: LLocaleTextGet("result.summary.license"), value: LLicenseShortGet(props.result.licenseProfileName), unit: "", danger: props.result.licenseProfileName === "nonfree-local" },
     { label: LLocaleTextGet("result.summary.latestBuild"), value: LDateTimeFormat(props.result.createdAt), unit: "" },
   ];
   return (
@@ -96,7 +96,7 @@ function PSummaryResultRender(props: { result: LResultBuild }) {
   );
 }
 
-function PPanelLocationRender(props: { result: LResultBuild; onOpenFolder: () => Promise<void>; onOpenReport: () => Promise<void> }) {
+function PPanelLocationRender(props: { result: LResultState; onOpenFolder: () => Promise<void>; onOpenReport: () => Promise<void> }) {
   const rows = [
     { label: LLocaleTextGet("result.metadata.folder"), value: props.result.artifactsDirectory, actionLabel: LLocaleTextGet("result.actions.open") },
     { label: LLocaleTextGet("result.metadata.latestReport"), value: props.result.reportPath || LLocaleTextGet("result.metadata.noReport"), actionLabel: LLocaleTextGet("result.actions.open") },
@@ -185,9 +185,9 @@ function PListFileRender(props: { files: LFileResult[] }) {
 }
 
 
-type PResultDetailTabId = "files" | "libraries" | "packages" | "options" | "flags";
+type LResultDetailIdentifier = "files" | "libraries" | "packages" | "options" | "flags";
 
-function PResultPlanItemsRender(props: { title: string; items: string[]; emptyText: string; code?: boolean }) {
+function PResultItemsRender(props: { title: string; items: string[]; emptyText: string; code?: boolean }) {
   return (
     <section className="result-plan-panel">
       <div className="result-files__head">
@@ -208,16 +208,16 @@ function PResultPlanItemsRender(props: { title: string; items: string[]; emptyTe
   );
 }
 
-function PTabDetailRender(props: { result: LResultBuild; verification: LVerificationBuild | null; verificationError: string; isVerifying: boolean }) {
-  const [activeTabId, setActiveTabId] = React.useState<PResultDetailTabId>("files");
-  const options = React.useMemo(() => props.result.selectedConfigureOptions.map(LResultOptionLabelGet), [props.result.selectedConfigureOptions]);
+function PTabDetailRender(props: { result: LResultState; verification: LVerificationState | null; verificationError: string; isVerifying: boolean }) {
+  const [activeTabId, setActiveTabId] = React.useState<LResultDetailIdentifier>("files");
+  const options = React.useMemo(() => props.result.selectedConfigureOptions.map(LOptionResultGet), [props.result.selectedConfigureOptions]);
 
   // Jump to the Libraries tab when a verification run finishes or starts, so its
   // results surface where the user is looking instead of on a hidden tab.
   React.useEffect(() => {
     if (props.isVerifying || props.verification || props.verificationError) setActiveTabId("libraries");
   }, [props.isVerifying, props.verification, props.verificationError]);
-  const tabs: { id: PResultDetailTabId; label: string; count: number }[] = [
+  const tabs: { id: LResultDetailIdentifier; label: string; count: number }[] = [
     { id: "files", label: LLocaleTextGet("result.details.tabs.files"), count: props.result.files.length },
     { id: "libraries", label: LLocaleTextGet("result.details.tabs.libraries"), count: props.result.selectedLibraries.length },
     { id: "packages", label: LLocaleTextGet("result.details.tabs.packages"), count: props.result.requiredMsys2PackageNames.length },
@@ -244,10 +244,10 @@ function PTabDetailRender(props: { result: LResultBuild; verification: LVerifica
       </div>
       <div className="result-details-body">
         {activeTabId === "files" && <PListFileRender files={props.result.files} />}
-        {activeTabId === "libraries" && <PResultLibraryItemsRender librarySpecs={props.result.selectedLibraries} verification={props.verification} verificationError={props.verificationError} isVerifying={props.isVerifying} />}
-        {activeTabId === "packages" && <PResultPlanItemsRender title={LLocaleTextGet("result.review.packages")} items={props.result.requiredMsys2PackageNames} emptyText={LLocaleTextGet("result.details.empty.packages")} code />}
-        {activeTabId === "options" && <PResultPlanItemsRender title={LLocaleTextGet("result.review.options")} items={options} emptyText={LLocaleTextGet("result.details.empty.options")} />}
-        {activeTabId === "flags" && <PResultPlanItemsRender title={LLocaleTextGet("approval.review.finalConfigureFlags")} items={props.result.configureFlags} emptyText={LLocaleTextGet("result.details.empty.flags")} code />}
+        {activeTabId === "libraries" && <PResultLibraryRender librarySpecs={props.result.selectedLibraries} verification={props.verification} verificationError={props.verificationError} isVerifying={props.isVerifying} />}
+        {activeTabId === "packages" && <PResultItemsRender title={LLocaleTextGet("result.review.packages")} items={props.result.requiredMsys2PackageNames} emptyText={LLocaleTextGet("result.details.empty.packages")} code />}
+        {activeTabId === "options" && <PResultItemsRender title={LLocaleTextGet("result.review.options")} items={options} emptyText={LLocaleTextGet("result.details.empty.options")} />}
+        {activeTabId === "flags" && <PResultItemsRender title={LLocaleTextGet("approval.review.finalConfigureFlags")} items={props.result.configureFlags} emptyText={LLocaleTextGet("result.details.empty.flags")} code />}
       </div>
     </section>
   );
@@ -270,7 +270,7 @@ function PCardEmptyRender(props: { variant: "workspace" | "build"; title: string
   );
 }
 
-function LResultLibraryIdGet(raw: string): string {
+function LLibraryResultGet(raw: string): string {
   const match = raw.match(/^library:([^:]+):/);
   return match ? match[1] : "";
 }
@@ -278,7 +278,7 @@ function LResultLibraryIdGet(raw: string): string {
 // Pill text + variant for one library's verification status. Libraries are
 // checked by their configure flag, by probing for a provided component, or are
 // built-in components that ship in every FFmpeg build.
-function LVerificationLibraryPillGet(status: LVerificationLibrary): { variant: string; label: string; title: string } {
+function LLibraryPillGet(status: LVerificationLibrary): { variant: string; label: string; title: string } {
   if (status.status === "builtin") {
     return { variant: "builtin", label: LLocaleTextGet("result.verify.status.builtin"), title: LLocaleTextGet("result.verify.builtinHint") };
   }
@@ -299,7 +299,7 @@ function LVerificationLibraryPillGet(status: LVerificationLibrary): { variant: s
 
 // Libraries detail tab. When a verification has been run, each row gains a
 // Present/Missing pill and a compact caption carries the global findings.
-function PResultLibraryItemsRender(props: { librarySpecs: string[]; verification: LVerificationBuild | null; verificationError: string; isVerifying: boolean }) {
+function PResultLibraryRender(props: { librarySpecs: string[]; verification: LVerificationState | null; verificationError: string; isVerifying: boolean }) {
   const verification = props.verification;
   const statusByLibraryId = React.useMemo(() => {
     const map: Record<string, LVerificationLibrary> = {};
@@ -322,8 +322,8 @@ function PResultLibraryItemsRender(props: { librarySpecs: string[]; verification
       {props.librarySpecs.length === 0 ? <p className="empty-text">{LLocaleTextGet("result.details.empty.libraries")}</p> : (
         <div className="result-file-list result-plan-list">
           {props.librarySpecs.map((spec, index) => {
-            const status = statusByLibraryId[LResultLibraryIdGet(spec)];
-            const pill = status ? LVerificationLibraryPillGet(status) : null;
+            const status = statusByLibraryId[LLibraryResultGet(spec)];
+            const pill = status ? LLibraryPillGet(status) : null;
             return (
               <article className={`result-plan-item ${pill ? "result-plan-item--with-status" : ""}`} key={`${spec}-${index}`}>
                 <span className="result-plan-item__index">{String(index + 1).padStart(2, "0")}</span>
@@ -347,7 +347,7 @@ function PResultLibraryItemsRender(props: { librarySpecs: string[]; verification
   );
 }
 
-function PPanelResultRender(props: { result: LResultBuild | null; errorText: string; isLoading: boolean; verification: LVerificationBuild | null; verificationError: string; isVerifying: boolean; hasWorkspace: boolean; onOpenFolder: () => Promise<void>; onOpenReport: () => Promise<void>; onGoToSource: () => void; onGoToBuild: () => void }) {
+function PPanelResultRender(props: { result: LResultState | null; errorText: string; isLoading: boolean; verification: LVerificationState | null; verificationError: string; isVerifying: boolean; hasWorkspace: boolean; onOpenFolder: () => Promise<void>; onOpenReport: () => Promise<void>; onGoToSource: () => void; onGoToBuild: () => void }) {
   const result = props.result;
   const isMissingWorkspace = !props.hasWorkspace;
   const isLoadingFirstResult = props.isLoading && !result && !props.errorText && props.hasWorkspace;
@@ -386,11 +386,11 @@ function PPanelResultRender(props: { result: LResultBuild | null; errorText: str
 
 // ─── PResultRender ───────────────────────────────────────────────────────────────
 
-export type PResultProps = {
-  buildResult: LResultBuild | null;
+export type LResultProperties = {
+  buildResult: LResultState | null;
   buildResultError: string;
   isLoadingBuildResult: boolean;
-  buildVerification: LVerificationBuild | null;
+  buildVerification: LVerificationState | null;
   buildVerificationError: string;
   isVerifyingBuild: boolean;
   verifyBuildResult: () => Promise<void>;
@@ -402,7 +402,7 @@ export type PResultProps = {
   onGoToBuild: () => void;
 };
 
-export function PResultRender({ buildResult, buildResultError, isLoadingBuildResult, buildVerification, buildVerificationError, isVerifyingBuild, verifyBuildResult, hasWorkspace, refreshBuildResult, openResultFolder, openResultReport, onGoToSource, onGoToBuild }: PResultProps) {
+export function PResultRender({ buildResult, buildResultError, isLoadingBuildResult, buildVerification, buildVerificationError, isVerifyingBuild, verifyBuildResult, hasWorkspace, refreshBuildResult, openResultFolder, openResultReport, onGoToSource, onGoToBuild }: LResultProperties) {
   return (
     <section className="tab-page result-page">
       <header className="result-page__header">

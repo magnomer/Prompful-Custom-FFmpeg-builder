@@ -16,7 +16,7 @@ import (
 	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
-// lLibraryNonnativePrepare prepares every Internal- and External-track library in
+// LLibraryNonnativePrepare prepares every Internal- and External-track library in
 // the plan before FFmpeg configure runs. Internal-track libraries are built from a
 // verified upstream source archive inside the private MSYS2 environment; External-
 // track libraries are imported from a verified vendor binary archive. Each library:
@@ -29,13 +29,13 @@ import (
 //
 // The plan only ever contains libraries that have an implemented recipe; libraries
 // without one block the plan in the planner and never reach here.
-func (program *LProgram) lLibraryNonnativePrepare(LContext context.Context, plan planning.LPlanFFmpeg, userDownloadLConsent consent.LConsentFFmpeg, userLConsentArchive consent.LConsentArchive, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
-	if len(plan.LLibraryPreparationList) == 0 {
+func (program *LProgram) LLibraryNonnativePrepare(LContext context.Context, plan planning.LPlanFFmpeg, userDownloadLConsent consent.LConsentFFmpeg, userLConsentArchive consent.LArchiveConsentState, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+	if len(plan.LPreparationCatalog) == 0 {
 		return nil
 	}
-	for _, preparation := range plan.LLibraryPreparationList {
+	for _, preparation := range plan.LPreparationCatalog {
 		emitProgress("info", LLocaleTextGetInternal("run.log.libraryPreparationStarted", map[string]string{"library": preparation.DisplayName}))
-		if err := program.lLibrarySinglePrepare(LContext, plan, preparation, userDownloadLConsent, userLConsentArchive, userLibraryPackageInstallLConsent, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
+		if err := program.LLibrarySinglePrepare(LContext, plan, preparation, userDownloadLConsent, userLConsentArchive, userLibraryPackageInstallLConsent, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
 			return fmt.Errorf("%s: %w", preparation.DisplayName, err)
 		}
 		emitProgress("info", LLocaleTextGetInternal("run.log.libraryPreparationFinished", map[string]string{"library": preparation.DisplayName}))
@@ -43,18 +43,18 @@ func (program *LProgram) lLibraryNonnativePrepare(LContext context.Context, plan
 	return nil
 }
 
-func (program *LProgram) lLibrarySinglePrepare(LContext context.Context, plan planning.LPlanFFmpeg, preparation planning.LLibraryPreparation, userDownloadLConsent consent.LConsentFFmpeg, userLConsentArchive consent.LConsentArchive, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
-	if err := program.lPackageDependencyInstall(LContext, plan, preparation, userLibraryPackageInstallLConsent, auditWriter, emitProgress); err != nil {
+func (program *LProgram) LLibrarySinglePrepare(LContext context.Context, plan planning.LPlanFFmpeg, preparation planning.LLibraryPreparation, userDownloadLConsent consent.LConsentFFmpeg, userLConsentArchive consent.LArchiveConsentState, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+	if err := program.LDependencyInstall(LContext, plan, preparation, userLibraryPackageInstallLConsent, auditWriter, emitProgress); err != nil {
 		return err
 	}
 	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
-	archiveFormat, archiveExtension, err := LArchivePreparationResolve(preparation.LArchiveFormat)
+	archiveFormat, archiveExtension, err := LArchivePreparationResolve(preparation.LArchiveKind)
 	if err != nil {
 		return err
 	}
 
 	archivePath := filepath.Join(workspaceLayout.DownloadsDirectory, "prep-"+preparation.LibraryId+"-"+plan.PlanHash+archiveExtension)
-	downloadPlan := download.LPlanDownload{
+	downloadPlan := download.LDownloadPlanState{
 		ActionName:              plan.ActionName,
 		PlanHash:                plan.PlanHash,
 		WorkspaceDirectory:      plan.WorkspaceDirectory,
@@ -62,7 +62,7 @@ func (program *LProgram) lLibrarySinglePrepare(LContext context.Context, plan pl
 		DownloadUrl:             preparation.ArchiveUrl,
 		ExpectedSha256Hash:      preparation.ArchiveSha256Hash,
 		DestinationFilePath:     archivePath,
-		AllowedHosts:            LDownloadHostList(preparation.AllowedDownloadHost),
+		AllowedHosts:            LDownloadHostGet(preparation.AllowedDownloadHost),
 		ExpectedFileSizeMinimum: 1_000,
 		ExpectedFileSizeMaximum: 5_000_000_000,
 		LPolicyFile:             LPolicyHashResolve(preparation.ArchiveSha256Hash),
@@ -72,7 +72,7 @@ func (program *LProgram) lLibrarySinglePrepare(LContext context.Context, plan pl
 	}
 
 	extractRootDirectory := filepath.Join(workspaceLayout.BuildDirectory, "prep", preparation.LibraryId+"-"+plan.PlanHash)
-	if err := program.lDirectoryPreparationRemove(plan.WorkspaceDirectory, extractRootDirectory); err != nil {
+	if err := program.LPreparationRemove(plan.WorkspaceDirectory, extractRootDirectory); err != nil {
 		return err
 	}
 	extractPlan := extraction.LPlanExtraction{
@@ -81,9 +81,9 @@ func (program *LProgram) lLibrarySinglePrepare(LContext context.Context, plan pl
 		ArchiveFilePath:            archivePath,
 		DestinationDirectory:       extractRootDirectory,
 		WorkspaceDirectory:         plan.WorkspaceDirectory,
-		LArchiveFormat:             archiveFormat,
-		LPolicyExtraction:          extraction.LPolicyExtractionRequireNewDirectory,
-		LPolicyFilemode:            extraction.LPolicyFilemodeExecutablePreserve,
+		LArchiveKind:               archiveFormat,
+		LPolicyExtraction:          extraction.LNewDirectoryPolicy,
+		LPolicyFilemode:            extraction.LExecutablePreservePolicy,
 		MaximumFileCount:           250000,
 		MaximumExtractedByteCount:  10_000_000_000,
 		MaximumSingleFileByteCount: 2_000_000_000,
@@ -135,12 +135,12 @@ func (program *LProgram) lLibrarySinglePrepare(LContext context.Context, plan pl
 	return execution.LCommandConsentRun(LContext, userExternalLConsentCommand, commandPlan, emitProgress)
 }
 
-// lPackageDependencyInstall installs the MSYS2 packages a library's build
+// LDependencyInstall installs the MSYS2 packages a library's build
 // system needs at configure time (e.g. a Python3 interpreter) into the build environment
 // before its source build runs. It reuses the same hash-pinned, consent-gated pacman
 // installation path as the FFmpeg library packages, so the same one pacman consent the
 // run already collected covers it. Libraries with no build dependencies are skipped.
-func (program *LProgram) lPackageDependencyInstall(LContext context.Context, plan planning.LPlanFFmpeg, preparation planning.LLibraryPreparation, userLibraryPackageInstallLConsent consent.LConsentPacman, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+func (program *LProgram) LDependencyInstall(LContext context.Context, plan planning.LPlanFFmpeg, preparation planning.LLibraryPreparation, userLibraryPackageInstallLConsent consent.LConsentPacman, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
 	// Profile-prefixed mingw packages plus verbatim MSYS base packages (e.g. autotools)
 	// are installed together in one pacman transaction.
 	dependencyPackages := append(append([]string{}, preparation.BuildDependencyPackages...), preparation.MsysBuildDependencyPackages...)
@@ -152,7 +152,7 @@ func (program *LProgram) lPackageDependencyInstall(LContext context.Context, pla
 	}
 	emitProgress("info", LLocaleTextGetInternal("run.log.libraryBuildDependenciesStarted", map[string]string{"library": preparation.DisplayName}))
 	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
-	scriptLines, err := scripting.LScriptPackageLinesCreate(dependencyPackages)
+	scriptLines, err := scripting.LPackageScriptCreate(dependencyPackages)
 	if err != nil {
 		return err
 	}
@@ -175,7 +175,7 @@ func (program *LProgram) lPackageDependencyInstall(LContext context.Context, pla
 		WindowsShellProfileName:    plan.WindowsShellProfileName,
 		EnvironmentVariables:       map[string]string{},
 		AllowedExecutableBasenames: []string{"bash.exe"},
-		LScriptKind:                execution.LScriptPacmanInstall,
+		LScriptKind:                execution.LPacmanInstallScript,
 		ApprovedScriptFilePath:     scriptFile.ScriptFilePath,
 		ApprovedScriptSha256Hash:   scriptFile.ScriptSha256Hash,
 		RunLAuditDirectoryGet:      auditWriter.LAuditDirectoryGet(),
@@ -184,13 +184,13 @@ func (program *LProgram) lPackageDependencyInstall(LContext context.Context, pla
 	return execution.LCommandPacmanRun(LContext, userLibraryPackageInstallLConsent, commandPlan, emitProgress)
 }
 
-// LDownloadHostList returns the hosts trusted for a preparation archive
+// LDownloadHostGet returns the hosts trusted for a preparation archive
 // download. It expands github.com to the CDN hosts GitHub always redirects downloads to
 // (codeload.github.com for /archive/refs tarballs, objects.githubusercontent.com for
 // release assets). Those are GitHub's own infrastructure and the archive is still gated
 // by SHA-256, so trusting the redirect target removes a spurious "untrusted host"
 // warning without weakening verification.
-func LDownloadHostList(allowedDownloadHost string) []string {
+func LDownloadHostGet(allowedDownloadHost string) []string {
 	hosts := []string{allowedDownloadHost}
 	if allowedDownloadHost == "github.com" {
 		hosts = append(hosts, "codeload.github.com", "objects.githubusercontent.com")
@@ -198,7 +198,7 @@ func LDownloadHostList(allowedDownloadHost string) []string {
 	return hosts
 }
 
-func (program *LProgram) lDirectoryPreparationRemove(workspaceDirectory string, preparationDirectory string) error {
+func (program *LProgram) LPreparationRemove(workspaceDirectory string, preparationDirectory string) error {
 	if _, err := os.Lstat(preparationDirectory); err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -238,7 +238,7 @@ func LScriptPreparationBuild(preparation planning.LLibraryPreparation) ([]string
 		PkgConfigAppendLibs:      preparation.PkgConfigAppendLibs,
 		PkgConfigAppendCFlags:    preparation.PkgConfigAppendCFlags,
 		PkgConfigLibsLine:        preparation.PkgConfigLibsLine,
-		PkgConfigLibsLinePatches: LPkgConfigLibsLinePatchConvert(preparation.PkgConfigLibsLinePatches),
+		PkgConfigLibsLinePatches: LPackageLineConvert(preparation.PkgConfigLibsLinePatches),
 		PrivatePrefixInstall:     preparation.PrivatePrefixInstall,
 		VerifyHeaderRelativePath: preparation.VerifyHeaderRelativePath,
 		VerifyLibStem:            preparation.VerifyLibStem,
@@ -247,21 +247,21 @@ func LScriptPreparationBuild(preparation planning.LLibraryPreparation) ([]string
 	}
 	switch preparation.Method {
 	case planning.LLibraryInternalMethod:
-		return scripting.LScriptLibraryInternalCreate(buildSpec)
+		return scripting.LScriptInternalCreate(buildSpec)
 	case planning.LLibraryExternalMethod:
-		return scripting.LScriptLibraryExternalCreate(buildSpec)
+		return scripting.LScriptExternalCreate(buildSpec)
 	default:
 		return nil, fmt.Errorf("unknown library preparation LMethod: %s", preparation.Method)
 	}
 }
 
-func LPkgConfigLibsLinePatchConvert(patches []planning.LPkgConfigLibsLinePatch) []scripting.LPkgConfigLibsLinePatch {
+func LPackageLineConvert(patches []planning.LLibraryPatchEntry) []scripting.LLibraryPatchEntry {
 	if len(patches) == 0 {
 		return nil
 	}
-	mapped := make([]scripting.LPkgConfigLibsLinePatch, 0, len(patches))
+	mapped := make([]scripting.LLibraryPatchEntry, 0, len(patches))
 	for _, patch := range patches {
-		mapped = append(mapped, scripting.LPkgConfigLibsLinePatch{Module: patch.Module, LibsLine: patch.LibsLine})
+		mapped = append(mapped, scripting.LLibraryPatchEntry{Module: patch.Module, LibsLine: patch.LibsLine})
 	}
 	return mapped
 }
@@ -308,7 +308,7 @@ func LPreparationSourceResolve(extractRootDirectory string) (string, error) {
 	return extractRootDirectory, nil
 }
 
-func LArchivePreparationResolve(archiveFormatName string) (extraction.LArchiveFormat, string, error) {
+func LArchivePreparationResolve(archiveFormatName string) (extraction.LArchiveKind, string, error) {
 	switch archiveFormatName {
 	case "tar.gz", "tgz":
 		return extraction.LArchiveTarGz, ".tar.gz", nil
@@ -317,7 +317,7 @@ func LArchivePreparationResolve(archiveFormatName string) (extraction.LArchiveFo
 	case "tar.zst":
 		return extraction.LArchiveTarZst, ".tar.zst", nil
 	case "tar.bz2":
-		return extraction.LArchiveTarBz2, ".tar.bz2", nil
+		return extraction.LTarBzipArchive, ".tar.bz2", nil
 	case "zip":
 		return extraction.LArchiveZip, ".zip", nil
 	default:

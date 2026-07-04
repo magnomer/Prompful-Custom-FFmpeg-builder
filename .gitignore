@@ -30,6 +30,11 @@ coverage.out
 # Internal docs (not versioned)
 /docs/internal/
 
+# Local build-lifecycle helper scripts (not versioned)
+/clean.ps1
+/build.ps1
+/run.ps1
+
 # Editor / tooling
 /.claude/
 /.codex-tmp/

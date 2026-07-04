@@ -18,36 +18,36 @@ const (
 type LLibrarySupportState string
 
 const (
-	LLibrarySupportUnknown                  LLibrarySupportState = "unknown"
-	LLibrarySupportSupported                LLibrarySupportState = "supported"
-	LLibrarySupportUnsupported              LLibrarySupportState = "unsupported"
-	LLibrarySupportUnavailable              LLibrarySupportState = "unavailable"
-	LLibrarySupportHidden                   LLibrarySupportState = "hidden"
-	LLibrarySupportReplaced                 LLibrarySupportState = "replaced"
-	LLibrarySupportSourceBuildRequired      LLibrarySupportState = "source-build-required"
-	LLibrarySupportPreparationUnimplemented LLibrarySupportState = "preparation-unimplemented"
-	LLibrarySupportUiDisabled               LLibrarySupportState = "ui-disabled"
+	LLibrarySupportUnknown     LLibrarySupportState = "unknown"
+	LLibrarySupportSupported   LLibrarySupportState = "supported"
+	LLibrarySupportUnsupported LLibrarySupportState = "unsupported"
+	LLibrarySupportUnavailable LLibrarySupportState = "unavailable"
+	LLibrarySupportHidden      LLibrarySupportState = "hidden"
+	LLibrarySupportReplaced    LLibrarySupportState = "replaced"
+	LSourceBuildRequired       LLibrarySupportState = "source-build-required"
+	LPreparationMissing        LLibrarySupportState = "preparation-unimplemented"
+	LUIDisabledSupport         LLibrarySupportState = "ui-disabled"
 )
 
-// LLibraryWorkPhaseName identifies when version-specific library work is allowed
+// LWorkPhaseName identifies when version-specific library work is allowed
 // to run. The term is deliberately "work", not only "preparation": some library
 // fixes occur during configure/build/install, pkg-config repair, or before FFmpeg
 // configure/link.
-type LLibraryWorkPhaseName string
+type LWorkPhaseName string
 
 const (
-	LLibraryWorkPhaseBeforeLibrarySourceFetch  LLibraryWorkPhaseName = "before-library-source-fetch"
-	LLibraryWorkPhaseAfterLibrarySourceExtract LLibraryWorkPhaseName = "after-library-source-extract"
-	LLibraryWorkPhaseBeforeLibraryConfigure    LLibraryWorkPhaseName = "before-library-configure"
-	LLibraryWorkPhaseLibraryConfigure          LLibraryWorkPhaseName = "library-configure"
-	LLibraryWorkPhaseBeforeLibraryBuild        LLibraryWorkPhaseName = "before-library-build"
-	LLibraryWorkPhaseLibraryBuild              LLibraryWorkPhaseName = "library-build"
-	LLibraryWorkPhaseLibraryInstall            LLibraryWorkPhaseName = "library-install"
-	LLibraryWorkPhaseAfterLibraryInstall       LLibraryWorkPhaseName = "after-library-install"
-	LLibraryWorkPhaseBeforeFFmpegConfigure     LLibraryWorkPhaseName = "before-ffmpeg-configure"
-	LLibraryWorkPhaseAfterFFmpegConfigure      LLibraryWorkPhaseName = "after-ffmpeg-configure"
-	LLibraryWorkPhaseBeforeFFmpegBuild         LLibraryWorkPhaseName = "before-ffmpeg-build"
-	LLibraryWorkPhaseAfterFFmpegBuild          LLibraryWorkPhaseName = "after-ffmpeg-build"
+	LSourceFetchBefore      LWorkPhaseName = "before-library-source-fetch"
+	LSourceExtractAfter     LWorkPhaseName = "after-library-source-extract"
+	LLibraryConfigureBefore LWorkPhaseName = "before-library-configure"
+	LLibraryConfigurePhase  LWorkPhaseName = "library-configure"
+	LLibraryBuildBefore     LWorkPhaseName = "before-library-build"
+	LLibraryBuildPhase      LWorkPhaseName = "library-build"
+	LLibraryInstallPhase    LWorkPhaseName = "library-install"
+	LLibraryInstallAfter    LWorkPhaseName = "after-library-install"
+	LFFmpegConfigureBefore  LWorkPhaseName = "before-ffmpeg-configure"
+	LFFmpegConfigureAfter   LWorkPhaseName = "after-ffmpeg-configure"
+	LFFmpegBuildBefore      LWorkPhaseName = "before-ffmpeg-build"
+	LFFmpegBuildAfter       LWorkPhaseName = "after-ffmpeg-build"
 )
 
 // LLibraryManifest is the planned data shape for /libraries/{libraryId}.json.
@@ -103,12 +103,12 @@ type LPresetManifest struct {
 // LVersionLibraryWork identifies executable version-specific library work.
 // The implementation may live under /versions/x.x.x/*.go in later phases.
 type LVersionLibraryWork struct {
-	WorkId        string                  `json:"workId"`
-	FfmpegVersion string                  `json:"ffmpegVersion"`
-	LibraryId     string                  `json:"libraryId"`
-	GoFilePath    string                  `json:"goFilePath"`
-	PhaseNames    []LLibraryWorkPhaseName `json:"phaseNames"`
-	Summary       string                  `json:"summary,omitempty"`
+	WorkId        string           `json:"workId"`
+	FfmpegVersion string           `json:"ffmpegVersion"`
+	LibraryId     string           `json:"libraryId"`
+	GoFilePath    string           `json:"goFilePath"`
+	PhaseNames    []LWorkPhaseName `json:"phaseNames"`
+	Summary       string           `json:"summary,omitempty"`
 }
 
 // LResolvedLibrary is the future resolver-facing shape for one library after the
@@ -182,9 +182,9 @@ type LResolvedBuildPlan struct {
 	Warnings                   []LWarningPlan        `json:"warnings,omitempty"`
 }
 
-// LStructuralRuleSummary returns the Phase 1 design rule as data so tests can
+// LStructuralSummaryCreate returns the Phase 1 design rule as data so tests can
 // pin the intended split while later phases fill in the implementation.
-func LStructuralRuleSummary() map[LCatalogDomainName]string {
+func LStructuralSummaryCreate() map[LCatalogDomainName]string {
 	return map[LCatalogDomainName]string{
 		LCatalogDomainLibraries: "library facts and work references",
 		LCatalogDomainVersions:  "FFmpeg release facts and compatibility rules",

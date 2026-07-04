@@ -7,8 +7,8 @@ import (
 )
 
 func TestLLibraryXavs2PrepareDisablesStripDuringMake(t *testing.T) {
-	plan := shared.NewLibraryPreparationPlan("7.1.5", "xavs2", "versions/7.1.5/xavs2.go")
-	LLibraryXavs2Prepare(plan)
+	plan := shared.LPreparationPlanCreate("7.1.5", "xavs2", "versions/7.1.5/xavs2.go")
+	LXavs2Prepare(plan)
 
 	for _, makeVariable := range plan.MakeVariables {
 		if makeVariable == "STRIP=" {

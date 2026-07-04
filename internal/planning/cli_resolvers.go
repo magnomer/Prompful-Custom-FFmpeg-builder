@@ -18,7 +18,7 @@ func LReleaseVersionResolve(version string) (LReleaseChoice, bool) {
 	if version == "" {
 		return LReleaseChoice{}, false
 	}
-	for _, release := range LReleaseSupportedListGet() {
+	for _, release := range LReleaseSupportedGet() {
 		if release.Version == version {
 			return release, true
 		}
@@ -26,18 +26,18 @@ func LReleaseVersionResolve(version string) (LReleaseChoice, bool) {
 	return LReleaseChoice{}, false
 }
 
-// LPresetLibraryIdsResolve returns the library IDs a preset selects for the
+// LPresetIdentifiersResolve returns the library IDs a preset selects for the
 // FFmpeg release identified by ffmpegSourceArchiveUrl. When extended is true it
 // returns the preset's extended set (a superset), falling back to the normal set
 // when the preset defines no extended libraries. The boolean is false when the
 // preset ID is unknown for that release. The result is a fresh copy the caller
 // may mutate (for example to apply --enable/--disable overrides).
-func LPresetLibraryIdsResolve(ffmpegSourceArchiveUrl string, windowsShellProfileName string, presetId string, extended bool) ([]string, bool) {
+func LPresetIdentifiersResolve(ffmpegSourceArchiveUrl string, windowsShellProfileName string, presetId string, extended bool) ([]string, bool) {
 	presetId = strings.TrimSpace(presetId)
 	if presetId == "" {
 		return nil, false
 	}
-	for _, preset := range LCatalogPresetSourceBuildResolved(ffmpegSourceArchiveUrl, windowsShellProfileName) {
+	for _, preset := range LCatalogPresetGet(ffmpegSourceArchiveUrl, windowsShellProfileName) {
 		if preset.PresetId != presetId {
 			continue
 		}
@@ -59,7 +59,7 @@ func LLibraryFlagResolve(ffmpegSourceArchiveUrl string, windowsShellProfileName 
 	if configureEnableFlag == "" {
 		return "", false
 	}
-	for _, library := range LCatalogSourceBuildResolved(ffmpegSourceArchiveUrl, windowsShellProfileName) {
+	for _, library := range LCatalogLibraryGet(ffmpegSourceArchiveUrl, windowsShellProfileName) {
 		for _, flag := range library.ConfigureFlags {
 			if flag == configureEnableFlag {
 				return library.LibraryId, true

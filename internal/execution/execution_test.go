@@ -8,14 +8,14 @@ import (
 
 func TestLLogLineClassifyDemotesGarbledStripNoSectionLine(t *testing.T) {
 	line := "D:/tempc/build/prep/xavs2/source/common/x86/mc-a2.asm:402: warning: improperly calling multi-lD:\\tempc\\toolchains\\msys2-ucrt64\\ucrt64\\bin\\strip.exe:ine macr o `SETUP_STACK_POINTER' with 0error: the input file 'common/x86/pixel-32.o' has no section spa"
-	if got := LLogLineClassify("warn", line); got != "info" {
+	if got := LLogLineGet("warn", line); got != "info" {
 		t.Fatalf("expected strip no-section noise to be info, got %q", got)
 	}
 }
 
 func TestLLogLineClassifyPromotesArgumentListTooLong(t *testing.T) {
 	line := "/bin/sh: line 1: /ucrt64/bin/gcc: Argument list too long"
-	if got := LLogLineClassify("warn", line); got != "error" {
+	if got := LLogLineGet("warn", line); got != "error" {
 		t.Fatalf("expected argument-list overflow to be error, got %q", got)
 	}
 }

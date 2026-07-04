@@ -8,11 +8,11 @@ import (
 	"promptfulcustomffmpegbuilder/internal/planning"
 )
 
-// exitFor maps an error to a process exit code: a usageError carries its own
+// LCommandExitGet maps an error to a process exit code: a LErrorUsage carries its own
 // code, anything else is a general failure (1).
-func exitFor(err error) int {
-	var usage usageError
-	if e, ok := err.(usageError); ok {
+func LCommandExitGet(err error) int {
+	var usage LErrorUsage
+	if e, ok := err.(LErrorUsage); ok {
 		usage = e
 		fmt.Fprintln(os.Stderr, "promptfulx:", usage.message)
 		return usage.code
@@ -21,29 +21,29 @@ func exitFor(err error) int {
 	return 1
 }
 
-// cmdPlan resolves CLI arguments into a build plan and prints it. It never
+// LCommandPlanRun resolves CLI arguments into a build plan and prints it. It never
 // modifies the build environment.
-func cmdPlan(args []string) int {
-	parsed, err := argsParse(args)
+func LCommandPlanRun(args []string) int {
+	parsed, err := LArgumentParse(args)
 	if err != nil {
-		return exitFor(err)
+		return LCommandExitGet(err)
 	}
-	settings, err := settingsResolve(parsed)
+	settings, err := LSettingsFFmpegResolve(parsed)
 	if err != nil {
-		return exitFor(err)
+		return LCommandExitGet(err)
 	}
 	plan, err := planning.LPlanFFmpegCreate(settings)
 	if err != nil {
-		return exitFor(unsupported("could not resolve plan: %v", err))
+		return LCommandExitGet(LErrorSupportCreate("could not resolve plan: %v", err))
 	}
-	printPlan(plan)
+	LCommandPlanPrint(plan)
 	if !plan.IsExecutable {
 		return 4 // resolved, but blocked by an unsupported combination
 	}
 	return 0
 }
 
-func printPlan(plan planning.LPlanFFmpeg) {
+func LCommandPlanPrint(plan planning.LPlanFFmpeg) {
 	version := plan.CompatibilityFfmpegVersion
 	if version == "" {
 		version = plan.RequestedFfmpegVersion
@@ -81,39 +81,39 @@ func printPlan(plan planning.LPlanFFmpeg) {
 	}
 }
 
-// cmdList prints embedded catalog data: versions, presets, or libraries.
-func cmdList(args []string) int {
+// LCommandListRun prints embedded catalog data: versions, presets, or libraries.
+func LCommandListRun(args []string) int {
 	if len(args) == 0 {
-		return exitFor(badArgs("list needs a target: versions | presets | libraries"))
+		return LCommandExitGet(LErrorArgumentCreate("list needs a target: versions | presets | libraries"))
 	}
 	target := args[0]
 	rest := args[1:]
 	switch target {
 	case "versions":
-		return listVersions()
+		return LCommandVersionList()
 	case "presets":
-		return listPresets()
+		return LCommandPresetList()
 	case "libraries":
-		return listLibraries(rest)
+		return LCommandLibraryList(rest)
 	default:
-		return exitFor(badArgs("unknown list target %q (want versions | presets | libraries)", target))
+		return LCommandExitGet(LErrorArgumentCreate("unknown list target %q (want versions | presets | libraries)", target))
 	}
 }
 
-func listVersions() int {
-	for _, release := range planning.LReleaseSupportedListGet() {
+func LCommandVersionList() int {
+	for _, release := range planning.LReleaseSupportedGet() {
 		fmt.Printf("%-8s %s\n", release.Version, release.Codename)
 	}
 	return 0
 }
 
-func listPresets() int {
+func LCommandPresetList() int {
 	// Preset IDs are stable across releases; resolve against the latest one.
-	release, ok := latestRelease()
+	release, ok := LReleaseLatestGet()
 	if !ok {
-		return exitFor(fmt.Errorf("no supported FFmpeg releases are embedded"))
+		return LCommandExitGet(fmt.Errorf("no supported FFmpeg releases are embedded"))
 	}
-	for _, preset := range planning.LCatalogPresetSourceBuildResolved(release.ArchiveUrl, "") {
+	for _, preset := range planning.LCatalogPresetGet(release.ArchiveUrl, "") {
 		if preset.Hidden {
 			continue
 		}
@@ -126,19 +126,19 @@ func listPresets() int {
 	return 0
 }
 
-func listLibraries(args []string) int {
-	parsed, err := argsParse(args)
+func LCommandLibraryList(args []string) int {
+	parsed, err := LArgumentParse(args)
 	if err != nil {
-		return exitFor(err)
+		return LCommandExitGet(err)
 	}
 	if strings.TrimSpace(parsed.version) == "" {
-		return exitFor(badArgs("list libraries requires --ffmpeg-version (availability varies per release)"))
+		return LCommandExitGet(LErrorArgumentCreate("list libraries requires --ffmpeg-version (availability varies per release)"))
 	}
 	release, ok := planning.LReleaseVersionResolve(parsed.version)
 	if !ok {
-		return exitFor(unsupported("unsupported FFmpeg version: %s", parsed.version))
+		return LCommandExitGet(LErrorSupportCreate("unsupported FFmpeg version: %s", parsed.version))
 	}
-	for _, library := range planning.LCatalogSourceBuildResolved(release.ArchiveUrl, "") {
+	for _, library := range planning.LCatalogLibraryGet(release.ArchiveUrl, "") {
 		flag := ""
 		if len(library.ConfigureFlags) > 0 {
 			flag = library.ConfigureFlags[0]
@@ -148,9 +148,9 @@ func listLibraries(args []string) int {
 	return 0
 }
 
-func latestRelease() (planning.LReleaseChoice, bool) {
-	// LReleaseSupportedListGet returns releases newest-first, so index 0 is latest.
-	releases := planning.LReleaseSupportedListGet()
+func LReleaseLatestGet() (planning.LReleaseChoice, bool) {
+	// LReleaseSupportedGet returns releases newest-first, so index 0 is latest.
+	releases := planning.LReleaseSupportedGet()
 	if len(releases) == 0 {
 		return planning.LReleaseChoice{}, false
 	}

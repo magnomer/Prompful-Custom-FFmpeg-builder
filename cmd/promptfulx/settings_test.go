@@ -3,7 +3,7 @@ package main
 import "testing"
 
 func TestArgsParse(t *testing.T) {
-	parsed, err := argsParse([]string{
+	parsed, err := LArgumentParse([]string{
 		"--ffmpeg-version", "8.1.2",
 		"--preset=full",
 		"--extended",
@@ -30,19 +30,19 @@ func TestArgsParse(t *testing.T) {
 }
 
 func TestArgsParseErrors(t *testing.T) {
-	if _, err := argsParse([]string{"--bogus"}); err == nil {
+	if _, err := LArgumentParse([]string{"--bogus"}); err == nil {
 		t.Fatalf("expected unknown-flag error")
 	}
-	if _, err := argsParse([]string{"--jobs", "-3"}); err == nil {
+	if _, err := LArgumentParse([]string{"--jobs", "-3"}); err == nil {
 		t.Fatalf("expected negative-jobs error")
 	}
-	if _, err := argsParse([]string{"--ffmpeg-version"}); err == nil {
+	if _, err := LArgumentParse([]string{"--ffmpeg-version"}); err == nil {
 		t.Fatalf("expected missing-value error")
 	}
 }
 
 func TestSettingsResolve(t *testing.T) {
-	parsed, err := argsParse([]string{
+	parsed, err := LArgumentParse([]string{
 		"--ffmpeg-version", "8.1.2",
 		"--preset", "minimal",
 		"--enable-libx264",
@@ -51,7 +51,7 @@ func TestSettingsResolve(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
-	settings, err := settingsResolve(parsed)
+	settings, err := LSettingsFFmpegResolve(parsed)
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
@@ -71,15 +71,15 @@ func TestSettingsResolve(t *testing.T) {
 
 func TestSettingsResolveExitCodes(t *testing.T) {
 	// Missing version -> bad args (2).
-	if _, err := settingsResolve(cliBuildArgs{}); err == nil {
+	if _, err := LSettingsFFmpegResolve(LArgumentBuild{}); err == nil {
 		t.Fatalf("expected missing-version error")
-	} else if usage, ok := err.(usageError); !ok || usage.code != 2 {
+	} else if usage, ok := err.(LErrorUsage); !ok || usage.code != 2 {
 		t.Fatalf("missing version: want code 2, got %v", err)
 	}
 	// Unknown version -> unsupported (4).
-	if _, err := settingsResolve(cliBuildArgs{version: "9.9.9"}); err == nil {
+	if _, err := LSettingsFFmpegResolve(LArgumentBuild{version: "9.9.9"}); err == nil {
 		t.Fatalf("expected unknown-version error")
-	} else if usage, ok := err.(usageError); !ok || usage.code != 4 {
+	} else if usage, ok := err.(LErrorUsage); !ok || usage.code != 4 {
 		t.Fatalf("unknown version: want code 4, got %v", err)
 	}
 }

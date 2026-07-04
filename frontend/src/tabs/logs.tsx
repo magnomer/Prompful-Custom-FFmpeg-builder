@@ -9,7 +9,7 @@ import {
 
 export type { LLogSecurityEntry, LPhaseLogGroup };
 export type { LLogSecurityPayload, LStatusActionPayload, LProgressLive, LPhaseLogId, LLogParsedEntry } from "./logutils";
-export { LProgressCompute, LPipelineToolchainGet, LPipelineFFmpegGet } from "./logutils";
+export { LProgressGet, LPipelineToolchainGet, LPipelineFFmpegGet } from "./logutils";
 
 function PLogSmartRender(props: { entries: LLogSecurityEntry[]; context?: "toolchain" | "ffmpeg"; viewMode?: "smart" | "raw"; hideModeToolbar?: boolean }) {
   const [expandedPhases, setExpandedPhases] = useState<Set<LPhaseLogId>>(new Set());
@@ -27,7 +27,7 @@ function PLogSmartRender(props: { entries: LLogSecurityEntry[]; context?: "toolc
   const totalAssemble = phaseGroups.reduce((sum, g) => sum + g.assembleCount, 0);
   const totalCopied = phaseGroups.reduce((sum, g) => sum + g.copiedDlls.length, 0);
 
-  function togglePhase(phase: LPhaseLogId) {
+  function LPhaseToggle(phase: LPhaseLogId) {
     setExpandedPhases((prev) => {
       const next = new Set(prev);
       if (next.has(phase)) next.delete(phase);
@@ -69,7 +69,7 @@ function PLogSmartRender(props: { entries: LLogSecurityEntry[]; context?: "toolc
           {errorEntries.length > 0 && (
             <section className="smart-log__surface smart-log__surface--error">
               <h3 className="smart-log__surface-title">{LLocaleTextGet("logs.errors.title")}</h3>
-              {errorEntries.map((e, i) => <PLogSurfaceEntryRender entry={e} key={`err-${i}`} />)}
+              {errorEntries.map((e, i) => <PLogEntryRender entry={e} key={`err-${i}`} />)}
             </section>
           )}
           {warnEntries.length > 0 && (
@@ -77,13 +77,13 @@ function PLogSmartRender(props: { entries: LLogSecurityEntry[]; context?: "toolc
               <h3 className="smart-log__surface-title">{LLocaleTextGet("logs.warnings.title", { count: warnEntries.length })}</h3>
               <details className="smart-log__details">
                 <summary className="smart-log__details-summary">{LLocaleTextGet("logs.warnings.showLines", { count: warnEntries.length })}</summary>
-                {warnEntries.map((e, i) => <PLogSurfaceEntryRender entry={e} key={`warn-${i}`} />)}
+                {warnEntries.map((e, i) => <PLogEntryRender entry={e} key={`warn-${i}`} />)}
               </details>
             </section>
           )}
           {phaseGroups.map((group) => (
             <section className="smart-log__phase" key={group.phase}>
-              <button className="smart-log__phase-header" type="button" onClick={() => togglePhase(group.phase)}>
+              <button className="smart-log__phase-header" type="button" onClick={() => LPhaseToggle(group.phase)}>
                 <span className="smart-log__phase-label">{group.label}</span>
                 <span className="smart-log__phase-meta">
                   {group.phase === "ff-compile" && group.compileCount > 0 && <span className="smart-log__badge">{LLocaleTextGet("logs.badge.cFiles", { count: group.compileCount })}</span>}
@@ -114,7 +114,7 @@ function PStatRender(props: { value: number; label: string; className?: string }
   return <div className={`smart-log__stat ${props.className ?? ""}`}><span className="smart-log__stat-value">{props.value}</span><span className="smart-log__stat-label">{props.label}</span></div>;
 }
 
-function PLogSurfaceEntryRender(props: { entry: LLogSecurityEntry }) {
+function PLogEntryRender(props: { entry: LLogSecurityEntry }) {
   return <p className="smart-log__surface-entry"><time className="log-list__time">{props.entry.timestamp}</time><span>{LLogRuntimeBuild(props.entry.message)}</span></p>;
 }
 
@@ -166,7 +166,7 @@ function PPhaseBodyRender({ group, showSystemDlls, onToggleSystemDlls }: { group
       )}
       {group.phase === "ff-configure" && (
         <>
-          {group.entries.filter(LLogConfigureKeyCheck).map((e, i) => <PLogRawRender entry={e} id={`cfg-key-${i}`} key={`cfg-key-${i}`} />)}
+          {group.entries.filter(LLogConfigureCheck).map((e, i) => <PLogRawRender entry={e} id={`cfg-key-${i}`} key={`cfg-key-${i}`} />)}
           <details className="smart-log__details"><summary className="smart-log__details-summary">{LLocaleTextGet("logs.configure.showAll", { count: group.entries.length })}</summary>{group.entries.map((e, i) => <PLogRawRender entry={e} id={`cfg-raw-${i}`} key={`cfg-raw-${i}`} />)}</details>
         </>
       )}
@@ -192,11 +192,11 @@ function LLogSummaryCreate(compileCount: number, assembleCount: number): string 
   return LLocaleTextGet("logs.compile.summary", { compileCount, compileUnit: LLocaleTextGet(compileKey) });
 }
 
-function LLogConfigureKeyCheck(e: LLogSecurityEntry): boolean {
+function LLogConfigureCheck(e: LLogSecurityEntry): boolean {
   return e.message.startsWith("FFmpeg configure") || e.message.startsWith("Starting FFmpeg configure") || e.message.startsWith("License:") || e.message.startsWith("C compiler") || e.message.startsWith("C library") || e.message.startsWith("ARCH ") || e.message.startsWith("threading") || e.message.startsWith("static ") || e.message.startsWith("shared ") || e.message.startsWith("x86 assembler") || e.message.startsWith("Running approved");
 }
 
-function PLogEmptyCardRender(props: { onGoToPrep: () => void; onGoToBuild: () => void }) {
+function PLogEmptyRender(props: { onGoToPrep: () => void; onGoToBuild: () => void }) {
   return (
     <section className="card card--purple logs-empty-card">
       <span className="card__badge" aria-hidden="true">
@@ -214,7 +214,7 @@ function PLogEmptyCardRender(props: { onGoToPrep: () => void; onGoToBuild: () =>
   );
 }
 
-type PLogViewTabId = "summary" | "raw";
+type LLogViewIdentifier = "summary" | "raw";
 type LLogKindNormalized = "toolchain" | "ffmpeg" | "unknown";
 
 function LRecordKindNormalize(kind: string): LLogKindNormalized {
@@ -223,13 +223,13 @@ function LRecordKindNormalize(kind: string): LLogKindNormalized {
   return "unknown";
 }
 
-function LLogKindLabelGet(kind: string): string {
+function LLogKindGet(kind: string): string {
   if (kind === "toolchain") return LLocaleTextGet("logs.local.kind.toolchain");
   if (kind === "ffmpeg") return LLocaleTextGet("logs.local.kind.ffmpeg");
   return LLocaleTextGet("logs.local.kind.unknown");
 }
 
-function LLogStatusLabelGet(status: string): string {
+function LLogStatusGet(status: string): string {
   return LLocaleTextGet(`logs.local.status.${status}`);
 }
 
@@ -287,7 +287,7 @@ function PLogSelectorRender(props: { records: LRecordLog[]; selectedRunId: strin
       >
         {props.records.map((record) => (
           <option value={record.runId} key={record.runId}>
-            {record.displayTime} · {LLogKindLabelGet(record.kind)} · {LLogStatusLabelGet(record.status)}
+            {record.displayTime} · {LLogKindGet(record.kind)} · {LLogStatusGet(record.status)}
           </option>
         ))}
       </select>
@@ -310,12 +310,12 @@ function PLogSelectorRender(props: { records: LRecordLog[]; selectedRunId: strin
   );
 }
 
-function PLogRawViewerRender(props: { text: string }) {
+function PLogViewerRender(props: { text: string }) {
   if (!props.text.trim()) return <p className="empty-text">{LLocaleTextGet("logs.local.empty.raw")}</p>;
   return <pre className="log-raw-file-viewer">{props.text}</pre>;
 }
 
-function PLogRawFilesRender(props: { record: LRecordLog; onOpenFile: (runId: string, fileName: string) => Promise<void> }) {
+function PLogFilesRender(props: { record: LRecordLog; onOpenFile: (runId: string, fileName: string) => Promise<void> }) {
   const files: { fileName: string; key: string; available: boolean }[] = [
     { fileName: "stdout.log", key: "stdout", available: props.record.hasStdoutLog },
     { fileName: "stderr.log", key: "stderr", available: props.record.hasStderrLog },
@@ -348,7 +348,7 @@ function PLogRawFilesRender(props: { record: LRecordLog; onOpenFile: (runId: str
 }
 
 function PLogDetailsRender(props: { record: LRecordLog; onOpenRecordFile: (runId: string, fileName: string) => Promise<void> }) {
-  const [activeTabId, setActiveTabId] = useState<PLogViewTabId>("summary");
+  const [activeTabId, setActiveTabId] = useState<LLogViewIdentifier>("summary");
   const kind = LRecordKindNormalize(props.record.kind);
   const context = kind === "toolchain" ? "toolchain" : kind === "ffmpeg" ? "ffmpeg" : null;
   const isLive = props.record.runId.startsWith("live-");
@@ -356,7 +356,7 @@ function PLogDetailsRender(props: { record: LRecordLog; onOpenRecordFile: (runId
   const rawCount = isLive
     ? (props.record.rawText.trim() ? 1 : 0)
     : [props.record.hasStdoutLog, props.record.hasStderrLog, props.record.hasSecurityLAuditEvents].filter(Boolean).length;
-  const tabs: { id: PLogViewTabId; label: string; count: number }[] = kind === "unknown"
+  const tabs: { id: LLogViewIdentifier; label: string; count: number }[] = kind === "unknown"
     ? [{ id: "raw", label: LLocaleTextGet("logs.local.tabs.unknownRaw"), count: rawCount }]
     : [
       { id: "summary", label: kind === "toolchain" ? LLocaleTextGet("logs.local.tabs.environmentSummary") : LLocaleTextGet("logs.local.tabs.ffmpegSummary"), count: props.record.entries.length },
@@ -385,21 +385,21 @@ function PLogDetailsRender(props: { record: LRecordLog; onOpenRecordFile: (runId
       <div className="result-details-body log-details-body">
         <div className="log-record-meta">
           <span>{props.record.displayTime}</span>
-          <span>{LLogKindLabelGet(props.record.kind)}</span>
-          <span>{LLogStatusLabelGet(props.record.status)}</span>
+          <span>{LLogKindGet(props.record.kind)}</span>
+          <span>{LLogStatusGet(props.record.status)}</span>
           {props.record.errorCount > 0 && <span>{LLocaleTextGet("logs.local.meta.errors", { count: props.record.errorCount })}</span>}
           {props.record.warnCount > 0 && <span>{LLocaleTextGet("logs.local.meta.warnings", { count: props.record.warnCount })}</span>}
         </div>
         {(() => {
           const showRaw = effectiveActiveTabId === "raw" || !context;
           if (showRaw && !isLive) {
-            return <PLogRawFilesRender record={props.record} onOpenFile={props.onOpenRecordFile} />;
+            return <PLogFilesRender record={props.record} onOpenFile={props.onOpenRecordFile} />;
           }
           if (!hasDetails) {
             return <p className="empty-text">{LLocaleTextGet("logs.local.loading")}</p>;
           }
           if (showRaw) {
-            return <PLogRawViewerRender text={props.record.rawText} />;
+            return <PLogViewerRender text={props.record.rawText} />;
           }
           if (context) {
             return <PLogSmartRender entries={props.record.entries} context={context} viewMode="smart" hideModeToolbar />;
@@ -411,7 +411,7 @@ function PLogDetailsRender(props: { record: LRecordLog; onOpenRecordFile: (runId
   );
 }
 
-export type PLogProps = {
+export type LLogProperties = {
   toolchainLogEntries: LLogSecurityEntry[];
   ffmpegLogEntries: LLogSecurityEntry[];
   localLogRecords: LRecordLog[];
@@ -425,7 +425,7 @@ export type PLogProps = {
   onGoToBuild: () => void;
 };
 
-export function PLogRender({ toolchainLogEntries, ffmpegLogEntries, localLogRecords, localLogRecordsError, refreshLocalLogRecords, loadLocalLogRecord, openLocalLogsFolder, openLocalLogRecordFolder, openLocalLogRecordFile, onGoToPrep, onGoToBuild }: PLogProps) {
+export function PLogRender({ toolchainLogEntries, ffmpegLogEntries, localLogRecords, localLogRecordsError, refreshLocalLogRecords, loadLocalLogRecord, openLocalLogsFolder, openLocalLogRecordFolder, openLocalLogRecordFile, onGoToPrep, onGoToBuild }: LLogProperties) {
   const liveRecords = useMemo(() => LRecordLiveCreate(toolchainLogEntries, ffmpegLogEntries), [toolchainLogEntries, ffmpegLogEntries]);
   const records = useMemo(() => [...liveRecords, ...localLogRecords], [liveRecords, localLogRecords]);
   const [selectedRunId, setSelectedRunId] = useState("");
@@ -469,7 +469,7 @@ export function PLogRender({ toolchainLogEntries, ffmpegLogEntries, localLogReco
           <PLogDetailsRender record={selectedRecord} onOpenRecordFile={openLocalLogRecordFile} />
         </>
       )}
-      {!localLogRecordsError && records.length === 0 && <PLogEmptyCardRender onGoToPrep={onGoToPrep} onGoToBuild={onGoToBuild} />}
+      {!localLogRecordsError && records.length === 0 && <PLogEmptyRender onGoToPrep={onGoToPrep} onGoToBuild={onGoToBuild} />}
     </section>
   );
 }

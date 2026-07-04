@@ -1,5 +1,155 @@
+export namespace audit {
+	
+	export class LAuditWriter {
+	    LRunId: string;
+	    LDirectoryLog: string;
+	    // Go type: sync
+	    LMutex: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new LAuditWriter(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.LRunId = source["LRunId"];
+	        this.LDirectoryLog = source["LDirectoryLog"];
+	        this.LMutex = this.convertValues(source["LMutex"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
 export namespace consent {
 	
+	export class LArchiveConsentState {
+	    consentId: string;
+	    kind: string;
+	    approvedActionName: string;
+	    approvedPlanHash: string;
+	    approvedAtUnixTime: number;
+	    consentText: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LArchiveConsentState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.consentId = source["consentId"];
+	        this.kind = source["kind"];
+	        this.approvedActionName = source["approvedActionName"];
+	        this.approvedPlanHash = source["approvedPlanHash"];
+	        this.approvedAtUnixTime = source["approvedAtUnixTime"];
+	        this.consentText = source["consentText"];
+	    }
+	}
+	export class LConsentCommand {
+	    consentId: string;
+	    kind: string;
+	    approvedActionName: string;
+	    approvedPlanHash: string;
+	    approvedAtUnixTime: number;
+	    consentText: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LConsentCommand(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.consentId = source["consentId"];
+	        this.kind = source["kind"];
+	        this.approvedActionName = source["approvedActionName"];
+	        this.approvedPlanHash = source["approvedPlanHash"];
+	        this.approvedAtUnixTime = source["approvedAtUnixTime"];
+	        this.consentText = source["consentText"];
+	    }
+	}
+	export class LConsentFFmpeg {
+	    consentId: string;
+	    kind: string;
+	    approvedActionName: string;
+	    approvedPlanHash: string;
+	    approvedAtUnixTime: number;
+	    consentText: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LConsentFFmpeg(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.consentId = source["consentId"];
+	        this.kind = source["kind"];
+	        this.approvedActionName = source["approvedActionName"];
+	        this.approvedPlanHash = source["approvedPlanHash"];
+	        this.approvedAtUnixTime = source["approvedAtUnixTime"];
+	        this.consentText = source["consentText"];
+	    }
+	}
+	export class LConsentMsys {
+	    consentId: string;
+	    kind: string;
+	    approvedActionName: string;
+	    approvedPlanHash: string;
+	    approvedAtUnixTime: number;
+	    consentText: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LConsentMsys(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.consentId = source["consentId"];
+	        this.kind = source["kind"];
+	        this.approvedActionName = source["approvedActionName"];
+	        this.approvedPlanHash = source["approvedPlanHash"];
+	        this.approvedAtUnixTime = source["approvedAtUnixTime"];
+	        this.consentText = source["consentText"];
+	    }
+	}
+	export class LConsentPacman {
+	    consentId: string;
+	    kind: string;
+	    approvedActionName: string;
+	    approvedPlanHash: string;
+	    approvedAtUnixTime: number;
+	    consentText: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LConsentPacman(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.consentId = source["consentId"];
+	        this.kind = source["kind"];
+	        this.approvedActionName = source["approvedActionName"];
+	        this.approvedPlanHash = source["approvedPlanHash"];
+	        this.approvedAtUnixTime = source["approvedAtUnixTime"];
+	        this.consentText = source["consentText"];
+	    }
+	}
 	export class LRequestApproval {
 	    approvedActionName: string;
 	    approvedPlanHash: string;
@@ -136,6 +286,20 @@ export namespace planning {
 		}
 	}
 	
+	export class LLibraryPatchEntry {
+	    module: string;
+	    libsLine: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LLibraryPatchEntry(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.module = source["module"];
+	        this.libsLine = source["libsLine"];
+	    }
+	}
 	export class LSourcePatch {
 	    file: string;
 	    find: string;
@@ -150,20 +314,6 @@ export namespace planning {
 	        this.file = source["file"];
 	        this.find = source["find"];
 	        this.replace = source["replace"];
-	    }
-	}
-	export class LPkgConfigLibsLinePatch {
-	    module: string;
-	    libsLine: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new LPkgConfigLibsLinePatch(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.module = source["module"];
-	        this.libsLine = source["libsLine"];
 	    }
 	}
 	export class LLibraryPreparation {
@@ -196,7 +346,7 @@ export namespace planning {
 	    pkgConfigAppendLibs?: string[];
 	    pkgConfigAppendCFlags?: string[];
 	    pkgConfigLibsLine?: string;
-	    pkgConfigLibsLinePatches?: LPkgConfigLibsLinePatch[];
+	    pkgConfigLibsLinePatches?: LLibraryPatchEntry[];
 	    privatePrefixInstall?: boolean;
 	    verifyHeaderRelativePath: string;
 	    verifyLibStem: string;
@@ -238,7 +388,7 @@ export namespace planning {
 	        this.pkgConfigAppendLibs = source["pkgConfigAppendLibs"];
 	        this.pkgConfigAppendCFlags = source["pkgConfigAppendCFlags"];
 	        this.pkgConfigLibsLine = source["pkgConfigLibsLine"];
-	        this.pkgConfigLibsLinePatches = this.convertValues(source["pkgConfigLibsLinePatches"], LPkgConfigLibsLinePatch);
+	        this.pkgConfigLibsLinePatches = this.convertValues(source["pkgConfigLibsLinePatches"], LLibraryPatchEntry);
 	        this.privatePrefixInstall = source["privatePrefixInstall"];
 	        this.verifyHeaderRelativePath = source["verifyHeaderRelativePath"];
 	        this.verifyLibStem = source["verifyLibStem"];
@@ -343,7 +493,6 @@ export namespace planning {
 	        this.riskLevelName = source["riskLevelName"];
 	    }
 	}
-	
 	export class LVersionLibraryWork {
 	    workId: string;
 	    ffmpegVersion: string;
@@ -831,28 +980,6 @@ export namespace planning {
 		    return a;
 		}
 	}
-	export class LSettingsBuild {
-	    workspaceDirectory: string;
-	    msys2ArchiveUrl: string;
-	    msys2ArchiveSha256Hash: string;
-	    msys2ArchiveSignatureUrl: string;
-	    msys2PackageNames: string[];
-	    windowsShellProfileName: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new LSettingsBuild(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.workspaceDirectory = source["workspaceDirectory"];
-	        this.msys2ArchiveUrl = source["msys2ArchiveUrl"];
-	        this.msys2ArchiveSha256Hash = source["msys2ArchiveSha256Hash"];
-	        this.msys2ArchiveSignatureUrl = source["msys2ArchiveSignatureUrl"];
-	        this.msys2PackageNames = source["msys2PackageNames"];
-	        this.windowsShellProfileName = source["windowsShellProfileName"];
-	    }
-	}
 	export class LSettingsFFmpeg {
 	    workspaceDirectory: string;
 	    ffmpegSourceArchiveUrl: string;
@@ -883,6 +1010,28 @@ export namespace planning {
 	        this.parallelJobCount = source["parallelJobCount"];
 	        this.windowsShellProfileName = source["windowsShellProfileName"];
 	        this.licenseProfileName = source["licenseProfileName"];
+	    }
+	}
+	export class LSettingsToolchain {
+	    workspaceDirectory: string;
+	    msys2ArchiveUrl: string;
+	    msys2ArchiveSha256Hash: string;
+	    msys2ArchiveSignatureUrl: string;
+	    msys2PackageNames: string[];
+	    windowsShellProfileName: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LSettingsToolchain(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.workspaceDirectory = source["workspaceDirectory"];
+	        this.msys2ArchiveUrl = source["msys2ArchiveUrl"];
+	        this.msys2ArchiveSha256Hash = source["msys2ArchiveSha256Hash"];
+	        this.msys2ArchiveSignatureUrl = source["msys2ArchiveSignatureUrl"];
+	        this.msys2PackageNames = source["msys2PackageNames"];
+	        this.windowsShellProfileName = source["windowsShellProfileName"];
 	    }
 	}
 	
@@ -994,7 +1143,7 @@ export namespace program {
 	        this.startedAt = source["startedAt"];
 	    }
 	}
-	export class LResultBuild {
+	export class LResultState {
 	    artifactsDirectory: string;
 	    reportPath: string;
 	    ffmpegVersion: string;
@@ -1007,7 +1156,7 @@ export namespace program {
 	    createdAt: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new LResultBuild(source);
+	        return new LResultState(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -1042,12 +1191,76 @@ export namespace program {
 		    return a;
 		}
 	}
+	export class LReviewFFmpegStored {
+	    ReviewSession: reviewsession.LSessionReview;
+	    Plan: planning.LPlanFFmpeg;
+	
+	    static createFrom(source: any = {}) {
+	        return new LReviewFFmpegStored(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ReviewSession = this.convertValues(source["ReviewSession"], reviewsession.LSessionReview);
+	        this.Plan = this.convertValues(source["Plan"], planning.LPlanFFmpeg);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class LReviewToolchainStored {
+	    ReviewSession: reviewsession.LSessionReview;
+	    Plan: planning.LPlanToolchain;
+	
+	    static createFrom(source: any = {}) {
+	        return new LReviewToolchainStored(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ReviewSession = this.convertValues(source["ReviewSession"], reviewsession.LSessionReview);
+	        this.Plan = this.convertValues(source["Plan"], planning.LPlanToolchain);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class LStateInitial {
 	    hostOs: string;
 	    kindExplanation: string;
 	    securityRuleSummary: string;
 	    namingRuleSummary: string;
-	    defaultBuildConfigSettings: planning.LSettingsBuild;
+	    defaultBuildConfigSettings: planning.LSettingsToolchain;
 	    defaultFfmpegBuildSettings: planning.LSettingsFFmpeg;
 	    defaultLibraryCatalog: planning.LLibraryChoice[];
 	    defaultLibraryPresetCatalog: planning.LPresetLibraryChoice[];
@@ -1064,7 +1277,7 @@ export namespace program {
 	        this.kindExplanation = source["kindExplanation"];
 	        this.securityRuleSummary = source["securityRuleSummary"];
 	        this.namingRuleSummary = source["namingRuleSummary"];
-	        this.defaultBuildConfigSettings = this.convertValues(source["defaultBuildConfigSettings"], planning.LSettingsBuild);
+	        this.defaultBuildConfigSettings = this.convertValues(source["defaultBuildConfigSettings"], planning.LSettingsToolchain);
 	        this.defaultFfmpegBuildSettings = this.convertValues(source["defaultFfmpegBuildSettings"], planning.LSettingsFFmpeg);
 	        this.defaultLibraryCatalog = this.convertValues(source["defaultLibraryCatalog"], planning.LLibraryChoice);
 	        this.defaultLibraryPresetCatalog = this.convertValues(source["defaultLibraryPresetCatalog"], planning.LPresetLibraryChoice);
@@ -1142,7 +1355,7 @@ export namespace program {
 	        this.status = source["status"];
 	    }
 	}
-	export class LVerificationBuild {
+	export class LVerificationState {
 	    ffmpegPath: string;
 	    ffmpegVersion: string;
 	    libraries: LVerificationLibrary[];
@@ -1154,7 +1367,7 @@ export namespace program {
 	    verifiedAt: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new LVerificationBuild(source);
+	        return new LVerificationState(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -1188,7 +1401,6 @@ export namespace program {
 		    return a;
 		}
 	}
-	
 	export class LVerificationToolchain {
 	    verified: boolean;
 	    checkedPackageCount: number;
@@ -1205,6 +1417,72 @@ export namespace program {
 	        this.checkedPackageCount = source["checkedPackageCount"];
 	        this.missingPackageNames = source["missingPackageNames"];
 	        this.message = source["message"];
+	    }
+	}
+
+}
+
+export namespace reviewsession {
+	
+	export class LSessionReview {
+	    reviewSessionId: string;
+	    actionName: string;
+	    planHash: string;
+	    expectedLConsentText: string;
+	    expectedLConsentTextHash: string;
+	    createdAtUnixTime: number;
+	    expiresAtUnixTime: number;
+	    wasUsed: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new LSessionReview(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.reviewSessionId = source["reviewSessionId"];
+	        this.actionName = source["actionName"];
+	        this.planHash = source["planHash"];
+	        this.expectedLConsentText = source["expectedLConsentText"];
+	        this.expectedLConsentTextHash = source["expectedLConsentTextHash"];
+	        this.createdAtUnixTime = source["createdAtUnixTime"];
+	        this.expiresAtUnixTime = source["expiresAtUnixTime"];
+	        this.wasUsed = source["wasUsed"];
+	    }
+	}
+
+}
+
+export namespace workspace {
+	
+	export class LWorkspaceLayout {
+	    workspaceDirectory: string;
+	    cacheDirectory: string;
+	    downloadsDirectory: string;
+	    sourcesDirectory: string;
+	    buildDirectory: string;
+	    prefixDirectory: string;
+	    artifactsBaseDirectory: string;
+	    artifactsDirectory: string;
+	    logsDirectory: string;
+	    toolchainsDirectory: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LWorkspaceLayout(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.workspaceDirectory = source["workspaceDirectory"];
+	        this.cacheDirectory = source["cacheDirectory"];
+	        this.downloadsDirectory = source["downloadsDirectory"];
+	        this.sourcesDirectory = source["sourcesDirectory"];
+	        this.buildDirectory = source["buildDirectory"];
+	        this.prefixDirectory = source["prefixDirectory"];
+	        this.artifactsBaseDirectory = source["artifactsBaseDirectory"];
+	        this.artifactsDirectory = source["artifactsDirectory"];
+	        this.logsDirectory = source["logsDirectory"];
+	        this.toolchainsDirectory = source["toolchainsDirectory"];
 	    }
 	}
 

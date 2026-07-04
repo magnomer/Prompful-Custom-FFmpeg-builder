@@ -15,28 +15,28 @@ import (
 	"promptfulcustomffmpegbuilder/versions/shared"
 )
 
-// LVersionLibraryWorkImplementation connects a version-specific work id to the
+// LWorkImplementation connects a version-specific work id to the
 // executable Go manipulation hook under /versions/x.x.x/.
-type LVersionLibraryWorkImplementation struct {
+type LWorkImplementation struct {
 	Work        LVersionLibraryWork
-	Manipulator shared.LibraryPreparationManipulator
-	Plan        shared.LibraryPreparationPlan
+	Manipulator shared.LPreparationManipulator
+	Plan        shared.LPreparationPlan
 }
 
-type LVersionLibraryWorkRegistry struct {
-	WorkById map[string]LVersionLibraryWorkImplementation
+type LWorkRegistry struct {
+	WorkById map[string]LWorkImplementation
 }
 
-func LVersionLibraryWorkRegistryLoad() (LVersionLibraryWorkRegistry, error) {
-	registry := LVersionLibraryWorkRegistry{WorkById: map[string]LVersionLibraryWorkImplementation{}}
-	versionLists := []map[string]shared.LibraryPreparationManipulator{
-		version448.LLibraryPreparationList,
-		version519.LLibraryPreparationList,
-		version616.LLibraryPreparationList,
-		version703.LLibraryPreparationList,
-		version715.LLibraryPreparationList,
-		version803.LLibraryPreparationList,
-		version812.LLibraryPreparationList,
+func LWorkRegistryLoad() (LWorkRegistry, error) {
+	registry := LWorkRegistry{WorkById: map[string]LWorkImplementation{}}
+	versionLists := []map[string]shared.LPreparationManipulator{
+		version448.LPreparationCatalog,
+		version519.LPreparationCatalog,
+		version616.LPreparationCatalog,
+		version703.LPreparationCatalog,
+		version715.LPreparationCatalog,
+		version803.LPreparationCatalog,
+		version812.LPreparationCatalog,
 	}
 	for _, versionList := range versionLists {
 		libraryIds := make([]string, 0, len(versionList))
@@ -46,18 +46,18 @@ func LVersionLibraryWorkRegistryLoad() (LVersionLibraryWorkRegistry, error) {
 		sort.Strings(libraryIds)
 		for _, libraryId := range libraryIds {
 			if err := registry.LWorkRegister(libraryId, versionList[libraryId]); err != nil {
-				return LVersionLibraryWorkRegistry{}, err
+				return LWorkRegistry{}, err
 			}
 		}
 	}
 	return registry, nil
 }
 
-func (registry LVersionLibraryWorkRegistry) LWorkRegister(libraryId string, manipulator shared.LibraryPreparationManipulator) error {
+func (registry LWorkRegistry) LWorkRegister(libraryId string, manipulator shared.LPreparationManipulator) error {
 	if manipulator == nil {
 		return fmt.Errorf("version-library work for %q has nil manipulator", libraryId)
 	}
-	plan := shared.NewLibraryPreparationPlan("", libraryId, "")
+	plan := shared.LPreparationPlanCreate("", libraryId, "")
 	manipulator(plan)
 	if strings.TrimSpace(plan.FfmpegVersion) == "" {
 		return fmt.Errorf("version-library work for %q did not set FFmpeg version", libraryId)
@@ -65,27 +65,27 @@ func (registry LVersionLibraryWorkRegistry) LWorkRegister(libraryId string, mani
 	if strings.TrimSpace(plan.LibraryId) == "" {
 		return fmt.Errorf("version-library work for FFmpeg %q has empty library id", plan.FfmpegVersion)
 	}
-	work := LVersionLibraryWorkFromPreparationPlan(*plan)
+	work := LWorkPlanResolve(*plan)
 	if _, exists := registry.WorkById[work.WorkId]; exists {
 		return fmt.Errorf("duplicate version-library work id %q", work.WorkId)
 	}
-	registry.WorkById[work.WorkId] = LVersionLibraryWorkImplementation{Work: work, Manipulator: manipulator, Plan: *plan}
+	registry.WorkById[work.WorkId] = LWorkImplementation{Work: work, Manipulator: manipulator, Plan: *plan}
 	return nil
 }
 
-func (registry LVersionLibraryWorkRegistry) LWorkResolve(workId string) (LVersionLibraryWorkImplementation, bool) {
+func (registry LWorkRegistry) LWorkResolve(workId string) (LWorkImplementation, bool) {
 	implementation, exists := registry.WorkById[strings.TrimSpace(workId)]
 	return implementation, exists
 }
 
-func (registry LVersionLibraryWorkRegistry) LWorkResolveByVersionAndLibrary(ffmpegVersion string, libraryId string) (LVersionLibraryWorkImplementation, bool) {
-	return registry.LWorkResolve(LCatalogVersionLibraryWorkIdCreate(ffmpegVersion, libraryId))
+func (registry LWorkRegistry) LWorkLibraryResolve(ffmpegVersion string, libraryId string) (LWorkImplementation, bool) {
+	return registry.LWorkResolve(LWorkIdentifierCreate(ffmpegVersion, libraryId))
 }
 
-func (registry LVersionLibraryWorkRegistry) LWorksResolve(workIds []string) ([]LVersionLibraryWork, []string) {
+func (registry LWorkRegistry) LWorksResolve(workIds []string) ([]LVersionLibraryWork, []string) {
 	works := []LVersionLibraryWork{}
 	missing := []string{}
-	for _, workId := range LCatalogStringsUniqueSortedStable(workIds) {
+	for _, workId := range LStringsSortedGet(workIds) {
 		implementation, exists := registry.LWorkResolve(workId)
 		if !exists {
 			missing = append(missing, workId)
@@ -96,34 +96,34 @@ func (registry LVersionLibraryWorkRegistry) LWorksResolve(workIds []string) ([]L
 	return works, missing
 }
 
-func LVersionLibraryWorkFromPreparationPlan(plan shared.LibraryPreparationPlan) LVersionLibraryWork {
-	workId := LCatalogVersionLibraryWorkIdCreate(plan.FfmpegVersion, plan.LibraryId)
+func LWorkPlanResolve(plan shared.LPreparationPlan) LVersionLibraryWork {
+	workId := LWorkIdentifierCreate(plan.FfmpegVersion, plan.LibraryId)
 	return LVersionLibraryWork{
 		WorkId:        workId,
 		FfmpegVersion: plan.FfmpegVersion,
 		LibraryId:     plan.LibraryId,
 		GoFilePath:    plan.VersionSpecificGoFile,
-		PhaseNames:    LVersionLibraryWorkPhasesFromPreparationPlan(plan),
-		Summary:       LVersionLibraryWorkSummaryCreate(plan),
+		PhaseNames:    LWorkPhaseResolve(plan),
+		Summary:       LWorkSummaryCreate(plan),
 	}
 }
 
-func LVersionLibraryWorkPhasesFromPreparationPlan(plan shared.LibraryPreparationPlan) []LLibraryWorkPhaseName {
+func LWorkPhaseResolve(plan shared.LPreparationPlan) []LWorkPhaseName {
 	if plan.Method == "" {
 		return nil
 	}
-	return []LLibraryWorkPhaseName{
-		LLibraryWorkPhaseAfterLibrarySourceExtract,
-		LLibraryWorkPhaseBeforeLibraryConfigure,
-		LLibraryWorkPhaseLibraryConfigure,
-		LLibraryWorkPhaseLibraryBuild,
-		LLibraryWorkPhaseLibraryInstall,
-		LLibraryWorkPhaseAfterLibraryInstall,
-		LLibraryWorkPhaseBeforeFFmpegConfigure,
+	return []LWorkPhaseName{
+		LSourceExtractAfter,
+		LLibraryConfigureBefore,
+		LLibraryConfigurePhase,
+		LLibraryBuildPhase,
+		LLibraryInstallPhase,
+		LLibraryInstallAfter,
+		LFFmpegConfigureBefore,
 	}
 }
 
-func LVersionLibraryWorkSummaryCreate(plan shared.LibraryPreparationPlan) string {
+func LWorkSummaryCreate(plan shared.LPreparationPlan) string {
 	parts := []string{}
 	if plan.BuildSystem != "" {
 		parts = append(parts, plan.BuildSystem)

@@ -6,16 +6,68 @@ export function LActionApprovedCancel() {
   return window['go']['program']['LProgram']['LActionApprovedCancel']();
 }
 
-export function LCatalogPresetSourceGet(arg1, arg2) {
-  return window['go']['program']['LProgram']['LCatalogPresetSourceGet'](arg1, arg2);
+export function LActionApprovedFinish(arg1) {
+  return window['go']['program']['LProgram']['LActionApprovedFinish'](arg1);
+}
+
+export function LActionApprovedStart() {
+  return window['go']['program']['LProgram']['LActionApprovedStart']();
+}
+
+export function LAuditProgressCreate(arg1, arg2, arg3) {
+  return window['go']['program']['LProgram']['LAuditProgressCreate'](arg1, arg2, arg3);
 }
 
 export function LCatalogSourceGet(arg1, arg2) {
   return window['go']['program']['LProgram']['LCatalogSourceGet'](arg1, arg2);
 }
 
+export function LDependencyInstall(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['program']['LProgram']['LDependencyInstall'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
 export function LDirectoryResultOpen(arg1) {
   return window['go']['program']['LProgram']['LDirectoryResultOpen'](arg1);
+}
+
+export function LErrorLocalizedEmit(arg1, arg2, arg3) {
+  return window['go']['program']['LProgram']['LErrorLocalizedEmit'](arg1, arg2, arg3);
+}
+
+export function LFFmpegApproveSync(arg1, arg2) {
+  return window['go']['program']['LProgram']['LFFmpegApproveSync'](arg1, arg2);
+}
+
+export function LFFmpegApproveValidate(arg1, arg2) {
+  return window['go']['program']['LProgram']['LFFmpegApproveValidate'](arg1, arg2);
+}
+
+export function LFFmpegCompilationLaunch(arg1, arg2, arg3) {
+  return window['go']['program']['LProgram']['LFFmpegCompilationLaunch'](arg1, arg2, arg3);
+}
+
+export function LFFmpegCompile(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['program']['LProgram']['LFFmpegCompile'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+}
+
+export function LFFmpegConfigureRun(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['program']['LProgram']['LFFmpegConfigureRun'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+export function LFFmpegFailureClean(arg1, arg2, arg3) {
+  return window['go']['program']['LProgram']['LFFmpegFailureClean'](arg1, arg2, arg3);
+}
+
+export function LFFmpegMakeRun(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['program']['LProgram']['LFFmpegMakeRun'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+export function LFFmpegReviewConsume(arg1) {
+  return window['go']['program']['LProgram']['LFFmpegReviewConsume'](arg1);
+}
+
+export function LFFmpegReviewValidate(arg1, arg2) {
+  return window['go']['program']['LProgram']['LFFmpegReviewValidate'](arg1, arg2);
 }
 
 export function LFileRecordOpen(arg1, arg2, arg3) {
@@ -30,6 +82,22 @@ export function LFolderRecordOpen(arg1, arg2) {
   return window['go']['program']['LProgram']['LFolderRecordOpen'](arg1, arg2);
 }
 
+export function LLibraryNonnativePrepare(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
+  return window['go']['program']['LProgram']['LLibraryNonnativePrepare'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+}
+
+export function LLibraryPackageInstall(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['program']['LProgram']['LLibraryPackageInstall'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function LLibrarySinglePrepare(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
+  return window['go']['program']['LProgram']['LLibrarySinglePrepare'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+}
+
+export function LLibraryVersionValidate(arg1, arg2, arg3) {
+  return window['go']['program']['LProgram']['LLibraryVersionValidate'](arg1, arg2, arg3);
+}
+
 export function LLinkExternalOpen(arg1) {
   return window['go']['program']['LProgram']['LLinkExternalOpen'](arg1);
 }
@@ -38,12 +106,28 @@ export function LLocaleSet(arg1) {
   return window['go']['program']['LProgram']['LLocaleSet'](arg1);
 }
 
-export function LPlanFFmpegApprove(arg1, arg2) {
-  return window['go']['program']['LProgram']['LPlanFFmpegApprove'](arg1, arg2);
+export function LLogConfigurationSave(arg1, arg2) {
+  return window['go']['program']['LProgram']['LLogConfigurationSave'](arg1, arg2);
 }
 
-export function LPlanFFmpegApproveSync(arg1, arg2) {
-  return window['go']['program']['LProgram']['LPlanFFmpegApproveSync'](arg1, arg2);
+export function LLogEmit(arg1, arg2) {
+  return window['go']['program']['LProgram']['LLogEmit'](arg1, arg2);
+}
+
+export function LLogRecordList(arg1) {
+  return window['go']['program']['LProgram']['LLogRecordList'](arg1);
+}
+
+export function LNativeConsentAsk(arg1, arg2) {
+  return window['go']['program']['LProgram']['LNativeConsentAsk'](arg1, arg2);
+}
+
+export function LPacmanPackageInstall(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['program']['LProgram']['LPacmanPackageInstall'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function LPlanFFmpegApprove(arg1, arg2) {
+  return window['go']['program']['LProgram']['LPlanFFmpegApprove'](arg1, arg2);
 }
 
 export function LPlanFFmpegRequest(arg1) {
@@ -54,24 +138,20 @@ export function LPlanToolchainApprove(arg1, arg2) {
   return window['go']['program']['LProgram']['LPlanToolchainApprove'](arg1, arg2);
 }
 
-export function LPlanToolchainApproveSync(arg1, arg2) {
-  return window['go']['program']['LProgram']['LPlanToolchainApproveSync'](arg1, arg2);
-}
-
 export function LPlanToolchainRequest(arg1) {
   return window['go']['program']['LProgram']['LPlanToolchainRequest'](arg1);
 }
 
-export function LProfileToolchainList(arg1) {
-  return window['go']['program']['LProgram']['LProfileToolchainList'](arg1);
+export function LPreparationRemove(arg1, arg2) {
+  return window['go']['program']['LProgram']['LPreparationRemove'](arg1, arg2);
+}
+
+export function LPresetSourceGet(arg1, arg2) {
+  return window['go']['program']['LProgram']['LPresetSourceGet'](arg1, arg2);
 }
 
 export function LRecordLogGet(arg1, arg2) {
   return window['go']['program']['LProgram']['LRecordLogGet'](arg1, arg2);
-}
-
-export function LRecordLogList(arg1) {
-  return window['go']['program']['LProgram']['LRecordLogList'](arg1);
 }
 
 export function LReportResultOpen(arg1) {
@@ -94,22 +174,78 @@ export function LStateUiSave(arg1) {
   return window['go']['program']['LProgram']['LStateUiSave'](arg1);
 }
 
+export function LStatusEmit(arg1) {
+  return window['go']['program']['LProgram']['LStatusEmit'](arg1);
+}
+
+export function LStatusFailureEmit(arg1, arg2) {
+  return window['go']['program']['LProgram']['LStatusFailureEmit'](arg1, arg2);
+}
+
 export function LStatusToolchainGet(arg1, arg2) {
   return window['go']['program']['LProgram']['LStatusToolchainGet'](arg1, arg2);
+}
+
+export function LToolchainApproveSync(arg1, arg2) {
+  return window['go']['program']['LProgram']['LToolchainApproveSync'](arg1, arg2);
+}
+
+export function LToolchainApproveValidate(arg1, arg2) {
+  return window['go']['program']['LProgram']['LToolchainApproveValidate'](arg1, arg2);
 }
 
 export function LToolchainEnvironmentClear(arg1) {
   return window['go']['program']['LProgram']['LToolchainEnvironmentClear'](arg1);
 }
 
+export function LToolchainFailureClean(arg1, arg2) {
+  return window['go']['program']['LProgram']['LToolchainFailureClean'](arg1, arg2);
+}
+
+export function LToolchainFreshPrepare(arg1, arg2, arg3) {
+  return window['go']['program']['LProgram']['LToolchainFreshPrepare'](arg1, arg2, arg3);
+}
+
 export function LToolchainInstallVerify(arg1, arg2) {
   return window['go']['program']['LProgram']['LToolchainInstallVerify'](arg1, arg2);
+}
+
+export function LToolchainPrepare(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['program']['LProgram']['LToolchainPrepare'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+export function LToolchainPrepareLaunch(arg1, arg2, arg3) {
+  return window['go']['program']['LProgram']['LToolchainPrepareLaunch'](arg1, arg2, arg3);
+}
+
+export function LToolchainProfileList(arg1) {
+  return window['go']['program']['LProgram']['LToolchainProfileList'](arg1);
+}
+
+export function LToolchainReviewConsume(arg1) {
+  return window['go']['program']['LProgram']['LToolchainReviewConsume'](arg1);
+}
+
+export function LToolchainReviewValidate(arg1, arg2) {
+  return window['go']['program']['LProgram']['LToolchainReviewValidate'](arg1, arg2);
 }
 
 export function LVerificationBuildRun(arg1) {
   return window['go']['program']['LProgram']['LVerificationBuildRun'](arg1);
 }
 
+export function LWindowGeometryRestore() {
+  return window['go']['program']['LProgram']['LWindowGeometryRestore']();
+}
+
+export function LWindowGeometrySave(arg1) {
+  return window['go']['program']['LProgram']['LWindowGeometrySave'](arg1);
+}
+
 export function LWorkspaceSelect() {
   return window['go']['program']['LProgram']['LWorkspaceSelect']();
+}
+
+export function LWorkspaceTargetsClean(arg1, arg2) {
+  return window['go']['program']['LProgram']['LWorkspaceTargetsClean'](arg1, arg2);
 }

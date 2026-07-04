@@ -22,12 +22,12 @@ import (
 type LPolicyFile string
 
 const (
-	LPolicyFileFailIfExists LPolicyFile = "fail-if-exists"
-	LPolicyFileHashReuse    LPolicyFile = "reuse-if-hash-matches"
-	LPolicyFileOverwrite    LPolicyFile = "overwrite-approved"
+	LFileExistsPolicy    LPolicyFile = "fail-if-exists"
+	LHashReusePolicy     LPolicyFile = "reuse-if-hash-matches"
+	LPolicyFileOverwrite LPolicyFile = "overwrite-approved"
 )
 
-type LPlanDownload struct {
+type LDownloadPlanState struct {
 	ActionName              string      `json:"actionName"`
 	PlanHash                string      `json:"planHash"`
 	WorkspaceDirectory      string      `json:"workspaceDirectory"`
@@ -51,7 +51,7 @@ type LProgressFunc func(level string, message string)
 const (
 	LDownloadAttemptMax        = 10
 	LDownloadRetryInitialDelay = 5 * time.Second
-	LDownloadRetryMaxDelay     = 60 * time.Second
+	LRetryMaximumDelay         = 60 * time.Second
 
 	// LDownloadStallPollInterval is how often the watchdog samples transfer progress.
 	LDownloadStallPollInterval = 2 * time.Second
@@ -65,7 +65,7 @@ const (
 	// below the floor. Catches a transfer that trickles (so it never trips the
 	// zero-data cap) yet is effectively never going to finish. Mirrors pacman's
 	// low-speed-limit/low-speed-time behavior.
-	LDownloadLowSpeedWindow              = 20 * time.Second
+	LLowSpeedWindow                      = 20 * time.Second
 	LDownloadLowSpeedFloorBytesPerSecond = 1024 // 1 KiB/s averaged over the window
 )
 
@@ -77,14 +77,14 @@ const (
 	LDownloadStallTooSlow
 )
 
-func LDownloadMsysRun(LContext context.Context, userDownloadLConsent consent.LConsentMsys, downloadPlan LPlanDownload, emitProgress LProgressFunc) error {
+func LDownloadMsysRun(LContext context.Context, userDownloadLConsent consent.LConsentMsys, downloadPlan LDownloadPlanState, emitProgress LProgressFunc) error {
 	if err := consent.LConsentCheck(userDownloadLConsent.LConsent, consent.LConsentKindMsys, downloadPlan.ActionName, downloadPlan.PlanHash); err != nil {
 		return err
 	}
 	return LDownloadFileRun(LContext, downloadPlan, emitProgress)
 }
 
-func LDownloadFFmpegRun(LContext context.Context, userDownloadLConsent consent.LConsentFFmpeg, downloadPlan LPlanDownload, emitProgress LProgressFunc) error {
+func LDownloadFFmpegRun(LContext context.Context, userDownloadLConsent consent.LConsentFFmpeg, downloadPlan LDownloadPlanState, emitProgress LProgressFunc) error {
 	if err := consent.LConsentCheck(userDownloadLConsent.LConsent, consent.LConsentKindFFmpeg, downloadPlan.ActionName, downloadPlan.PlanHash); err != nil {
 		return err
 	}
@@ -115,12 +115,12 @@ func LHashFileCheck(filePath string, expectedSha256Hash string) error {
 	return nil
 }
 
-func LDownloadFileRun(LContext context.Context, downloadPlan LPlanDownload, emitProgress LProgressFunc) error {
+func LDownloadFileRun(LContext context.Context, downloadPlan LDownloadPlanState, emitProgress LProgressFunc) error {
 	if err := LPlanDownloadCheck(downloadPlan); err != nil {
 		return err
 	}
-	LHostAllowlistWarn(downloadPlan, emitProgress)
-	if LFileMatchingReuse(downloadPlan, emitProgress) {
+	LHostAllowlistCheck(downloadPlan, emitProgress)
+	if LFileReuseCheck(downloadPlan, emitProgress) {
 		return nil
 	}
 	if emitProgress != nil {
@@ -162,8 +162,8 @@ func LDownloadFileRun(LContext context.Context, downloadPlan LPlanDownload, emit
 			return err
 		case <-time.After(retryDelay):
 		}
-		if retryDelay *= 2; retryDelay > LDownloadRetryMaxDelay {
-			retryDelay = LDownloadRetryMaxDelay
+		if retryDelay *= 2; retryDelay > LRetryMaximumDelay {
+			retryDelay = LRetryMaximumDelay
 		}
 	}
 }
@@ -172,7 +172,7 @@ func LDownloadFileRun(LContext context.Context, downloadPlan LPlanDownload, emit
 // downloadPlan.DownloadUrl (the official URL) so a retry lets the server pick a
 // fresh, possibly healthier, redirect target. It reports whether the failure was
 // transient (stalled transfer, dropped connection, 5xx) so the caller can retry.
-func LDownloadAttemptRun(LContext context.Context, downloadPlan LPlanDownload, temporaryPath string, emitProgress LProgressFunc) (bool, error) {
+func LDownloadAttemptRun(LContext context.Context, downloadPlan LDownloadPlanState, temporaryPath string, emitProgress LProgressFunc) (bool, error) {
 	// Clear any partial file left by a prior failed attempt; O_EXCL below needs a
 	// clean slate.
 	_ = os.Remove(temporaryPath)
@@ -214,7 +214,7 @@ func LDownloadAttemptRun(LContext context.Context, downloadPlan LPlanDownload, t
 				}
 
 				// Cap 2 ??too slow: average speed over a full window below the floor.
-				if elapsed := now.Sub(windowStartTime); elapsed >= LDownloadLowSpeedWindow {
+				if elapsed := now.Sub(windowStartTime); elapsed >= LLowSpeedWindow {
 					averageBytesPerSecond := float64(currentBytes-windowStartBytes) / elapsed.Seconds()
 					if averageBytesPerSecond < LDownloadLowSpeedFloorBytesPerSecond {
 						stallKind.Store(LDownloadStallTooSlow)
@@ -253,7 +253,7 @@ func LDownloadAttemptRun(LContext context.Context, downloadPlan LPlanDownload, t
 		// Any connection-level error (DNS, reset, refused) ??or a stall the watchdog
 		// turned into a cancellation ??is transient. A genuine user cancellation is
 		// caught by the caller's LContext.Err() check.
-		return true, LErrorStallDescribe(stallKind.Load(), err)
+		return true, LErrorStallGet(stallKind.Load(), err)
 	}
 	defer response.Body.Close()
 	if response.StatusCode < 200 || response.StatusCode > 299 {
@@ -275,7 +275,7 @@ func LDownloadAttemptRun(LContext context.Context, downloadPlan LPlanDownload, t
 		_ = os.Remove(temporaryPath)
 		// A stall the watchdog aborted, or a mid-stream read failure (connection
 		// dropped), is transient.
-		return true, LErrorStallDescribe(stallKind.Load(), copyErr)
+		return true, LErrorStallGet(stallKind.Load(), copyErr)
 	}
 	if closeErr != nil {
 		return false, closeErr
@@ -318,15 +318,15 @@ func (r *LReaderActivity) Read(p []byte) (int, error) {
 	return n, err
 }
 
-// LErrorStallDescribe wraps a transfer error with the watchdog's reason when the
+// LErrorStallGet wraps a transfer error with the watchdog's reason when the
 // attempt was aborted for being dead or too slow, so the retry message tells the
 // two cases apart. With no stall it returns the underlying error unchanged.
-func LErrorStallDescribe(stallKind int32, baseErr error) error {
+func LErrorStallGet(stallKind int32, baseErr error) error {
 	switch stallKind {
 	case LDownloadStallZeroData:
 		return fmt.Errorf("download stalled: no data received for %s: %w", LDownloadZeroDataTimeout, baseErr)
 	case LDownloadStallTooSlow:
-		return fmt.Errorf("download too slow: averaged under %d bytes/sec over %s: %w", LDownloadLowSpeedFloorBytesPerSecond, LDownloadLowSpeedWindow, baseErr)
+		return fmt.Errorf("download too slow: averaged under %d bytes/sec over %s: %w", LDownloadLowSpeedFloorBytesPerSecond, LLowSpeedWindow, baseErr)
 	default:
 		return baseErr
 	}
@@ -355,8 +355,8 @@ func LErrorGithubCheck(statusCode int, host string) bool {
 	return host == "github.com" || host == "codeload.github.com"
 }
 
-func LFileMatchingReuse(downloadPlan LPlanDownload, emitProgress LProgressFunc) bool {
-	if downloadPlan.LPolicyFile != LPolicyFileHashReuse {
+func LFileReuseCheck(downloadPlan LDownloadPlanState, emitProgress LProgressFunc) bool {
+	if downloadPlan.LPolicyFile != LHashReusePolicy {
 		return false
 	}
 	if _, err := os.Stat(downloadPlan.DestinationFilePath); err != nil {
@@ -374,11 +374,11 @@ func LFileMatchingReuse(downloadPlan LPlanDownload, emitProgress LProgressFunc) 
 	return true
 }
 
-func LPlanDownloadCheck(downloadPlan LPlanDownload) error {
+func LPlanDownloadCheck(downloadPlan LDownloadPlanState) error {
 	if downloadPlan.DownloadUrl == "" {
 		return errors.New("download url is empty")
 	}
-	if downloadPlan.ExpectedSha256Hash != "" && !LHashSha256Check(downloadPlan.ExpectedSha256Hash) {
+	if downloadPlan.ExpectedSha256Hash != "" && !LHashSHA256Check(downloadPlan.ExpectedSha256Hash) {
 		return errors.New("expected sha256 hash must be exactly 64 hexadecimal characters")
 	}
 	if downloadPlan.WorkspaceDirectory == "" {
@@ -406,10 +406,10 @@ func LPlanDownloadCheck(downloadPlan LPlanDownload) error {
 	return nil
 }
 
-func LPolicyFileCheck(downloadPlan LPlanDownload) error {
+func LPolicyFileCheck(downloadPlan LDownloadPlanState) error {
 	policyName := downloadPlan.LPolicyFile
 	if policyName == "" {
-		policyName = LPolicyFileHashReuse
+		policyName = LHashReusePolicy
 	}
 	_, statError := os.Stat(downloadPlan.DestinationFilePath)
 	if errors.Is(statError, os.ErrNotExist) {
@@ -419,9 +419,9 @@ func LPolicyFileCheck(downloadPlan LPlanDownload) error {
 		return statError
 	}
 	switch policyName {
-	case LPolicyFileFailIfExists:
+	case LFileExistsPolicy:
 		return errors.New("download destination already exists")
-	case LPolicyFileHashReuse:
+	case LHashReusePolicy:
 		if downloadPlan.ExpectedSha256Hash == "" {
 			return errors.New("download destination already exists and cannot be reused without an expected SHA-256")
 		}
@@ -433,7 +433,7 @@ func LPolicyFileCheck(downloadPlan LPlanDownload) error {
 	}
 }
 
-func LHostAllowlistWarn(downloadPlan LPlanDownload, emitProgress LProgressFunc) {
+func LHostAllowlistCheck(downloadPlan LDownloadPlanState, emitProgress LProgressFunc) {
 	if emitProgress == nil {
 		return
 	}
@@ -456,7 +456,7 @@ func LHostAllowedCheck(hostName string, allowedHostNames []string) bool {
 	return false
 }
 
-func LHashSha256Check(value string) bool {
+func LHashSHA256Check(value string) bool {
 	if len(value) != 64 {
 		return false
 	}

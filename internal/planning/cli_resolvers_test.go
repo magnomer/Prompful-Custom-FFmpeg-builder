@@ -2,7 +2,7 @@ package planning
 
 import "testing"
 
-func stringsContain(values []string, target string) bool {
+func LStringsContainCheck(values []string, target string) bool {
 	for _, value := range values {
 		if value == target {
 			return true
@@ -37,36 +37,36 @@ func TestLPresetLibraryIdsResolve(t *testing.T) {
 	}
 	url := release.ArchiveUrl
 
-	normal, ok := LPresetLibraryIdsResolve(url, "", "full", false)
+	normal, ok := LPresetIdentifiersResolve(url, "", "full", false)
 	if !ok {
 		t.Fatalf("expected preset 'full' to resolve")
 	}
-	if !stringsContain(normal, "x264") {
+	if !LStringsContainCheck(normal, "x264") {
 		t.Fatalf("normal 'full' preset missing x264: %v", normal)
 	}
 	// vvenc is an extended-only library for the full preset.
-	if stringsContain(normal, "vvenc") {
+	if LStringsContainCheck(normal, "vvenc") {
 		t.Fatalf("normal 'full' unexpectedly contains extended-only vvenc")
 	}
 
-	extended, ok := LPresetLibraryIdsResolve(url, "", "full", true)
+	extended, ok := LPresetIdentifiersResolve(url, "", "full", true)
 	if !ok {
 		t.Fatalf("expected extended 'full' to resolve")
 	}
-	if !stringsContain(extended, "vvenc") {
+	if !LStringsContainCheck(extended, "vvenc") {
 		t.Fatalf("extended 'full' missing vvenc: %v", extended)
 	}
 	if len(extended) <= len(normal) {
 		t.Fatalf("extended set (%d) should be a superset of normal (%d)", len(extended), len(normal))
 	}
 
-	if _, ok := LPresetLibraryIdsResolve(url, "", "no-such-preset", false); ok {
+	if _, ok := LPresetIdentifiersResolve(url, "", "no-such-preset", false); ok {
 		t.Fatalf("expected unknown preset to be unresolved")
 	}
 
 	// Returned slice must be an independent copy.
 	normal[0] = "mutated"
-	fresh, _ := LPresetLibraryIdsResolve(url, "", "full", false)
+	fresh, _ := LPresetIdentifiersResolve(url, "", "full", false)
 	if fresh[0] == "mutated" {
 		t.Fatalf("resolver returned a shared slice; mutation leaked")
 	}
