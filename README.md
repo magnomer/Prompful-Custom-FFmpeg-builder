@@ -17,7 +17,7 @@
 <div align="center">
 <a href="#english"><img alt="English" src="https://img.shields.io/badge/English-Read-blue?style=for-the-badge"></a>
 &nbsp;&nbsp;
-<a href="#korean"><img alt="한국어" src="https://img.shields.io/badge/한국어-읽기-brightgreen?style=for-the-badge"></a>
+<a href="#한국어"><img alt="한국어" src="https://img.shields.io/badge/한국어-읽기-brightgreen?style=for-the-badge"></a>
 
 <br><br>
 
