@@ -3,11 +3,13 @@ import react from "@vitejs/plugin-react";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
-// Read version from wails.json so the developer only needs to edit one file.
-const wailsConfig = JSON.parse(
-  readFileSync(resolve(__dirname, "../wails.json"), "utf-8")
+// version.json at the repo root is the single source of truth for the app
+// version (UI, exe metadata, and the CLI all derive from it). Edit that file
+// only; build.ps1 mirrors it into wails.json for the Wails/NSIS metadata.
+const versionConfig = JSON.parse(
+  readFileSync(resolve(__dirname, "../version.json"), "utf-8")
 );
-const programVersion: string = wailsConfig.version ?? "unknown";
+const programVersion: string = versionConfig.version ?? "unknown";
 
 export default defineConfig({
   base: "./",

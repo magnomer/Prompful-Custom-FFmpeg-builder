@@ -8,6 +8,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"promptfulcustomffmpegbuilder/internal/appversion"
 )
 
 func main() { os.Exit(LCommandRun(os.Args[1:])) }
@@ -22,6 +24,9 @@ func LCommandRun(args []string) int {
 	switch args[0] {
 	case "-h", "--help", "help":
 		LCommandUsagePrint()
+		return 0
+	case "-v", "--version", "version":
+		fmt.Println("promptfulx", appversion.Version)
 		return 0
 	case "list":
 		return LCommandListRun(args[1:])
@@ -45,6 +50,7 @@ Usage:
   promptfulx <command> [options]
 
 Commands:
+  version    Print the PromptfulX version and exit
   list       List known versions, presets, or libraries
   plan       Show the resolved build plan (no build is run)
   setup      Prepare the MSYS2 build environment in a workspace
