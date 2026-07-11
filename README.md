@@ -17,17 +17,17 @@
 <div align="center">
 <a href="#english"><img alt="English" src="https://img.shields.io/badge/English-Read-blue?style=for-the-badge"></a>
 &nbsp;&nbsp;
-<a href="#korean"><img alt="한국어" src="https://img.shields.io/badge/한국어-읽기-brightgreen?style=for-the-badge"></a>
+<a href="#한국어"><img alt="한국어" src="https://img.shields.io/badge/한국어-읽기-brightgreen?style=for-the-badge"></a>
 
 <br><br>
 
-<img alt="Supporting FFmpeg 8.1.2" src="https://img.shields.io/badge/Supporting-FFmpeg_8.1.2-7692a7?style=for-the-badge"><br>
-<img alt="Supporting FFmpeg 8.0.3" src="https://img.shields.io/badge/Supporting-FFmpeg_8.0.3-7692a7?style=for-the-badge"><br>
-<img alt="Supporting FFmpeg 7.1.5" src="https://img.shields.io/badge/Supporting-FFmpeg_7.1.5-7692a7?style=for-the-badge"><br>
-<img alt="Supporting FFmpeg 7.0.3" src="https://img.shields.io/badge/Supporting-FFmpeg_7.0.3-7692a7?style=for-the-badge"><br>
-<img alt="Supporting FFmpeg 6.1.6" src="https://img.shields.io/badge/Supporting-FFmpeg_6.1.6-7692a7?style=for-the-badge"><br>
-<img alt="Supporting FFmpeg 5.1.9" src="https://img.shields.io/badge/Supporting-FFmpeg_5.1.9-7692a7?style=for-the-badge"><br>
-<img alt="Supporting FFmpeg 4.4.8" src="https://img.shields.io/badge/Supporting-FFmpeg_4.4.8-7692a7?style=for-the-badge"><br>
+<img alt="Supporting FFmpeg 8.1.2" src="https://img.shields.io/badge/Supporting-8.1.2-7692a7?style=for-the-badge">
+<img alt="Supporting FFmpeg 8.0.3" src="https://img.shields.io/badge/Supporting-8.0.3-7692a7?style=for-the-badge"><br>
+<img alt="Supporting FFmpeg 7.1.5" src="https://img.shields.io/badge/Supporting-7.1.5-7692a7?style=for-the-badge">
+<img alt="Supporting FFmpeg 7.0.3" src="https://img.shields.io/badge/Supporting-7.0.3-7692a7?style=for-the-badge"><br>
+<img alt="Supporting FFmpeg 6.1.6" src="https://img.shields.io/badge/Supporting-6.1.6-7692a7?style=for-the-badge">
+<img alt="Supporting FFmpeg 5.1.9" src="https://img.shields.io/badge/Supporting-5.1.9-7692a7?style=for-the-badge"><br>
+<img alt="Supporting FFmpeg 4.4.8" src="https://img.shields.io/badge/Supporting-4.4.8-7692a7?style=for-the-badge"><br>
 
 </div>
 </div>
