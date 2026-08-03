@@ -6,8 +6,16 @@
 /frontend/node_modules/
 /frontend/package.json.md5
 
-# Generated reports
-/reports/
+# Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.rsuser
 
 # Local backups and temporary files
 /backup/
@@ -23,21 +31,24 @@
 *.cover
 coverage.out
 
-# Local `go build` litter in the repo root (real releases go to /build/bin/)
-/promptfulcustomffmpegbuilder.exe
-/promptfulx.exe
-
-# Internal docs (not versioned)
-/docs-internal/
-
-# Local build-lifecycle helper scripts (not versioned)
-/*.ps1
-
-# Editor / tooling
-/.claude/
-/.codex-tmp/
-/.codex-*/
-
-# OS
+# OS metadata
+[Dd]esktop.ini
 Thumbs.db
+ehthumbs.db
+$RECYCLE.BIN/
 .DS_Store
+
+
+# AI / local project state
+.agents/
+.claude/
+.codegraph/
+.codex/
+
+# Project-internal material
+/docs-internal/
+/docs-work/
+/snapshots/
+
+# Build-lifecycle helper scripts
+/*.ps1
