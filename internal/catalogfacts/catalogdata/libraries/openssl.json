@@ -307,6 +307,48 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "openssl",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "OpenSSL",
+      "categoryName": "Secure network (TLS)",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-openssl"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-openssl"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-openssl"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-openssl"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-openssl"
+        ]
+      },
+      "licenseEffectName": "nonfree",
+      "officialWebpageUrl": "https://www.openssl.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

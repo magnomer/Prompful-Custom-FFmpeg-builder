@@ -230,6 +230,37 @@
         "required": false,
         "kind": "included-in-official-ffmpeg-source"
       }
+    },
+    "9.0.1": {
+      "libraryId": "libavfilter",
+      "ffmpegVersion": "9.0.1",
+      "state": "included",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libavfilter",
+      "categoryName": "Included by default (official FFmpeg source)",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "included",
+      "officialWebpageUrl": "https://ffmpeg.org/",
+      "defaultChecked": true,
+      "locked": true,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "included-in-official-ffmpeg-source"
+      }
     }
   }
 }

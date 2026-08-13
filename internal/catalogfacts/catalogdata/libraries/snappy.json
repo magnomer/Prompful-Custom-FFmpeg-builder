@@ -307,6 +307,48 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "snappy",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "Snappy",
+      "categoryName": "Image codecs",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-libsnappy"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libsnappy"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-snappy"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-snappy"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-snappy"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/google/snappy",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

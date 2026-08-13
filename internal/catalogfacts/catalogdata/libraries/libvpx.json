@@ -314,6 +314,49 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "libvpx",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.4.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libvpx",
+      "categoryName": "Video encoders",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-libvpx"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libvpx"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-libvpx"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-libvpx"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-libvpx"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://chromium.googlesource.com/webm/libvpx/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

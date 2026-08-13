@@ -307,6 +307,48 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "pulse",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "PulseAudio",
+      "categoryName": "Disc and device input",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-libpulse"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libpulse"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-pulseaudio"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-pulseaudio"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-pulseaudio"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.freedesktop.org/wiki/Software/PulseAudio/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

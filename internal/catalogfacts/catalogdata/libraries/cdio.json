@@ -328,6 +328,51 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "cdio",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libcdio",
+      "categoryName": "Disc and device input",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-libcdio"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libcdio"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-libcdio",
+          "mingw-w64-ucrt-x86_64-libcdio-paranoia"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-libcdio",
+          "mingw-w64-x86_64-libcdio-paranoia"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-libcdio",
+          "mingw-w64-clang-x86_64-libcdio-paranoia"
+        ]
+      },
+      "licenseEffectName": "gpl",
+      "officialWebpageUrl": "https://www.gnu.org/software/libcdio/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

@@ -307,6 +307,48 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "frei0r",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "frei0r",
+      "categoryName": "Filters and processing",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-frei0r"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-frei0r"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-frei0r-plugins"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-frei0r-plugins"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-frei0r-plugins"
+        ]
+      },
+      "licenseEffectName": "gpl",
+      "officialWebpageUrl": "https://frei0r.dyne.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

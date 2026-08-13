@@ -293,6 +293,52 @@
           "host": "storage.googleapis.com"
         }
       }
+    },
+    "9.0.1": {
+      "libraryId": "tensorflow",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "TensorFlow / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-libtensorflow"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtensorflow"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.tensorflow.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "disabled-in-current-v4-ui"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-external-preparation",
+        "implementation": "versions/8.1.2/tensorflow.go",
+        "implementationLanguage": "go",
+        "sourcePin": {
+          "version": "2.16.1",
+          "url": "https://storage.googleapis.com/tensorflow/versions/2.16.1/libtensorflow-cpu-windows-x86_64.zip",
+          "sha256": "78c2b8caa2fafe11b2b7507dc4a2122e61e9c25fab30f92b1713f365c7ecaf76",
+          "format": "zip",
+          "host": "storage.googleapis.com"
+        }
+      }
     }
   }
 }

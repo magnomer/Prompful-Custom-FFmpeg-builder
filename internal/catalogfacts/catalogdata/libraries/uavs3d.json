@@ -286,6 +286,51 @@
           "host": "github.com"
         }
       }
+    },
+    "9.0.1": {
+      "libraryId": "uavs3d",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.1.41",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libuavs3d / AVS3 decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libuavs3d"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libuavs3d"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/uavs3/uavs3d",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.1.2/uavs3d.go",
+        "implementationLanguage": "go",
+        "sourcePin": {
+          "version": "master",
+          "url": "https://github.com/uavs3/uavs3d/archive/refs/heads/master.tar.gz",
+          "sha256": "f5288ffed9f540a0300fc040b971cb910bf676e2a8441c5aee6495280c0683e8",
+          "format": "tar.gz",
+          "host": "github.com"
+        }
+      }
     }
   }
 }

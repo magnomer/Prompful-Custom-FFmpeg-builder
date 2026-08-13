@@ -328,6 +328,51 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "opencl",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "OpenCL",
+      "categoryName": "Filters and processing",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-opencl"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-opencl"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-opencl-icd",
+          "mingw-w64-ucrt-x86_64-opencl-headers"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-opencl-icd",
+          "mingw-w64-x86_64-opencl-headers"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-opencl-icd",
+          "mingw-w64-clang-x86_64-opencl-headers"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.khronos.org/opencl/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

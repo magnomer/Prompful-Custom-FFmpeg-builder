@@ -307,6 +307,48 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "zvbi",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libzvbi",
+      "categoryName": "Subtitles and text",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-libzvbi"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libzvbi"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-zvbi"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-zvbi"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-zvbi"
+        ]
+      },
+      "licenseEffectName": "gpl",
+      "officialWebpageUrl": "https://zapping.sourceforge.net/ZVBI/index.html",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

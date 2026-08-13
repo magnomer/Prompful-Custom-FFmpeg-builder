@@ -311,6 +311,49 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "openh264",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.3.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "OpenH264",
+      "categoryName": "Video encoders",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-libopenh264"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libopenh264"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-openh264"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-openh264"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-openh264"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.openh264.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

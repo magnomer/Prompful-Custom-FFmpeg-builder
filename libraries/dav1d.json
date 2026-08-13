@@ -314,6 +314,49 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "dav1d",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "1.0.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "dav1d",
+      "categoryName": "Video decoders",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-libdav1d"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libdav1d"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-dav1d"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-dav1d"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-dav1d"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://code.videolan.org/videolan/dav1d",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

@@ -289,6 +289,49 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "svt-av1",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "0.9.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "SVT-AV1",
+      "categoryName": "Video encoders",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-libsvtav1"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libsvtav1"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-svt-av1"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-svt-av1"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-svt-av1"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://gitlab.com/AOMediaCodec/SVT-AV1",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

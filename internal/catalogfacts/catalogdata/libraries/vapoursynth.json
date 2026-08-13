@@ -321,6 +321,50 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "vapoursynth",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "VapourSynth / Scripted video processing",
+      "categoryName": "Filters and processing",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-vapoursynth"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-vapoursynth"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-vapoursynth"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-vapoursynth"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-vapoursynth"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.vapoursynth.com/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "disabled-in-current-v4-ui"
+        ]
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

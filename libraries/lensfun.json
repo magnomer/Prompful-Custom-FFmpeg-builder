@@ -321,6 +321,50 @@
         "kind": "ffmpeg-version-unavailable",
         "reason": "Current V4 marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
       }
+    },
+    "9.0.1": {
+      "libraryId": "lensfun",
+      "ffmpegVersion": "9.0.1",
+      "state": "unavailable-in-current-v4-for-ffmpeg-version",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": false,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "lensfun",
+      "categoryName": "Filters and processing",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-liblensfun"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-liblensfun"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-lensfun"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-lensfun"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-lensfun"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://lensfun.github.io/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "unavailable-for-selected-ffmpeg-version"
+        ]
+      },
+      "preparation": {
+        "required": false,
+        "kind": "ffmpeg-version-unavailable",
+        "reason": "Current V4 marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
+      }
     }
   }
 }

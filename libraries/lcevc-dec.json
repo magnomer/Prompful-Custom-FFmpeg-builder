@@ -278,6 +278,51 @@
           "host": "github.com"
         }
       }
+    },
+    "9.0.1": {
+      "libraryId": "lcevc-dec",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "4.0.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "liblcevc-dec / LCEVC decoding",
+      "categoryName": "Video decoders",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-liblcevc-dec"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-liblcevc-dec"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/v-novaltd/LCEVCdec",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.1.2/lcevc_dec.go",
+        "implementationLanguage": "go",
+        "sourcePin": {
+          "version": "4.2.0",
+          "url": "https://github.com/v-novaltd/LCEVCdec/archive/refs/tags/4.2.0.tar.gz",
+          "sha256": "788ccdabfa441881893ac2079157fdae7db1c0c1fa1a7a0e8ba91bcd03c96838",
+          "format": "tar.gz",
+          "host": "github.com"
+        }
+      }
     }
   }
 }

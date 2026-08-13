@@ -279,6 +279,50 @@
           "host": "cdn.openbsd.org"
         }
       }
+    },
+    "9.0.1": {
+      "libraryId": "libtls",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libtls / Secure network access",
+      "categoryName": "Secure network (TLS)",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libtls"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libtls"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.libressl.org/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.1.2/libtls.go",
+        "implementationLanguage": "go",
+        "sourcePin": {
+          "version": "4.3.2",
+          "url": "https://cdn.openbsd.org/pub/OpenBSD/LibreSSL/libressl-4.3.2.tar.gz",
+          "sha256": "edf01aee24c65d69e6a9efcb9d44bcda682ff9d4f3bbbd95e794e1dfa90847b5",
+          "format": "tar.gz",
+          "host": "cdn.openbsd.org"
+        }
+      }
     }
   }
 }

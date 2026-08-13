@@ -293,6 +293,46 @@
         "implementationLanguage": null,
         "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
       }
+    },
+    "9.0.1": {
+      "libraryId": "decklink",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "DeckLink (Blackmagic capture/playback)",
+      "categoryName": "Disc and device input",
+      "trackName": "external",
+      "baseCatalogTrackName": "external",
+      "ffmpegConfigureFlags": [
+        "--enable-decklink"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-decklink"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://www.blackmagicdesign.com/developer/product/capture-and-playback",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
     }
   }
 }

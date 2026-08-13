@@ -279,6 +279,50 @@
           "host": "github.com"
         }
       }
+    },
+    "9.0.1": {
+      "libraryId": "klvanc",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libklvanc / Broadcast metadata",
+      "categoryName": "Support libraries",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libklvanc"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libklvanc"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/stoth68000/libklvanc",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.1.2/klvanc.go",
+        "implementationLanguage": "go",
+        "sourcePin": {
+          "version": "vid.obe.1.6.0",
+          "url": "https://github.com/stoth68000/libklvanc/archive/refs/tags/vid.obe.1.6.0.tar.gz",
+          "sha256": "5076ca48455a4ef4ead2cd880ba189b21937a9ad8fd458adfc133d7bb1c948c3",
+          "format": "tar.gz",
+          "host": "github.com"
+        }
+      }
     }
   }
 }

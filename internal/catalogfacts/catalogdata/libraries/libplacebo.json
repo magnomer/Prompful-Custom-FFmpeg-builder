@@ -364,6 +364,57 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "libplacebo",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "5.229.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libplacebo",
+      "categoryName": "Filters and processing",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-libplacebo",
+        "--enable-vulkan"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libplacebo",
+        "--enable-vulkan"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-libplacebo",
+          "mingw-w64-ucrt-x86_64-vulkan-loader",
+          "mingw-w64-ucrt-x86_64-vulkan-headers"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-libplacebo",
+          "mingw-w64-x86_64-vulkan-loader",
+          "mingw-w64-x86_64-vulkan-headers"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-libplacebo",
+          "mingw-w64-clang-x86_64-vulkan-loader",
+          "mingw-w64-clang-x86_64-vulkan-headers"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://code.videolan.org/videolan/libplacebo",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

@@ -307,6 +307,48 @@
       "unavailableShellProfiles": [
         "mingw64"
       ]
+    },
+    "9.0.1": {
+      "libraryId": "onnxruntime",
+      "ffmpegVersion": "9.0.1",
+      "state": "unsupported-by-ffmpeg-version",
+      "supportedByFfmpeg": false,
+      "availableInCurrentV4": false,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "ONNX Runtime / AI model inference",
+      "categoryName": "AI support",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libonnxruntime"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-onnxruntime"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-onnxruntime"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://onnxruntime.ai/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "unsupported-by-selected-ffmpeg-version"
+        ]
+      },
+      "preparation": {
+        "required": false,
+        "kind": "ffmpeg-version-unsupported",
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+      },
+      "unavailableShellProfiles": [
+        "mingw64"
+      ]
     }
   }
 }

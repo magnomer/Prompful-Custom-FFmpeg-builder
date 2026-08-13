@@ -314,6 +314,49 @@
         "kind": "native-package",
         "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
       }
+    },
+    "9.0.1": {
+      "libraryId": "rav1e",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "ffmpegPkgConfigMinimumVersion": "0.5.0",
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "rav1e",
+      "categoryName": "Video encoders",
+      "trackName": "native",
+      "baseCatalogTrackName": "native",
+      "ffmpegConfigureFlags": [
+        "--enable-librav1e"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-librav1e"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [
+          "mingw-w64-ucrt-x86_64-rav1e"
+        ],
+        "mingw64": [
+          "mingw-w64-x86_64-rav1e"
+        ],
+        "clang64": [
+          "mingw-w64-clang-x86_64-rav1e"
+        ]
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/xiph/rav1e",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": false,
+        "kind": "native-package",
+        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+      }
     }
   }
 }

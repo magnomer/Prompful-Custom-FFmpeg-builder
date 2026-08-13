@@ -293,6 +293,46 @@
         "implementationLanguage": null,
         "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
       }
+    },
+    "9.0.1": {
+      "libraryId": "dc1394",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libdc1394 (IEEE 1394 camera)",
+      "categoryName": "Disc and device input",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libdc1394"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libdc1394"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://sourceforge.net/projects/libdc1394/",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": false,
+        "reasonsWhenUnavailable": [
+          "missing-current-v4-preparation-implementation"
+        ]
+      },
+      "preparation": {
+        "required": true,
+        "kind": "blocked-unimplemented-preparation",
+        "implementation": null,
+        "implementationLanguage": null,
+        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+      }
     }
   }
 }

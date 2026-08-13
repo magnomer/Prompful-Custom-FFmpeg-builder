@@ -276,6 +276,50 @@
           "host": "github.com"
         }
       }
+    },
+    "9.0.1": {
+      "libraryId": "quirc",
+      "ffmpegVersion": "9.0.1",
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
+      "sourceBuildRequiredByReleaseManifest": false,
+      "displayName": "libquirc / QR code decoding",
+      "categoryName": "Support libraries",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
+      "ffmpegConfigureFlags": [
+        "--enable-libquirc"
+      ],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [
+        "--enable-libquirc"
+      ],
+      "packageNamesByShellProfile": {
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
+      },
+      "licenseEffectName": "lgpl",
+      "officialWebpageUrl": "https://github.com/dlbeer/quirc",
+      "defaultChecked": false,
+      "locked": false,
+      "currentV4UiState": {
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
+      },
+      "preparation": {
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.1.2/quirc.go",
+        "implementationLanguage": "go",
+        "sourcePin": {
+          "version": "1.2",
+          "url": "https://github.com/dlbeer/quirc/archive/refs/tags/v1.2.tar.gz",
+          "sha256": "73c12ea33d337ec38fb81218c7674f57dba7ec0570bddd5c7f7a977c0deb64c5",
+          "format": "tar.gz",
+          "host": "github.com"
+        }
+      }
     }
   }
 }
