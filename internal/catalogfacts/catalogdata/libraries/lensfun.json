@@ -51,7 +51,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unavailable",
-        "reason": "Current V4 marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
+        "reason": "The current catalog marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
       }
     },
     "5.1.9": {
@@ -92,7 +92,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unavailable",
-        "reason": "Current V4 marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
+        "reason": "The current catalog marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
       }
     },
     "6.1.6": {
@@ -133,7 +133,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unavailable",
-        "reason": "Current V4 marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
+        "reason": "The current catalog marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
       }
     },
     "7.0.3": {
@@ -174,7 +174,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unavailable",
-        "reason": "Current V4 marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
+        "reason": "The current catalog marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
       }
     },
     "7.1.5": {
@@ -215,7 +215,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unavailable",
-        "reason": "Current V4 marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
+        "reason": "The current catalog marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
       }
     },
     "8.0.3": {
@@ -256,7 +256,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unavailable",
-        "reason": "Current V4 marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
+        "reason": "The current catalog marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
       }
     },
     "8.1.2": {
@@ -297,7 +297,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unavailable",
-        "reason": "Current V4 marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
+        "reason": "The current catalog marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
       }
     },
     "9.0.1": {
@@ -338,7 +338,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unavailable",
-        "reason": "Current V4 marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
+        "reason": "The current catalog marks this FFmpeg/library pair unavailable even though FFmpeg has the switch."
       }
     }
   }

@@ -259,8 +259,15 @@ func LPackageScriptCreate(packageNames []string) ([]string, error) {
 		// upgrade: MSYS2 is rolling, and installing a new package against a stale set of
 		// already-installed dependencies can pull a dependency version whose file the mirror
 		// has already superseded (404). A full upgrade keeps every package coherent.
+		//
+		// msys2-runtime is held back with --ignore: upgrading the core runtime forces MSYS2 to
+		// close every process including the build shell ("To complete this update all MSYS2
+		// processes including this terminal will be closed"), which aborts the non-interactive
+		// build with exit status 1. The FFmpeg libraries install into the mingw/ucrt repos,
+		// which do not depend on a newer msys2-runtime, so holding it back keeps the install
+		// coherent without killing the shell.
 		"echo 'Refreshing databases and upgrading the environment before installing FFmpeg library packages.'",
-		"pacman -Syyu --needed --noconfirm",
+		"pacman -Syyu --needed --noconfirm --ignore msys2-runtime --ignore msys2-runtime-devel",
 		"echo 'Installing MSYS2 packages required by the selected FFmpeg libraries.'",
 		// --overwrite '*' lets pacman take ownership of untracked files in the private,
 		// rebuildable prefix. A prior library prep (e.g. AviSynth+) may have written headers

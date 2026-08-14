@@ -47,7 +47,7 @@
         "kind": "blocked-unimplemented-preparation",
         "implementation": null,
         "implementationLanguage": null,
-        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+        "reason": "The current catalog has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
       }
     },
     "5.1.9": {
@@ -84,7 +84,7 @@
         "kind": "blocked-unimplemented-preparation",
         "implementation": null,
         "implementationLanguage": null,
-        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+        "reason": "The current catalog has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
       }
     },
     "6.1.6": {
@@ -121,7 +121,7 @@
         "kind": "blocked-unimplemented-preparation",
         "implementation": null,
         "implementationLanguage": null,
-        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+        "reason": "The current catalog has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
       }
     },
     "7.0.3": {
@@ -158,7 +158,7 @@
         "kind": "blocked-unimplemented-preparation",
         "implementation": null,
         "implementationLanguage": null,
-        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+        "reason": "The current catalog has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
       }
     },
     "7.1.5": {
@@ -195,7 +195,7 @@
         "kind": "blocked-unimplemented-preparation",
         "implementation": null,
         "implementationLanguage": null,
-        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+        "reason": "The current catalog has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
       }
     },
     "8.0.3": {
@@ -232,7 +232,7 @@
         "kind": "blocked-unimplemented-preparation",
         "implementation": null,
         "implementationLanguage": null,
-        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+        "reason": "The current catalog has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
       }
     },
     "8.1.2": {
@@ -269,7 +269,7 @@
         "kind": "blocked-unimplemented-preparation",
         "implementation": null,
         "implementationLanguage": null,
-        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+        "reason": "The current catalog has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
       }
     },
     "9.0.1": {
@@ -306,7 +306,7 @@
         "kind": "blocked-unimplemented-preparation",
         "implementation": null,
         "implementationLanguage": null,
-        "reason": "Current V4 has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
+        "reason": "The current catalog has no implemented preparation recipe for this library, so no version-specific Go file is claimed."
       }
     }
   }

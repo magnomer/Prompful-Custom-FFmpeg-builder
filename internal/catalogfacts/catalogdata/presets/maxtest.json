@@ -103,7 +103,7 @@
         "zvbi"
       ],
       "kind": "computed-current-catalog-maximum-test",
-      "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
+      "computeRule": "maximumTestLibraryIds from current catalog LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "5.1.9": {
       "ffmpegVersion": "5.1.9",
@@ -202,7 +202,7 @@
         "zvbi"
       ],
       "kind": "computed-current-catalog-maximum-test",
-      "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
+      "computeRule": "maximumTestLibraryIds from current catalog LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "6.1.6": {
       "ffmpegVersion": "6.1.6",
@@ -303,7 +303,7 @@
         "zvbi"
       ],
       "kind": "computed-current-catalog-maximum-test",
-      "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
+      "computeRule": "maximumTestLibraryIds from current catalog LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "7.0.3": {
       "ffmpegVersion": "7.0.3",
@@ -410,7 +410,7 @@
         "zvbi"
       ],
       "kind": "computed-current-catalog-maximum-test",
-      "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
+      "computeRule": "maximumTestLibraryIds from current catalog LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "7.1.5": {
       "ffmpegVersion": "7.1.5",
@@ -520,7 +520,7 @@
         "zvbi"
       ],
       "kind": "computed-current-catalog-maximum-test",
-      "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
+      "computeRule": "maximumTestLibraryIds from current catalog LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "8.0.3": {
       "ffmpegVersion": "8.0.3",
@@ -632,7 +632,7 @@
         "zvbi"
       ],
       "kind": "computed-current-catalog-maximum-test",
-      "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
+      "computeRule": "maximumTestLibraryIds from current catalog LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "8.1.2": {
       "ffmpegVersion": "8.1.2",
@@ -748,7 +748,7 @@
         "zvbi"
       ],
       "kind": "computed-current-catalog-maximum-test",
-      "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
+      "computeRule": "maximumTestLibraryIds from current catalog LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "9.0.1": {
       "ffmpegVersion": "9.0.1",
@@ -864,7 +864,7 @@
         "zvbi"
       ],
       "kind": "computed-current-catalog-maximum-test",
-      "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
+      "computeRule": "maximumTestLibraryIds from current catalog LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     }
   }
 }

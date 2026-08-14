@@ -61,7 +61,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       }
     },
     "5.1.9": {
@@ -112,7 +112,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       }
     },
     "6.1.6": {
@@ -163,7 +163,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       }
     },
     "7.0.3": {
@@ -214,7 +214,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       }
     },
     "7.1.5": {
@@ -265,7 +265,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       }
     },
     "8.0.3": {
@@ -316,7 +316,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       }
     },
     "8.1.2": {
@@ -368,7 +368,7 @@
       "preparation": {
         "required": false,
         "kind": "native-package",
-        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+        "reason": "The current catalog provides this library through the native MSYS2 package path for this FFmpeg version."
       }
     },
     "9.0.1": {
@@ -420,7 +420,7 @@
       "preparation": {
         "required": false,
         "kind": "native-package",
-        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+        "reason": "The current catalog provides this library through the native MSYS2 package path for this FFmpeg version."
       }
     }
   }

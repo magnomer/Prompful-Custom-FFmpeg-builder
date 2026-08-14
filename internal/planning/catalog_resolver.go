@@ -452,7 +452,7 @@ func LConflictGroupNormalize(selectedLibraryIds []string) []string {
 		selectedSet[libraryId] = true
 	}
 
-	// Match V4's backend selection normalization: TLS is priority-ordered, while
+	// Match the current catalog's backend selection normalization: TLS is priority-ordered, while
 	// shader compilers, EVC bindings, and Intel acceleration backends are pick-one pairs.
 	if selectedSet["openssl"] {
 		delete(selectedSet, "gnutls")

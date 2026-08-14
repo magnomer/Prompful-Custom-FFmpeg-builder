@@ -46,7 +46,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       },
       "unavailableShellProfiles": [
         "mingw64"
@@ -85,7 +85,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       },
       "unavailableShellProfiles": [
         "mingw64"
@@ -124,7 +124,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       },
       "unavailableShellProfiles": [
         "mingw64"
@@ -163,7 +163,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       },
       "unavailableShellProfiles": [
         "mingw64"
@@ -202,7 +202,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       },
       "unavailableShellProfiles": [
         "mingw64"
@@ -241,7 +241,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       },
       "unavailableShellProfiles": [
         "mingw64"
@@ -280,7 +280,7 @@
       "preparation": {
         "required": false,
         "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "reason": "The selected FFmpeg version does not provide this library/configure switch in current catalog release-support metadata."
       },
       "unavailableShellProfiles": [
         "mingw64"
@@ -319,7 +319,7 @@
       "preparation": {
         "required": false,
         "kind": "native-package",
-        "reason": "Current V4 provides ONNX Runtime through the native MSYS2 package path for FFmpeg 9."
+        "reason": "The current catalog provides ONNX Runtime through the native MSYS2 package path for FFmpeg 9."
       },
       "unavailableShellProfiles": [
         "mingw64"
