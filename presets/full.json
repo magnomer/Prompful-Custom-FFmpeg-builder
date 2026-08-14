@@ -1505,7 +1505,8 @@
         "avisynthplus",
         "mpeghdec",
         "quirc",
-        "klvanc"
+        "klvanc",
+        "svtjpegxs"
       ]
     },
     "9.0.1": {
@@ -1719,7 +1720,9 @@
         "avisynthplus",
         "mpeghdec",
         "quirc",
-        "klvanc"
+        "klvanc",
+        "svtjpegxs",
+        "onnxruntime"
       ]
     }
   }
