@@ -128,6 +128,23 @@
         "native-codecs",
         "native-formats"
       ]
+    },
+    "9.0.1": {
+      "ffmpegVersion": "9.0.1",
+      "hiddenInCurrentV4Ui": false,
+      "devInCurrentV4Ui": false,
+      "libraryIds": [
+        "ffmpeg-program",
+        "ffprobe-program",
+        "libavcodec",
+        "libavformat",
+        "libavfilter",
+        "libavutil",
+        "libswscale",
+        "libswresample",
+        "native-codecs",
+        "native-formats"
+      ]
     }
   }
 }

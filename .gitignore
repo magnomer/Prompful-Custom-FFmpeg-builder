@@ -1,6 +1,7 @@
 # Build artifacts
 /build/bin/
 /frontend/dist/
+/run/
 
 # Dependencies and generated package metadata
 /frontend/node_modules/

@@ -311,15 +311,17 @@
     "9.0.1": {
       "libraryId": "onnxruntime",
       "ffmpegVersion": "9.0.1",
-      "state": "unsupported-by-ffmpeg-version",
-      "supportedByFfmpeg": false,
-      "availableInCurrentV4": false,
+      "state": "compatible",
+      "supportedByFfmpeg": true,
+      "availableInCurrentV4": true,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "ONNX Runtime / AI model inference",
       "categoryName": "AI support",
       "trackName": "native",
       "baseCatalogTrackName": "native",
-      "ffmpegConfigureFlags": [],
+      "ffmpegConfigureFlags": [
+        "--enable-libonnxruntime"
+      ],
       "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libonnxruntime"
       ],
@@ -336,15 +338,13 @@
       "defaultChecked": false,
       "locked": false,
       "currentV4UiState": {
-        "selectableInNormalUiForUcrt64": false,
-        "reasonsWhenUnavailable": [
-          "unsupported-by-selected-ffmpeg-version"
-        ]
+        "selectableInNormalUiForUcrt64": true,
+        "reasonsWhenUnavailable": []
       },
       "preparation": {
         "required": false,
-        "kind": "ffmpeg-version-unsupported",
-        "reason": "The selected FFmpeg version does not provide this library/configure switch in current V4 release-support metadata."
+        "kind": "native-package",
+        "reason": "Current V4 provides ONNX Runtime through the native MSYS2 package path for FFmpeg 9."
       },
       "unavailableShellProfiles": [
         "mingw64"

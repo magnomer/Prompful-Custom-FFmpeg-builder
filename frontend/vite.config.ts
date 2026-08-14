@@ -9,7 +9,7 @@ import { resolve } from "path";
 const versionConfig = JSON.parse(
   readFileSync(resolve(__dirname, "../version.json"), "utf-8")
 );
-const programVersion: string = versionConfig.version ?? "unknown";
+const programVersion: string = versionConfig["current-version"] ?? "unknown";
 
 export default defineConfig({
   base: "./",
