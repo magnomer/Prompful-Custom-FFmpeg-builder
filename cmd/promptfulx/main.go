@@ -59,7 +59,7 @@ Commands:
   explain    Explain a version, library, or preset (not implemented yet)
 
 Plan / build options:
-  --ffmpeg-version X     required; a supported release (e.g. 8.1.2)
+  --ffmpeg-version X     required; a supported release (e.g. 9.0.1)
   --preset P             start from a preset (e.g. full, minimal)
   --extended             use the preset's extended library set
   --enable-libNAME       add an FFmpeg library (e.g. --enable-libx264)
@@ -77,10 +77,10 @@ Setup options:
 
 Examples:
   promptfulx list versions
-  promptfulx list libraries --ffmpeg-version 8.1.2
-  promptfulx plan --ffmpeg-version 8.1.2 --preset full --disable-liboapv
+  promptfulx list libraries --ffmpeg-version 9.0.1
+  promptfulx plan --ffmpeg-version 9.0.1 --preset full --disable-liboapv
   promptfulx setup --workspace D:\Work --yes
-  promptfulx build --ffmpeg-version 8.1.2 --preset full --workspace D:\Work --yes
+  promptfulx build --ffmpeg-version 9.0.1 --preset full --workspace D:\Work --yes
 
 See docs/internal/PlanCLI.md.`)
 }
