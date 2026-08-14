@@ -407,6 +407,39 @@ func LAmfScriptCreate() []string {
 	}
 }
 
+// LNvencScriptCreate guards --enable-ffnvcodec against a stale MSYS2 ffnvcodec-headers package on
+// FFmpeg 9. FFmpeg 9 drops NVENC SDK generations older than 11.1 and gates them at compile time
+// through nvEncodeAPI.h's NVENCAPI version macros (the same NVENCAPI_CHECK_VERSION scheme FFmpeg's
+// own nvenc code uses), not through a pkg-config version requirement, so a too-old header slips past
+// configure's existence-only ffnvcodec probe and aborts deep in the NVENC compile with an opaque
+// error. This preflight inspects NVENCAPI_MAJOR_VERSION/NVENCAPI_MINOR_VERSION directly and requires
+// >= 11.1 (NVENC SDK 11.1, ffnvcodec 11.1.5.0). Caller gates this to FFmpeg 9+, so 8.x builds keep
+// their lower floor. A missing or unparseable header is left to FFmpeg configure rather than blocked
+// here.
+func LNvencScriptCreate() []string {
+	return []string{
+		`nvenc_version_header="${profile_prefix}/include/ffnvcodec/nvEncodeAPI.h"`,
+		`if [ -f "${nvenc_version_header}" ]; then`,
+		`  nvenc_field_read() { grep -E "^#define[[:space:]]+$1([[:space:]]|\$)" "${nvenc_version_header}" | grep -oE "[0-9]+" | tail -n1 || true; }`,
+		`  nvenc_major="$(nvenc_field_read NVENCAPI_MAJOR_VERSION)"`,
+		`  nvenc_minor="$(nvenc_field_read NVENCAPI_MINOR_VERSION)"`,
+		`  if [ -n "${nvenc_major}" ] && [ -n "${nvenc_minor}" ]; then`,
+		`    nvenc_installed=$(( (nvenc_major * 1000) + nvenc_minor ))`,
+		`    nvenc_required=$(( (11 * 1000) + 1 ))`,
+		`    echo "NVIDIA NVENC (ffnvcodec) header NVENCAPI version: ${nvenc_major}.${nvenc_minor} (FFmpeg 9 requires >= 11.1)"`,
+		`    if [ "${nvenc_installed}" -lt "${nvenc_required}" ]; then`,
+		`      echo "ERROR: Installed ffnvcodec headers are NVENCAPI ${nvenc_major}.${nvenc_minor}, but FFmpeg 9 requires NVENC SDK >= 11.1 (ffnvcodec 11.1.5.0) for --enable-ffnvcodec."`,
+		`      echo "ERROR: Update the ffnvcodec-headers package for this shell profile (e.g. pacman -S --needed <profile>-ffnvcodec-headers) and rebuild."`,
+		`      exit 1`,
+		`    fi`,
+		`    echo "ffnvcodec header version satisfies the FFmpeg 9 minimum. Keeping --enable-ffnvcodec."`,
+		`  else`,
+		`    echo "WARNING: Could not parse the NVENCAPI version from ${nvenc_version_header}. Leaving the ffnvcodec version check to FFmpeg configure."`,
+		`  fi`,
+		`fi`,
+	}
+}
+
 // LConfigureScriptCreate builds the FFmpeg configure script. privatePkgConfigDirs are the
 // pkgconfig directories of any privately-installed libraries (e.g. libtls); they are
 // prepended to the script's exported PKG_CONFIG_PATH/PKG_CONFIG_LIBDIR so pkg-config finds
@@ -696,6 +729,14 @@ int main(void){return 0;}
 	if LFlagConfigureCheck(configureFlags, "--enable-amf") {
 		if ffmpegMajor, _, ok := catalogfacts.LReleaseLineSplit(catalogfacts.LReleaseKeyGet(ffmpegVersion)); ok && ffmpegMajor >= 9 {
 			scriptLines = append(scriptLines, LAmfScriptCreate()...)
+		}
+	}
+	// The --enable-ffnvcodec flag is version-agnostic, but only FFmpeg 9+ raises the NVENC SDK floor
+	// to 11.1 (NVENCAPI 11.1). Scope the header preflight to FFmpeg 9+ so 8.x builds keep their lower
+	// floor. An unknown/snapshot version resolves no line and is left to FFmpeg configure.
+	if LFlagConfigureCheck(configureFlags, "--enable-ffnvcodec") {
+		if ffmpegMajor, _, ok := catalogfacts.LReleaseLineSplit(catalogfacts.LReleaseKeyGet(ffmpegVersion)); ok && ffmpegMajor >= 9 {
+			scriptLines = append(scriptLines, LNvencScriptCreate()...)
 		}
 	}
 	if len(LModulePkgconfigs) > 0 {
