@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LPlanFFmpegApprove,
+  LFFmpegCompilationLaunch,
   LPlanToolchainApprove,
   LActionApprovedCancel,
   LToolchainEnvironmentClear,
@@ -27,8 +28,9 @@ import {
   LLocaleSet,
 } from "../wailsjs/go/program/LProgram";
 import { BrowserOpenURL, EventsOn, WindowGetPosition, WindowGetSize, WindowSetPosition, WindowSetSize } from "../wailsjs/runtime/runtime";
+import { planning } from "../wailsjs/go/models";
 
-import { LLogSecurityEntry, LLogSecurityPayload, LStatusActionPayload, LProgressLive, LProgressGet } from "./tabs/logutils";
+import { LLogSecurityEntry, LLogSecurityPayload, LStatusActionPayload, LStalledActionPayload, LProgressLive, LProgressGet } from "./tabs/logutils";
 import {
   LPresetLibraryId, LPresetLibrary, LPresetLibraryClean, LPresetLibraryResolve,
   LLibrarySelectionNormalize, LPresetLibraryMatch, LPresetLibraryValidate,
@@ -105,6 +107,14 @@ export function LStateBuilderUse() {
   const [ffmpegBuildPlanReview, setFfmpegBuildPlanReview] = useState<LReviewFFmpeg | null>(null);
   const [approvedActionStatus, setApprovedActionStatus] = useState("idle");
   const [approvedActionPhase, setApprovedActionPhase] = useState<"toolchain" | "ffmpeg" | null>(null);
+  // Mirror addresses tried before a transient-network stall halted the run,
+  // delivered by the "approved-action-stalled" event for the stalled banner.
+  const [ffmpegStalledAddresses, setFfmpegStalledAddresses] = useState<string[]>([]);
+  // The plan and approval of the last-launched FFmpeg run, kept so Retry can
+  // re-invoke the same approved action after a stall (the backend resumes from
+  // cache). The review session is single-use and gone by then, so Retry uses
+  // the direct run-start binding rather than the review-approval path.
+  const pFfmpegRunLast = useRef<{ plan: planning.LPlanFFmpeg; approval: LRequestApproval } | null>(null);
   const [toolchainLogEntries, setToolchainLogEntries] = useState<LLogSecurityEntry[]>([]);
   const [ffmpegLogEntries, setFfmpegLogEntries] = useState<LLogSecurityEntry[]>([]);
   const [localLogRecords, setLocalLogRecords] = useState<LRecordLog[]>([]);
@@ -126,7 +136,7 @@ export function LStateBuilderUse() {
   libraryPresetIdRef.current = libraryPresetId;
   activeTabIdRef.current = activeTabId;
 
-  const canCancelApprovedAction = useMemo(() => approvedActionStatus !== "idle" && approvedActionStatus !== "completed" && approvedActionStatus !== "failed", [approvedActionStatus]);
+  const canCancelApprovedAction = useMemo(() => approvedActionStatus !== "idle" && approvedActionStatus !== "completed" && approvedActionStatus !== "failed" && approvedActionStatus !== "stalled", [approvedActionStatus]);
   const canCancelToolchain = canCancelApprovedAction && approvedActionPhase === "toolchain";
   const canCancelFfmpeg = canCancelApprovedAction && approvedActionPhase === "ffmpeg";
   const toolchainProgress = useMemo<LProgressLive>(() => LProgressGet(toolchainLogEntries, approvedActionStatus, "toolchain"), [toolchainLogEntries, approvedActionStatus]);
@@ -195,8 +205,15 @@ export function LStateBuilderUse() {
       setApprovedActionStatus(payload.status);
       if (payload.status === "failed") { setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null); setBuildResult(null); }
       if (payload.status === "completed") { setBuildResult(null); setApprovedActionPhase(null); }
+      // A stall halts the run in a non-active retryable state: drop the "ffmpeg"
+      // phase so the live progress stops reading as in-flight and the orange
+      // stalled banner (not a spinner) becomes the authoritative signal.
+      if (payload.status === "stalled") { setApprovedActionPhase(null); }
     });
-    return () => { removeLogListener(); removeStatusListener(); window.removeEventListener("customffmpeg-locale-change", onLocaleChange); };
+    const removeStalledListener = EventsOn("approved-action-stalled", (payload: LStalledActionPayload) => {
+      setFfmpegStalledAddresses(Array.isArray(payload.addresses) ? payload.addresses : []);
+    });
+    return () => { removeLogListener(); removeStatusListener(); removeStalledListener(); window.removeEventListener("customffmpeg-locale-change", onLocaleChange); };
   }, []);
 
   useEffect(() => {
@@ -492,11 +509,33 @@ export function LStateBuilderUse() {
   async function approveFfmpegBuildPlan() {
     if (!ffmpegBuildPlanReview) return;
     const r = ffmpegBuildPlanReview;
-    setFfmpegLogEntries([]); setApprovedActionStatus("starting");
+    const approval = LRequestApprovalCreate(r.plan.actionName, r.plan.planHash, r.expectedLConsentText);
+    setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setApprovedActionStatus("starting");
     try {
-      await LPlanFFmpegApprove(r.reviewSessionId, LRequestApprovalCreate(r.plan.actionName, r.plan.planHash, r.expectedLConsentText));
+      await LPlanFFmpegApprove(r.reviewSessionId, approval);
+      // Keep the approved plan and approval so Retry can resume the same action.
+      // r.plan is the full backend plan; the ambient review type omits a few
+      // generated fields, so narrow it to the binding's plan type for reuse.
+      pFfmpegRunLast.current = { plan: r.plan as unknown as planning.LPlanFFmpeg, approval };
       setApprovedActionPhase("ffmpeg");
       setFfmpegBuildPlanReview(null); setActiveTabId("buildFfmpeg");
+    } catch (err) {
+      setApprovedActionStatus("failed");
+      setFfmpegLogEntries((prev) => [...prev, { level: "error", message: err instanceof Error ? err.message : String(err), timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
+    }
+  }
+
+  // Re-run the same approved FFmpeg action after a stall. The cache-resumable
+  // backend picks up where it halted, so this reuses the stored plan and approval
+  // through the direct run-start binding rather than forking a second run path.
+  async function retryFfmpegBuildPlan() {
+    const last = pFfmpegRunLast.current;
+    if (!last) return;
+    setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setApprovedActionStatus("starting");
+    try {
+      await LFFmpegCompilationLaunch(last.plan, last.approval, false);
+      setApprovedActionPhase("ffmpeg");
+      setActiveTabId("buildFfmpeg");
     } catch (err) {
       setApprovedActionStatus("failed");
       setFfmpegLogEntries((prev) => [...prev, { level: "error", message: err instanceof Error ? err.message : String(err), timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
@@ -507,7 +546,7 @@ export function LStateBuilderUse() {
   // Clear a finished-but-unsuccessful run (failed or cancelled) so the user can
   // discard the dead plan and its logs, returning the page to its idle state.
   function LActionApprovedClear() {
-    setToolchainLogEntries([]); setFfmpegLogEntries([]);
+    setToolchainLogEntries([]); setFfmpegLogEntries([]); setFfmpegStalledAddresses([]);
     setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null);
     setBuildResult(null); setBuildResultError("");
     setApprovedActionPhase(null); setApprovedActionStatus("idle");
@@ -603,6 +642,7 @@ export function LStateBuilderUse() {
     ffmpegBuildPlanReview,
     approvedActionStatus,
     approvedActionPhase,
+    ffmpegStalledAddresses,
     toolchainLogEntries,
     ffmpegLogEntries,
     localLogRecords, localLogRecordsError,
@@ -617,7 +657,7 @@ export function LStateBuilderUse() {
     LSettingsToolchainUpdate, LSettingsFFmpegUpdate, LMSYSArchiveUpdate, LProfileShellUpdate,
     chooseWorkspaceDirectory,
     addBuildConfigPlanAndContinueToPrep, reviewFfmpegPlans,
-    approveToolchainPreparationPlan, approveFfmpegBuildPlan, LPlanToolchainCancel, cancelApprovedAction, LActionApprovedClear,
+    approveToolchainPreparationPlan, approveFfmpegBuildPlan, retryFfmpegBuildPlan, LPlanToolchainCancel, cancelApprovedAction, LActionApprovedClear,
     openInUserBrowser,
     LLibraryToggle, LPresetLibraryApply, LLibraryExtendedUpdate, LOptionToggle, LPresetOptionApply,
     LPackageToolchainRestore, LFlagExtraRestore,

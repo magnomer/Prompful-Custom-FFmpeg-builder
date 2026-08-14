@@ -25,6 +25,12 @@ func (reporter LReporterWails) LReporterLogEmit(level string, message string) {
 	}
 }
 
+func (reporter LReporterWails) LReporterStalledEmit(addresses []string) {
+	if reporter.program.LContext != nil {
+		wailsRuntime.EventsEmit(reporter.program.LContext, "approved-action-stalled", map[string][]string{"addresses": addresses})
+	}
+}
+
 // LConfirmerWails is the GUI reporting.LConfirmer implementation. It presents
 // the backend-owned approval as a localized native question dialog.
 type LConfirmerWails struct {

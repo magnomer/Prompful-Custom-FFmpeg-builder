@@ -42,6 +42,11 @@ func (reporter LReporterConsole) LReporterLogEmit(level string, message string) 
 	fmt.Fprintf(os.Stdout, "[%s] %s\n", level, message)
 }
 
+// LReporterStalledEmit is a no-op on the console: the tried addresses already
+// reach the operator through the warn-level "downloadStalled" log line, which
+// this reporter prints to stderr. The structured list exists for the GUI banner.
+func (reporter LReporterConsole) LReporterStalledEmit(addresses []string) {}
+
 // LConfirmerConsole is the CLI reporting.LConfirmer. It approves automatically
 // when assumeYes is set (--yes), fails without prompting when noInput is set
 // (--no-input), and otherwise reads a y/N answer from input.

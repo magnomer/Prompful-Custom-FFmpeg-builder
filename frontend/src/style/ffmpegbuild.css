@@ -157,6 +157,72 @@
   color: #8c2420;
 }
 
+/* Stalled: halted-but-retryable. Orange — deliberately between the green of a
+   completed run and the red of a hard failure, so it never reads as either. */
+.build-plan-stalled-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #f0d69a;
+  border-left: 4px solid #e0a526;
+  border-radius: 14px;
+  padding: 16px;
+  background: #fff9ee;
+  box-shadow: 0 10px 30px rgba(224, 165, 38, 0.12);
+}
+
+.build-plan-stalled-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.build-plan-stalled__icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e0a526;
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.build-plan-stalled__icon::before {
+  content: "!";
+}
+
+.build-plan-stalled-addresses {
+  display: grid;
+  gap: 6px;
+}
+
+.build-plan-stalled__label {
+  color: #6b4e0c;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.build-plan-stalled-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+
+.build-plan-stalled-list__item code {
+  color: #6b4e0c;
+  font-size: 0.84rem;
+  word-break: break-all;
+}
+
+.build-plan-stalled-control {
+  display: flex;
+}
+
 .build-plan-details-card {
   box-shadow: 0 16px 42px rgba(15, 23, 42, 0.07);
 }

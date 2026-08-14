@@ -26,6 +26,10 @@ func (r *LReporterBuild) LReporterLogEmit(level string, message string) {
 	r.console.LReporterLogEmit(level, message)
 }
 
+func (r *LReporterBuild) LReporterStalledEmit(addresses []string) {
+	r.console.LReporterStalledEmit(addresses)
+}
+
 // LCommandBuildRun resolves the plan, confirms, and runs the build synchronously,
 // mapping the outcome to an exit code. It assumes the workspace's MSYS2
 // toolchain is already prepared (there is no CLI `setup` yet); an unprepared

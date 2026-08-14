@@ -583,6 +583,12 @@ func (program *LProgram) LLogEmit(level string, message string) {
 	}
 }
 
+func (program *LProgram) lStalledEmit(addresses []string) {
+	if program.LReporter != nil {
+		program.LReporter.LReporterStalledEmit(addresses)
+	}
+}
+
 func (program *LProgram) LStatusFailureEmit(message string, err error) {
 	program.LLogEmit("error", message+": "+err.Error())
 	program.LStatusEmit("failed")

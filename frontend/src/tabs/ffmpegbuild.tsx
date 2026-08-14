@@ -11,9 +11,11 @@ export type LBuildProperties = {
   ffmpegLogEntries: { timestamp: string; level: "info" | "warn" | "error"; message: string }[];
   approvedActionPhase: "toolchain" | "ffmpeg" | null;
   approvedActionStatus: string;
+  ffmpegStalledAddresses: string[];
   ffmpegProgress: LProgressLive;
   canCancelFfmpeg: boolean;
   approveFfmpegBuildPlan: () => Promise<void>;
+  retryFfmpegBuildPlan: () => Promise<void>;
   cancelApprovedAction: () => Promise<void>;
   LActionApprovedClear: () => void;
   onGoToOptions: () => void;
@@ -195,7 +197,34 @@ function PCardBuildRender(props: { review: LReviewFFmpeg }) {
   );
 }
 
-export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approvedActionPhase, approvedActionStatus, ffmpegProgress, canCancelFfmpeg, cancelApprovedAction, LActionApprovedClear, onGoToOptions }: LBuildProperties) {
+// A transient-network stall is halted but retryable, not a hard failure: an
+// orange (never red, never green) banner lists the mirror addresses that were
+// tried and offers Retry, which resumes the same approved action from cache.
+function PBuildStalledRender(props: { addresses: string[]; onRetry: () => void }) {
+  return (
+    <section className="build-plan-stalled-card">
+      <div className="build-plan-stalled-head">
+        <span className="build-plan-stalled__icon" aria-hidden="true" />
+        <h3 className="build-plan-section-title">{LLocaleTextGet("ffmpegBuild.stalled.title")}</h3>
+      </div>
+      {props.addresses.length > 0 && (
+        <div className="build-plan-stalled-addresses">
+          <span className="build-plan-stalled__label">{LLocaleTextGet("ffmpegBuild.stalled.triedAddresses")}</span>
+          <ul className="build-plan-stalled-list">
+            {props.addresses.map((address, index) => (
+              <li className="build-plan-stalled-list__item" key={`${address}-${index}`}><code>{address}</code></li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="build-plan-stalled-control">
+        <button className="button button--primary" type="button" onClick={props.onRetry}>{LLocaleTextGet("ffmpegBuild.stalled.retry")}</button>
+      </div>
+    </section>
+  );
+}
+
+export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approvedActionPhase, approvedActionStatus, ffmpegStalledAddresses, ffmpegProgress, canCancelFfmpeg, retryFfmpegBuildPlan, cancelApprovedAction, LActionApprovedClear, onGoToOptions }: LBuildProperties) {
   // A running FFmpeg build takes priority: show live progress, hide the plan.
   const isFfmpegRunning = approvedActionPhase === "ffmpeg";
   const showProgress = isFfmpegRunning || ffmpegLogEntries.length > 0;
@@ -206,6 +235,9 @@ export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approved
       {showApproval && <PCardBuildRender review={ffmpegBuildPlanReview} />}
       {!showApproval && !showProgress && (
         <PCardPlanRender onGoToOptions={onGoToOptions} />
+      )}
+      {approvedActionStatus === "stalled" && (
+        <PBuildStalledRender addresses={ffmpegStalledAddresses} onRetry={retryFfmpegBuildPlan} />
       )}
       {showProgress && (
         <PProgressLiveRender

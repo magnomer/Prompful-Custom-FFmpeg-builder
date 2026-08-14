@@ -19,6 +19,12 @@ export type LStatusActionPayload = {
   status: string;
 };
 
+// Structured tried-mirror list carried by the "approved-action-stalled" event
+// when a transient-network stall halts the run in its retryable "stalled" state.
+export type LStalledActionPayload = {
+  addresses: string[];
+};
+
 export type LPhaseToolchainId =
   | "tc-download"
   | "tc-extract"

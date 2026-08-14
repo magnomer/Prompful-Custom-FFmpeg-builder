@@ -13,6 +13,10 @@ type LReporter interface {
 	// LReporterLogEmit reports one log line at the given level
 	// ("info", "warn", "error").
 	LReporterLogEmit(level string, message string)
+	// LReporterStalledEmit reports the mirror addresses tried before a
+	// transient-network stall halted the run in its retryable "stalled" state,
+	// as a structured list the GUI can render alongside the "stalled" status.
+	LReporterStalledEmit(addresses []string)
 }
 
 // LConfirmer answers the single backend-owned approval gate that must be

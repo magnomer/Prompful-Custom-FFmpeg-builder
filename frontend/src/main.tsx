@@ -245,9 +245,11 @@ function PProgramRender() {
               ffmpegLogEntries={s.ffmpegLogEntries}
               approvedActionPhase={s.approvedActionPhase}
               approvedActionStatus={s.approvedActionStatus}
+              ffmpegStalledAddresses={s.ffmpegStalledAddresses}
               ffmpegProgress={s.ffmpegProgress}
               canCancelFfmpeg={s.canCancelFfmpeg}
               approveFfmpegBuildPlan={s.approveFfmpegBuildPlan}
+              retryFfmpegBuildPlan={s.retryFfmpegBuildPlan}
               cancelApprovedAction={s.cancelApprovedAction}
               LActionApprovedClear={s.LActionApprovedClear}
               onGoToOptions={() => s.setActiveTabId("options")}

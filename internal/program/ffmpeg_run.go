@@ -146,6 +146,9 @@ func (program *LProgram) LActionFailureEmit(auditWriter *audit.LAuditWriter, pla
 		message := LLocaleTextGetInternal("run.log.downloadStalled", map[string]string{"addresses": strings.Join(stalled.LNetworkAddresses, ", ")})
 		_ = auditWriter.LAuditEventWrite("action-stalled", plan.ActionName, plan.PlanHash, "warn", message)
 		program.LLogEmit("warn", message)
+		// Carry the tried addresses to the GUI as a structured list (the banner
+		// renders one per line) before flipping the status to the retryable state.
+		program.lStalledEmit(stalled.LNetworkAddresses)
 		program.LStatusEmit("stalled")
 		return true
 	}
