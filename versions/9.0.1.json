@@ -90,7 +90,7 @@
         "libraryId": "avisynthplus",
         "metadata": "libraries/avisynthplus.json",
         "ffmpegPkgConfigMinimumVersion": "3.7.3",
-        "preparation": "versions/8.1.2/avisynthplus.go"
+        "preparation": "versions/9.0.1/avisynthplus.go"
       },
       {
         "libraryId": "bluray",
@@ -133,7 +133,7 @@
         "libraryId": "davs2",
         "metadata": "libraries/davs2.json",
         "ffmpegPkgConfigMinimumVersion": "1.6.0",
-        "preparation": "versions/8.1.2/davs2.go"
+        "preparation": "versions/9.0.1/davs2.go"
       },
       {
         "libraryId": "dc1394",
@@ -204,7 +204,7 @@
       {
         "libraryId": "klvanc",
         "metadata": "libraries/klvanc.json",
-        "preparation": "versions/8.1.2/klvanc.go"
+        "preparation": "versions/9.0.1/klvanc.go"
       },
       {
         "libraryId": "kvazaar",
@@ -224,7 +224,7 @@
         "libraryId": "lcevc-dec",
         "metadata": "libraries/lcevc-dec.json",
         "ffmpegPkgConfigMinimumVersion": "4.0.0",
-        "preparation": "versions/8.1.2/lcevc_dec.go"
+        "preparation": "versions/9.0.1/lcevc_dec.go"
       },
       {
         "libraryId": "lcms2",
@@ -240,7 +240,7 @@
         "libraryId": "libmfx",
         "metadata": "libraries/libmfx.json",
         "ffmpegPkgConfigMinimumVersion": "1.28",
-        "preparation": "versions/8.1.2/libmfx.go"
+        "preparation": "versions/9.0.1/libmfx.go"
       },
       {
         "libraryId": "libplacebo",
@@ -250,7 +250,7 @@
       {
         "libraryId": "libtls",
         "metadata": "libraries/libtls.json",
-        "preparation": "versions/8.1.2/libtls.go"
+        "preparation": "versions/9.0.1/libtls.go"
       },
       {
         "libraryId": "libvpl",
@@ -282,7 +282,7 @@
         "libraryId": "mpeghdec",
         "metadata": "libraries/mpeghdec.json",
         "ffmpegPkgConfigMinimumVersion": "3.0.0",
-        "preparation": "versions/8.1.2/mpeghdec.go"
+        "preparation": "versions/9.0.1/mpeghdec.go"
       },
       {
         "libraryId": "mysofa",
@@ -372,7 +372,7 @@
       {
         "libraryId": "quirc",
         "metadata": "libraries/quirc.json",
-        "preparation": "versions/8.1.2/quirc.go"
+        "preparation": "versions/9.0.1/quirc.go"
       },
       {
         "libraryId": "rabbitmq",
@@ -454,7 +454,7 @@
       {
         "libraryId": "tensorflow",
         "metadata": "libraries/tensorflow.json",
-        "preparation": "versions/8.1.2/tensorflow.go"
+        "preparation": "versions/9.0.1/tensorflow.go"
       },
       {
         "libraryId": "tesseract",
@@ -476,7 +476,7 @@
         "libraryId": "uavs3d",
         "metadata": "libraries/uavs3d.json",
         "ffmpegPkgConfigMinimumVersion": "1.1.41",
-        "preparation": "versions/8.1.2/uavs3d.go"
+        "preparation": "versions/9.0.1/uavs3d.go"
       },
       {
         "libraryId": "vapoursynth",
@@ -504,7 +504,7 @@
         "libraryId": "vvenc",
         "metadata": "libraries/vvenc.json",
         "ffmpegPkgConfigMinimumVersion": "1.6.1",
-        "preparation": "versions/8.1.2/vvenc.go"
+        "preparation": "versions/9.0.1/vvenc.go"
       },
       {
         "libraryId": "webp",
@@ -532,7 +532,7 @@
         "libraryId": "xavs2",
         "metadata": "libraries/xavs2.json",
         "ffmpegPkgConfigMinimumVersion": "1.3.0",
-        "preparation": "versions/8.1.2/xavs2.go"
+        "preparation": "versions/9.0.1/xavs2.go"
       },
       {
         "libraryId": "xevd",

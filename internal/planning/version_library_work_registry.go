@@ -12,6 +12,7 @@ import (
 	version715 "promptfulcustomffmpegbuilder/versions/7.1.5"
 	version803 "promptfulcustomffmpegbuilder/versions/8.0.3"
 	version812 "promptfulcustomffmpegbuilder/versions/8.1.2"
+	version901 "promptfulcustomffmpegbuilder/versions/9.0.1"
 	"promptfulcustomffmpegbuilder/versions/shared"
 )
 
@@ -37,6 +38,7 @@ func LWorkRegistryLoad() (LWorkRegistry, error) {
 		version715.LPreparationCatalog,
 		version803.LPreparationCatalog,
 		version812.LPreparationCatalog,
+		version901.LPreparationCatalog,
 	}
 	for _, versionList := range versionLists {
 		libraryIds := make([]string, 0, len(versionList))

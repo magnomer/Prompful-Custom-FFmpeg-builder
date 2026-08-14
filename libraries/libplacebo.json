@@ -371,7 +371,7 @@
       "state": "compatible",
       "supportedByFfmpeg": true,
       "availableInCurrentV4": true,
-      "ffmpegPkgConfigMinimumVersion": "5.229.0",
+      "ffmpegPkgConfigMinimumVersion": "7.351.0",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libplacebo",
       "categoryName": "Filters and processing",
