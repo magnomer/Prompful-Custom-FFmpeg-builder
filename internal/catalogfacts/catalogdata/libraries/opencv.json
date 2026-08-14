@@ -22,21 +22,15 @@
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "OpenCV",
       "categoryName": "Filters and processing",
-      "trackName": "native",
-      "baseCatalogTrackName": "native",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
         "--enable-libopencv"
       ],
       "packageNamesByShellProfile": {
-        "ucrt64": [
-          "mingw-w64-ucrt-x86_64-opencv"
-        ],
-        "mingw64": [
-          "mingw-w64-x86_64-opencv"
-        ],
-        "clang64": [
-          "mingw-w64-clang-x86_64-opencv"
-        ]
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
       },
       "licenseEffectName": "lgpl",
       "officialWebpageUrl": "https://opencv.org/",
@@ -47,9 +41,10 @@
         "reasonsWhenUnavailable": []
       },
       "preparation": {
-        "required": false,
-        "kind": "native-package",
-        "reason": "The current catalog provides this library through the native MSYS2 package path for this FFmpeg version."
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/4.4.8/opencv.go",
+        "implementationLanguage": "go"
       }
     },
     "5.1.9": {
@@ -61,21 +56,15 @@
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "OpenCV",
       "categoryName": "Filters and processing",
-      "trackName": "native",
-      "baseCatalogTrackName": "native",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
         "--enable-libopencv"
       ],
       "packageNamesByShellProfile": {
-        "ucrt64": [
-          "mingw-w64-ucrt-x86_64-opencv"
-        ],
-        "mingw64": [
-          "mingw-w64-x86_64-opencv"
-        ],
-        "clang64": [
-          "mingw-w64-clang-x86_64-opencv"
-        ]
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
       },
       "licenseEffectName": "lgpl",
       "officialWebpageUrl": "https://opencv.org/",
@@ -86,9 +75,10 @@
         "reasonsWhenUnavailable": []
       },
       "preparation": {
-        "required": false,
-        "kind": "native-package",
-        "reason": "The current catalog provides this library through the native MSYS2 package path for this FFmpeg version."
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/5.1.9/opencv.go",
+        "implementationLanguage": "go"
       }
     },
     "6.1.6": {
@@ -100,21 +90,15 @@
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "OpenCV",
       "categoryName": "Filters and processing",
-      "trackName": "native",
-      "baseCatalogTrackName": "native",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
         "--enable-libopencv"
       ],
       "packageNamesByShellProfile": {
-        "ucrt64": [
-          "mingw-w64-ucrt-x86_64-opencv"
-        ],
-        "mingw64": [
-          "mingw-w64-x86_64-opencv"
-        ],
-        "clang64": [
-          "mingw-w64-clang-x86_64-opencv"
-        ]
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
       },
       "licenseEffectName": "lgpl",
       "officialWebpageUrl": "https://opencv.org/",
@@ -125,9 +109,10 @@
         "reasonsWhenUnavailable": []
       },
       "preparation": {
-        "required": false,
-        "kind": "native-package",
-        "reason": "The current catalog provides this library through the native MSYS2 package path for this FFmpeg version."
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/6.1.6/opencv.go",
+        "implementationLanguage": "go"
       }
     },
     "7.0.3": {
@@ -139,21 +124,15 @@
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "OpenCV",
       "categoryName": "Filters and processing",
-      "trackName": "native",
-      "baseCatalogTrackName": "native",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
         "--enable-libopencv"
       ],
       "packageNamesByShellProfile": {
-        "ucrt64": [
-          "mingw-w64-ucrt-x86_64-opencv"
-        ],
-        "mingw64": [
-          "mingw-w64-x86_64-opencv"
-        ],
-        "clang64": [
-          "mingw-w64-clang-x86_64-opencv"
-        ]
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
       },
       "licenseEffectName": "lgpl",
       "officialWebpageUrl": "https://opencv.org/",
@@ -164,9 +143,10 @@
         "reasonsWhenUnavailable": []
       },
       "preparation": {
-        "required": false,
-        "kind": "native-package",
-        "reason": "The current catalog provides this library through the native MSYS2 package path for this FFmpeg version."
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/7.0.3/opencv.go",
+        "implementationLanguage": "go"
       }
     },
     "7.1.5": {
@@ -178,21 +158,15 @@
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "OpenCV",
       "categoryName": "Filters and processing",
-      "trackName": "native",
-      "baseCatalogTrackName": "native",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
         "--enable-libopencv"
       ],
       "packageNamesByShellProfile": {
-        "ucrt64": [
-          "mingw-w64-ucrt-x86_64-opencv"
-        ],
-        "mingw64": [
-          "mingw-w64-x86_64-opencv"
-        ],
-        "clang64": [
-          "mingw-w64-clang-x86_64-opencv"
-        ]
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
       },
       "licenseEffectName": "lgpl",
       "officialWebpageUrl": "https://opencv.org/",
@@ -203,9 +177,10 @@
         "reasonsWhenUnavailable": []
       },
       "preparation": {
-        "required": false,
-        "kind": "native-package",
-        "reason": "The current catalog provides this library through the native MSYS2 package path for this FFmpeg version."
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/7.1.5/opencv.go",
+        "implementationLanguage": "go"
       }
     },
     "8.0.3": {
@@ -217,21 +192,15 @@
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "OpenCV",
       "categoryName": "Filters and processing",
-      "trackName": "native",
-      "baseCatalogTrackName": "native",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
         "--enable-libopencv"
       ],
       "packageNamesByShellProfile": {
-        "ucrt64": [
-          "mingw-w64-ucrt-x86_64-opencv"
-        ],
-        "mingw64": [
-          "mingw-w64-x86_64-opencv"
-        ],
-        "clang64": [
-          "mingw-w64-clang-x86_64-opencv"
-        ]
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
       },
       "licenseEffectName": "lgpl",
       "officialWebpageUrl": "https://opencv.org/",
@@ -242,9 +211,10 @@
         "reasonsWhenUnavailable": []
       },
       "preparation": {
-        "required": false,
-        "kind": "native-package",
-        "reason": "The current catalog provides this library through the native MSYS2 package path for this FFmpeg version."
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.0.3/opencv.go",
+        "implementationLanguage": "go"
       }
     },
     "8.1.2": {
@@ -256,21 +226,15 @@
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "OpenCV",
       "categoryName": "Filters and processing",
-      "trackName": "native",
-      "baseCatalogTrackName": "native",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
         "--enable-libopencv"
       ],
       "packageNamesByShellProfile": {
-        "ucrt64": [
-          "mingw-w64-ucrt-x86_64-opencv"
-        ],
-        "mingw64": [
-          "mingw-w64-x86_64-opencv"
-        ],
-        "clang64": [
-          "mingw-w64-clang-x86_64-opencv"
-        ]
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
       },
       "licenseEffectName": "lgpl",
       "officialWebpageUrl": "https://opencv.org/",
@@ -281,9 +245,10 @@
         "reasonsWhenUnavailable": []
       },
       "preparation": {
-        "required": false,
-        "kind": "native-package",
-        "reason": "The current catalog provides this library through the native MSYS2 package path for this FFmpeg version."
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/8.1.2/opencv.go",
+        "implementationLanguage": "go"
       }
     },
     "9.0.1": {
@@ -295,21 +260,15 @@
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "OpenCV",
       "categoryName": "Filters and processing",
-      "trackName": "native",
-      "baseCatalogTrackName": "native",
+      "trackName": "internal",
+      "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
         "--enable-libopencv"
       ],
       "packageNamesByShellProfile": {
-        "ucrt64": [
-          "mingw-w64-ucrt-x86_64-opencv"
-        ],
-        "mingw64": [
-          "mingw-w64-x86_64-opencv"
-        ],
-        "clang64": [
-          "mingw-w64-clang-x86_64-opencv"
-        ]
+        "ucrt64": [],
+        "mingw64": [],
+        "clang64": []
       },
       "licenseEffectName": "lgpl",
       "officialWebpageUrl": "https://opencv.org/",
@@ -320,9 +279,10 @@
         "reasonsWhenUnavailable": []
       },
       "preparation": {
-        "required": false,
-        "kind": "native-package",
-        "reason": "The current catalog provides this library through the native MSYS2 package path for this FFmpeg version."
+        "required": true,
+        "kind": "version-specific-source-preparation",
+        "implementation": "versions/9.0.1/opencv.go",
+        "implementationLanguage": "go"
       }
     }
   }

@@ -13,6 +13,8 @@ export function LActionApprovedFinish(arg1:string):Promise<void>;
 
 export function LActionApprovedStart():Promise<string>;
 
+export function LActionFailureEmit(arg1:audit.LAuditWriter,arg2:planning.LPlanFFmpeg,arg3:string,arg4:string,arg5:Error):Promise<boolean>;
+
 export function LAuditProgressCreate(arg1:audit.LAuditWriter,arg2:string,arg3:string):Promise<any>;
 
 export function LCatalogSourceGet(arg1:string,arg2:string):Promise<Array<planning.LLibraryChoice>>;

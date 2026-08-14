@@ -14,6 +14,10 @@ export function LActionApprovedStart() {
   return window['go']['program']['LProgram']['LActionApprovedStart']();
 }
 
+export function LActionFailureEmit(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['program']['LProgram']['LActionFailureEmit'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function LAuditProgressCreate(arg1, arg2, arg3) {
   return window['go']['program']['LProgram']['LAuditProgressCreate'](arg1, arg2, arg3);
 }
