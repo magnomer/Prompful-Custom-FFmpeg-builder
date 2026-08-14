@@ -2,6 +2,7 @@ package program
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,6 +27,7 @@ func LSignatureFFmpegVerify(signaturePath string, archivePath string, publicKeyP
 func (program *LProgram) LFFmpegCompile(LContext context.Context, LRunId string, plan planning.LPlanFFmpeg, userLConsentFFmpeg consent.LConsentFFmpeg, userLConsentArchive consent.LArchiveConsentState, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand) {
 	actionSucceeded := false
 	copyFailed := false
+	stalledHalt := false
 	workspaceLayout := workspace.LLayoutVersionedGet(plan.WorkspaceDirectory, planning.LVersionArchiveParse(plan.FfmpegSourceArchiveUrl))
 	sourceRootDirectory := filepath.Join(workspaceLayout.SourcesDirectory, "ffmpeg-"+LRunId)
 	ffmpegSourceDirectory := ""
@@ -41,6 +43,13 @@ func (program *LProgram) LFFmpegCompile(LContext context.Context, LRunId string,
 			return
 		}
 		program.LLogConfigurationSave(ffmpegSourceDirectory, workspaceLayout.WorkspaceDirectory)
+		if stalledHalt {
+			// A transient-network stall is retryable and the whole pipeline resumes
+			// from cache, so preserve the partial build instead of cleaning it. The
+			// "stalled" status was already emitted when the stall was classified.
+			program.LActionApprovedFinish("stalled")
+			return
+		}
 		program.LFFmpegFailureClean(plan, workspaceLayout, sourceRootDirectory)
 		program.LActionApprovedFinish("failed")
 	}()
@@ -61,80 +70,88 @@ func (program *LProgram) LFFmpegCompile(LContext context.Context, LRunId string,
 	archivePath := filepath.Join(workspaceLayout.DownloadsDirectory, "ffmpeg-approved-source"+LArchiveExtensionResolve(plan.FfmpegSourceArchiveUrl))
 	downloadPlan := download.LDownloadPlanState{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "FFmpeg", DownloadUrl: plan.FfmpegSourceArchiveUrl, ExpectedSha256Hash: plan.FfmpegSourceSha256Hash, DestinationFilePath: archivePath, AllowedHosts: []string{"ffmpeg.org", "www.ffmpeg.org"}, ExpectedFileSizeMinimum: 1_000_000, ExpectedFileSizeMaximum: 200_000_000, LPolicyFile: LPolicyHashResolve(plan.FfmpegSourceSha256Hash)}
 	if err := download.LDownloadFFmpegRun(LContext, userLConsentFFmpeg, downloadPlan, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.ffmpegSourceDownload", "FFmpeg source download failed", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSourceDownload", "FFmpeg source download failed", err)
 		return
 	}
 	signaturePath := filepath.Join(workspaceLayout.DownloadsDirectory, "ffmpeg-approved-source"+LArchiveExtensionResolve(plan.FfmpegSourceArchiveUrl)+".asc")
 	signatureDownloadPlan := download.LDownloadPlanState{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "FFmpeg signature", DownloadUrl: plan.FfmpegSourceSignatureUrl, DestinationFilePath: signaturePath, AllowedHosts: []string{"ffmpeg.org", "www.ffmpeg.org"}, ExpectedFileSizeMinimum: 100, ExpectedFileSizeMaximum: 100_000, LPolicyFile: download.LPolicyFileOverwrite}
 	if err := download.LDownloadFFmpegRun(LContext, userLConsentFFmpeg, signatureDownloadPlan, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.ffmpegSignatureDownload", "FFmpeg source signature download failed", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSignatureDownload", "FFmpeg source signature download failed", err)
 		return
 	}
 	publicKeyPath := filepath.Join(workspaceLayout.DownloadsDirectory, "ffmpeg-devel.asc")
 	publicKeyDownloadPlan := download.LDownloadPlanState{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "FFmpeg release signing key", DownloadUrl: LSignatureFFmpegUrl, DestinationFilePath: publicKeyPath, AllowedHosts: []string{"ffmpeg.org", "www.ffmpeg.org"}, ExpectedFileSizeMinimum: 1000, ExpectedFileSizeMaximum: 100_000, LPolicyFile: download.LPolicyFileOverwrite}
 	if err := download.LDownloadFFmpegRun(LContext, userLConsentFFmpeg, publicKeyDownloadPlan, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.ffmpegSigningKeyDownload", "FFmpeg signing key download failed", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSigningKeyDownload", "FFmpeg signing key download failed", err)
 		return
 	}
 	if err := LSignatureFFmpegVerify(signaturePath, archivePath, publicKeyPath, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.ffmpegSignatureVerification", "FFmpeg source signature verification failed", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSignatureVerification", "FFmpeg source signature verification failed", err)
 		return
 	}
 	extractPlan := extraction.LPlanExtraction{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ArchiveFilePath: archivePath, DestinationDirectory: sourceRootDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, LArchiveKind: LArchiveFormatResolve(plan.FfmpegSourceArchiveUrl), LPolicyExtraction: extraction.LNewDirectoryPolicy, LPolicyFilemode: extraction.LExecutablePreservePolicy, MaximumFileCount: 50000, MaximumExtractedByteCount: 2_000_000_000, MaximumSingleFileByteCount: 500_000_000}
 	if err := extraction.LArchiveConsentExtract(LContext, userLConsentArchive, extractPlan, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.ffmpegSourceExtraction", "FFmpeg source extraction failed", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSourceExtraction", "FFmpeg source extraction failed", err)
 		return
 	}
 	ffmpegSourceDirectory, err = LDirectoryChildFind(sourceRootDirectory)
 	if err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.ffmpegSourceDirectoryMissing", "Could not locate extracted FFmpeg source directory", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSourceDirectoryMissing", "Could not locate extracted FFmpeg source directory", err)
 		return
 	}
 	if err := program.LLibraryVersionValidate(plan, ffmpegSourceDirectory, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.libraryVersionIncompatible", "A prepared library version is incompatible with the selected FFmpeg release", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.libraryVersionIncompatible", "A prepared library version is incompatible with the selected FFmpeg release", err)
 		return
 	}
 	if err := program.LLibraryPackageInstall(LContext, plan, userLibraryPackageInstallLConsent, auditWriter, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.ffmpegLibraryPackageInstall", "FFmpeg library package installation failed", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegLibraryPackageInstall", "FFmpeg library package installation failed", err)
 		return
 	}
 	if err := program.LLibraryNonnativePrepare(LContext, plan, userLConsentFFmpeg, userLConsentArchive, userLibraryPackageInstallLConsent, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.libraryPreparation", "Non-Native library preparation failed", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.libraryPreparation", "Non-Native library preparation failed", err)
 		return
 	}
 	if err := program.LFFmpegConfigureRun(LContext, plan, ffmpegSourceDirectory, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.ffmpegConfigure", "FFmpeg configure failed", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegConfigure", "FFmpeg configure failed", err)
 		return
 	}
 	if err := program.LFFmpegMakeRun(LContext, plan, ffmpegSourceDirectory, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.ffmpegBuild", "FFmpeg build failed", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegBuild", "FFmpeg build failed", err)
 		return
 	}
 	if err := LArtifactFFmpegCopy(ffmpegSourceDirectory, workspaceLayout, plan, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
 		copyFailed = true
-		program.LErrorLocalizedEmit("run.failure.copyArtifacts", "Could not copy FFmpeg artifacts", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.copyArtifacts", "Could not copy FFmpeg artifacts", err)
 		return
 	}
 	if err := LReportArtifactWrite(workspaceLayout, LRunId, plan); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.writeArtifactReport", "Could not write artifact report", err)
+		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.writeArtifactReport", "Could not write artifact report", err)
 		return
 	}
 	_ = auditWriter.LAuditEventWrite("action-completed", plan.ActionName, plan.PlanHash, "info", "Approved FFmpeg build completed.")
 	emitProgress("info", LLocaleTextGetInternal("run.log.ffmpegCompleted", nil))
 	actionSucceeded = true
+}
+
+// LActionFailureEmit records the terminal outcome of a failed FFmpeg build stage.
+// A transient-network stall (execution.LErrorNetworkStalled) is halted in the
+// retryable "stalled" state: a final warn-level audit event carries the tried
+// addresses (localized run.log.downloadStalled) and the live status becomes
+// "stalled". Every other error is a genuine failure: an error-level "action-failed"
+// event and the localized failure status. Returns true when the stage stalled so
+// the caller can preserve the partial build for a later resume.
+func (program *LProgram) LActionFailureEmit(auditWriter *audit.LAuditWriter, plan planning.LPlanFFmpeg, messageKey string, fallback string, err error) bool {
+	var stalled *execution.LErrorNetworkStalled
+	if errors.As(err, &stalled) {
+		message := LLocaleTextGetInternal("run.log.downloadStalled", map[string]string{"addresses": strings.Join(stalled.LNetworkAddresses, ", ")})
+		_ = auditWriter.LAuditEventWrite("action-stalled", plan.ActionName, plan.PlanHash, "warn", message)
+		program.LLogEmit("warn", message)
+		program.LStatusEmit("stalled")
+		return true
+	}
+	_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+	program.LErrorLocalizedEmit(messageKey, fallback, err)
+	return false
 }
 
 func (program *LProgram) LLogConfigurationSave(ffmpegSourceDirectory string, workspaceDirectory string) {

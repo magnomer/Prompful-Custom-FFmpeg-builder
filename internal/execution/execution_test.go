@@ -1,9 +1,12 @@
 package execution
 
 import (
+	"errors"
 	"strings"
 	"sync/atomic"
 	"testing"
+
+	"promptfulcustomffmpegbuilder/internal/scripting"
 )
 
 func TestLLogLineClassifyDemotesGarbledStripNoSectionLine(t *testing.T) {
@@ -30,6 +33,7 @@ func TestLLogCommandCopyKeepsSpecificErrorBeforeGenericMakeFailure(t *testing.T)
 		nil,
 		nil,
 		&lastErrorLine,
+		nil,
 		doneChannel,
 	)
 	<-doneChannel
@@ -41,5 +45,42 @@ func TestLLogCommandCopyKeepsSpecificErrorBeforeGenericMakeFailure(t *testing.T)
 	want := "/bin/sh: line 1: /ucrt64/bin/gcc: Argument list too long"
 	if *got != want {
 		t.Fatalf("expected specific failure %q, got %q", want, *got)
+	}
+}
+
+func TestLNetworkHostParseExtractsStalledHost(t *testing.T) {
+	line := "error: failed retrieving file 'zlib-1.3.1-1-any.pkg.tar.zst' from repo.msys2.org : Operation too slow"
+	if got := LNetworkHostParse(line); got != "repo.msys2.org" {
+		t.Fatalf("expected host repo.msys2.org, got %q", got)
+	}
+	if got := LNetworkHostParse("gcc: error: undefined reference to foo"); got != "" {
+		t.Fatalf("expected no host from a compile error, got %q", got)
+	}
+}
+
+func TestLNetworkStalledCreateMergesCatalogAndParsedHosts(t *testing.T) {
+	collector := &LNetworkAddressCollector{}
+	collector.LNetworkHostAdd("mirror.example.net")
+	collector.LNetworkHostAdd("mirror.example.net") // repeat is deduped
+
+	cause := errors.New("exit status 1")
+	stalledErr := LNetworkStalledCreate(cause, collector)
+
+	var stalled *LErrorNetworkStalled
+	if !errors.As(stalledErr, &stalled) {
+		t.Fatalf("expected an LErrorNetworkStalled, got %T", stalledErr)
+	}
+	if !errors.Is(stalledErr, cause) {
+		t.Fatal("expected the stalled error to unwrap to its cause")
+	}
+	// Every authored mirror base is listed first, in order.
+	for index, mirror := range scripting.LMSYSMirrorCatalog {
+		if stalled.LNetworkAddresses[index] != mirror {
+			t.Fatalf("expected authored mirror %q at position %d, got %q", mirror, index, stalled.LNetworkAddresses[index])
+		}
+	}
+	joined := strings.Join(stalled.LNetworkAddresses, ",")
+	if strings.Count(joined, "mirror.example.net") != 1 {
+		t.Fatalf("expected the parsed host once, got %q", joined)
 	}
 }

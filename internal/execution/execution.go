@@ -14,11 +14,13 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"promptfulcustomffmpegbuilder/internal/consent"
 	"promptfulcustomffmpegbuilder/internal/hostexec"
+	"promptfulcustomffmpegbuilder/internal/scripting"
 	"promptfulcustomffmpegbuilder/internal/workspace"
 	"promptfulcustomffmpegbuilder/localization"
 )
@@ -35,6 +37,94 @@ const (
 	LCommandRetryBackoffFactor = 2
 	LCommandMaximumDelay       = 60 * time.Second
 )
+
+// LErrorNetworkStalled marks a command that exhausted its retry budget while
+// still hitting transient network failures. It is distinct from a genuine
+// build/config error so the run can halt in a retryable "stalled" state rather
+// than fail outright, and it records which addresses were tried (the authored
+// mirror bases plus any specific hosts parsed from the streamed failures). See
+// the resume rationale on LCommandAttemptMax above.
+type LErrorNetworkStalled struct {
+	LNetworkAddresses []string
+	LNetworkCause     error
+}
+
+func (stalled *LErrorNetworkStalled) Error() string {
+	if len(stalled.LNetworkAddresses) == 0 {
+		return fmt.Sprintf("network stalled after %d attempts: %v", LCommandAttemptMax, stalled.LNetworkCause)
+	}
+	return fmt.Sprintf("network stalled after %d attempts (tried %s): %v", LCommandAttemptMax, strings.Join(stalled.LNetworkAddresses, ", "), stalled.LNetworkCause)
+}
+
+func (stalled *LErrorNetworkStalled) Unwrap() error { return stalled.LNetworkCause }
+
+// LNetworkAddressCollector accumulates the distinct hosts named by transient
+// "failed retrieving file … from <host>" lines across every retry attempt of one
+// command. It is written from the two per-attempt stream-copy goroutines, so its
+// mutations are mutex-guarded.
+type LNetworkAddressCollector struct {
+	LMutex        sync.Mutex
+	LNetworkSeen  map[string]bool
+	LNetworkHosts []string
+}
+
+func (collector *LNetworkAddressCollector) LNetworkHostAdd(host string) {
+	if collector == nil || host == "" {
+		return
+	}
+	collector.LMutex.Lock()
+	defer collector.LMutex.Unlock()
+	if collector.LNetworkSeen == nil {
+		collector.LNetworkSeen = map[string]bool{}
+	}
+	if collector.LNetworkSeen[host] {
+		return
+	}
+	collector.LNetworkSeen[host] = true
+	collector.LNetworkHosts = append(collector.LNetworkHosts, host)
+}
+
+func (collector *LNetworkAddressCollector) LNetworkHostListGet() []string {
+	if collector == nil {
+		return nil
+	}
+	collector.LMutex.Lock()
+	defer collector.LMutex.Unlock()
+	return append([]string{}, collector.LNetworkHosts...)
+}
+
+// LNetworkHostPattern extracts the server named by a pacman/curl transfer failure
+// such as "error: failed retrieving file 'zlib.pkg.tar.zst' from repo.msys2.org : …".
+// The first whitespace-delimited token after "from" is the host that stalled.
+var LNetworkHostPattern = regexp.MustCompile(`(?i)failed retrieving file\s+.+?\s+from\s+(\S+)`)
+
+// LNetworkHostParse returns the stalled host named by a transient-failure line, or
+// an empty string when the line does not carry one.
+func LNetworkHostParse(line string) string {
+	match := LNetworkHostPattern.FindStringSubmatch(line)
+	if match == nil {
+		return ""
+	}
+	return strings.Trim(match[1], "'\"")
+}
+
+// LNetworkStalledCreate wraps an exhausted-retry error as LErrorNetworkStalled,
+// attaching the authored mirror bases (the servers pacman was configured to try in
+// order) followed by any distinct hosts parsed from the streamed failures.
+func LNetworkStalledCreate(cause error, addressCollector *LNetworkAddressCollector) error {
+	addresses := append([]string{}, scripting.LMSYSMirrorCatalog...)
+	seen := map[string]bool{}
+	for _, address := range addresses {
+		seen[address] = true
+	}
+	for _, host := range addressCollector.LNetworkHostListGet() {
+		if !seen[host] {
+			seen[host] = true
+			addresses = append(addresses, host)
+		}
+	}
+	return &LErrorNetworkStalled{LNetworkAddresses: addresses, LNetworkCause: cause}
+}
 
 type LScriptKind string
 
@@ -102,16 +192,27 @@ func LCommandRun(LContext context.Context, commandPlan LPlanCommand, emitProgres
 		defer stderrLogFile.Close()
 	}
 
+	addressCollector := &LNetworkAddressCollector{}
 	retryDelay := LCommandInitialDelay
 	for attemptNumber := 1; ; attemptNumber++ {
-		transientFailureSeen, runErr := LCommandAttemptRun(LContext, commandPlan, scriptBytes, stdoutLogFile, stderrLogFile, attemptNumber, LCommandAttemptMax, emitProgress)
+		transientFailureSeen, runErr := LCommandAttemptRun(LContext, commandPlan, scriptBytes, stdoutLogFile, stderrLogFile, attemptNumber, LCommandAttemptMax, emitProgress, addressCollector)
 		if runErr == nil {
 			return nil
 		}
-		// Never retry a cancelled run, a clearly non-transient failure, or once
-		// the attempt budget is spent. Surface the real error in those cases.
-		if LContext.Err() != nil || !transientFailureSeen || attemptNumber >= LCommandAttemptMax {
+		// A cancelled run is never a stall: surface its real error so the run maps
+		// to a cancelled/failed state, not the retryable stalled state.
+		if LContext.Err() != nil {
 			return runErr
+		}
+		// A clearly non-transient failure (a genuine build/link/config error) is a
+		// real failure regardless of the attempt budget.
+		if !transientFailureSeen {
+			return runErr
+		}
+		// Transient failure that outlasted the whole retry budget: halt in the
+		// retryable stalled state and record the addresses that were tried.
+		if attemptNumber >= LCommandAttemptMax {
+			return LNetworkStalledCreate(runErr, addressCollector)
 		}
 		if emitProgress != nil {
 			emitProgress("warn", fmt.Sprintf("Transient network failure detected (attempt %d of %d): %v. Retrying in %s...", attemptNumber, LCommandAttemptMax, runErr, retryDelay))
@@ -131,7 +232,7 @@ func LCommandRun(LContext context.Context, commandPlan LPlanCommand, emitProgres
 // whether any streamed line looked like a transient network failure so the
 // caller can decide to retry. Fresh pipes and a fresh stdin LReader are built
 // per attempt because both are single-use.
-func LCommandAttemptRun(LContext context.Context, commandPlan LPlanCommand, scriptBytes []byte, stdoutLogFile, stderrLogFile *os.File, attemptNumber int, attemptMax int, emitProgress LProgressFunc) (bool, error) {
+func LCommandAttemptRun(LContext context.Context, commandPlan LPlanCommand, scriptBytes []byte, stdoutLogFile, stderrLogFile *os.File, attemptNumber int, attemptMax int, emitProgress LProgressFunc, addressCollector *LNetworkAddressCollector) (bool, error) {
 	if emitProgress != nil {
 		if attemptNumber > 1 {
 			// Announce the current attempt before it runs so a user watching a slow
@@ -167,8 +268,8 @@ func LCommandAttemptRun(LContext context.Context, commandPlan LPlanCommand, scri
 	var transientFailureSeen atomic.Bool
 	var lastErrorLine atomic.Pointer[string]
 	doneChannel := make(chan struct{}, 2)
-	go LLogCommandCopy(stdoutPipe, stdoutLogFile, "info", emitProgress, &transientFailureSeen, &lastErrorLine, doneChannel)
-	go LLogCommandCopy(stderrPipe, stderrLogFile, "warn", emitProgress, &transientFailureSeen, &lastErrorLine, doneChannel)
+	go LLogCommandCopy(stdoutPipe, stdoutLogFile, "info", emitProgress, &transientFailureSeen, &lastErrorLine, addressCollector, doneChannel)
+	go LLogCommandCopy(stderrPipe, stderrLogFile, "warn", emitProgress, &transientFailureSeen, &lastErrorLine, addressCollector, doneChannel)
 	<-doneChannel
 	<-doneChannel
 	waitErr := command.Wait()
@@ -410,7 +511,7 @@ func LStdinFlagReplace(argumentValues []string, scriptFilePath string) ([]string
 	return updatedArgumentValues, false
 }
 
-func LLogCommandCopy(pipeReader interface{ Read([]byte) (int, error) }, logFile *os.File, level string, emitProgress LProgressFunc, transientFailureSeen *atomic.Bool, lastErrorLine *atomic.Pointer[string], doneChannel chan<- struct{}) {
+func LLogCommandCopy(pipeReader interface{ Read([]byte) (int, error) }, logFile *os.File, level string, emitProgress LProgressFunc, transientFailureSeen *atomic.Bool, lastErrorLine *atomic.Pointer[string], addressCollector *LNetworkAddressCollector, doneChannel chan<- struct{}) {
 	defer func() { doneChannel <- struct{}{} }()
 	scanner := bufio.NewScanner(pipeReader)
 	// Build/link output lines can far exceed the default 64 KB scan limit (a linker
@@ -426,6 +527,7 @@ func LLogCommandCopy(pipeReader interface{ Read([]byte) (int, error) }, logFile 
 		}
 		if transientFailureSeen != nil && LLogNetworkCheck(line) {
 			transientFailureSeen.Store(true)
+			addressCollector.LNetworkHostAdd(LNetworkHostParse(line))
 		}
 		classifiedLevel := LLogLineGet(level, line)
 		if lastErrorLine != nil && classifiedLevel == "error" {

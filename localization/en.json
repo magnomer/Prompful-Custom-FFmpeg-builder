@@ -1040,6 +1040,7 @@
   "run.log.configSaveFailed": "Could not save config.log to workspace: {message}",
   "run.log.configSaved": "Saved FFmpeg config.log to: {path}",
   "run.log.cleaningFfmpegPartial": "Cleaning partial FFmpeg build files from the failed run.",
+  "run.log.downloadStalled": "Network stalled: every retry timed out. The run is paused and can be retried. Tried: {addresses}",
   "run.log.toolchainReady": "Approved private MSYS2 environment is ready.",
   "run.log.toolchainManifestFailed": "Could not write the toolchain recovery manifest. The environment is still usable, but Prep may not recognize it after a relaunch.",
   "verify.toolchain.notInstalled": "No private build environment was found in this workspace.",

@@ -239,7 +239,14 @@ func LRecordLocalRead(recordDirectory string, LRunId string, includeDetails bool
 		if event.LAuditEventName == "action-completed" {
 			record.Status = "completed"
 		}
-		if event.LAuditEventName == "action-failed" || event.Level == "error" && record.Status != "completed" {
+		// A transient-network stall halts the run in its own retryable state. Its
+		// terminal event is written at warn level (so it does not raise ErrorCount)
+		// and is the last event in the record, so it overrides any "failed" that
+		// earlier error-level output set.
+		if event.LAuditEventName == "action-stalled" {
+			record.Status = "stalled"
+		}
+		if event.LAuditEventName == "action-failed" || event.Level == "error" && record.Status != "completed" && record.Status != "stalled" {
 			record.Status = "failed"
 		}
 		level := event.Level
