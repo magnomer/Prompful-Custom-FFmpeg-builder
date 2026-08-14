@@ -11,6 +11,7 @@
           "format": "tar.gz",
           "host": "github.com",
           "extraCMakeOptions": [
+            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
             "-DBUILD_SHARED_LIBS=ON",
             "-DOPENCV_GENERATE_PKGCONFIG=ON",
             "-DOPENCV_DLLVERSION=",
@@ -151,6 +152,7 @@
           "format": "tar.gz",
           "host": "github.com",
           "extraCMakeOptions": [
+            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
             "-DBUILD_SHARED_LIBS=ON",
             "-DOPENCV_GENERATE_PKGCONFIG=ON",
             "-DOPENCV_DLLVERSION=",
@@ -214,6 +216,7 @@
           "format": "tar.gz",
           "host": "github.com",
           "extraCMakeOptions": [
+            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
             "-DBUILD_SHARED_LIBS=ON",
             "-DOPENCV_GENERATE_PKGCONFIG=ON",
             "-DOPENCV_DLLVERSION=",
@@ -270,6 +273,7 @@
           "format": "tar.gz",
           "host": "github.com",
           "extraCMakeOptions": [
+            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
             "-DBUILD_SHARED_LIBS=ON",
             "-DOPENCV_GENERATE_PKGCONFIG=ON",
             "-DOPENCV_DLLVERSION=",
