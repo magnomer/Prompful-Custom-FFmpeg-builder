@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -26,9 +25,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-ladspa"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-ladspa"
       ],
       "packageNamesByShellProfile": {
@@ -73,9 +69,6 @@
       "ffmpegConfigureFlags": [
         "--enable-ladspa"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-ladspa"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-ladspa-sdk",
@@ -116,9 +109,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-ladspa"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-ladspa"
       ],
       "packageNamesByShellProfile": {
@@ -163,9 +153,6 @@
       "ffmpegConfigureFlags": [
         "--enable-ladspa"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-ladspa"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-ladspa-sdk",
@@ -206,9 +193,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-ladspa"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-ladspa"
       ],
       "packageNamesByShellProfile": {
@@ -253,9 +237,6 @@
       "ffmpegConfigureFlags": [
         "--enable-ladspa"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-ladspa"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-ladspa-sdk",
@@ -298,9 +279,6 @@
       "ffmpegConfigureFlags": [
         "--enable-ladspa"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-ladspa"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-ladspa-sdk",
@@ -341,9 +319,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-ladspa"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-ladspa"
       ],
       "packageNamesByShellProfile": {

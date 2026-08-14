@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -26,9 +25,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-liblcevc-dec"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -62,9 +58,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-liblcevc-dec"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -98,9 +91,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-liblcevc-dec"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -134,9 +124,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-liblcevc-dec"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -171,9 +158,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-liblcevc-dec"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-liblcevc-dec"
       ],
       "packageNamesByShellProfile": {
@@ -211,9 +195,6 @@
       "ffmpegConfigureFlags": [
         "--enable-liblcevc-dec"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-liblcevc-dec"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -247,9 +228,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-liblcevc-dec"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-liblcevc-dec"
       ],
       "packageNamesByShellProfile": {
@@ -292,9 +270,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-liblcevc-dec"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-liblcevc-dec"
       ],
       "packageNamesByShellProfile": {

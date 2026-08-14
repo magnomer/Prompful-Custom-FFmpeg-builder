@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -26,10 +25,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libopencore-amrnb",
-        "--enable-libopencore-amrwb"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libopencore-amrnb",
         "--enable-libopencore-amrwb"
       ],
@@ -73,10 +68,6 @@
         "--enable-libopencore-amrnb",
         "--enable-libopencore-amrwb"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libopencore-amrnb",
-        "--enable-libopencore-amrwb"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-opencore-amr"
@@ -114,10 +105,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libopencore-amrnb",
-        "--enable-libopencore-amrwb"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libopencore-amrnb",
         "--enable-libopencore-amrwb"
       ],
@@ -161,10 +148,6 @@
         "--enable-libopencore-amrnb",
         "--enable-libopencore-amrwb"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libopencore-amrnb",
-        "--enable-libopencore-amrwb"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-opencore-amr"
@@ -202,10 +185,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libopencore-amrnb",
-        "--enable-libopencore-amrwb"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libopencore-amrnb",
         "--enable-libopencore-amrwb"
       ],
@@ -249,10 +228,6 @@
         "--enable-libopencore-amrnb",
         "--enable-libopencore-amrwb"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libopencore-amrnb",
-        "--enable-libopencore-amrwb"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-opencore-amr"
@@ -293,10 +268,6 @@
         "--enable-libopencore-amrnb",
         "--enable-libopencore-amrwb"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libopencore-amrnb",
-        "--enable-libopencore-amrwb"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-opencore-amr"
@@ -334,10 +305,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libopencore-amrnb",
-        "--enable-libopencore-amrwb"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libopencore-amrnb",
         "--enable-libopencore-amrwb"
       ],

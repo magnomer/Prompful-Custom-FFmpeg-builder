@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -26,9 +25,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libmfx"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libmfx"
       ],
       "packageNamesByShellProfile": {
@@ -66,9 +62,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libmfx"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libmfx"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -102,9 +95,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libmfx"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libmfx"
       ],
       "packageNamesByShellProfile": {
@@ -142,9 +132,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libmfx"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libmfx"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -178,9 +165,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libmfx"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libmfx"
       ],
       "packageNamesByShellProfile": {
@@ -218,9 +202,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libmfx"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libmfx"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -254,9 +235,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libmfx"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libmfx"
       ],
       "packageNamesByShellProfile": {
@@ -299,9 +277,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libmfx"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libmfx"
       ],
       "packageNamesByShellProfile": {

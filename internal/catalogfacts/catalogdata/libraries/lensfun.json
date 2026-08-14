@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -26,9 +25,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-liblensfun"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-liblensfun"
       ],
       "packageNamesByShellProfile": {
@@ -72,9 +68,6 @@
       "ffmpegConfigureFlags": [
         "--enable-liblensfun"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-liblensfun"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-lensfun"
@@ -114,9 +107,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-liblensfun"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-liblensfun"
       ],
       "packageNamesByShellProfile": {
@@ -160,9 +150,6 @@
       "ffmpegConfigureFlags": [
         "--enable-liblensfun"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-liblensfun"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-lensfun"
@@ -202,9 +189,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-liblensfun"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-liblensfun"
       ],
       "packageNamesByShellProfile": {
@@ -248,9 +232,6 @@
       "ffmpegConfigureFlags": [
         "--enable-liblensfun"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-liblensfun"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-lensfun"
@@ -292,9 +273,6 @@
       "ffmpegConfigureFlags": [
         "--enable-liblensfun"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-liblensfun"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-lensfun"
@@ -334,9 +312,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-liblensfun"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-liblensfun"
       ],
       "packageNamesByShellProfile": {

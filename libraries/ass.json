@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -26,9 +25,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libass"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libass"
       ],
       "packageNamesByShellProfile": {
@@ -71,9 +67,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libass"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libass"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libass"
@@ -112,9 +105,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libass"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libass"
       ],
       "packageNamesByShellProfile": {
@@ -157,9 +147,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libass"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libass"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libass"
@@ -198,9 +185,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libass"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libass"
       ],
       "packageNamesByShellProfile": {
@@ -243,9 +227,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libass"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libass"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libass"
@@ -286,9 +267,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libass"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libass"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libass"
@@ -327,9 +305,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libass"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libass"
       ],
       "packageNamesByShellProfile": {

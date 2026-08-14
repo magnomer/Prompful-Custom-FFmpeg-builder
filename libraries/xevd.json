@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -26,9 +25,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libxevd"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-xevd"
@@ -68,9 +64,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libxevd"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-xevd"
@@ -110,9 +103,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libxevd"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-xevd"
@@ -155,9 +145,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libxevd"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libxevd"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-xevd"
@@ -196,9 +183,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libxevd"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libxevd"
       ],
       "packageNamesByShellProfile": {
@@ -241,9 +225,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libxevd"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libxevd"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-xevd"
@@ -284,9 +265,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libxevd"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libxevd"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-xevd"
@@ -325,9 +303,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libxevd"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libxevd"
       ],
       "packageNamesByShellProfile": {

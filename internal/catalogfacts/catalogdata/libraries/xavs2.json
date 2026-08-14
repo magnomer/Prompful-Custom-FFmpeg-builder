@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -27,9 +26,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libxavs2"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libxavs2"
       ],
       "packageNamesByShellProfile": {
@@ -67,9 +63,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libxavs2"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libxavs2"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -103,9 +96,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libxavs2"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libxavs2"
       ],
       "packageNamesByShellProfile": {
@@ -143,9 +133,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libxavs2"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libxavs2"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -179,9 +166,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libxavs2"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libxavs2"
       ],
       "packageNamesByShellProfile": {
@@ -219,9 +203,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libxavs2"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libxavs2"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -255,9 +236,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libxavs2"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libxavs2"
       ],
       "packageNamesByShellProfile": {
@@ -300,9 +278,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libxavs2"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libxavs2"
       ],
       "packageNamesByShellProfile": {

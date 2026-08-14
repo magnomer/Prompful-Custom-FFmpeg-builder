@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -26,10 +25,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libplacebo",
-        "--enable-vulkan"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libplacebo",
@@ -79,10 +74,6 @@
         "--enable-libplacebo",
         "--enable-vulkan"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libplacebo",
-        "--enable-vulkan"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -123,10 +114,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libplacebo",
-        "--enable-vulkan"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libplacebo",
         "--enable-vulkan"
       ],
@@ -177,10 +164,6 @@
         "--enable-libplacebo",
         "--enable-vulkan"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libplacebo",
-        "--enable-vulkan"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libplacebo",
@@ -225,10 +208,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libplacebo",
-        "--enable-vulkan"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libplacebo",
         "--enable-vulkan"
       ],
@@ -279,10 +258,6 @@
         "--enable-libplacebo",
         "--enable-vulkan"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libplacebo",
-        "--enable-vulkan"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libplacebo",
@@ -330,10 +305,6 @@
         "--enable-libplacebo",
         "--enable-vulkan"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libplacebo",
-        "--enable-vulkan"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libplacebo",
@@ -378,10 +349,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libplacebo",
-        "--enable-vulkan"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libplacebo",
         "--enable-vulkan"
       ],

@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -26,9 +25,6 @@
       "trackName": "external",
       "baseCatalogTrackName": "external",
       "ffmpegConfigureFlags": [
-        "--enable-libsmbclient"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libsmbclient"
       ],
       "packageNamesByShellProfile": {
@@ -68,9 +64,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libsmbclient"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libsmbclient"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -106,9 +99,6 @@
       "trackName": "external",
       "baseCatalogTrackName": "external",
       "ffmpegConfigureFlags": [
-        "--enable-libsmbclient"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libsmbclient"
       ],
       "packageNamesByShellProfile": {
@@ -148,9 +138,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libsmbclient"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libsmbclient"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -186,9 +173,6 @@
       "trackName": "external",
       "baseCatalogTrackName": "external",
       "ffmpegConfigureFlags": [
-        "--enable-libsmbclient"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libsmbclient"
       ],
       "packageNamesByShellProfile": {
@@ -228,9 +212,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libsmbclient"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libsmbclient"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -268,9 +249,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libsmbclient"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libsmbclient"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -306,9 +284,6 @@
       "trackName": "external",
       "baseCatalogTrackName": "external",
       "ffmpegConfigureFlags": [
-        "--enable-libsmbclient"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libsmbclient"
       ],
       "packageNamesByShellProfile": {

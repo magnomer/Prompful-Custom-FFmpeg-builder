@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -26,9 +25,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libvpl"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libvpl"
@@ -68,9 +64,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libvpl"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libvpl"
@@ -113,9 +106,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libvpl"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libvpl"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libvpl"
@@ -154,9 +144,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libvpl"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libvpl"
       ],
       "packageNamesByShellProfile": {
@@ -199,9 +186,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libvpl"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libvpl"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libvpl"
@@ -240,9 +224,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libvpl"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libvpl"
       ],
       "packageNamesByShellProfile": {
@@ -285,9 +266,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libvpl"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libvpl"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-libvpl"
@@ -326,9 +304,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libvpl"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libvpl"
       ],
       "packageNamesByShellProfile": {

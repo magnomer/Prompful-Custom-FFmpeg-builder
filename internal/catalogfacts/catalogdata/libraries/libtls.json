@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -26,9 +25,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libtls"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libtls"
       ],
       "packageNamesByShellProfile": {
@@ -65,9 +61,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libtls"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libtls"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -100,9 +93,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libtls"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libtls"
       ],
       "packageNamesByShellProfile": {
@@ -139,9 +129,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libtls"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libtls"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -174,9 +161,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libtls"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libtls"
       ],
       "packageNamesByShellProfile": {
@@ -213,9 +197,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libtls"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libtls"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -248,9 +229,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libtls"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libtls"
       ],
       "packageNamesByShellProfile": {
@@ -292,9 +270,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "internal",
       "ffmpegConfigureFlags": [
-        "--enable-libtls"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libtls"
       ],
       "packageNamesByShellProfile": {

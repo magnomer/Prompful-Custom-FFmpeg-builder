@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -26,9 +25,6 @@
       "trackName": "external",
       "baseCatalogTrackName": "external",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libtorch"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -63,9 +59,6 @@
       "trackName": "external",
       "baseCatalogTrackName": "external",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libtorch"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -100,9 +93,6 @@
       "trackName": "external",
       "baseCatalogTrackName": "external",
       "ffmpegConfigureFlags": [],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libtorch"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -137,9 +127,6 @@
       "trackName": "external",
       "baseCatalogTrackName": "external",
       "ffmpegConfigureFlags": [
-        "--enable-libtorch"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libtorch"
       ],
       "packageNamesByShellProfile": {
@@ -179,9 +166,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libtorch"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libtorch"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -217,9 +201,6 @@
       "trackName": "external",
       "baseCatalogTrackName": "external",
       "ffmpegConfigureFlags": [
-        "--enable-libtorch"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libtorch"
       ],
       "packageNamesByShellProfile": {
@@ -259,9 +240,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libtorch"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libtorch"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -297,9 +275,6 @@
       "trackName": "external",
       "baseCatalogTrackName": "external",
       "ffmpegConfigureFlags": [
-        "--enable-libtorch"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libtorch"
       ],
       "packageNamesByShellProfile": {

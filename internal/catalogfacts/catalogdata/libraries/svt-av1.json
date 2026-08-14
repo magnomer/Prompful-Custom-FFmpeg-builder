@@ -1,7 +1,6 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version-aware-library",
-  "generatedFromCurrentV4CodeOnly": true,
   "sourceFiles": [
     "internal/planning/LCatalogLibrarySource.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -27,9 +26,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libsvtav1"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libsvtav1"
       ],
       "packageNamesByShellProfile": {
@@ -67,9 +63,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libsvtav1"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libsvtav1"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -103,9 +96,6 @@
       "trackName": "internal",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libsvtav1"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libsvtav1"
       ],
       "packageNamesByShellProfile": {
@@ -143,9 +133,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libsvtav1"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libsvtav1"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -181,9 +168,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libsvtav1"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libsvtav1"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [],
         "mingw64": [],
@@ -217,9 +201,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libsvtav1"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libsvtav1"
       ],
       "packageNamesByShellProfile": {
@@ -262,9 +243,6 @@
       "ffmpegConfigureFlags": [
         "--enable-libsvtav1"
       ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libsvtav1"
-      ],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-svt-av1"
@@ -303,9 +281,6 @@
       "trackName": "native",
       "baseCatalogTrackName": "native",
       "ffmpegConfigureFlags": [
-        "--enable-libsvtav1"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
         "--enable-libsvtav1"
       ],
       "packageNamesByShellProfile": {
