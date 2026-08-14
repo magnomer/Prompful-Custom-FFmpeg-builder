@@ -357,6 +357,19 @@ func LOpenCVScriptCreate() []string {
 	}
 }
 
+// LOnnxRuntimeScriptCreate exposes MSYS2's nested ONNX Runtime header to FFmpeg
+// configure. MSYS2 installs onnxruntime_c_api.h under include/onnxruntime/, but
+// FFmpeg 9 probes the bare header name, so the nested dir must join extra-cflags.
+func LOnnxRuntimeScriptCreate() []string {
+	return []string{
+		`onnx_incdir="${MSYSTEM_PREFIX:-/ucrt64}/include/onnxruntime"`,
+		`if [ -d "${onnx_incdir}" ]; then`,
+		`  echo "Adding ${onnx_incdir} to FFmpeg extra-cflags so the ONNX Runtime onnxruntime_c_api.h header check passes (MSYS2 installs it under include/onnxruntime, off the default search path)."`,
+		`  configure_flags+=("--extra-cflags=-I${onnx_incdir}")`,
+		`fi`,
+	}
+}
+
 // LConfigureScriptCreate builds the FFmpeg configure script. privatePkgConfigDirs are the
 // pkgconfig directories of any privately-installed libraries (e.g. libtls); they are
 // prepended to the script's exported PKG_CONFIG_PATH/PKG_CONFIG_LIBDIR so pkg-config finds
@@ -636,6 +649,9 @@ int main(void){return 0;}
 	}
 	if LFlagConfigureCheck(configureFlags, "--enable-libopencv") {
 		scriptLines = append(scriptLines, LOpenCVScriptCreate()...)
+	}
+	if LFlagConfigureCheck(configureFlags, "--enable-libonnxruntime") {
+		scriptLines = append(scriptLines, LOnnxRuntimeScriptCreate()...)
 	}
 	if len(LModulePkgconfigs) > 0 {
 		scriptLines = append(scriptLines, "echo 'Diagnosing selected pkg-config libraries before FFmpeg configure.'")
