@@ -326,12 +326,8 @@
       "categoryName": "Filters and processing",
       "trackName": "native",
       "baseCatalogTrackName": "native",
-      "ffmpegConfigureFlags": [
-        "--enable-libshaderc"
-      ],
-      "declaredConfigureFlagsFromCurrentV4Catalog": [
-        "--enable-libshaderc"
-      ],
+      "ffmpegConfigureFlags": [],
+      "declaredConfigureFlagsFromCurrentV4Catalog": [],
       "packageNamesByShellProfile": {
         "ucrt64": [
           "mingw-w64-ucrt-x86_64-shaderc"
@@ -354,7 +350,7 @@
       "preparation": {
         "required": false,
         "kind": "native-package",
-        "reason": "Current V4 provides this library through the native MSYS2 package path for this FFmpeg version."
+        "reason": "FFmpeg 9 removed the --enable-libshaderc switch; the shaderc MSYS2 package is still installed as a Vulkan shader build tool, not as an FFmpeg-enabled library."
       }
     }
   }
