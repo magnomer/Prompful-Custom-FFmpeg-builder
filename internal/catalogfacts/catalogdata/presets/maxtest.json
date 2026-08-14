@@ -1,7 +1,7 @@
 {
   "schemaVersion": 3,
   "recordKind": "ffmpeg-preset",
-  "generatedFromCurrentV4CodeOnly": true,
+  "generatedFromCurrentCatalogCodeOnly": true,
   "sourceFiles": [
     "frontend/src/tabs/libraries.tsx",
     "versions/{ffmpegVersion}.json",
@@ -12,8 +12,8 @@
   "ffmpegVersions": {
     "4.4.8": {
       "ffmpegVersion": "4.4.8",
-      "hiddenInCurrentV4Ui": true,
-      "devInCurrentV4Ui": true,
+      "hiddenInCurrentCatalogUi": true,
+      "devInCurrentCatalogUi": true,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -102,13 +102,13 @@
         "zmq",
         "zvbi"
       ],
-      "kind": "computed-current-v4-maximum-test",
+      "kind": "computed-current-catalog-maximum-test",
       "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "5.1.9": {
       "ffmpegVersion": "5.1.9",
-      "hiddenInCurrentV4Ui": true,
-      "devInCurrentV4Ui": true,
+      "hiddenInCurrentCatalogUi": true,
+      "devInCurrentCatalogUi": true,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -201,13 +201,13 @@
         "zmq",
         "zvbi"
       ],
-      "kind": "computed-current-v4-maximum-test",
+      "kind": "computed-current-catalog-maximum-test",
       "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "6.1.6": {
       "ffmpegVersion": "6.1.6",
-      "hiddenInCurrentV4Ui": true,
-      "devInCurrentV4Ui": true,
+      "hiddenInCurrentCatalogUi": true,
+      "devInCurrentCatalogUi": true,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -302,13 +302,13 @@
         "zmq",
         "zvbi"
       ],
-      "kind": "computed-current-v4-maximum-test",
+      "kind": "computed-current-catalog-maximum-test",
       "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "7.0.3": {
       "ffmpegVersion": "7.0.3",
-      "hiddenInCurrentV4Ui": true,
-      "devInCurrentV4Ui": true,
+      "hiddenInCurrentCatalogUi": true,
+      "devInCurrentCatalogUi": true,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -409,13 +409,13 @@
         "zmq",
         "zvbi"
       ],
-      "kind": "computed-current-v4-maximum-test",
+      "kind": "computed-current-catalog-maximum-test",
       "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "7.1.5": {
       "ffmpegVersion": "7.1.5",
-      "hiddenInCurrentV4Ui": true,
-      "devInCurrentV4Ui": true,
+      "hiddenInCurrentCatalogUi": true,
+      "devInCurrentCatalogUi": true,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -519,13 +519,13 @@
         "zmq",
         "zvbi"
       ],
-      "kind": "computed-current-v4-maximum-test",
+      "kind": "computed-current-catalog-maximum-test",
       "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "8.0.3": {
       "ffmpegVersion": "8.0.3",
-      "hiddenInCurrentV4Ui": true,
-      "devInCurrentV4Ui": true,
+      "hiddenInCurrentCatalogUi": true,
+      "devInCurrentCatalogUi": true,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -631,13 +631,13 @@
         "zmq",
         "zvbi"
       ],
-      "kind": "computed-current-v4-maximum-test",
+      "kind": "computed-current-catalog-maximum-test",
       "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "8.1.2": {
       "ffmpegVersion": "8.1.2",
-      "hiddenInCurrentV4Ui": true,
-      "devInCurrentV4Ui": true,
+      "hiddenInCurrentCatalogUi": true,
+      "devInCurrentCatalogUi": true,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -747,13 +747,13 @@
         "zmq",
         "zvbi"
       ],
-      "kind": "computed-current-v4-maximum-test",
+      "kind": "computed-current-catalog-maximum-test",
       "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     },
     "9.0.1": {
       "ffmpegVersion": "9.0.1",
-      "hiddenInCurrentV4Ui": true,
-      "devInCurrentV4Ui": true,
+      "hiddenInCurrentCatalogUi": true,
+      "devInCurrentCatalogUi": true,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -863,7 +863,7 @@
         "zmq",
         "zvbi"
       ],
-      "kind": "computed-current-v4-maximum-test",
+      "kind": "computed-current-catalog-maximum-test",
       "computeRule": "maximumTestLibraryIds from current V4 LCatalogLibrarySource, normalized for ucrt64 and this FFmpeg version"
     }
   }

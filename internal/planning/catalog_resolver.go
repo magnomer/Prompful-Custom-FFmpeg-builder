@@ -270,7 +270,7 @@ func (resolver LCatalogResolver) LLibraryResolve(ffmpegVersion string, libraryId
 		UnavailableProfiles:  LArrayFieldGet(versionObject, "unavailableShellProfiles"),
 		VersionCompatibility: &LLibraryCompatibility{
 			Supported:  LCatalogBooleanGet(versionObject, "supportedByFfmpeg"),
-			Available:  LCatalogBooleanGet(versionObject, "availableInCurrentV4"),
+			Available:  LCatalogBooleanGet(versionObject, "provisionableInCurrentCatalog"),
 			MinVersion: LCatalogFieldGet(versionObject, "ffmpegPkgConfigMinimumVersion"),
 		},
 	}, nil
@@ -281,10 +281,10 @@ func LCatalogSupportResolve(versionObject map[string]any, preparationStatus *LLi
 	if strings.Contains(stateName, "unsupported") || !LCatalogBooleanGet(versionObject, "supportedByFfmpeg") {
 		return LLibrarySupportUnsupported
 	}
-	if profileUnavailable || strings.Contains(stateName, "unavailable") || !LCatalogBooleanGet(versionObject, "availableInCurrentV4") {
+	if profileUnavailable || strings.Contains(stateName, "unavailable") || !LCatalogBooleanGet(versionObject, "provisionableInCurrentCatalog") {
 		return LLibrarySupportUnavailable
 	}
-	if LCatalogReasonCheck(versionObject, "disabled-in-current-v4-ui") {
+	if LCatalogReasonCheck(versionObject, "disabled-in-current-catalog-ui") {
 		return LUIDisabledSupport
 	}
 	if preparationStatus != nil && preparationStatus.Required {
@@ -323,7 +323,7 @@ func LPreparationStatusRead(preparationObject map[string]any) *LLibraryPreparati
 }
 
 func LCatalogReasonRead(versionObject map[string]any) []string {
-	uiState, ok := versionObject["currentV4UiState"].(map[string]any)
+	uiState, ok := versionObject["currentCatalogUiState"].(map[string]any)
 	if !ok {
 		return nil
 	}
@@ -354,7 +354,7 @@ func LLibraryOrderRead(versionRecord map[string]any) []string {
 		return nil
 	}
 	libraryIds := []string{}
-	for _, sectionName := range []string{"includedByOfficialFfmpegSource", "compatible", "unavailableInCurrentV4", "unsupportedByThisFfmpegVersion", "unsupported", "unavailable"} {
+	for _, sectionName := range []string{"includedByOfficialFfmpegSource", "compatible", "unavailableInCurrentCatalog", "unsupportedByThisFfmpegVersion", "unsupported", "unavailable"} {
 		items, ok := librariesObject[sectionName].([]any)
 		if !ok {
 			continue

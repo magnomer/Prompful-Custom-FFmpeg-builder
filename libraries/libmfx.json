@@ -18,7 +18,7 @@
       "ffmpegVersion": "4.4.8",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmfx (legacy Intel Media SDK)",
       "categoryName": "Hardware encoders",
@@ -36,7 +36,7 @@
       "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -52,7 +52,7 @@
       "ffmpegVersion": "5.1.9",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "1.28",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmfx (legacy Intel Media SDK)",
@@ -71,7 +71,7 @@
       "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -87,7 +87,7 @@
       "ffmpegVersion": "6.1.6",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "1.28",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmfx (legacy Intel Media SDK)",
@@ -106,7 +106,7 @@
       "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -122,7 +122,7 @@
       "ffmpegVersion": "7.0.3",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "1.28",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmfx (legacy Intel Media SDK)",
@@ -141,7 +141,7 @@
       "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -157,7 +157,7 @@
       "ffmpegVersion": "7.1.5",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "1.28",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmfx (legacy Intel Media SDK)",
@@ -176,7 +176,7 @@
       "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -192,7 +192,7 @@
       "ffmpegVersion": "8.0.3",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "1.28",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmfx (legacy Intel Media SDK)",
@@ -211,7 +211,7 @@
       "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -227,7 +227,7 @@
       "ffmpegVersion": "8.1.2",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "1.28",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmfx (legacy Intel Media SDK)",
@@ -246,7 +246,7 @@
       "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -269,7 +269,7 @@
       "ffmpegVersion": "9.0.1",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "1.28",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmfx (legacy Intel Media SDK)",
@@ -288,7 +288,7 @@
       "officialWebpageUrl": "https://github.com/lu-zero/mfx_dispatch",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },

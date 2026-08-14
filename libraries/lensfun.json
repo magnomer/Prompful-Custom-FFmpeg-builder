@@ -16,9 +16,9 @@
     "4.4.8": {
       "libraryId": "lensfun",
       "ffmpegVersion": "4.4.8",
-      "state": "unavailable-in-current-v4-for-ffmpeg-version",
+      "state": "unavailable-in-current-catalog-for-ffmpeg-version",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "lensfun",
       "categoryName": "Filters and processing",
@@ -42,7 +42,7 @@
       "officialWebpageUrl": "https://lensfun.github.io/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unavailable-for-selected-ffmpeg-version"
@@ -57,9 +57,9 @@
     "5.1.9": {
       "libraryId": "lensfun",
       "ffmpegVersion": "5.1.9",
-      "state": "unavailable-in-current-v4-for-ffmpeg-version",
+      "state": "unavailable-in-current-catalog-for-ffmpeg-version",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "lensfun",
       "categoryName": "Filters and processing",
@@ -83,7 +83,7 @@
       "officialWebpageUrl": "https://lensfun.github.io/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unavailable-for-selected-ffmpeg-version"
@@ -98,9 +98,9 @@
     "6.1.6": {
       "libraryId": "lensfun",
       "ffmpegVersion": "6.1.6",
-      "state": "unavailable-in-current-v4-for-ffmpeg-version",
+      "state": "unavailable-in-current-catalog-for-ffmpeg-version",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "lensfun",
       "categoryName": "Filters and processing",
@@ -124,7 +124,7 @@
       "officialWebpageUrl": "https://lensfun.github.io/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unavailable-for-selected-ffmpeg-version"
@@ -139,9 +139,9 @@
     "7.0.3": {
       "libraryId": "lensfun",
       "ffmpegVersion": "7.0.3",
-      "state": "unavailable-in-current-v4-for-ffmpeg-version",
+      "state": "unavailable-in-current-catalog-for-ffmpeg-version",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "lensfun",
       "categoryName": "Filters and processing",
@@ -165,7 +165,7 @@
       "officialWebpageUrl": "https://lensfun.github.io/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unavailable-for-selected-ffmpeg-version"
@@ -180,9 +180,9 @@
     "7.1.5": {
       "libraryId": "lensfun",
       "ffmpegVersion": "7.1.5",
-      "state": "unavailable-in-current-v4-for-ffmpeg-version",
+      "state": "unavailable-in-current-catalog-for-ffmpeg-version",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "lensfun",
       "categoryName": "Filters and processing",
@@ -206,7 +206,7 @@
       "officialWebpageUrl": "https://lensfun.github.io/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unavailable-for-selected-ffmpeg-version"
@@ -221,9 +221,9 @@
     "8.0.3": {
       "libraryId": "lensfun",
       "ffmpegVersion": "8.0.3",
-      "state": "unavailable-in-current-v4-for-ffmpeg-version",
+      "state": "unavailable-in-current-catalog-for-ffmpeg-version",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "lensfun",
       "categoryName": "Filters and processing",
@@ -247,7 +247,7 @@
       "officialWebpageUrl": "https://lensfun.github.io/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unavailable-for-selected-ffmpeg-version"
@@ -262,9 +262,9 @@
     "8.1.2": {
       "libraryId": "lensfun",
       "ffmpegVersion": "8.1.2",
-      "state": "unavailable-in-current-v4-for-ffmpeg-version",
+      "state": "unavailable-in-current-catalog-for-ffmpeg-version",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "lensfun",
       "categoryName": "Filters and processing",
@@ -288,7 +288,7 @@
       "officialWebpageUrl": "https://lensfun.github.io/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unavailable-for-selected-ffmpeg-version"
@@ -303,9 +303,9 @@
     "9.0.1": {
       "libraryId": "lensfun",
       "ffmpegVersion": "9.0.1",
-      "state": "unavailable-in-current-v4-for-ffmpeg-version",
+      "state": "unavailable-in-current-catalog-for-ffmpeg-version",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "lensfun",
       "categoryName": "Filters and processing",
@@ -329,7 +329,7 @@
       "officialWebpageUrl": "https://lensfun.github.io/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unavailable-for-selected-ffmpeg-version"

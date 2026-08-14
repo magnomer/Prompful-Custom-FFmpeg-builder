@@ -18,7 +18,7 @@
       "ffmpegVersion": "4.4.8",
       "state": "unsupported-by-ffmpeg-version",
       "supportedByFfmpeg": false,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "Little CMS 2",
       "categoryName": "Image codecs",
@@ -40,7 +40,7 @@
       "officialWebpageUrl": "https://www.littlecms.com/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unsupported-by-selected-ffmpeg-version"
@@ -57,7 +57,7 @@
       "ffmpegVersion": "5.1.9",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.13",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "Little CMS 2",
@@ -82,7 +82,7 @@
       "officialWebpageUrl": "https://www.littlecms.com/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -97,7 +97,7 @@
       "ffmpegVersion": "6.1.6",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.13",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "Little CMS 2",
@@ -122,7 +122,7 @@
       "officialWebpageUrl": "https://www.littlecms.com/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -137,7 +137,7 @@
       "ffmpegVersion": "7.0.3",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.13",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "Little CMS 2",
@@ -162,7 +162,7 @@
       "officialWebpageUrl": "https://www.littlecms.com/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -177,7 +177,7 @@
       "ffmpegVersion": "7.1.5",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.13",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "Little CMS 2",
@@ -202,7 +202,7 @@
       "officialWebpageUrl": "https://www.littlecms.com/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -217,7 +217,7 @@
       "ffmpegVersion": "8.0.3",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.13",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "Little CMS 2",
@@ -242,7 +242,7 @@
       "officialWebpageUrl": "https://www.littlecms.com/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -257,7 +257,7 @@
       "ffmpegVersion": "8.1.2",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.13",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "Little CMS 2",
@@ -282,7 +282,7 @@
       "officialWebpageUrl": "https://www.littlecms.com/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -297,7 +297,7 @@
       "ffmpegVersion": "9.0.1",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.13",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "Little CMS 2",
@@ -322,7 +322,7 @@
       "officialWebpageUrl": "https://www.littlecms.com/",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 3,
   "recordKind": "ffmpeg-preset",
-  "generatedFromCurrentV4CodeOnly": true,
+  "generatedFromCurrentCatalogCodeOnly": true,
   "sourceFiles": [
     "frontend/src/tabs/libraries.tsx",
     "versions/{ffmpegVersion}.json",
@@ -12,8 +12,8 @@
   "ffmpegVersions": {
     "4.4.8": {
       "ffmpegVersion": "4.4.8",
-      "hiddenInCurrentV4Ui": false,
-      "devInCurrentV4Ui": false,
+      "hiddenInCurrentCatalogUi": false,
+      "devInCurrentCatalogUi": false,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -152,8 +152,8 @@
     },
     "5.1.9": {
       "ffmpegVersion": "5.1.9",
-      "hiddenInCurrentV4Ui": false,
-      "devInCurrentV4Ui": false,
+      "hiddenInCurrentCatalogUi": false,
+      "devInCurrentCatalogUi": false,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -292,8 +292,8 @@
     },
     "6.1.6": {
       "ffmpegVersion": "6.1.6",
-      "hiddenInCurrentV4Ui": false,
-      "devInCurrentV4Ui": false,
+      "hiddenInCurrentCatalogUi": false,
+      "devInCurrentCatalogUi": false,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -432,8 +432,8 @@
     },
     "7.0.3": {
       "ffmpegVersion": "7.0.3",
-      "hiddenInCurrentV4Ui": false,
-      "devInCurrentV4Ui": false,
+      "hiddenInCurrentCatalogUi": false,
+      "devInCurrentCatalogUi": false,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -572,8 +572,8 @@
     },
     "7.1.5": {
       "ffmpegVersion": "7.1.5",
-      "hiddenInCurrentV4Ui": false,
-      "devInCurrentV4Ui": false,
+      "hiddenInCurrentCatalogUi": false,
+      "devInCurrentCatalogUi": false,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -712,8 +712,8 @@
     },
     "8.0.3": {
       "ffmpegVersion": "8.0.3",
-      "hiddenInCurrentV4Ui": false,
-      "devInCurrentV4Ui": false,
+      "hiddenInCurrentCatalogUi": false,
+      "devInCurrentCatalogUi": false,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -852,8 +852,8 @@
     },
     "8.1.2": {
       "ffmpegVersion": "8.1.2",
-      "hiddenInCurrentV4Ui": false,
-      "devInCurrentV4Ui": false,
+      "hiddenInCurrentCatalogUi": false,
+      "devInCurrentCatalogUi": false,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",
@@ -992,8 +992,8 @@
     },
     "9.0.1": {
       "ffmpegVersion": "9.0.1",
-      "hiddenInCurrentV4Ui": false,
-      "devInCurrentV4Ui": false,
+      "hiddenInCurrentCatalogUi": false,
+      "devInCurrentCatalogUi": false,
       "libraryIds": [
         "ffmpeg-program",
         "ffprobe-program",

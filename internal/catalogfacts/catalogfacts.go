@@ -173,7 +173,7 @@ func LReleaseVersionGet(ffmpegVersion string) (LCatalogReleaseSupport, bool) {
 		}
 		release.Libraries[libraryId] = LCatalogLibrarySupport{
 			MinVersion:  LStringFieldGet(versionObject, "ffmpegPkgConfigMinimumVersion"),
-			Unavailable: !LBooleanFieldGet(versionObject, "availableInCurrentV4"),
+			Unavailable: !LBooleanFieldGet(versionObject, "provisionableInCurrentCatalog"),
 			SourceBuild: LBooleanFieldGet(versionObject, "sourceBuildRequiredByReleaseManifest"),
 		}
 	}

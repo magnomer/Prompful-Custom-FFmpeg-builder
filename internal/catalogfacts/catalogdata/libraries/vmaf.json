@@ -18,7 +18,7 @@
       "ffmpegVersion": "4.4.8",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "1.5.2",
       "sourceBuildRequiredByReleaseManifest": true,
       "displayName": "libvmaf",
@@ -37,7 +37,7 @@
       "officialWebpageUrl": "https://github.com/Netflix/vmaf",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -60,7 +60,7 @@
       "ffmpegVersion": "5.1.9",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.0.0",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libvmaf",
@@ -85,7 +85,7 @@
       "officialWebpageUrl": "https://github.com/Netflix/vmaf",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -100,7 +100,7 @@
       "ffmpegVersion": "6.1.6",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.0.0",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libvmaf",
@@ -125,7 +125,7 @@
       "officialWebpageUrl": "https://github.com/Netflix/vmaf",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -140,7 +140,7 @@
       "ffmpegVersion": "7.0.3",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.0.0",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libvmaf",
@@ -165,7 +165,7 @@
       "officialWebpageUrl": "https://github.com/Netflix/vmaf",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -180,7 +180,7 @@
       "ffmpegVersion": "7.1.5",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.0.0",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libvmaf",
@@ -205,7 +205,7 @@
       "officialWebpageUrl": "https://github.com/Netflix/vmaf",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -220,7 +220,7 @@
       "ffmpegVersion": "8.0.3",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.0.0",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libvmaf",
@@ -245,7 +245,7 @@
       "officialWebpageUrl": "https://github.com/Netflix/vmaf",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -260,7 +260,7 @@
       "ffmpegVersion": "8.1.2",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.0.0",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libvmaf",
@@ -285,7 +285,7 @@
       "officialWebpageUrl": "https://github.com/Netflix/vmaf",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -300,7 +300,7 @@
       "ffmpegVersion": "9.0.1",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "2.0.0",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libvmaf",
@@ -325,7 +325,7 @@
       "officialWebpageUrl": "https://github.com/Netflix/vmaf",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },

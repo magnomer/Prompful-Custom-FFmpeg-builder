@@ -262,7 +262,7 @@ function LLibraryReasonCheck(library: LLibraryChoice, reason: string): boolean {
 }
 
 function LLibraryDisabledCheck(library: LLibraryChoice): boolean {
-  return LLibraryReasonCheck(library, "disabled-in-current-v4-ui") || library.supportState === "ui-disabled";
+  return LLibraryReasonCheck(library, "disabled-in-current-catalog-ui") || library.supportState === "ui-disabled";
 }
 
 function LLibraryPrepCheck(library: LLibraryChoice): boolean {

@@ -18,7 +18,7 @@
       "ffmpegVersion": "4.4.8",
       "state": "unsupported-by-ffmpeg-version",
       "supportedByFfmpeg": false,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmpeghdec / MPEG-H audio decoding",
       "categoryName": "Audio",
@@ -34,7 +34,7 @@
       "officialWebpageUrl": "https://github.com/Fraunhofer-IIS/mpeghdec",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unsupported-by-selected-ffmpeg-version"
@@ -51,7 +51,7 @@
       "ffmpegVersion": "5.1.9",
       "state": "unsupported-by-ffmpeg-version",
       "supportedByFfmpeg": false,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmpeghdec / MPEG-H audio decoding",
       "categoryName": "Audio",
@@ -67,7 +67,7 @@
       "officialWebpageUrl": "https://github.com/Fraunhofer-IIS/mpeghdec",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unsupported-by-selected-ffmpeg-version"
@@ -84,7 +84,7 @@
       "ffmpegVersion": "6.1.6",
       "state": "unsupported-by-ffmpeg-version",
       "supportedByFfmpeg": false,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmpeghdec / MPEG-H audio decoding",
       "categoryName": "Audio",
@@ -100,7 +100,7 @@
       "officialWebpageUrl": "https://github.com/Fraunhofer-IIS/mpeghdec",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unsupported-by-selected-ffmpeg-version"
@@ -117,7 +117,7 @@
       "ffmpegVersion": "7.0.3",
       "state": "unsupported-by-ffmpeg-version",
       "supportedByFfmpeg": false,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmpeghdec / MPEG-H audio decoding",
       "categoryName": "Audio",
@@ -133,7 +133,7 @@
       "officialWebpageUrl": "https://github.com/Fraunhofer-IIS/mpeghdec",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unsupported-by-selected-ffmpeg-version"
@@ -150,7 +150,7 @@
       "ffmpegVersion": "7.1.5",
       "state": "unsupported-by-ffmpeg-version",
       "supportedByFfmpeg": false,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmpeghdec / MPEG-H audio decoding",
       "categoryName": "Audio",
@@ -166,7 +166,7 @@
       "officialWebpageUrl": "https://github.com/Fraunhofer-IIS/mpeghdec",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unsupported-by-selected-ffmpeg-version"
@@ -183,7 +183,7 @@
       "ffmpegVersion": "8.0.3",
       "state": "unsupported-by-ffmpeg-version",
       "supportedByFfmpeg": false,
-      "availableInCurrentV4": false,
+      "provisionableInCurrentCatalog": false,
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmpeghdec / MPEG-H audio decoding",
       "categoryName": "Audio",
@@ -199,7 +199,7 @@
       "officialWebpageUrl": "https://github.com/Fraunhofer-IIS/mpeghdec",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": false,
         "reasonsWhenUnavailable": [
           "unsupported-by-selected-ffmpeg-version"
@@ -216,7 +216,7 @@
       "ffmpegVersion": "8.1.2",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "3.0.0",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmpeghdec / MPEG-H audio decoding",
@@ -236,7 +236,7 @@
       "officialWebpageUrl": "https://github.com/Fraunhofer-IIS/mpeghdec",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },
@@ -259,7 +259,7 @@
       "ffmpegVersion": "9.0.1",
       "state": "compatible",
       "supportedByFfmpeg": true,
-      "availableInCurrentV4": true,
+      "provisionableInCurrentCatalog": true,
       "ffmpegPkgConfigMinimumVersion": "3.0.0",
       "sourceBuildRequiredByReleaseManifest": false,
       "displayName": "libmpeghdec / MPEG-H audio decoding",
@@ -279,7 +279,7 @@
       "officialWebpageUrl": "https://github.com/Fraunhofer-IIS/mpeghdec",
       "defaultChecked": false,
       "locked": false,
-      "currentV4UiState": {
+      "currentCatalogUiState": {
         "selectableInNormalUiForUcrt64": true,
         "reasonsWhenUnavailable": []
       },

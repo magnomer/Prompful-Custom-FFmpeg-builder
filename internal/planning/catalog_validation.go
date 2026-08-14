@@ -273,7 +273,7 @@ func LPresetFlatCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFil
 	for _, fieldName := range []string{"libraryIds", "extendedLibraryIds"} {
 		LIdentifierArrayCheck(report, file, versionObject, fieldName, libraryIds)
 	}
-	for _, fieldName := range []string{"declaredLibraryIdsFromCurrentV4Preset", "selectedLibraryIdsForUcrt64", "selectedLibraryIdsForMingw64", "selectedLibraryIdsForClang64", "removedLibraryIdsForUcrt64", "removedLibraryIdsForMingw64", "removedLibraryIdsForClang64"} {
+	for _, fieldName := range []string{"declaredLibraryIdsFromCurrentCatalogPreset", "selectedLibraryIdsForUcrt64", "selectedLibraryIdsForMingw64", "selectedLibraryIdsForClang64", "removedLibraryIdsForUcrt64", "removedLibraryIdsForMingw64", "removedLibraryIdsForClang64"} {
 		if _, exists := versionObject[fieldName]; exists {
 			report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("preset %s must not contain legacy/result field %s", versionId, fieldName)))
 		}

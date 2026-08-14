@@ -238,8 +238,8 @@ func (resolver LCatalogResolver) LPresetChoicesResolve(settings LCatalogResoluti
 		choice := LPresetLibraryChoice{
 			PresetId:   presetId,
 			LibraryIds: normalLibraryIds,
-			Hidden:     LCatalogBooleanGet(presetVersionRecord, "hiddenInCurrentV4Ui"),
-			Dev:        LCatalogBooleanGet(presetVersionRecord, "devInCurrentV4Ui"),
+			Hidden:     LCatalogBooleanGet(presetVersionRecord, "hiddenInCurrentCatalogUi"),
+			Dev:        LCatalogBooleanGet(presetVersionRecord, "devInCurrentCatalogUi"),
 		}
 		if extendedOk {
 			choice.ExtendedLibraryIds = extendedLibraryIds
@@ -268,7 +268,7 @@ func LPresetOrderRead(versionRecord map[string]any) []string {
 		return nil
 	}
 	presetIds := []string{}
-	for _, sectionName := range []string{"availableInCurrentV4Ui", "hiddenOrDevInCurrentV4Ui"} {
+	for _, sectionName := range []string{"availableInCurrentCatalogUi", "hiddenOrDevInCurrentCatalogUi"} {
 		items, ok := presetsObject[sectionName].([]any)
 		if !ok {
 			continue

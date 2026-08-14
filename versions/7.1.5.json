@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "recordKind": "ffmpeg-version",
-  "generatedFromCurrentV4CodeOnly": true,
+  "generatedFromCurrentCatalogCodeOnly": true,
   "sourceFiles": [
     "internal/planning/ffmpegreleases.go",
     "backup/shared/releasesupport/ffmpeg-release-support.json",
@@ -536,7 +536,7 @@
         "metadata": "libraries/zvbi.json"
       }
     ],
-    "unavailableInCurrentV4": [
+    "unavailableInCurrentCatalog": [
       {
         "libraryId": "lensfun",
         "metadata": "libraries/lensfun.json"
@@ -771,12 +771,12 @@
         "riskLevelName": "low"
       }
     ],
-    "unsupportedCurrentV4OptionIds": []
+    "unsupportedCurrentCatalogOptionIds": []
   },
   "presets": {
     "modelingRule": "This section connects the FFmpeg version to preset ids only. Full per-version preset details are authoritative in /presets/{presetId}.json.",
     "metadataFolder": "presets",
-    "availableInCurrentV4Ui": [
+    "availableInCurrentCatalogUi": [
       {
         "presetId": "minimal",
         "metadata": "presets/minimal.json"
@@ -802,7 +802,7 @@
         "metadata": "presets/full.json"
       }
     ],
-    "hiddenOrDevInCurrentV4Ui": [
+    "hiddenOrDevInCurrentCatalogUi": [
       {
         "presetId": "ai",
         "metadata": "presets/ai.json"
@@ -814,7 +814,7 @@
       {
         "presetId": "maxtest",
         "metadata": "presets/maxtest.json",
-        "devOnlyInCurrentV4Ui": true
+        "devOnlyInCurrentCatalogUi": true
       }
     ]
   },
