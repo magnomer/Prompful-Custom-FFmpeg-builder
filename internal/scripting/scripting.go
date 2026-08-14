@@ -132,12 +132,18 @@ var LMSYSMirrorCatalog = []string{
 }
 
 // LRepoMirrorlistMsys pairs each pacman mirrorlist file with the repository path
-// appended to every mirror base. Ordered for a deterministic script.
+// appended to every mirror base. Ordered for a deterministic script. The "mingw"
+// entry writes mirrorlist.mingw, the file stock pacman.conf actually Includes for
+// every mingw-family repo (ucrt64/mingw64/clang64/etc.); $repo is a pacman variable
+// so one file serves them all and the ordered LMSYSMirrorCatalog finally takes effect.
+// The per-profile files are kept (harmless, deterministic) for any logic/tests that
+// reference their names.
 var LRepoMirrorlistMsys = []struct {
 	mirrorlistName string
 	repoPath       string
 }{
 	{"msys", "/msys/$arch/"},
+	{"mingw", "/mingw/$repo/"},
 	{"mingw32", "/mingw/mingw32/"},
 	{"mingw64", "/mingw/mingw64/"},
 	{"ucrt64", "/mingw/ucrt64/"},
@@ -158,6 +164,19 @@ func LMirrorScriptCreate() []string {
 		lines = append(lines, "EOF")
 	}
 	return lines
+}
+
+// LXferCommandSet writes a pacman XferCommand into pacman.conf so a stalled mirror
+// fails over fast instead of hanging. curl aborts a transfer that stays under
+// 2048 B/s for 30s (--speed-limit/--speed-time), whereupon pacman advances to the
+// next Server in the mirrorlist; -C - resumes a partially cached file and --retry 3
+// tolerates transient errors. curl already ships in MSYS2. Shared by the toolchain
+// install and the FFmpeg library/build-dependency install so both gain the failover.
+func LXferCommandSet() []string {
+	return []string{
+		"echo 'Setting a pacman transfer command that fails a stalled mirror over to the next server.'",
+		`printf '%s\n' 'XferCommand = /usr/bin/curl -fL -C - --retry 3 --speed-limit 2048 --speed-time 30 -o %o %u' >> /etc/pacman.conf`,
+	}
 }
 
 func LRepositoryNameResolve(windowsShellProfileName string) string {
@@ -206,6 +225,7 @@ func LScriptPacmanBuild(packageNames []string, windowsShellProfileName string) (
 		"# MSYS2 packages remain signature-checked. Repository database signatures are treated as optional, matching normal MSYS2 pacman behavior and avoiding false failures when a database .sig is not served or is cleared during refresh.",
 		"sed -i -E 's/^SigLevel[[:space:]]*=.*/SigLevel = Required DatabaseOptional/' /etc/pacman.conf",
 	)
+	scriptLines = append(scriptLines, LXferCommandSet()...)
 	scriptLines = append(scriptLines, disableUnusedRepoLines...)
 	scriptLines = append(scriptLines,
 		"echo 'Clearing stale or half-downloaded package databases before refresh.'",
@@ -253,6 +273,9 @@ func LPackageScriptCreate(packageNames []string) ([]string, error) {
 	scriptLines = append(scriptLines, LMirrorScriptCreate()...)
 	scriptLines = append(scriptLines,
 		"sed -i -E 's/^SigLevel[[:space:]]*=.*/SigLevel = Required DatabaseOptional/' /etc/pacman.conf",
+	)
+	scriptLines = append(scriptLines, LXferCommandSet()...)
+	scriptLines = append(scriptLines,
 		"echo 'Clearing half-downloaded package files before installing FFmpeg library packages.'",
 		"rm -f /var/cache/pacman/pkg/*.part",
 		// Full refresh + upgrade (-Syyu), not a bare -Syy, so the install is not a partial
