@@ -20,6 +20,7 @@ import (
 	"promptfulcustomffmpegbuilder/internal/consent"
 	"promptfulcustomffmpegbuilder/internal/hostexec"
 	"promptfulcustomffmpegbuilder/internal/workspace"
+	"promptfulcustomffmpegbuilder/localization"
 )
 
 // Transient network failures (a stalled download, a dropped connection, an
@@ -103,7 +104,7 @@ func LCommandRun(LContext context.Context, commandPlan LPlanCommand, emitProgres
 
 	retryDelay := LCommandInitialDelay
 	for attemptNumber := 1; ; attemptNumber++ {
-		transientFailureSeen, runErr := LCommandAttemptRun(LContext, commandPlan, scriptBytes, stdoutLogFile, stderrLogFile, emitProgress)
+		transientFailureSeen, runErr := LCommandAttemptRun(LContext, commandPlan, scriptBytes, stdoutLogFile, stderrLogFile, attemptNumber, LCommandAttemptMax, emitProgress)
 		if runErr == nil {
 			return nil
 		}
@@ -130,9 +131,19 @@ func LCommandRun(LContext context.Context, commandPlan LPlanCommand, emitProgres
 // whether any streamed line looked like a transient network failure so the
 // caller can decide to retry. Fresh pipes and a fresh stdin LReader are built
 // per attempt because both are single-use.
-func LCommandAttemptRun(LContext context.Context, commandPlan LPlanCommand, scriptBytes []byte, stdoutLogFile, stderrLogFile *os.File, emitProgress LProgressFunc) (bool, error) {
+func LCommandAttemptRun(LContext context.Context, commandPlan LPlanCommand, scriptBytes []byte, stdoutLogFile, stderrLogFile *os.File, attemptNumber int, attemptMax int, emitProgress LProgressFunc) (bool, error) {
 	if emitProgress != nil {
-		emitProgress("info", "Running approved command: "+filepath.Base(commandPlan.ExecutablePath))
+		if attemptNumber > 1 {
+			// Announce the current attempt before it runs so a user watching a slow
+			// retry sees progress, not silence, until it succeeds or fails. warn
+			// renders orange to mark it as a retry.
+			emitProgress("warn", localization.LLocaleTextGet("run.log.commandRetryAttempt", map[string]string{
+				"n":   fmt.Sprintf("%d", attemptNumber),
+				"max": fmt.Sprintf("%d", attemptMax),
+			}))
+		} else {
+			emitProgress("info", "Running approved command: "+filepath.Base(commandPlan.ExecutablePath))
+		}
 	}
 	command := exec.CommandContext(LContext, commandPlan.ExecutablePath, commandPlan.ArgumentValues...)
 	command.Dir = commandPlan.WorkingDirectory
@@ -402,6 +413,12 @@ func LStdinFlagReplace(argumentValues []string, scriptFilePath string) ([]string
 func LLogCommandCopy(pipeReader interface{ Read([]byte) (int, error) }, logFile *os.File, level string, emitProgress LProgressFunc, transientFailureSeen *atomic.Bool, lastErrorLine *atomic.Pointer[string], doneChannel chan<- struct{}) {
 	defer func() { doneChannel <- struct{}{} }()
 	scanner := bufio.NewScanner(pipeReader)
+	// Build/link output lines can far exceed the default 64 KB scan limit (a linker
+	// invocation echoing hundreds of object files, for example). Grow the buffer so
+	// Scan does not stop early on ErrTooLong and silently drop the rest of the pipe,
+	// which would truncate the on-disk log and could hide a later error or transient-
+	// network marker that drives classification and retry.
+	scanner.Buffer(make([]byte, 64*1024), 4*1024*1024)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if logFile != nil {
@@ -420,6 +437,12 @@ func LLogCommandCopy(pipeReader interface{ Read([]byte) (int, error) }, logFile 
 		if emitProgress != nil {
 			emitProgress(classifiedLevel, line)
 		}
+	}
+	// A read error (including an over-limit line beyond the grown buffer) ends the
+	// loop with output still on the pipe. Surface it so the truncation is visible
+	// rather than mistaken for clean end-of-stream.
+	if err := scanner.Err(); err != nil && emitProgress != nil {
+		emitProgress("warn", localization.LLocaleTextGet("run.log.commandLogTruncated", map[string]string{"message": err.Error()}))
 	}
 }
 

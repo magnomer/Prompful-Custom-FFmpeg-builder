@@ -1033,6 +1033,8 @@
   "run.log.libraryVersionCheckSkipped": "Could not read FFmpeg configure to preflight library versions; relying on the FFmpeg configure step instead.",
   "run.log.libraryPreparationStarted": "Preparing non-Native library before configure: {library}",
   "run.log.libraryPreparationFinished": "Non-Native library prepared: {library}",
+  "run.log.commandRetryAttempt": "Retrying download — attempt {n} of {max}…",
+  "run.log.commandLogTruncated": "Command output log stream truncated: {message}",
   "run.log.ffmpegCompleted": "Approved FFmpeg build completed. Artifact report written.",
   "run.log.configReadFailed": "Could not read config.log: {message}",
   "run.log.configSaveFailed": "Could not save config.log to workspace: {message}",

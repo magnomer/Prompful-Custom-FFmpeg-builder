@@ -1033,6 +1033,8 @@
   "run.log.libraryVersionCheckSkipped": "FFmpeg configure를 읽지 못해 라이브러리 버전을 사전 점검하지 못했습니다. FFmpeg configure 단계에 의존합니다.",
   "run.log.libraryPreparationStarted": "configure 전에 비 Native 라이브러리를 준비합니다: {library}",
   "run.log.libraryPreparationFinished": "비 Native 라이브러리 준비 완료: {library}",
+  "run.log.commandRetryAttempt": "다운로드 재시도 중 — {max}회 중 {n}회째…",
+  "run.log.commandLogTruncated": "명령 출력 로그 스트림이 잘렸습니다: {message}",
   "run.log.ffmpegCompleted": "승인된 FFmpeg 빌드가 완료되었습니다. 산출물 보고서를 작성했습니다.",
   "run.log.configReadFailed": "config.log를 읽을 수 없습니다: {message}",
   "run.log.configSaveFailed": "config.log를 작업 폴더에 저장할 수 없습니다: {message}",
