@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"promptfulcustomffmpegbuilder/internal/hostexec"
 	"promptfulcustomffmpegbuilder/internal/planning"
 	"promptfulcustomffmpegbuilder/internal/workspace"
 )
@@ -249,7 +250,9 @@ func LFFmpegComponentGet(ffmpegPath string) map[string]bool {
 func LFFmpegListRun(ffmpegPath string, listArg string) (string, error) {
 	LContext, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	output, err := exec.CommandContext(LContext, ffmpegPath, "-hide_banner", listArg).CombinedOutput()
+	command := exec.CommandContext(LContext, ffmpegPath, "-hide_banner", listArg)
+	hostexec.LCommandWindowHide(command)
+	output, err := command.CombinedOutput()
 	if err != nil {
 		return "", err
 	}
@@ -280,7 +283,9 @@ func LNameComponentAdd(set map[string]bool, listOutput string) {
 func LFFmpegVersionRun(ffmpegPath string) (string, error) {
 	LContext, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	output, err := exec.CommandContext(LContext, ffmpegPath, "-hide_banner", "-version").CombinedOutput()
+	command := exec.CommandContext(LContext, ffmpegPath, "-hide_banner", "-version")
+	hostexec.LCommandWindowHide(command)
+	output, err := command.CombinedOutput()
 	if err != nil {
 		return "", err
 	}

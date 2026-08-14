@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"promptfulcustomffmpegbuilder/internal/hostexec"
 	"promptfulcustomffmpegbuilder/internal/planning"
 	"promptfulcustomffmpegbuilder/internal/workspace"
 )
@@ -269,6 +270,7 @@ func LPackageInstallQuery(msys2RootDirectory string, windowsShellProfileName str
 	command := exec.CommandContext(LContext, LBashPathResolve(msys2RootDirectory), "-lc", "pacman -Qq")
 	command.Dir = msys2RootDirectory
 	command.Env = append(os.Environ(), "MSYSTEM="+shellSystemName, "MSYS2_PATH_TYPE=minimal", "CHERE_INVOKING=1")
+	hostexec.LCommandWindowHide(command)
 	output, err := command.Output()
 	if err != nil {
 		return nil, fmt.Errorf("could not query installed packages with pacman -Qq: %w", err)

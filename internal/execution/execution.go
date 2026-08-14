@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"promptfulcustomffmpegbuilder/internal/consent"
+	"promptfulcustomffmpegbuilder/internal/hostexec"
 	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
@@ -136,6 +137,7 @@ func LCommandAttemptRun(LContext context.Context, commandPlan LPlanCommand, scri
 	command := exec.CommandContext(LContext, commandPlan.ExecutablePath, commandPlan.ArgumentValues...)
 	command.Dir = commandPlan.WorkingDirectory
 	command.Env = LEnvironmentMsysCreate(commandPlan)
+	hostexec.LCommandWindowHide(command)
 	if scriptBytes != nil {
 		command.Stdin = bytes.NewReader(scriptBytes)
 	}

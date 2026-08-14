@@ -13,6 +13,7 @@ import (
 	"promptfulcustomffmpegbuilder/internal/audit"
 	"promptfulcustomffmpegbuilder/internal/consent"
 	"promptfulcustomffmpegbuilder/internal/download"
+	"promptfulcustomffmpegbuilder/internal/hostexec"
 	"promptfulcustomffmpegbuilder/internal/execution"
 	"promptfulcustomffmpegbuilder/internal/extraction"
 	"promptfulcustomffmpegbuilder/internal/planning"
@@ -261,6 +262,7 @@ func LMSYSProcessStop(msys2RootDirectory string, emitProgress func(string, strin
 	command := exec.Command(bashPath, "-lc", "GNUPGHOME=/etc/pacman.d/gnupg gpgconf --kill gpg-agent >/dev/null 2>&1 || true; GNUPGHOME=/etc/pacman.d/gnupg gpgconf --kill all >/dev/null 2>&1 || true")
 	command.Dir = msys2RootDirectory
 	command.Env = append(os.Environ(), "MSYSTEM=UCRT64", "MSYS2_PATH_TYPE=inherit", "CHERE_INVOKING=1")
+	hostexec.LCommandWindowHide(command)
 	if err := command.Run(); err == nil && emitProgress != nil {
 		emitProgress("info", LLocaleTextGetInternal("run.log.stoppedMsys2Agents", nil))
 	}
