@@ -313,7 +313,7 @@
       "preparation": {
         "required": true,
         "kind": "version-specific-source-preparation",
-        "implementation": "versions/8.1.2/klvanc.go",
+        "implementation": "versions/9.0.1/klvanc.go",
         "implementationLanguage": "go",
         "sourcePin": {
           "version": "vid.obe.1.6.0",

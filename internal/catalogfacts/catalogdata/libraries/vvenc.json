@@ -313,7 +313,7 @@
       "preparation": {
         "required": true,
         "kind": "version-specific-source-preparation",
-        "implementation": "versions/8.1.2/vvenc.go",
+        "implementation": "versions/9.0.1/vvenc.go",
         "implementationLanguage": "go",
         "sourcePin": {
           "version": "1.14.0",

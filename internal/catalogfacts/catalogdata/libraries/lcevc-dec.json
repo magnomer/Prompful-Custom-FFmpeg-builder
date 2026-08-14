@@ -313,7 +313,7 @@
       "preparation": {
         "required": true,
         "kind": "version-specific-source-preparation",
-        "implementation": "versions/8.1.2/lcevc_dec.go",
+        "implementation": "versions/9.0.1/lcevc_dec.go",
         "implementationLanguage": "go",
         "sourcePin": {
           "version": "4.2.0",

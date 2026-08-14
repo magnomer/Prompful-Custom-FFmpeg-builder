@@ -321,7 +321,7 @@
       "preparation": {
         "required": true,
         "kind": "version-specific-source-preparation",
-        "implementation": "versions/8.1.2/uavs3d.go",
+        "implementation": "versions/9.0.1/uavs3d.go",
         "implementationLanguage": "go",
         "sourcePin": {
           "version": "master",

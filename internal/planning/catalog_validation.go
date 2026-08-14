@@ -188,6 +188,11 @@ func LCrossReferenceCheck(report *LCatalogValidationReport, catalog LCatalogEmbe
 			if versionLibraryId != "" && versionLibraryId != libraryId {
 				report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("ffmpegVersions.%s libraryId %q does not match top-level libraryId %q", versionId, versionLibraryId, libraryId)))
 			}
+			preparationObject, _ := versionObject["preparation"].(map[string]any)
+			implementationPath := LCatalogFieldGet(preparationObject, "implementation")
+			if implementationPath != "" {
+				LSourcePathCheck(report, file, implementationPath, versionId)
+			}
 		}
 	}
 	for _, file := range catalog.VersionFiles {
@@ -238,7 +243,7 @@ func LVersionReferenceCheck(report *LCatalogValidationReport, file LCatalogEmbed
 			}
 			preparationPath := LCatalogFieldGet(itemObject, "preparation")
 			if preparationPath != "" {
-				LSourcePathCheck(report, file, preparationPath)
+				LSourcePathCheck(report, file, preparationPath, LVersionIdentifierRead(record))
 			}
 		}
 	}
@@ -312,16 +317,29 @@ func LCatalogFieldGet(record map[string]any, fieldName string) string {
 	return value
 }
 
-func LSourcePathCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, sourcePath string) {
+func LSourcePathCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFile, sourcePath string, expectedVersion string) {
 	cleanPath := filepath.ToSlash(filepath.Clean(sourcePath))
 	if strings.HasPrefix(cleanPath, "../") || strings.HasPrefix(cleanPath, "/") {
 		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("unsafe source path %q", sourcePath)))
 		return
 	}
-	if strings.HasPrefix(cleanPath, "versions/") && strings.HasSuffix(cleanPath, ".go") {
+	if !strings.HasPrefix(cleanPath, "versions/") || !strings.HasSuffix(cleanPath, ".go") {
+		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueWarning, file, fmt.Sprintf("source path %q is not a recognized version work path", sourcePath)))
 		return
 	}
-	report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueWarning, file, fmt.Sprintf("source path %q is not a recognized version work path", sourcePath)))
+	pathVersion := LSourcePathVersionGet(cleanPath)
+	if expectedVersion != "" && pathVersion != expectedVersion {
+		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("source path %q targets FFmpeg version %q but the owning record is FFmpeg %q", sourcePath, pathVersion, expectedVersion)))
+	}
+}
+
+// LSourcePathVersionGet extracts the version segment of a "versions/<version>/<file>.go" path.
+func LSourcePathVersionGet(cleanPath string) string {
+	segments := strings.Split(cleanPath, "/")
+	if len(segments) < 3 {
+		return ""
+	}
+	return segments[1]
 }
 
 func LValidationIssueCreate(levelName LValidationIssueLevel, file LCatalogEmbeddedFile, message string) LCatalogValidationIssue {

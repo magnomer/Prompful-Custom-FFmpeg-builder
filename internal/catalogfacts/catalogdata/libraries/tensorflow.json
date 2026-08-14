@@ -329,7 +329,7 @@
       "preparation": {
         "required": true,
         "kind": "version-specific-external-preparation",
-        "implementation": "versions/8.1.2/tensorflow.go",
+        "implementation": "versions/9.0.1/tensorflow.go",
         "implementationLanguage": "go",
         "sourcePin": {
           "version": "2.16.1",
