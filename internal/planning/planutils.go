@@ -11,7 +11,7 @@ import (
 // and its pkg-config minimum. Covers every track (a non-native library such as libmpeghdec is
 // equally version-gated). When the release line is not release-supported, or the version is a
 // snapshot, libraries are left unannotated. The annotation is informational for the UI; the
-// build-blocking decision is made in LWarningFFmpegAppend.
+// build-blocking decision is made in LWarningFfmpegAppend.
 func LVersionAnnotationGet(libraries []LLibraryChoice, ffmpegVersion string) {
 	release, releaseSupported := LReleaseSupportResolve(ffmpegVersion)
 	if !releaseSupported {
@@ -58,14 +58,14 @@ func LLibraryTrackApply(libraries []LLibraryChoice, ffmpegVersion string) {
 	}
 }
 
-// LWarningFFmpegAppend adds the FFmpeg-version plan warnings and reports whether any
+// LWarningFfmpegAppend adds the FFmpeg-version plan warnings and reports whether any
 // of them blocks the build. When the chosen release line is release-supported in the per-release
 // support data, each selected library or configure option the release does not support is
 // blocked early with a clear message (configure would otherwise fail late and cryptically) —
 // the same treatment as an unknown library id or an unprepared track. An unsupported line
 // is not gated here (FFmpeg configure stays the backstop). It always appends the non-blocking
-// release-line advisory (see LFFmpegWarningAppend).
-func LWarningFFmpegAppend(warnings []LWarningPlan, ffmpegVersion string, libraries []LLibraryChoice, selectedConfigureOptionIds []string) ([]LWarningPlan, bool) {
+// release-line advisory (see LFfmpegWarningAppend).
+func LWarningFfmpegAppend(warnings []LWarningPlan, ffmpegVersion string, libraries []LLibraryChoice, selectedConfigureOptionIds []string) ([]LWarningPlan, bool) {
 	blocked := false
 	if release, releaseSupported := LReleaseSupportResolve(ffmpegVersion); releaseSupported {
 		seenLibrary := map[string]bool{}
@@ -101,11 +101,11 @@ func LWarningFFmpegAppend(warnings []LWarningPlan, ffmpegVersion string, librari
 			}
 		}
 	}
-	warnings = LFFmpegWarningAppend(warnings, ffmpegVersion)
+	warnings = LFfmpegWarningAppend(warnings, ffmpegVersion)
 	return warnings, blocked
 }
 
-// LFFmpegWarningAppend adds a non-blocking advisory about the chosen FFmpeg release:
+// LFfmpegWarningAppend adds a non-blocking advisory about the chosen FFmpeg release:
 //   - Supported line, older patch than recommended (e.g. 8.1.1 on the 8.1 line): advise the
 //     recommended patch (8.1.2), which carries that line's security/critical fixes.
 //   - Unmaintained line (e.g. 6.0, 4.2), and not newer than the newest known release: advise
@@ -113,7 +113,7 @@ func LWarningFFmpegAppend(warnings []LWarningPlan, ffmpegVersion string, librari
 //
 // A snapshot/unparseable version, an exact recommended release, a newer patch on a supported
 // line, or a version newer than the newest known release draws no advisory.
-func LFFmpegWarningAppend(warnings []LWarningPlan, ffmpegVersion string) []LWarningPlan {
+func LFfmpegWarningAppend(warnings []LWarningPlan, ffmpegVersion string) []LWarningPlan {
 	lineKey := LReleaseLineResolve(ffmpegVersion)
 	if lineKey == "" {
 		return warnings
@@ -136,16 +136,16 @@ func LFFmpegWarningAppend(warnings []LWarningPlan, ffmpegVersion string) []LWarn
 	return warnings
 }
 
-// LFFmpegVersionPattern extracts the dotted-numeric release from an FFmpeg source
+// LFfmpegVersionPattern extracts the dotted-numeric release from an FFmpeg source
 // archive filename, e.g. ".../ffmpeg-8.1.2.tar.xz" -> "8.1.2".
-var LFFmpegVersionPattern = regexp.MustCompile(`ffmpeg-(\d+(?:\.\d+){0,2})`)
+var LFfmpegVersionPattern = regexp.MustCompile(`ffmpeg-(\d+(?:\.\d+){0,2})`)
 
 // LArchiveURLParse derives the FFmpeg version from its source archive URL so
 // the library version layer can be resolved for that release. Returns "" when the URL
 // carries no recognizable version; callers must treat that as missing, not as a cue to
 // substitute another release.
 func LArchiveURLParse(archiveUrl string) string {
-	match := LFFmpegVersionPattern.FindStringSubmatch(archiveUrl)
+	match := LFfmpegVersionPattern.FindStringSubmatch(archiveUrl)
 	if match == nil {
 		return ""
 	}

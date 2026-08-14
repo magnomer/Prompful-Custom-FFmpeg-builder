@@ -96,7 +96,7 @@ type LSettingsToolchain struct {
 	WindowsShellProfileName  string   `json:"windowsShellProfileName"`
 }
 
-type LSettingsFFmpeg struct {
+type LSettingsFfmpeg struct {
 	WorkspaceDirectory         string   `json:"workspaceDirectory"`
 	FfmpegSourceArchiveUrl     string   `json:"ffmpegSourceArchiveUrl"`
 	FfmpegSourceSignatureUrl   string   `json:"ffmpegSourceSignatureUrl"`
@@ -131,7 +131,7 @@ type LPlanToolchain struct {
 	IsExecutable               bool             `json:"isExecutable"`
 }
 
-type LPlanFFmpeg struct {
+type LPlanFfmpeg struct {
 	ActionName                 string                   `json:"actionName"`
 	PlanHash                   string                   `json:"planHash"`
 	WorkspaceDirectory         string                   `json:"workspaceDirectory"`
@@ -178,10 +178,10 @@ type LReviewToolchain struct {
 	Plan                     LPlanToolchain `json:"plan"`
 }
 
-type LReviewFFmpeg struct {
+type LReviewFfmpeg struct {
 	ReviewSessionId          string      `json:"reviewSessionId"`
 	ExpectedLConsentText     string      `json:"expectedLConsentText"`
 	ExpectedLConsentTextHash string      `json:"expectedLConsentTextHash"`
 	ExpiresAtUnixTime        int64       `json:"expiresAtUnixTime"`
-	Plan                     LPlanFFmpeg `json:"plan"`
+	Plan                     LPlanFfmpeg `json:"plan"`
 }

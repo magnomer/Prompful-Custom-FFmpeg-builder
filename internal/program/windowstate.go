@@ -29,7 +29,7 @@ func LPathWindowResolve() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDirectory, "PromptfulCustomFFmpegBuilder", "window-state.json"), nil
+	return filepath.Join(configDirectory, "PromptfulCustomFfmpegBuilder", "window-state.json"), nil
 }
 
 // LStateWindowLoad returns the saved geometry, or sane defaults when nothing

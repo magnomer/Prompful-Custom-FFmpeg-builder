@@ -77,13 +77,13 @@ func (program *LProgram) LVerificationBuildRun(workspaceDirectory string) (LVeri
 		return verification, nil
 	}
 
-	versionOutput, err := LFFmpegVersionRun(ffmpegPath)
+	versionOutput, err := LFfmpegVersionRun(ffmpegPath)
 	if err != nil {
 		verification.Overall = "unverifiable"
 		verification.Message = "Could not run ffmpeg.exe to read its build configuration: " + err.Error()
 		return verification, nil
 	}
-	verification.FfmpegVersion = LVersionFFmpegParse(versionOutput)
+	verification.FfmpegVersion = LVersionFfmpegParse(versionOutput)
 	configuredFlags := LFlagConfiguredParse(versionOutput)
 	if len(configuredFlags) == 0 {
 		verification.Overall = "unverifiable"
@@ -104,7 +104,7 @@ func (program *LProgram) LVerificationBuildRun(workspaceDirectory string) (LVeri
 	componentNamesLoaded := false
 	ensureComponentNames := func() map[string]bool {
 		if !componentNamesLoaded {
-			componentNames = LFFmpegComponentGet(ffmpegPath)
+			componentNames = LFfmpegComponentGet(ffmpegPath)
 			componentNamesLoaded = true
 		}
 		return componentNames
@@ -209,7 +209,7 @@ func LCatalogLibraryRead(ffmpegVersion string) map[string]bool {
 	}
 	resolvedPlan, err := planning.LCatalogEmbeddedResolve(planning.LCatalogResolutionSettings{
 		FfmpegVersion:           versionName,
-		WindowsShellProfileName: planning.LSettingsFFmpegCreate().WindowsShellProfileName,
+		WindowsShellProfileName: planning.LSettingsFfmpegCreate().WindowsShellProfileName,
 	})
 	if err != nil {
 		return flags
@@ -232,13 +232,13 @@ func LLibraryFlagsAdd(flags map[string]bool, configureFlags []string) {
 	}
 }
 
-// LFFmpegComponentGet runs the built ffmpeg and collects the names of every
+// LFfmpegComponentGet runs the built ffmpeg and collects the names of every
 // decoder/encoder/demuxer/muxer it reports, so flagless libraries can be checked
 // by the component they provide (e.g. the "png" decoder).
-func LFFmpegComponentGet(ffmpegPath string) map[string]bool {
+func LFfmpegComponentGet(ffmpegPath string) map[string]bool {
 	names := map[string]bool{}
 	for _, listArg := range []string{"-decoders", "-encoders", "-demuxers", "-muxers"} {
-		output, err := LFFmpegListRun(ffmpegPath, listArg)
+		output, err := LFfmpegListRun(ffmpegPath, listArg)
 		if err != nil {
 			continue
 		}
@@ -247,7 +247,7 @@ func LFFmpegComponentGet(ffmpegPath string) map[string]bool {
 	return names
 }
 
-func LFFmpegListRun(ffmpegPath string, listArg string) (string, error) {
+func LFfmpegListRun(ffmpegPath string, listArg string) (string, error) {
 	LContext, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	command := exec.CommandContext(LContext, ffmpegPath, "-hide_banner", listArg)
@@ -280,7 +280,7 @@ func LNameComponentAdd(set map[string]bool, listOutput string) {
 	}
 }
 
-func LFFmpegVersionRun(ffmpegPath string) (string, error) {
+func LFfmpegVersionRun(ffmpegPath string) (string, error) {
 	LContext, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	command := exec.CommandContext(LContext, ffmpegPath, "-hide_banner", "-version")
@@ -310,7 +310,7 @@ func LFlagConfiguredParse(versionOutput string) map[string]bool {
 	return flags
 }
 
-func LVersionFFmpegParse(versionOutput string) string {
+func LVersionFfmpegParse(versionOutput string) string {
 	scanner := bufio.NewScanner(strings.NewReader(versionOutput))
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())

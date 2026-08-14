@@ -51,7 +51,7 @@ func TestSettingsResolve(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
-	settings, err := LSettingsFFmpegResolve(parsed)
+	settings, err := LSettingsFfmpegResolve(parsed)
 	if err != nil {
 		t.Fatalf("resolve: %v", err)
 	}
@@ -71,13 +71,13 @@ func TestSettingsResolve(t *testing.T) {
 
 func TestSettingsResolveExitCodes(t *testing.T) {
 	// Missing version -> bad args (2).
-	if _, err := LSettingsFFmpegResolve(LArgumentBuild{}); err == nil {
+	if _, err := LSettingsFfmpegResolve(LArgumentBuild{}); err == nil {
 		t.Fatalf("expected missing-version error")
 	} else if usage, ok := err.(LErrorUsage); !ok || usage.code != 2 {
 		t.Fatalf("missing version: want code 2, got %v", err)
 	}
 	// Unknown version -> unsupported (4).
-	if _, err := LSettingsFFmpegResolve(LArgumentBuild{version: "9.9.9"}); err == nil {
+	if _, err := LSettingsFfmpegResolve(LArgumentBuild{version: "9.9.9"}); err == nil {
 		t.Fatalf("expected unknown-version error")
 	} else if usage, ok := err.(LErrorUsage); !ok || usage.code != 4 {
 		t.Fatalf("unknown version: want code 4, got %v", err)

@@ -11,7 +11,7 @@ type LConsentKind string
 
 const (
 	LConsentKindMsys      LConsentKind = "msys2-download"
-	LConsentKindFFmpeg    LConsentKind = "ffmpeg-source-download"
+	LConsentKindFfmpeg    LConsentKind = "ffmpeg-source-download"
 	LArchiveConsentKind   LConsentKind = "archive-extraction"
 	LConsentKindPacman    LConsentKind = "pacman-package-installation"
 	LConsentKindCommand   LConsentKind = "external-command-execution"
@@ -28,7 +28,7 @@ type LConsent struct {
 }
 
 type LConsentMsys struct{ LConsent }
-type LConsentFFmpeg struct{ LConsent }
+type LConsentFfmpeg struct{ LConsent }
 type LArchiveConsentState struct{ LConsent }
 type LConsentPacman struct{ LConsent }
 type LConsentCommand struct{ LConsent }
@@ -45,9 +45,9 @@ func LConsentMsysCreate(approval LRequestApproval) (LConsentMsys, error) {
 	return LConsentMsys{LConsent: approvalRecord}, err
 }
 
-func LConsentFFmpegCreate(approval LRequestApproval) (LConsentFFmpeg, error) {
-	approvalRecord, err := LConsentCreate(LConsentKindFFmpeg, approval)
-	return LConsentFFmpeg{LConsent: approvalRecord}, err
+func LConsentFfmpegCreate(approval LRequestApproval) (LConsentFfmpeg, error) {
+	approvalRecord, err := LConsentCreate(LConsentKindFfmpeg, approval)
+	return LConsentFfmpeg{LConsent: approvalRecord}, err
 }
 
 func LConsentArchiveCreate(approval LRequestApproval) (LArchiveConsentState, error) {

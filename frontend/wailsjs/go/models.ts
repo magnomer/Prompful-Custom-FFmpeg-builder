@@ -84,7 +84,7 @@ export namespace consent {
 	        this.consentText = source["consentText"];
 	    }
 	}
-	export class LConsentFFmpeg {
+	export class LConsentFfmpeg {
 	    consentId: string;
 	    kind: string;
 	    approvedActionName: string;
@@ -93,7 +93,7 @@ export namespace consent {
 	    consentText: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new LConsentFFmpeg(source);
+	        return new LConsentFfmpeg(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -699,7 +699,7 @@ export namespace planning {
 	        this.messageValues = source["messageValues"];
 	    }
 	}
-	export class LPlanFFmpeg {
+	export class LPlanFfmpeg {
 	    actionName: string;
 	    planHash: string;
 	    workspaceDirectory: string;
@@ -738,7 +738,7 @@ export namespace planning {
 	    isExecutable: boolean;
 	
 	    static createFrom(source: any = {}) {
-	        return new LPlanFFmpeg(source);
+	        return new LPlanFfmpeg(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -904,15 +904,15 @@ export namespace planning {
 	
 	
 	
-	export class LReviewFFmpeg {
+	export class LReviewFfmpeg {
 	    reviewSessionId: string;
 	    expectedLConsentText: string;
 	    expectedLConsentTextHash: string;
 	    expiresAtUnixTime: number;
-	    plan: LPlanFFmpeg;
+	    plan: LPlanFfmpeg;
 	
 	    static createFrom(source: any = {}) {
-	        return new LReviewFFmpeg(source);
+	        return new LReviewFfmpeg(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -921,7 +921,7 @@ export namespace planning {
 	        this.expectedLConsentText = source["expectedLConsentText"];
 	        this.expectedLConsentTextHash = source["expectedLConsentTextHash"];
 	        this.expiresAtUnixTime = source["expiresAtUnixTime"];
-	        this.plan = this.convertValues(source["plan"], LPlanFFmpeg);
+	        this.plan = this.convertValues(source["plan"], LPlanFfmpeg);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -980,7 +980,7 @@ export namespace planning {
 		    return a;
 		}
 	}
-	export class LSettingsFFmpeg {
+	export class LSettingsFfmpeg {
 	    workspaceDirectory: string;
 	    ffmpegSourceArchiveUrl: string;
 	    ffmpegSourceSignatureUrl: string;
@@ -994,7 +994,7 @@ export namespace planning {
 	    licenseProfileName: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new LSettingsFFmpeg(source);
+	        return new LSettingsFfmpeg(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -1191,18 +1191,18 @@ export namespace program {
 		    return a;
 		}
 	}
-	export class LReviewFFmpegStored {
+	export class LReviewFfmpegStored {
 	    ReviewSession: reviewsession.LSessionReview;
-	    Plan: planning.LPlanFFmpeg;
+	    Plan: planning.LPlanFfmpeg;
 	
 	    static createFrom(source: any = {}) {
-	        return new LReviewFFmpegStored(source);
+	        return new LReviewFfmpegStored(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ReviewSession = this.convertValues(source["ReviewSession"], reviewsession.LSessionReview);
-	        this.Plan = this.convertValues(source["Plan"], planning.LPlanFFmpeg);
+	        this.Plan = this.convertValues(source["Plan"], planning.LPlanFfmpeg);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1261,7 +1261,7 @@ export namespace program {
 	    securityRuleSummary: string;
 	    namingRuleSummary: string;
 	    defaultBuildConfigSettings: planning.LSettingsToolchain;
-	    defaultFfmpegBuildSettings: planning.LSettingsFFmpeg;
+	    defaultFfmpegBuildSettings: planning.LSettingsFfmpeg;
 	    defaultLibraryCatalog: planning.LLibraryChoice[];
 	    defaultLibraryPresetCatalog: planning.LPresetLibraryChoice[];
 	    defaultConfigureOptionCatalog: planning.LOptionChoice[];
@@ -1278,7 +1278,7 @@ export namespace program {
 	        this.securityRuleSummary = source["securityRuleSummary"];
 	        this.namingRuleSummary = source["namingRuleSummary"];
 	        this.defaultBuildConfigSettings = this.convertValues(source["defaultBuildConfigSettings"], planning.LSettingsToolchain);
-	        this.defaultFfmpegBuildSettings = this.convertValues(source["defaultFfmpegBuildSettings"], planning.LSettingsFFmpeg);
+	        this.defaultFfmpegBuildSettings = this.convertValues(source["defaultFfmpegBuildSettings"], planning.LSettingsFfmpeg);
 	        this.defaultLibraryCatalog = this.convertValues(source["defaultLibraryCatalog"], planning.LLibraryChoice);
 	        this.defaultLibraryPresetCatalog = this.convertValues(source["defaultLibraryPresetCatalog"], planning.LPresetLibraryChoice);
 	        this.defaultConfigureOptionCatalog = this.convertValues(source["defaultConfigureOptionCatalog"], planning.LOptionChoice);

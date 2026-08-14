@@ -44,10 +44,10 @@ const (
 	LLibraryBuildPhase      LWorkPhaseName = "library-build"
 	LLibraryInstallPhase    LWorkPhaseName = "library-install"
 	LLibraryInstallAfter    LWorkPhaseName = "after-library-install"
-	LFFmpegConfigureBefore  LWorkPhaseName = "before-ffmpeg-configure"
-	LFFmpegConfigureAfter   LWorkPhaseName = "after-ffmpeg-configure"
-	LFFmpegBuildBefore      LWorkPhaseName = "before-ffmpeg-build"
-	LFFmpegBuildAfter       LWorkPhaseName = "after-ffmpeg-build"
+	LFfmpegConfigureBefore  LWorkPhaseName = "before-ffmpeg-configure"
+	LFfmpegConfigureAfter   LWorkPhaseName = "after-ffmpeg-configure"
+	LFfmpegBuildBefore      LWorkPhaseName = "before-ffmpeg-build"
+	LFfmpegBuildAfter       LWorkPhaseName = "after-ffmpeg-build"
 )
 
 // LLibraryManifest is the planned data shape for /libraries/{libraryId}.json.

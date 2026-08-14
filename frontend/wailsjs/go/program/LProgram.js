@@ -38,40 +38,40 @@ export function LErrorLocalizedEmit(arg1, arg2, arg3) {
   return window['go']['program']['LProgram']['LErrorLocalizedEmit'](arg1, arg2, arg3);
 }
 
-export function LFFmpegApproveSync(arg1, arg2) {
-  return window['go']['program']['LProgram']['LFFmpegApproveSync'](arg1, arg2);
+export function LFfmpegApproveSync(arg1, arg2) {
+  return window['go']['program']['LProgram']['LFfmpegApproveSync'](arg1, arg2);
 }
 
-export function LFFmpegApproveValidate(arg1, arg2) {
-  return window['go']['program']['LProgram']['LFFmpegApproveValidate'](arg1, arg2);
+export function LFfmpegApproveValidate(arg1, arg2) {
+  return window['go']['program']['LProgram']['LFfmpegApproveValidate'](arg1, arg2);
 }
 
-export function LFFmpegCompilationLaunch(arg1, arg2, arg3) {
-  return window['go']['program']['LProgram']['LFFmpegCompilationLaunch'](arg1, arg2, arg3);
+export function LFfmpegCompilationLaunch(arg1, arg2, arg3) {
+  return window['go']['program']['LProgram']['LFfmpegCompilationLaunch'](arg1, arg2, arg3);
 }
 
-export function LFFmpegCompile(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
-  return window['go']['program']['LProgram']['LFFmpegCompile'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+export function LFfmpegCompile(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['program']['LProgram']['LFfmpegCompile'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
-export function LFFmpegConfigureRun(arg1, arg2, arg3, arg4, arg5, arg6) {
-  return window['go']['program']['LProgram']['LFFmpegConfigureRun'](arg1, arg2, arg3, arg4, arg5, arg6);
+export function LFfmpegConfigureRun(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['program']['LProgram']['LFfmpegConfigureRun'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
-export function LFFmpegFailureClean(arg1, arg2, arg3) {
-  return window['go']['program']['LProgram']['LFFmpegFailureClean'](arg1, arg2, arg3);
+export function LFfmpegFailureClean(arg1, arg2, arg3) {
+  return window['go']['program']['LProgram']['LFfmpegFailureClean'](arg1, arg2, arg3);
 }
 
-export function LFFmpegMakeRun(arg1, arg2, arg3, arg4, arg5, arg6) {
-  return window['go']['program']['LProgram']['LFFmpegMakeRun'](arg1, arg2, arg3, arg4, arg5, arg6);
+export function LFfmpegMakeRun(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['program']['LProgram']['LFfmpegMakeRun'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
-export function LFFmpegReviewConsume(arg1) {
-  return window['go']['program']['LProgram']['LFFmpegReviewConsume'](arg1);
+export function LFfmpegReviewConsume(arg1) {
+  return window['go']['program']['LProgram']['LFfmpegReviewConsume'](arg1);
 }
 
-export function LFFmpegReviewValidate(arg1, arg2) {
-  return window['go']['program']['LProgram']['LFFmpegReviewValidate'](arg1, arg2);
+export function LFfmpegReviewValidate(arg1, arg2) {
+  return window['go']['program']['LProgram']['LFfmpegReviewValidate'](arg1, arg2);
 }
 
 export function LFileRecordOpen(arg1, arg2, arg3) {
@@ -130,12 +130,12 @@ export function LPacmanPackageInstall(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['program']['LProgram']['LPacmanPackageInstall'](arg1, arg2, arg3, arg4, arg5);
 }
 
-export function LPlanFFmpegApprove(arg1, arg2) {
-  return window['go']['program']['LProgram']['LPlanFFmpegApprove'](arg1, arg2);
+export function LPlanFfmpegApprove(arg1, arg2) {
+  return window['go']['program']['LProgram']['LPlanFfmpegApprove'](arg1, arg2);
 }
 
-export function LPlanFFmpegRequest(arg1) {
-  return window['go']['program']['LProgram']['LPlanFFmpegRequest'](arg1);
+export function LPlanFfmpegRequest(arg1) {
+  return window['go']['program']['LProgram']['LPlanFfmpegRequest'](arg1);
 }
 
 export function LPlanToolchainApprove(arg1, arg2) {

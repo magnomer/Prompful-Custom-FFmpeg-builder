@@ -20,7 +20,7 @@ func LHashToolchainVerify(plan planning.LPlanToolchain) error {
 	return nil
 }
 
-func LHashFFmpegVerify(plan planning.LPlanFFmpeg) error {
+func LHashFfmpegVerify(plan planning.LPlanFfmpeg) error {
 	planWithoutHash := plan
 	originalPlanHash := planWithoutHash.PlanHash
 	planWithoutHash.PlanHash = ""

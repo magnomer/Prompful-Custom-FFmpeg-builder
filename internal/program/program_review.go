@@ -30,23 +30,23 @@ func (program *LProgram) LToolchainReviewConsume(reviewSessionId string) {
 	delete(program.LToolchainReviewStorage, reviewSessionId)
 }
 
-func (program *LProgram) LFFmpegReviewValidate(reviewSessionId string, approval consent.LRequestApproval) (LReviewFFmpegStored, error) {
+func (program *LProgram) LFfmpegReviewValidate(reviewSessionId string, approval consent.LRequestApproval) (LReviewFfmpegStored, error) {
 	program.LMutexReviewSession.Lock()
 	defer program.LMutexReviewSession.Unlock()
-	storedReviewSession, exists := program.LFFmpegReviewStorage[reviewSessionId]
+	storedReviewSession, exists := program.LFfmpegReviewStorage[reviewSessionId]
 	if !exists {
-		return LReviewFFmpegStored{}, errors.New("FFmpeg review session was not found")
+		return LReviewFfmpegStored{}, errors.New("FFmpeg review session was not found")
 	}
 	if err := reviewsession.LReviewApprovalCheck(storedReviewSession.ReviewSession, approval.ApprovedActionName, approval.ApprovedPlanHash, approval.LConsentText); err != nil {
-		return LReviewFFmpegStored{}, err
+		return LReviewFfmpegStored{}, err
 	}
 	return storedReviewSession, nil
 }
 
-func (program *LProgram) LFFmpegReviewConsume(reviewSessionId string) {
+func (program *LProgram) LFfmpegReviewConsume(reviewSessionId string) {
 	program.LMutexReviewSession.Lock()
 	defer program.LMutexReviewSession.Unlock()
-	delete(program.LFFmpegReviewStorage, reviewSessionId)
+	delete(program.LFfmpegReviewStorage, reviewSessionId)
 }
 
 func (program *LProgram) LNativeConsentAsk(actionName string, planHash string) (bool, error) {

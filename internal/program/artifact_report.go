@@ -13,7 +13,7 @@ import (
 	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
-func LReportArtifactWrite(workspaceLayout workspace.LWorkspaceLayout, LRunId string, plan planning.LPlanFFmpeg) error {
+func LReportArtifactWrite(workspaceLayout workspace.LWorkspaceLayout, LRunId string, plan planning.LPlanFfmpeg) error {
 	reportPath := filepath.Join(workspaceLayout.ArtifactsDirectory, "build-report-"+LRunId+".json")
 	ffmpegExecutablePath := filepath.Join(workspaceLayout.ArtifactsDirectory, "ffmpeg.exe")
 	ffprobeExecutablePath := filepath.Join(workspaceLayout.ArtifactsDirectory, "ffprobe.exe")
@@ -39,11 +39,11 @@ func LArtifactVersionRead(workspaceLayout workspace.LWorkspaceLayout) string {
 	if err := workspace.LPathRealCheck(workspaceLayout.WorkspaceDirectory, ffmpegExecutablePath); err != nil {
 		return ""
 	}
-	versionOutput, err := LFFmpegVersionRun(ffmpegExecutablePath)
+	versionOutput, err := LFfmpegVersionRun(ffmpegExecutablePath)
 	if err != nil {
 		return ""
 	}
-	return LVersionFFmpegParse(versionOutput)
+	return LVersionFfmpegParse(versionOutput)
 }
 
 // LArtifactLayoutFind returns the workspace layout whose ArtifactsDirectory

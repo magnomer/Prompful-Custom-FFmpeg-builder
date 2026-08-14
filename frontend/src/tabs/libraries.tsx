@@ -31,7 +31,7 @@ export {
 export type LLibraryProperties = {
   initialProgramState: LStateInitial;
   libraryCatalog: LLibraryChoice[];
-  ffmpegBuildSettings: LSettingsFFmpeg;
+  ffmpegBuildSettings: LSettingsFfmpeg;
   libraryPresetCatalog: LPresetLibrary[];
   libraryPresetId: LPresetLibraryId;
   extendedLibraries: boolean;

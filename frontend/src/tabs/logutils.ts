@@ -33,14 +33,14 @@ export type LPhaseToolchainId =
   | "tc-install"
   | "tc-verify";
 
-export type LPhaseFFmpegId =
+export type LPhaseFfmpegId =
   | "ff-download"
   | "ff-pkgconfig"
   | "ff-configure"
   | "ff-compile"
   | "ff-extraction";
 
-export type LPhaseLogId = LPhaseToolchainId | LPhaseFFmpegId | "other";
+export type LPhaseLogId = LPhaseToolchainId | LPhaseFfmpegId | "other";
 
 export type LLogParsedEntry = LLogSecurityEntry & {
   phase: LPhaseLogId;
@@ -144,7 +144,7 @@ export function LLogRuntimeBuild(message: string): string {
 export const LPhaseToolchainOrder: LPhaseLogId[] = [
   "tc-download", "tc-extract", "tc-keyring", "tc-syncdb", "tc-install", "tc-verify",
 ];
-export const LPhaseFFmpegOrder: LPhaseLogId[] = [
+export const LPhaseFfmpegOrder: LPhaseLogId[] = [
   "ff-download", "ff-pkgconfig", "ff-configure", "ff-compile", "ff-extraction",
 ];
 
@@ -159,7 +159,7 @@ export function LPipelineToolchainGet(): { id: LPhaseLogId; label: string; short
   ];
 }
 
-export function LPipelineFFmpegGet(): { id: LPhaseLogId; label: string; short: string }[] {
+export function LPipelineFfmpegGet(): { id: LPhaseLogId; label: string; short: string }[] {
   return [
     { id: "ff-download",   label: LLocaleTextGet("logs.phase.ffDownload"),   short: LLocaleTextGet("logs.phaseShort.download") },
     { id: "ff-pkgconfig",  label: LLocaleTextGet("logs.phase.ffPkgconfig"),  short: LLocaleTextGet("logs.phaseShort.library") },
@@ -241,7 +241,7 @@ export function LPhaseToolchainDetect(msg: string): LPhaseLogId {
   return "other";
 }
 
-export function LPhaseFFmpegDetect(msg: string): LPhaseLogId {
+export function LPhaseFfmpegDetect(msg: string): LPhaseLogId {
   const n = msg.trimStart();
   const first = n.split(/\s+/)[0] ?? "";
   if (n.startsWith("Starting FFmpeg configure")) return "ff-configure";
@@ -304,7 +304,7 @@ export function LPhaseFFmpegDetect(msg: string): LPhaseLogId {
 export function LLogEntryParse(entry: LLogSecurityEntry, context: "toolchain" | "ffmpeg"): LLogParsedEntry {
   const msg = entry.message;
   const n = msg.trimStart();
-  const phase = context === "toolchain" ? LPhaseToolchainDetect(msg) : LPhaseFFmpegDetect(msg);
+  const phase = context === "toolchain" ? LPhaseToolchainDetect(msg) : LPhaseFfmpegDetect(msg);
   const parsed: LLogParsedEntry = { ...entry, phase };
   const compileMatch = n.match(/^(CC|CXX|HOSTCC|X86ASM|WINDRES|STRIP|AR|LDXX|LD|HOSTLD|GEN|BIN2C|GZIP|MINIFY|GLSLC|POD|HTML|TXT|TEXI|GENTEXI)\s+(.+)$/);
   if (compileMatch) { parsed.compileOp = compileMatch[1]; parsed.compileTarget = compileMatch[2]; }
@@ -348,7 +348,7 @@ export function LPhaseGroupBuild(entries: LLogParsedEntry[], phaseOrder: LPhaseL
 }
 
 export function LProgressGet(entries: LLogSecurityEntry[], approvedActionStatus: string, context: "toolchain" | "ffmpeg"): LProgressLive {
-  const phaseOrder = context === "toolchain" ? LPhaseToolchainOrder : LPhaseFFmpegOrder;
+  const phaseOrder = context === "toolchain" ? LPhaseToolchainOrder : LPhaseFfmpegOrder;
   const phaseSet = new Set<LPhaseLogId>(phaseOrder);
 
   if (entries.length === 0) {

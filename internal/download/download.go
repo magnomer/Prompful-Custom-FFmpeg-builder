@@ -84,8 +84,8 @@ func LDownloadMsysRun(LContext context.Context, userDownloadLConsent consent.LCo
 	return LDownloadFileRun(LContext, downloadPlan, emitProgress)
 }
 
-func LDownloadFFmpegRun(LContext context.Context, userDownloadLConsent consent.LConsentFFmpeg, downloadPlan LDownloadPlanState, emitProgress LProgressFunc) error {
-	if err := consent.LConsentCheck(userDownloadLConsent.LConsent, consent.LConsentKindFFmpeg, downloadPlan.ActionName, downloadPlan.PlanHash); err != nil {
+func LDownloadFfmpegRun(LContext context.Context, userDownloadLConsent consent.LConsentFfmpeg, downloadPlan LDownloadPlanState, emitProgress LProgressFunc) error {
+	if err := consent.LConsentCheck(userDownloadLConsent.LConsent, consent.LConsentKindFfmpeg, downloadPlan.ActionName, downloadPlan.PlanHash); err != nil {
 		return err
 	}
 	return LDownloadFileRun(LContext, downloadPlan, emitProgress)

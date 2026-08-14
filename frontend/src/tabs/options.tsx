@@ -29,11 +29,11 @@ export { LLicenseBoundaryResolve, LLicenseShortGet } from "./optionlicense";
 // ─── POptionRender ───────────────────────────────────────────────────────────────
 
 export type LOptionProperties = {
-  ffmpegBuildSettings: LSettingsFFmpeg;
+  ffmpegBuildSettings: LSettingsFfmpeg;
   initialProgramState: LStateInitial;
   extraConfigureFlagText: string;
   onExtraFlagTextChange: (text: string) => void;
-  LSettingsFFmpegUpdate: (partial: Partial<LSettingsFFmpeg>) => void;
+  LSettingsFfmpegUpdate: (partial: Partial<LSettingsFfmpeg>) => void;
   LOptionToggle: (optionId: string) => void;
   LPresetOptionApply: (presetId: LPresetOptionId) => void;
   optionsDetailedView: boolean;
@@ -47,7 +47,7 @@ export function POptionRender({
   initialProgramState,
   extraConfigureFlagText,
   onExtraFlagTextChange,
-  LSettingsFFmpegUpdate,
+  LSettingsFfmpegUpdate,
   LOptionToggle,
   LPresetOptionApply,
   optionsDetailedView,
@@ -187,7 +187,7 @@ export function POptionRender({
 
           <PSectionThreadRender
             parallelJobCount={ffmpegBuildSettings.parallelJobCount}
-            LSettingsFFmpegUpdate={LSettingsFFmpegUpdate}
+            LSettingsFfmpegUpdate={LSettingsFfmpegUpdate}
           />
         </>
       )}

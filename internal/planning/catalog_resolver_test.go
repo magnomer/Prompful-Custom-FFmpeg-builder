@@ -2,7 +2,7 @@ package planning
 
 import "testing"
 
-func TestCatalogResolverFFmpeg519LibjxlUsesInternalPreparation(t *testing.T) {
+func TestCatalogResolverFfmpeg519LibjxlUsesInternalPreparation(t *testing.T) {
 	resolvedPlan, err := LCatalogEmbeddedResolve(LCatalogResolutionSettings{
 		FfmpegVersion:           "5.1.9",
 		WindowsShellProfileName: "ucrt64",

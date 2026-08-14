@@ -24,19 +24,19 @@ func (program *LProgram) LPlanToolchainRequest(buildConfigSettings planning.LSet
 	return planning.LReviewToolchain{ReviewSessionId: reviewSession.ReviewSessionId, ExpectedLConsentText: reviewSession.ExpectedLConsentText, ExpectedLConsentTextHash: reviewSession.ExpectedLConsentTextHash, ExpiresAtUnixTime: reviewSession.ExpiresAtUnixTime, Plan: plan}, nil
 }
 
-func (program *LProgram) LPlanFFmpegRequest(ffmpegBuildSettings planning.LSettingsFFmpeg) (planning.LReviewFFmpeg, error) {
-	plan, err := planning.LPlanFFmpegCreate(ffmpegBuildSettings)
+func (program *LProgram) LPlanFfmpegRequest(ffmpegBuildSettings planning.LSettingsFfmpeg) (planning.LReviewFfmpeg, error) {
+	plan, err := planning.LPlanFfmpegCreate(ffmpegBuildSettings)
 	if err != nil {
-		return planning.LReviewFFmpeg{}, err
+		return planning.LReviewFfmpeg{}, err
 	}
 	reviewSession, err := reviewsession.LSessionReviewCreate(plan.ActionName, plan.PlanHash, 30*time.Minute)
 	if err != nil {
-		return planning.LReviewFFmpeg{}, err
+		return planning.LReviewFfmpeg{}, err
 	}
 	program.LMutexReviewSession.Lock()
-	program.LFFmpegReviewStorage[reviewSession.ReviewSessionId] = LReviewFFmpegStored{ReviewSession: reviewSession, Plan: plan}
+	program.LFfmpegReviewStorage[reviewSession.ReviewSessionId] = LReviewFfmpegStored{ReviewSession: reviewSession, Plan: plan}
 	program.LMutexReviewSession.Unlock()
-	return planning.LReviewFFmpeg{ReviewSessionId: reviewSession.ReviewSessionId, ExpectedLConsentText: reviewSession.ExpectedLConsentText, ExpectedLConsentTextHash: reviewSession.ExpectedLConsentTextHash, ExpiresAtUnixTime: reviewSession.ExpiresAtUnixTime, Plan: plan}, nil
+	return planning.LReviewFfmpeg{ReviewSessionId: reviewSession.ReviewSessionId, ExpectedLConsentText: reviewSession.ExpectedLConsentText, ExpectedLConsentTextHash: reviewSession.ExpectedLConsentTextHash, ExpiresAtUnixTime: reviewSession.ExpiresAtUnixTime, Plan: plan}, nil
 }
 
 // LPlanToolchainApprove validates the review, confirms, and prepares the
@@ -113,63 +113,63 @@ func (program *LProgram) LToolchainPrepareLaunch(plan planning.LPlanToolchain, a
 	return LResultAction{RunId: LRunId, StartedAt: time.Now().UTC().Format(time.RFC3339)}, nil
 }
 
-// LPlanFFmpegApprove validates the review, confirms, and launches the build
+// LPlanFfmpegApprove validates the review, confirms, and launches the build
 // asynchronously (GUI behavior: returns a RunId immediately, progress arrives
 // through the reporter).
-func (program *LProgram) LPlanFFmpegApprove(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
-	plan, err := program.LFFmpegApproveValidate(reviewSessionId, approval)
+func (program *LProgram) LPlanFfmpegApprove(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
+	plan, err := program.LFfmpegApproveValidate(reviewSessionId, approval)
 	if err != nil {
 		return LResultAction{}, err
 	}
-	return program.LFFmpegCompilationLaunch(plan, approval, false)
+	return program.LFfmpegCompilationLaunch(plan, approval, false)
 }
 
-// LFFmpegApproveSync is the CLI counterpart of LPlanFFmpegApprove: it runs
+// LFfmpegApproveSync is the CLI counterpart of LPlanFfmpegApprove: it runs
 // the build inline and returns only after the build finishes, so the caller can
 // map the outcome to an exit code. The final status is delivered through the
 // reporter, exactly as in the async path.
-func (program *LProgram) LFFmpegApproveSync(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
-	plan, err := program.LFFmpegApproveValidate(reviewSessionId, approval)
+func (program *LProgram) LFfmpegApproveSync(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
+	plan, err := program.LFfmpegApproveValidate(reviewSessionId, approval)
 	if err != nil {
 		return LResultAction{}, err
 	}
-	return program.LFFmpegCompilationLaunch(plan, approval, true)
+	return program.LFfmpegCompilationLaunch(plan, approval, true)
 }
 
-// LFFmpegApproveValidate performs the shared, side-effect-ordered validation for
+// LFfmpegApproveValidate performs the shared, side-effect-ordered validation for
 // both approve paths: session check, executability, hash, toolchain readiness,
 // and the backend-owned confirmation. It consumes the single-use session only
 // after confirmation succeeds, so a rejected confirmation leaves it retryable.
-func (program *LProgram) LFFmpegApproveValidate(reviewSessionId string, approval consent.LRequestApproval) (planning.LPlanFFmpeg, error) {
-	storedReviewSession, err := program.LFFmpegReviewValidate(reviewSessionId, approval)
+func (program *LProgram) LFfmpegApproveValidate(reviewSessionId string, approval consent.LRequestApproval) (planning.LPlanFfmpeg, error) {
+	storedReviewSession, err := program.LFfmpegReviewValidate(reviewSessionId, approval)
 	if err != nil {
-		return planning.LPlanFFmpeg{}, err
+		return planning.LPlanFfmpeg{}, err
 	}
 	plan := storedReviewSession.Plan
 	if err := planning.LPlanRunCheck(plan.IsExecutable); err != nil {
-		return planning.LPlanFFmpeg{}, err
+		return planning.LPlanFfmpeg{}, err
 	}
-	if err := LHashFFmpegVerify(plan); err != nil {
-		return planning.LPlanFFmpeg{}, err
+	if err := LHashFfmpegVerify(plan); err != nil {
+		return planning.LPlanFfmpeg{}, err
 	}
 	if err := LToolchainPreparedCheck(plan.WorkspaceDirectory, plan.WindowsShellProfileName); err != nil {
-		return planning.LPlanFFmpeg{}, err
+		return planning.LPlanFfmpeg{}, err
 	}
 	confirmed, err := program.LNativeConsentAsk(plan.ActionName, plan.PlanHash)
 	if err != nil {
-		return planning.LPlanFFmpeg{}, err
+		return planning.LPlanFfmpeg{}, err
 	}
 	if !confirmed {
-		return planning.LPlanFFmpeg{}, errors.New("user rejected approval in backend-owned confirmation")
+		return planning.LPlanFfmpeg{}, errors.New("user rejected approval in backend-owned confirmation")
 	}
-	program.LFFmpegReviewConsume(reviewSessionId)
+	program.LFfmpegReviewConsume(reviewSessionId)
 	return plan, nil
 }
 
-// LFFmpegCompilationLaunch builds the per-action consents and starts the build worker,
+// LFfmpegCompilationLaunch builds the per-action consents and starts the build worker,
 // inline when runInline is true (CLI) or on a goroutine otherwise (GUI).
-func (program *LProgram) LFFmpegCompilationLaunch(plan planning.LPlanFFmpeg, approval consent.LRequestApproval, runInline bool) (LResultAction, error) {
-	userLConsentFFmpeg, err := consent.LConsentFFmpegCreate(approval)
+func (program *LProgram) LFfmpegCompilationLaunch(plan planning.LPlanFfmpeg, approval consent.LRequestApproval, runInline bool) (LResultAction, error) {
+	userLConsentFfmpeg, err := consent.LConsentFfmpegCreate(approval)
 	if err != nil {
 		return LResultAction{}, err
 	}
@@ -190,9 +190,9 @@ func (program *LProgram) LFFmpegCompilationLaunch(plan planning.LPlanFFmpeg, app
 		return LResultAction{}, err
 	}
 	if runInline {
-		program.LFFmpegCompile(LContextAction, LRunId, plan, userLConsentFFmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
+		program.LFfmpegCompile(LContextAction, LRunId, plan, userLConsentFfmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
 	} else {
-		go program.LFFmpegCompile(LContextAction, LRunId, plan, userLConsentFFmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
+		go program.LFfmpegCompile(LContextAction, LRunId, plan, userLConsentFfmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
 	}
 	return LResultAction{RunId: LRunId, StartedAt: time.Now().UTC().Format(time.RFC3339)}, nil
 }

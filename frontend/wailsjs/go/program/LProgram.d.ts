@@ -13,35 +13,35 @@ export function LActionApprovedFinish(arg1:string):Promise<void>;
 
 export function LActionApprovedStart():Promise<string>;
 
-export function LActionFailureEmit(arg1:audit.LAuditWriter,arg2:planning.LPlanFFmpeg,arg3:string,arg4:string,arg5:Error):Promise<boolean>;
+export function LActionFailureEmit(arg1:audit.LAuditWriter,arg2:planning.LPlanFfmpeg,arg3:string,arg4:string,arg5:Error):Promise<boolean>;
 
 export function LAuditProgressCreate(arg1:audit.LAuditWriter,arg2:string,arg3:string):Promise<any>;
 
 export function LCatalogSourceGet(arg1:string,arg2:string):Promise<Array<planning.LLibraryChoice>>;
 
-export function LDependencyInstall(arg1:context.Context,arg2:planning.LPlanFFmpeg,arg3:planning.LLibraryPreparation,arg4:consent.LConsentPacman,arg5:audit.LAuditWriter,arg6:any):Promise<void>;
+export function LDependencyInstall(arg1:context.Context,arg2:planning.LPlanFfmpeg,arg3:planning.LLibraryPreparation,arg4:consent.LConsentPacman,arg5:audit.LAuditWriter,arg6:any):Promise<void>;
 
 export function LDirectoryResultOpen(arg1:string):Promise<void>;
 
 export function LErrorLocalizedEmit(arg1:string,arg2:string,arg3:Error):Promise<void>;
 
-export function LFFmpegApproveSync(arg1:string,arg2:consent.LRequestApproval):Promise<program.LResultAction>;
+export function LFfmpegApproveSync(arg1:string,arg2:consent.LRequestApproval):Promise<program.LResultAction>;
 
-export function LFFmpegApproveValidate(arg1:string,arg2:consent.LRequestApproval):Promise<planning.LPlanFFmpeg>;
+export function LFfmpegApproveValidate(arg1:string,arg2:consent.LRequestApproval):Promise<planning.LPlanFfmpeg>;
 
-export function LFFmpegCompilationLaunch(arg1:planning.LPlanFFmpeg,arg2:consent.LRequestApproval,arg3:boolean):Promise<program.LResultAction>;
+export function LFfmpegCompilationLaunch(arg1:planning.LPlanFfmpeg,arg2:consent.LRequestApproval,arg3:boolean):Promise<program.LResultAction>;
 
-export function LFFmpegCompile(arg1:context.Context,arg2:string,arg3:planning.LPlanFFmpeg,arg4:consent.LConsentFFmpeg,arg5:consent.LArchiveConsentState,arg6:consent.LConsentPacman,arg7:consent.LConsentCommand):Promise<void>;
+export function LFfmpegCompile(arg1:context.Context,arg2:string,arg3:planning.LPlanFfmpeg,arg4:consent.LConsentFfmpeg,arg5:consent.LArchiveConsentState,arg6:consent.LConsentPacman,arg7:consent.LConsentCommand):Promise<void>;
 
-export function LFFmpegConfigureRun(arg1:context.Context,arg2:planning.LPlanFFmpeg,arg3:string,arg4:consent.LConsentCommand,arg5:audit.LAuditWriter,arg6:any):Promise<void>;
+export function LFfmpegConfigureRun(arg1:context.Context,arg2:planning.LPlanFfmpeg,arg3:string,arg4:consent.LConsentCommand,arg5:audit.LAuditWriter,arg6:any):Promise<void>;
 
-export function LFFmpegFailureClean(arg1:planning.LPlanFFmpeg,arg2:workspace.LWorkspaceLayout,arg3:string):Promise<void>;
+export function LFfmpegFailureClean(arg1:planning.LPlanFfmpeg,arg2:workspace.LWorkspaceLayout,arg3:string):Promise<void>;
 
-export function LFFmpegMakeRun(arg1:context.Context,arg2:planning.LPlanFFmpeg,arg3:string,arg4:consent.LConsentCommand,arg5:audit.LAuditWriter,arg6:any):Promise<void>;
+export function LFfmpegMakeRun(arg1:context.Context,arg2:planning.LPlanFfmpeg,arg3:string,arg4:consent.LConsentCommand,arg5:audit.LAuditWriter,arg6:any):Promise<void>;
 
-export function LFFmpegReviewConsume(arg1:string):Promise<void>;
+export function LFfmpegReviewConsume(arg1:string):Promise<void>;
 
-export function LFFmpegReviewValidate(arg1:string,arg2:consent.LRequestApproval):Promise<program.LReviewFFmpegStored>;
+export function LFfmpegReviewValidate(arg1:string,arg2:consent.LRequestApproval):Promise<program.LReviewFfmpegStored>;
 
 export function LFileRecordOpen(arg1:string,arg2:string,arg3:string):Promise<void>;
 
@@ -49,13 +49,13 @@ export function LFolderLogOpen(arg1:string):Promise<void>;
 
 export function LFolderRecordOpen(arg1:string,arg2:string):Promise<void>;
 
-export function LLibraryNonnativePrepare(arg1:context.Context,arg2:planning.LPlanFFmpeg,arg3:consent.LConsentFFmpeg,arg4:consent.LArchiveConsentState,arg5:consent.LConsentPacman,arg6:consent.LConsentCommand,arg7:audit.LAuditWriter,arg8:any):Promise<void>;
+export function LLibraryNonnativePrepare(arg1:context.Context,arg2:planning.LPlanFfmpeg,arg3:consent.LConsentFfmpeg,arg4:consent.LArchiveConsentState,arg5:consent.LConsentPacman,arg6:consent.LConsentCommand,arg7:audit.LAuditWriter,arg8:any):Promise<void>;
 
-export function LLibraryPackageInstall(arg1:context.Context,arg2:planning.LPlanFFmpeg,arg3:consent.LConsentPacman,arg4:audit.LAuditWriter,arg5:any):Promise<void>;
+export function LLibraryPackageInstall(arg1:context.Context,arg2:planning.LPlanFfmpeg,arg3:consent.LConsentPacman,arg4:audit.LAuditWriter,arg5:any):Promise<void>;
 
-export function LLibrarySinglePrepare(arg1:context.Context,arg2:planning.LPlanFFmpeg,arg3:planning.LLibraryPreparation,arg4:consent.LConsentFFmpeg,arg5:consent.LArchiveConsentState,arg6:consent.LConsentPacman,arg7:consent.LConsentCommand,arg8:audit.LAuditWriter,arg9:any):Promise<void>;
+export function LLibrarySinglePrepare(arg1:context.Context,arg2:planning.LPlanFfmpeg,arg3:planning.LLibraryPreparation,arg4:consent.LConsentFfmpeg,arg5:consent.LArchiveConsentState,arg6:consent.LConsentPacman,arg7:consent.LConsentCommand,arg8:audit.LAuditWriter,arg9:any):Promise<void>;
 
-export function LLibraryVersionValidate(arg1:planning.LPlanFFmpeg,arg2:string,arg3:any):Promise<void>;
+export function LLibraryVersionValidate(arg1:planning.LPlanFfmpeg,arg2:string,arg3:any):Promise<void>;
 
 export function LLinkExternalOpen(arg1:string):Promise<void>;
 
@@ -71,9 +71,9 @@ export function LNativeConsentAsk(arg1:string,arg2:string):Promise<boolean>;
 
 export function LPacmanPackageInstall(arg1:context.Context,arg2:planning.LPlanToolchain,arg3:consent.LConsentPacman,arg4:audit.LAuditWriter,arg5:any):Promise<void>;
 
-export function LPlanFFmpegApprove(arg1:string,arg2:consent.LRequestApproval):Promise<program.LResultAction>;
+export function LPlanFfmpegApprove(arg1:string,arg2:consent.LRequestApproval):Promise<program.LResultAction>;
 
-export function LPlanFFmpegRequest(arg1:planning.LSettingsFFmpeg):Promise<planning.LReviewFFmpeg>;
+export function LPlanFfmpegRequest(arg1:planning.LSettingsFfmpeg):Promise<planning.LReviewFfmpeg>;
 
 export function LPlanToolchainApprove(arg1:string,arg2:consent.LRequestApproval):Promise<program.LResultAction>;
 

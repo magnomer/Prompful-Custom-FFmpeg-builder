@@ -28,11 +28,11 @@ func LCommandPlanRun(args []string) int {
 	if err != nil {
 		return LCommandExitGet(err)
 	}
-	settings, err := LSettingsFFmpegResolve(parsed)
+	settings, err := LSettingsFfmpegResolve(parsed)
 	if err != nil {
 		return LCommandExitGet(err)
 	}
-	plan, err := planning.LPlanFFmpegCreate(settings)
+	plan, err := planning.LPlanFfmpegCreate(settings)
 	if err != nil {
 		return LCommandExitGet(LErrorSupportCreate("could not resolve plan: %v", err))
 	}
@@ -43,7 +43,7 @@ func LCommandPlanRun(args []string) int {
 	return 0
 }
 
-func LCommandPlanPrint(plan planning.LPlanFFmpeg) {
+func LCommandPlanPrint(plan planning.LPlanFfmpeg) {
 	version := plan.CompatibilityFfmpegVersion
 	if version == "" {
 		version = plan.RequestedFfmpegVersion

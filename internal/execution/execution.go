@@ -32,8 +32,8 @@ type LScriptKind string
 
 const (
 	LPacmanInstallScript      LScriptKind = "pacman-install"
-	LScriptFFmpegConfigure    LScriptKind = "ffmpeg-configure"
-	LFFmpegMakeScript         LScriptKind = "ffmpeg-make"
+	LScriptFfmpegConfigure    LScriptKind = "ffmpeg-configure"
+	LFfmpegMakeScript         LScriptKind = "ffmpeg-make"
 	LScriptLibraryPreparation LScriptKind = "library-preparation"
 )
 

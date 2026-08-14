@@ -14,7 +14,7 @@ func LPathStateResolve() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configDirectory, "PromptfulCustomFFmpegBuilder", "ui-state.json"), nil
+	return filepath.Join(configDirectory, "PromptfulCustomFfmpegBuilder", "ui-state.json"), nil
 }
 
 // LStateUiLoad returns the saved UI state as an opaque JSON string, or an empty

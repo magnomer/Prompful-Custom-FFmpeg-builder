@@ -16,7 +16,7 @@ type LProgram struct {
 	LMutexAction            sync.Mutex
 	LMutexReviewSession     sync.Mutex
 	LToolchainReviewStorage map[string]LReviewToolchainStored
-	LFFmpegReviewStorage    map[string]LReviewFFmpegStored
+	LFfmpegReviewStorage    map[string]LReviewFfmpegStored
 	LStateWindowStartup     LStateWindow
 	LLocaleUi               string
 	LMutexLocaleUi          sync.RWMutex
@@ -29,13 +29,13 @@ type LReviewToolchainStored struct {
 	Plan          planning.LPlanToolchain
 }
 
-type LReviewFFmpegStored struct {
+type LReviewFfmpegStored struct {
 	ReviewSession reviewsession.LSessionReview
-	Plan          planning.LPlanFFmpeg
+	Plan          planning.LPlanFfmpeg
 }
 
 func LProgramCreate() *LProgram {
-	return &LProgram{LStateWindowStartup: LStateWindowLoad(), LToolchainReviewStorage: map[string]LReviewToolchainStored{}, LFFmpegReviewStorage: map[string]LReviewFFmpegStored{}}
+	return &LProgram{LStateWindowStartup: LStateWindowLoad(), LToolchainReviewStorage: map[string]LReviewToolchainStored{}, LFfmpegReviewStorage: map[string]LReviewFfmpegStored{}}
 }
 
 func LWindowInitialRead(program *LProgram) (int, int) {

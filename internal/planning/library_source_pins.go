@@ -21,7 +21,7 @@ type LLibrarySourcePin struct {
 
 type LLibrarySourceCatalog struct {
 	SchemaVersion   int                              `json:"schemaVersion"`
-	LReleaseFFmpegs map[string]LSourceCatalogRelease `json:"LReleaseFFmpegs"`
+	LReleaseFfmpegs map[string]LSourceCatalogRelease `json:"LReleaseFfmpegs"`
 }
 
 type LSourceCatalogRelease struct {
@@ -62,7 +62,7 @@ func (catalog LLibrarySourceCatalog) LSourceResolve(ffmpegVersion string, librar
 }
 
 func (catalog LLibrarySourceCatalog) LSourceExactResolve(ffmpegVersion string, libraryId string) (LLibrarySourcePin, bool) {
-	release, exists := catalog.LReleaseFFmpegs[ffmpegVersion]
+	release, exists := catalog.LReleaseFfmpegs[ffmpegVersion]
 	if !exists {
 		return LLibrarySourcePin{}, false
 	}
@@ -75,7 +75,7 @@ func (catalog LLibrarySourceCatalog) LSourceExactResolve(ffmpegVersion string, l
 
 func (catalog LLibrarySourceCatalog) LReleasePinnedGet() string {
 	highest := ""
-	for version := range catalog.LReleaseFFmpegs {
+	for version := range catalog.LReleaseFfmpegs {
 		if highest == "" || LVersionKeyCompare(version, highest) > 0 {
 			highest = version
 		}

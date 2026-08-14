@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  LPlanFFmpegApprove,
-  LFFmpegCompilationLaunch,
+  LPlanFfmpegApprove,
+  LFfmpegCompilationLaunch,
   LPlanToolchainApprove,
   LActionApprovedCancel,
   LStateInitialGet,
@@ -9,7 +9,7 @@ import {
   LPresetSourceGet,
   LStateUiLoad,
   LStateUiSave,
-  LPlanFFmpegRequest,
+  LPlanFfmpegRequest,
   LPlanToolchainRequest,
   LWorkspaceSelect,
   LLocaleSet,
@@ -27,10 +27,10 @@ import {
 import { LPresetOptionId, LPresetOptionCatalog } from "./tabs/options";
 import {
   LTabIdentifier, LStateUiSaved,
-  LSettingsBuildEmpty, LSettingsFFmpegEmpty, LStateInitialDefault,
+  LSettingsBuildEmpty, LSettingsFfmpegEmpty, LStateInitialDefault,
   LTextLineSplit, LLogLevelNormalize, LTabIdValidate,
   LRequestApprovalCreate, LStateUiParse,
-  LPackagePrefixUpdate, LSettingsBuildNormalize, LSettingsFFmpegNormalize, LStateInitialNormalize,
+  LPackagePrefixUpdate, LSettingsBuildNormalize, LSettingsFfmpegNormalize, LStateInitialNormalize,
 } from "./programstate";
 import { LLocaleGet } from "./i18n";
 import { LStateWindowRestore, LStateWindowUse } from "./builderwindowstate";
@@ -51,7 +51,7 @@ export function LStateBuilderUse() {
   const [libraryCatalog, setLibraryCatalog] = useState<LLibraryChoice[]>([]);
   const [libraryPresetCatalog, setLibraryPresetCatalog] = useState<LPresetLibrary[]>([]);
   const [buildConfigSettings, setBuildConfigSettings] = useState<LSettingsToolchain>(LSettingsBuildEmpty);
-  const [ffmpegBuildSettings, setFfmpegBuildSettings] = useState<LSettingsFFmpeg>(LSettingsFFmpegEmpty);
+  const [ffmpegBuildSettings, setFfmpegBuildSettings] = useState<LSettingsFfmpeg>(LSettingsFfmpegEmpty);
   const [libraryPresetId, setLibraryPresetId] = useState<LPresetLibraryId>("default");
   const [extendedLibraries, setExtendedLibrariesState] = useState(false);
   const [libraryDetailedView, setLibraryDetailedView] = useState(false);
@@ -62,7 +62,7 @@ export function LStateBuilderUse() {
   const [msys2PackageText, setMsys2PackageText] = useState("");
   const [extraConfigureFlagText, setExtraConfigureFlagText] = useState("");
   const [toolchainPreparationPlanReview, setToolchainPreparationPlanReview] = useState<LReviewToolchain | null>(null);
-  const [ffmpegBuildPlanReview, setFfmpegBuildPlanReview] = useState<LReviewFFmpeg | null>(null);
+  const [ffmpegBuildPlanReview, setFfmpegBuildPlanReview] = useState<LReviewFfmpeg | null>(null);
   const [approvedActionStatus, setApprovedActionStatus] = useState("idle");
   const [approvedActionPhase, setApprovedActionPhase] = useState<"toolchain" | "ffmpeg" | null>(null);
   // Mirror addresses tried before a transient-network stall halted the run,
@@ -72,7 +72,7 @@ export function LStateBuilderUse() {
   // re-invoke the same approved action after a stall (the backend resumes from
   // cache). The review session is single-use and gone by then, so Retry uses
   // the direct run-start binding rather than the review-approval path.
-  const pFfmpegRunLast = useRef<{ plan: planning.LPlanFFmpeg; approval: LRequestApproval } | null>(null);
+  const pFfmpegRunLast = useRef<{ plan: planning.LPlanFfmpeg; approval: LRequestApproval } | null>(null);
   const [toolchainLogEntries, setToolchainLogEntries] = useState<LLogSecurityEntry[]>([]);
   const [ffmpegLogEntries, setFfmpegLogEntries] = useState<LLogSecurityEntry[]>([]);
 
@@ -120,7 +120,7 @@ export function LStateBuilderUse() {
       const nextState = LStateInitialNormalize(rawNextState);
       const saved = LStateUiParse(await LStateUiLoad());
       const savedBts = LSettingsBuildNormalize(saved.buildConfigSettings, nextState.defaultBuildConfigSettings);
-      let resolvedFbs = LSettingsFFmpegNormalize(saved.ffmpegBuildSettings, nextState.defaultFfmpegBuildSettings);
+      let resolvedFbs = LSettingsFfmpegNormalize(saved.ffmpegBuildSettings, nextState.defaultFfmpegBuildSettings);
       const initialPresetCatalog = LPresetLibraryClean(nextState.defaultLibraryPresetCatalog);
       const hasSavedPreset = LPresetLibraryValidate(saved.libraryPresetId);
       const resolvedPresetId: LPresetLibraryId = hasSavedPreset ? saved.libraryPresetId! : "default";
@@ -269,7 +269,7 @@ export function LStateBuilderUse() {
     setToolchainPreparationPlanReview(null);
   }
 
-  function LSettingsFFmpegUpdate(next: Partial<LSettingsFFmpeg>) {
+  function LSettingsFfmpegUpdate(next: Partial<LSettingsFfmpeg>) {
     setFfmpegBuildSettings((s) => ({ ...s, ...next }));
     setFfmpegBuildPlanReview(null);
   }
@@ -283,7 +283,7 @@ export function LStateBuilderUse() {
     // preset/license to match.
     const nextLibraryIds = LLibrarySelectionNormalize(ffmpegBuildSettings.selectedLibraryIds, profileName, libraryCatalog);
     LSettingsToolchainUpdate({ windowsShellProfileName: profileName });
-    LSettingsFFmpegUpdate({
+    LSettingsFfmpegUpdate({
       windowsShellProfileName: profileName,
       selectedLibraryIds: nextLibraryIds,
       licenseProfileName: LLicenseBoundaryGet(nextLibraryIds, libraryCatalog, profileName),
@@ -305,7 +305,7 @@ export function LStateBuilderUse() {
     const nextDir = await LWorkspaceSelect();
     if (!nextDir) return;
     LSettingsToolchainUpdate({ workspaceDirectory: nextDir });
-    LSettingsFFmpegUpdate({ workspaceDirectory: nextDir });
+    LSettingsFfmpegUpdate({ workspaceDirectory: nextDir });
   }
 
   async function addBuildConfigPlanAndContinueToPrep() {
@@ -320,7 +320,7 @@ export function LStateBuilderUse() {
 
   async function reviewFfmpegPlans() {
     const flags = LTextLineSplit(extraConfigureFlagText);
-    const review = await LPlanFFmpegRequest({ ...ffmpegBuildSettings, extraConfigureFlags: flags, configureFlags: flags });
+    const review = await LPlanFfmpegRequest({ ...ffmpegBuildSettings, extraConfigureFlags: flags, configureFlags: flags });
     setFfmpegBuildPlanReview(review);
     setActiveTabId("buildFfmpeg");
   }
@@ -344,11 +344,11 @@ export function LStateBuilderUse() {
     const approval = LRequestApprovalCreate(r.plan.actionName, r.plan.planHash, r.expectedLConsentText);
     setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setApprovedActionStatus("starting");
     try {
-      await LPlanFFmpegApprove(r.reviewSessionId, approval);
+      await LPlanFfmpegApprove(r.reviewSessionId, approval);
       // Keep the approved plan and approval so Retry can resume the same action.
       // r.plan is the full backend plan; the ambient review type omits a few
       // generated fields, so narrow it to the binding's plan type for reuse.
-      pFfmpegRunLast.current = { plan: r.plan as unknown as planning.LPlanFFmpeg, approval };
+      pFfmpegRunLast.current = { plan: r.plan as unknown as planning.LPlanFfmpeg, approval };
       setApprovedActionPhase("ffmpeg");
       setFfmpegBuildPlanReview(null); setActiveTabId("buildFfmpeg");
     } catch (err) {
@@ -365,7 +365,7 @@ export function LStateBuilderUse() {
     if (!last) return;
     setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setApprovedActionStatus("starting");
     try {
-      await LFFmpegCompilationLaunch(last.plan, last.approval, false);
+      await LFfmpegCompilationLaunch(last.plan, last.approval, false);
       setApprovedActionPhase("ffmpeg");
       setActiveTabId("buildFfmpeg");
     } catch (err) {
@@ -395,7 +395,7 @@ export function LStateBuilderUse() {
     if (!removing) next = LLibraryExclusiveRemove(next, libraryId);
     next = LLibrarySelectionNormalize(next, profile, libraryCatalog);
     setLibraryPresetId(LPresetLibraryMatch(next, libraryPresetCatalog, profile, libraryCatalog, extendedLibraries));
-    LSettingsFFmpegUpdate({ selectedLibraryIds: next, licenseProfileName: LLicenseBoundaryGet(next, libraryCatalog, profile) });
+    LSettingsFfmpegUpdate({ selectedLibraryIds: next, licenseProfileName: LLicenseBoundaryGet(next, libraryCatalog, profile) });
   }
 
   function LPresetLibraryApply(presetId: LPresetLibraryId) {
@@ -406,7 +406,7 @@ export function LStateBuilderUse() {
       ? LLibraryTestGet(libraryCatalog, profile)
       : LLibrarySelectionNormalize(LPresetLibraryResolve(preset, extendedLibraries), profile, libraryCatalog);
     setLibraryPresetId(presetId);
-    LSettingsFFmpegUpdate({ selectedLibraryIds: next, licenseProfileName: LLicenseBoundaryGet(next, libraryCatalog, profile) });
+    LSettingsFfmpegUpdate({ selectedLibraryIds: next, licenseProfileName: LLicenseBoundaryGet(next, libraryCatalog, profile) });
   }
 
   // Toggling the Extended mode re-applies the active named preset under the new mode so
@@ -417,7 +417,7 @@ export function LStateBuilderUse() {
     const preset = libraryPresetCatalog.find((p) => p.presetId === libraryPresetId);
     if (preset && preset.presetId !== "custom" && !preset.dev) {
       const nextIds = LLibrarySelectionNormalize(LPresetLibraryResolve(preset, next), profile, libraryCatalog);
-      LSettingsFFmpegUpdate({ selectedLibraryIds: nextIds, licenseProfileName: LLicenseBoundaryGet(nextIds, libraryCatalog, profile) });
+      LSettingsFfmpegUpdate({ selectedLibraryIds: nextIds, licenseProfileName: LLicenseBoundaryGet(nextIds, libraryCatalog, profile) });
     } else {
       setLibraryPresetId(LPresetLibraryMatch(ffmpegBuildSettings.selectedLibraryIds, libraryPresetCatalog, profile, libraryCatalog, next));
     }
@@ -428,13 +428,13 @@ export function LStateBuilderUse() {
     const option = initialProgramState.defaultConfigureOptionCatalog.find((o) => o.optionId === optionId);
     if (option?.locked) return;
     const current = ffmpegBuildSettings.selectedConfigureOptionIds;
-    LSettingsFFmpegUpdate({ selectedConfigureOptionIds: current.includes(optionId) ? current.filter((id) => id !== optionId) : [...current, optionId] });
+    LSettingsFfmpegUpdate({ selectedConfigureOptionIds: current.includes(optionId) ? current.filter((id) => id !== optionId) : [...current, optionId] });
   }
 
   function LPresetOptionApply(presetId: LPresetOptionId) {
     const preset = LPresetOptionCatalog.find((p) => p.presetId === presetId);
     if (!preset || preset.presetId === "custom") return;
-    LSettingsFFmpegUpdate({ selectedConfigureOptionIds: preset.optionIds });
+    LSettingsFfmpegUpdate({ selectedConfigureOptionIds: preset.optionIds });
   }
 
   function LPackageToolchainRestore() {
@@ -447,7 +447,7 @@ export function LStateBuilderUse() {
     const flags = initialProgramState.defaultFfmpegBuildSettings.extraConfigureFlags || [];
     const optIds = initialProgramState.defaultFfmpegBuildSettings.selectedConfigureOptionIds || ["default-static", "default-programs", "default-ffmpeg", "default-ffprobe"];
     setExtraConfigureFlagText(flags.join("\n"));
-    LSettingsFFmpegUpdate({ selectedConfigureOptionIds: optIds, extraConfigureFlags: flags, configureFlags: flags });
+    LSettingsFfmpegUpdate({ selectedConfigureOptionIds: optIds, extraConfigureFlags: flags, configureFlags: flags });
   }
 
   function LMSYSPackageUpdate(text: string) { setMsys2PackageText(text); setToolchainPreparationPlanReview(null); }
@@ -485,7 +485,7 @@ export function LStateBuilderUse() {
     isApprovedActionRunning: canCancelApprovedAction,
     toolchainProgress, ffmpegProgress,
     securityLogEntries,
-    LSettingsToolchainUpdate, LSettingsFFmpegUpdate, LMSYSArchiveUpdate, LProfileShellUpdate,
+    LSettingsToolchainUpdate, LSettingsFfmpegUpdate, LMSYSArchiveUpdate, LProfileShellUpdate,
     chooseWorkspaceDirectory,
     addBuildConfigPlanAndContinueToPrep, reviewFfmpegPlans,
     approveToolchainPreparationPlan, approveFfmpegBuildPlan, retryFfmpegBuildPlan, LPlanToolchainCancel, cancelApprovedAction, LActionApprovedClear,

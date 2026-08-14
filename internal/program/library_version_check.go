@@ -35,7 +35,7 @@ func LPkgconfigVersionRead(configureText string, LModulePkgconfig string) (strin
 // It only constrains libraries that declare a pkg-config module and pin a dotted-numeric
 // version; header-only (avisynth) and vendor-imported (tensorflow) libraries, and moving
 // refs like "master", are skipped because there is nothing decidable to compare.
-func (program *LProgram) LLibraryVersionValidate(plan planning.LPlanFFmpeg, ffmpegSourceDirectory string, emitProgress func(string, string)) error {
+func (program *LProgram) LLibraryVersionValidate(plan planning.LPlanFfmpeg, ffmpegSourceDirectory string, emitProgress func(string, string)) error {
 	if len(plan.LPreparationCatalog) == 0 {
 		return nil
 	}

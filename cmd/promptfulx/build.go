@@ -39,7 +39,7 @@ func LCommandBuildRun(args []string) int {
 	if err != nil {
 		return LCommandExitGet(err)
 	}
-	settings, err := LSettingsFFmpegResolve(parsed)
+	settings, err := LSettingsFfmpegResolve(parsed)
 	if err != nil {
 		return LCommandExitGet(err)
 	}
@@ -49,7 +49,7 @@ func LCommandBuildRun(args []string) int {
 	driver.LReporter = reporter
 	driver.LConfirmer = LConfirmerConsole{assumeYes: parsed.yes, noInput: parsed.noInput}
 
-	review, err := driver.LPlanFFmpegRequest(settings)
+	review, err := driver.LPlanFfmpegRequest(settings)
 	if err != nil {
 		return LCommandExitGet(LErrorSupportCreate("could not resolve plan: %v", err))
 	}
@@ -77,7 +77,7 @@ func LCommandBuildRun(args []string) int {
 		ApprovedPlanHash:   review.Plan.PlanHash,
 		LConsentText:       review.ExpectedLConsentText,
 	}
-	if _, err := driver.LFFmpegApproveSync(review.ReviewSessionId, approval); err != nil {
+	if _, err := driver.LFfmpegApproveSync(review.ReviewSessionId, approval); err != nil {
 		fmt.Fprintln(os.Stderr, "promptfulx:", err.Error())
 		if strings.Contains(err.Error(), "rejected") {
 			return 10 // user cancelled at the confirmation gate

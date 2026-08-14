@@ -10,7 +10,7 @@ export type LTabIdentifier = "source" | "buildConfig" | "prep" | "library" | "op
 export type LStateUiSaved = {
   activeTabId?: LTabIdentifier;
   buildConfigSettings?: LSettingsToolchain;
-  ffmpegBuildSettings?: LSettingsFFmpeg;
+  ffmpegBuildSettings?: LSettingsFfmpeg;
   msys2PackageText?: string;
   extraConfigureFlagText?: string;
   libraryPresetId?: LPresetLibraryId;
@@ -43,7 +43,7 @@ export const LSettingsBuildEmpty: LSettingsToolchain = {
   windowsShellProfileName: "ucrt64",
 };
 
-export const LSettingsFFmpegEmpty: LSettingsFFmpeg = {
+export const LSettingsFfmpegEmpty: LSettingsFfmpeg = {
   workspaceDirectory: "",
   ffmpegSourceArchiveUrl: "",
   ffmpegSourceSignatureUrl: "",
@@ -63,7 +63,7 @@ export const LStateInitialDefault: LStateInitial = {
   securityRuleSummary: "",
   namingRuleSummary: "",
   defaultBuildConfigSettings: LSettingsBuildEmpty,
-  defaultFfmpegBuildSettings: LSettingsFFmpegEmpty,
+  defaultFfmpegBuildSettings: LSettingsFfmpegEmpty,
   defaultLibraryCatalog: [],
   defaultLibraryPresetCatalog: [],
   defaultConfigureOptionCatalog: [],
@@ -151,8 +151,8 @@ export function LSettingsBuildNormalize(value: unknown, fallback: LSettingsToolc
   };
 }
 
-export function LSettingsFFmpegNormalize(value: unknown, fallback: LSettingsFFmpeg = LSettingsFFmpegEmpty): LSettingsFFmpeg {
-  const source = value && typeof value === "object" ? value as Partial<LSettingsFFmpeg> : {};
+export function LSettingsFfmpegNormalize(value: unknown, fallback: LSettingsFfmpeg = LSettingsFfmpegEmpty): LSettingsFfmpeg {
+  const source = value && typeof value === "object" ? value as Partial<LSettingsFfmpeg> : {};
   return {
     workspaceDirectory: LStringValueGet(source.workspaceDirectory, fallback.workspaceDirectory),
     ffmpegSourceArchiveUrl: LStringValueGet(source.ffmpegSourceArchiveUrl, fallback.ffmpegSourceArchiveUrl),
@@ -176,7 +176,7 @@ export function LStateInitialNormalize(value: unknown, fallback: LStateInitial =
     securityRuleSummary: LStringValueGet(source.securityRuleSummary, fallback.securityRuleSummary),
     namingRuleSummary: LStringValueGet(source.namingRuleSummary, fallback.namingRuleSummary),
     defaultBuildConfigSettings: LSettingsBuildNormalize(source.defaultBuildConfigSettings, fallback.defaultBuildConfigSettings),
-    defaultFfmpegBuildSettings: LSettingsFFmpegNormalize(source.defaultFfmpegBuildSettings, fallback.defaultFfmpegBuildSettings),
+    defaultFfmpegBuildSettings: LSettingsFfmpegNormalize(source.defaultFfmpegBuildSettings, fallback.defaultFfmpegBuildSettings),
     defaultLibraryCatalog: LArrayValueGet<LLibraryChoice>(source.defaultLibraryCatalog, fallback.defaultLibraryCatalog),
     defaultLibraryPresetCatalog: LArrayValueGet<LPresetLibraryChoice>(source.defaultLibraryPresetCatalog, fallback.defaultLibraryPresetCatalog),
     defaultConfigureOptionCatalog: LArrayValueGet<LOptionChoice>(source.defaultConfigureOptionCatalog, fallback.defaultConfigureOptionCatalog),

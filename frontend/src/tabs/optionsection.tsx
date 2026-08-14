@@ -138,7 +138,7 @@ export function PSectionFlagRender(props: {
 
 export function PSectionThreadRender(props: {
   parallelJobCount: number;
-  LSettingsFFmpegUpdate: (partial: Partial<LSettingsFFmpeg>) => void;
+  LSettingsFfmpegUpdate: (partial: Partial<LSettingsFfmpeg>) => void;
 }) {
   return (
     <section className="options-section">
@@ -152,7 +152,7 @@ export function PSectionThreadRender(props: {
           max="256"
           value={props.parallelJobCount}
           onChange={(event) =>
-            props.LSettingsFFmpegUpdate({
+            props.LSettingsFfmpegUpdate({
               parallelJobCount: Number(event.target.value),
             })
           }

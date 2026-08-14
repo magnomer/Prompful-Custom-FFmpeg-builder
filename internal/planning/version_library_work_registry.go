@@ -121,7 +121,7 @@ func LWorkPhaseResolve(plan shared.LPreparationPlan) []LWorkPhaseName {
 		LLibraryBuildPhase,
 		LLibraryInstallPhase,
 		LLibraryInstallAfter,
-		LFFmpegConfigureBefore,
+		LFfmpegConfigureBefore,
 	}
 }
 

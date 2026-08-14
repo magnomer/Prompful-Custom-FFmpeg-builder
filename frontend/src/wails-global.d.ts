@@ -97,7 +97,7 @@ type LSettingsToolchain = {
   windowsShellProfileName: string;
 };
 
-type LSettingsFFmpeg = {
+type LSettingsFfmpeg = {
   workspaceDirectory: string;
   ffmpegSourceArchiveUrl: string;
   ffmpegSourceSignatureUrl: string;
@@ -130,7 +130,7 @@ type LPlanToolchain = {
   isExecutable: boolean;
 };
 
-type LPlanFFmpeg = {
+type LPlanFfmpeg = {
   actionName: string;
   planHash: string;
   workspaceDirectory: string;
@@ -171,12 +171,12 @@ type LReviewToolchain = {
   plan: LPlanToolchain;
 };
 
-type LReviewFFmpeg = {
+type LReviewFfmpeg = {
   reviewSessionId: string;
   expectedLConsentText: string;
   expectedLConsentTextHash: string;
   expiresAtUnixTime: number;
-  plan: LPlanFFmpeg;
+  plan: LPlanFfmpeg;
 };
 
 type LStateInitial = {
@@ -185,7 +185,7 @@ type LStateInitial = {
   securityRuleSummary: string;
   namingRuleSummary: string;
   defaultBuildConfigSettings: LSettingsToolchain;
-  defaultFfmpegBuildSettings: LSettingsFFmpeg;
+  defaultFfmpegBuildSettings: LSettingsFfmpeg;
   defaultLibraryCatalog: LLibraryChoice[];
   defaultLibraryPresetCatalog: LPresetLibraryChoice[];
   defaultConfigureOptionCatalog: LOptionChoice[];

@@ -3,13 +3,13 @@ import { LLocaleTextGet } from "../i18n";
 import emptyStatePurpleIcon from "../assets/empty-card-icons/EmptyStatePurple.svg";
 import {
   LLogSecurityEntry, LPhaseLogId, LPhaseLogGroup,
-  LPhaseToolchainOrder, LPhaseFFmpegOrder,
+  LPhaseToolchainOrder, LPhaseFfmpegOrder,
   LLogEntryParse, LPhaseGroupBuild, LLogRuntimeBuild,
 } from "./logutils";
 
 export type { LLogSecurityEntry, LPhaseLogGroup };
 export type { LLogSecurityPayload, LStatusActionPayload, LProgressLive, LPhaseLogId, LLogParsedEntry } from "./logutils";
-export { LProgressGet, LPipelineToolchainGet, LPipelineFFmpegGet } from "./logutils";
+export { LProgressGet, LPipelineToolchainGet, LPipelineFfmpegGet } from "./logutils";
 
 function PLogSmartRender(props: { entries: LLogSecurityEntry[]; context?: "toolchain" | "ffmpeg"; viewMode?: "smart" | "raw"; hideModeToolbar?: boolean }) {
   const [expandedPhases, setExpandedPhases] = useState<Set<LPhaseLogId>>(new Set());
@@ -18,7 +18,7 @@ function PLogSmartRender(props: { entries: LLogSecurityEntry[]; context?: "toolc
   const viewMode = props.viewMode ?? internalViewMode;
 
   const parsed = useMemo(() => props.entries.map((e) => LLogEntryParse(e, props.context ?? "ffmpeg")), [props.entries, props.context]);
-  const phaseOrder = props.context === "toolchain" ? LPhaseToolchainOrder : props.context === "ffmpeg" ? LPhaseFFmpegOrder : [...LPhaseToolchainOrder, ...LPhaseFFmpegOrder];
+  const phaseOrder = props.context === "toolchain" ? LPhaseToolchainOrder : props.context === "ffmpeg" ? LPhaseFfmpegOrder : [...LPhaseToolchainOrder, ...LPhaseFfmpegOrder];
   const phaseGroups = useMemo(() => LPhaseGroupBuild(parsed, phaseOrder), [parsed, phaseOrder]);
   const errorEntries = useMemo(() => parsed.filter((e) => e.level === "error"), [parsed]);
   const warnEntries = useMemo(() => parsed.filter((e) => e.level === "warn"), [parsed]);

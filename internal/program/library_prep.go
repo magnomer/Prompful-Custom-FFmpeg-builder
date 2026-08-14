@@ -29,7 +29,7 @@ import (
 //
 // The plan only ever contains libraries that have an implemented recipe; libraries
 // without one block the plan in the planner and never reach here.
-func (program *LProgram) LLibraryNonnativePrepare(LContext context.Context, plan planning.LPlanFFmpeg, userDownloadLConsent consent.LConsentFFmpeg, userLConsentArchive consent.LArchiveConsentState, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+func (program *LProgram) LLibraryNonnativePrepare(LContext context.Context, plan planning.LPlanFfmpeg, userDownloadLConsent consent.LConsentFfmpeg, userLConsentArchive consent.LArchiveConsentState, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
 	if len(plan.LPreparationCatalog) == 0 {
 		return nil
 	}
@@ -43,7 +43,7 @@ func (program *LProgram) LLibraryNonnativePrepare(LContext context.Context, plan
 	return nil
 }
 
-func (program *LProgram) LLibrarySinglePrepare(LContext context.Context, plan planning.LPlanFFmpeg, preparation planning.LLibraryPreparation, userDownloadLConsent consent.LConsentFFmpeg, userLConsentArchive consent.LArchiveConsentState, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+func (program *LProgram) LLibrarySinglePrepare(LContext context.Context, plan planning.LPlanFfmpeg, preparation planning.LLibraryPreparation, userDownloadLConsent consent.LConsentFfmpeg, userLConsentArchive consent.LArchiveConsentState, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
 	if err := program.LDependencyInstall(LContext, plan, preparation, userLibraryPackageInstallLConsent, auditWriter, emitProgress); err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (program *LProgram) LLibrarySinglePrepare(LContext context.Context, plan pl
 		ExpectedFileSizeMaximum: 5_000_000_000,
 		LPolicyFile:             LPolicyHashResolve(preparation.ArchiveSha256Hash),
 	}
-	if err := download.LDownloadFFmpegRun(LContext, userDownloadLConsent, downloadPlan, emitProgress); err != nil {
+	if err := download.LDownloadFfmpegRun(LContext, userDownloadLConsent, downloadPlan, emitProgress); err != nil {
 		return err
 	}
 
@@ -140,7 +140,7 @@ func (program *LProgram) LLibrarySinglePrepare(LContext context.Context, plan pl
 // before its source build runs. It reuses the same hash-pinned, consent-gated pacman
 // installation path as the FFmpeg library packages, so the same one pacman consent the
 // run already collected covers it. Libraries with no build dependencies are skipped.
-func (program *LProgram) LDependencyInstall(LContext context.Context, plan planning.LPlanFFmpeg, preparation planning.LLibraryPreparation, userLibraryPackageInstallLConsent consent.LConsentPacman, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+func (program *LProgram) LDependencyInstall(LContext context.Context, plan planning.LPlanFfmpeg, preparation planning.LLibraryPreparation, userLibraryPackageInstallLConsent consent.LConsentPacman, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
 	// Profile-prefixed mingw packages plus verbatim MSYS base packages (e.g. autotools)
 	// are installed together in one pacman transaction.
 	dependencyPackages := append(append([]string{}, preparation.BuildDependencyPackages...), preparation.MsysBuildDependencyPackages...)

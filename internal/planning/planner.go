@@ -13,7 +13,7 @@ import (
 
 func LSettingsBuildCreate() LSettingsToolchain {
 	return LSettingsToolchain{
-		WorkspaceDirectory:       filepath.Join(LUserDirectoryResolve(), "CustomFFmpegBuilder", "workspace"),
+		WorkspaceDirectory:       filepath.Join(LUserDirectoryResolve(), "CustomFfmpegBuilder", "workspace"),
 		Msys2ArchiveUrl:          "https://repo.msys2.org/distrib/msys2-x86_64-latest.tar.zst",
 		Msys2ArchiveSha256Hash:   "",
 		Msys2ArchiveSignatureUrl: "https://repo.msys2.org/distrib/msys2-x86_64-latest.tar.zst.sig",
@@ -22,9 +22,9 @@ func LSettingsBuildCreate() LSettingsToolchain {
 	}
 }
 
-func LSettingsFFmpegCreate() LSettingsFFmpeg {
-	return LSettingsFFmpeg{
-		WorkspaceDirectory:         filepath.Join(LUserDirectoryResolve(), "CustomFFmpegBuilder", "workspace"),
+func LSettingsFfmpegCreate() LSettingsFfmpeg {
+	return LSettingsFfmpeg{
+		WorkspaceDirectory:         filepath.Join(LUserDirectoryResolve(), "CustomFfmpegBuilder", "workspace"),
 		FfmpegSourceArchiveUrl:     "",
 		FfmpegSourceSignatureUrl:   "",
 		FfmpegSourceSha256Hash:     "",
@@ -72,7 +72,7 @@ func LLibraryNameJoin(libraries []LLibraryChoice) string {
 	return strings.Join(names, ", ")
 }
 
-func LOperationFFmpegBuild(hasInternalLibraries bool, hasExternalLibraries bool) []LOperationPlan {
+func LOperationFfmpegBuild(hasInternalLibraries bool, hasExternalLibraries bool) []LOperationPlan {
 	operations := []LOperationPlan{
 		LOperationLocalizedCreate("download-ffmpeg-source", "Download the approved FFmpeg source archive."),
 		LOperationLocalizedCreate("verify-ffmpeg-source-signature", "Verify the FFmpeg source archive with the matching .asc PGP signature before extraction."),
@@ -176,11 +176,11 @@ func LPlanToolchainCreate(buildConfigSettings LSettingsToolchain) (LPlanToolchai
 	return plan, nil
 }
 
-func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error) {
-	ffmpegBuildSettings = LSettingsFFmpegClean(ffmpegBuildSettings)
+func LPlanFfmpegCreate(ffmpegBuildSettings LSettingsFfmpeg) (LPlanFfmpeg, error) {
+	ffmpegBuildSettings = LSettingsFfmpegClean(ffmpegBuildSettings)
 	resolvedVersionPlan, hasResolvedVersionPlan, err := LCatalogPlanResolve(ffmpegBuildSettings)
 	if err != nil {
-		return LPlanFFmpeg{}, err
+		return LPlanFfmpeg{}, err
 	}
 	var resolvedVersionPlanPointer *LResolvedVersionPlan
 	var resolvedBuildPlanPointer *LResolvedBuildPlan
@@ -239,7 +239,7 @@ func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error)
 	if hasNonNativeBlockedWarning {
 		isExecutable = false
 	}
-	warnings, hasFfmpegVersionBlock := LWarningFFmpegAppend(warnings, ffmpegVersion, allEffectiveLibraries, ffmpegBuildSettings.SelectedConfigureOptionIds)
+	warnings, hasFfmpegVersionBlock := LWarningFfmpegAppend(warnings, ffmpegVersion, allEffectiveLibraries, ffmpegBuildSettings.SelectedConfigureOptionIds)
 	if hasFfmpegVersionBlock {
 		isExecutable = false
 	}
@@ -323,7 +323,7 @@ func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error)
 		isExecutable = false
 	}
 
-	plan := LPlanFFmpeg{
+	plan := LPlanFfmpeg{
 		ActionName:                 "build-ffmpeg-from-approved-source",
 		WorkspaceDirectory:         ffmpegBuildSettings.WorkspaceDirectory,
 		Msys2RootDirectory:         LDirectoryProfileResolve(ffmpegBuildSettings.WorkspaceDirectory, ffmpegBuildSettings.WindowsShellProfileName),
@@ -354,7 +354,7 @@ func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error)
 		WillDeleteFiles:            false,
 		DownloadConflictPolicyName: "reuse-if-hash-matches",
 		LPolicyExtraction:          "must-not-exist",
-		Operations:                 LOperationFFmpegBuild(len(LLibraryTrackFilter(libraryPreparations, LLibraryTrackInternal)) > 0, len(LLibraryTrackFilter(libraryPreparations, LLibraryTrackExternal)) > 0),
+		Operations:                 LOperationFfmpegBuild(len(LLibraryTrackFilter(libraryPreparations, LLibraryTrackInternal)) > 0, len(LLibraryTrackFilter(libraryPreparations, LLibraryTrackExternal)) > 0),
 		Warnings:                   warnings,
 		ResolvedVersionPlan:        resolvedVersionPlanPointer,
 		ResolvedBuildPlan:          resolvedBuildPlanPointer,
@@ -365,7 +365,7 @@ func LPlanFFmpegCreate(ffmpegBuildSettings LSettingsFFmpeg) (LPlanFFmpeg, error)
 	planWithoutHash.PlanHash = ""
 	planHash, err := LPlanHashCreate(planWithoutHash)
 	if err != nil {
-		return LPlanFFmpeg{}, err
+		return LPlanFfmpeg{}, err
 	}
 	plan.PlanHash = planHash
 	return plan, nil
@@ -395,8 +395,8 @@ func LSettingsBuildClean(buildConfigSettings LSettingsToolchain) LSettingsToolch
 	return buildConfigSettings
 }
 
-func LSettingsFFmpegClean(ffmpegBuildSettings LSettingsFFmpeg) LSettingsFFmpeg {
-	defaults := LSettingsFFmpegCreate()
+func LSettingsFfmpegClean(ffmpegBuildSettings LSettingsFfmpeg) LSettingsFfmpeg {
+	defaults := LSettingsFfmpegCreate()
 	if ffmpegBuildSettings.WorkspaceDirectory == "" {
 		ffmpegBuildSettings.WorkspaceDirectory = defaults.WorkspaceDirectory
 	}

@@ -21,9 +21,9 @@ func (program *LProgram) LStateInitialGet() LStateInitial {
 		SecurityRuleSummary:           LLocaleTextGetInternal("initial.securityRuleSummary", nil),
 		NamingRuleSummary:             LLocaleTextGetInternal("initial.namingRuleSummary", nil),
 		LBuildSettingsDefault:         planning.LSettingsBuildCreate(),
-		LFFmpegSettingsDefault:        planning.LSettingsFFmpegCreate(),
-		DefaultLibraryCatalog:         planning.LCatalogLibraryGet(planning.LSettingsFFmpegCreate().FfmpegSourceArchiveUrl, planning.LSettingsFFmpegCreate().WindowsShellProfileName),
-		DefaultLibraryPresetCatalog:   planning.LCatalogPresetGet(planning.LSettingsFFmpegCreate().FfmpegSourceArchiveUrl, planning.LSettingsFFmpegCreate().WindowsShellProfileName),
+		LFfmpegSettingsDefault:        planning.LSettingsFfmpegCreate(),
+		DefaultLibraryCatalog:         planning.LCatalogLibraryGet(planning.LSettingsFfmpegCreate().FfmpegSourceArchiveUrl, planning.LSettingsFfmpegCreate().WindowsShellProfileName),
+		DefaultLibraryPresetCatalog:   planning.LCatalogPresetGet(planning.LSettingsFfmpegCreate().FfmpegSourceArchiveUrl, planning.LSettingsFfmpegCreate().WindowsShellProfileName),
 		DefaultConfigureOptionCatalog: planning.LCatalogOptionBuild(),
 		LReleaseSupportedCatalog:      planning.LReleaseSupportedGet(),
 	}

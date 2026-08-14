@@ -136,16 +136,16 @@ func LArgumentParse(args []string) (LArgumentBuild, error) {
 	return parsed, nil
 }
 
-// LSettingsFFmpegResolve turns parsed CLI arguments into the planner's LSettingsFFmpeg,
+// LSettingsFfmpegResolve turns parsed CLI arguments into the planner's LSettingsFfmpeg,
 // using the shared Step 2 resolvers. It leaves WindowsShellProfileName empty so
 // the planner defaults it to ucrt64.
-func LSettingsFFmpegResolve(parsed LArgumentBuild) (planning.LSettingsFFmpeg, error) {
+func LSettingsFfmpegResolve(parsed LArgumentBuild) (planning.LSettingsFfmpeg, error) {
 	if strings.TrimSpace(parsed.version) == "" {
-		return planning.LSettingsFFmpeg{}, LErrorArgumentCreate("--ffmpeg-version is required")
+		return planning.LSettingsFfmpeg{}, LErrorArgumentCreate("--ffmpeg-version is required")
 	}
 	release, ok := planning.LReleaseVersionResolve(parsed.version)
 	if !ok {
-		return planning.LSettingsFFmpeg{}, LErrorSupportCreate("unsupported FFmpeg version: %s", parsed.version)
+		return planning.LSettingsFfmpeg{}, LErrorSupportCreate("unsupported FFmpeg version: %s", parsed.version)
 	}
 	url := release.ArchiveUrl
 
@@ -153,7 +153,7 @@ func LSettingsFFmpegResolve(parsed LArgumentBuild) (planning.LSettingsFFmpeg, er
 	if parsed.preset != "" && !parsed.noPreset {
 		ids, ok := planning.LPresetIdentifiersResolve(url, "", parsed.preset, parsed.extended)
 		if !ok {
-			return planning.LSettingsFFmpeg{}, LErrorSupportCreate("unknown preset %q for FFmpeg %s", parsed.preset, release.Version)
+			return planning.LSettingsFfmpeg{}, LErrorSupportCreate("unknown preset %q for FFmpeg %s", parsed.preset, release.Version)
 		}
 		libraryIds = ids
 	}
@@ -161,7 +161,7 @@ func LSettingsFFmpegResolve(parsed LArgumentBuild) (planning.LSettingsFFmpeg, er
 	for _, flag := range parsed.enable {
 		id, ok := planning.LLibraryFlagResolve(url, "", flag)
 		if !ok {
-			return planning.LSettingsFFmpeg{}, LErrorSupportCreate("unknown library flag %q for FFmpeg %s", flag, release.Version)
+			return planning.LSettingsFfmpeg{}, LErrorSupportCreate("unknown library flag %q for FFmpeg %s", flag, release.Version)
 		}
 		libraryIds = LIdentifierAppend(libraryIds, id)
 	}
@@ -169,12 +169,12 @@ func LSettingsFFmpegResolve(parsed LArgumentBuild) (planning.LSettingsFFmpeg, er
 		enableForm := strings.Replace(flag, "--disable-", "--enable-", 1)
 		id, ok := planning.LLibraryFlagResolve(url, "", enableForm)
 		if !ok {
-			return planning.LSettingsFFmpeg{}, LErrorSupportCreate("unknown library flag %q for FFmpeg %s", flag, release.Version)
+			return planning.LSettingsFfmpeg{}, LErrorSupportCreate("unknown library flag %q for FFmpeg %s", flag, release.Version)
 		}
 		libraryIds = LIdentifierRemove(libraryIds, id)
 	}
 
-	return planning.LSettingsFFmpeg{
+	return planning.LSettingsFfmpeg{
 		WorkspaceDirectory:       strings.TrimSpace(parsed.workspace),
 		FfmpegSourceArchiveUrl:   release.ArchiveUrl,
 		FfmpegSourceSignatureUrl: release.SignatureUrl,

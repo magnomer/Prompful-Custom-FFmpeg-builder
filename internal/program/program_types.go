@@ -8,7 +8,7 @@ type LStateInitial struct {
 	SecurityRuleSummary           string                          `json:"securityRuleSummary"`
 	NamingRuleSummary             string                          `json:"namingRuleSummary"`
 	LBuildSettingsDefault         planning.LSettingsToolchain     `json:"defaultBuildConfigSettings"`
-	LFFmpegSettingsDefault        planning.LSettingsFFmpeg        `json:"defaultFfmpegBuildSettings"`
+	LFfmpegSettingsDefault        planning.LSettingsFfmpeg        `json:"defaultFfmpegBuildSettings"`
 	DefaultLibraryCatalog         []planning.LLibraryChoice       `json:"defaultLibraryCatalog"`
 	DefaultLibraryPresetCatalog   []planning.LPresetLibraryChoice `json:"defaultLibraryPresetCatalog"`
 	DefaultConfigureOptionCatalog []planning.LOptionChoice        `json:"defaultConfigureOptionCatalog"`

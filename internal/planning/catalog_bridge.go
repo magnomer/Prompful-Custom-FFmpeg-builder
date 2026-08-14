@@ -93,7 +93,7 @@ func LLibraryFlagMatch(catalog []LLibraryChoice, flags []string, skip []LLibrary
 // with a current FFmpeg settings object. Known release lines resolve to their
 // catalog line; unknown newer release lines resolve through the highest known
 // catalog line. Unparseable or older unsupported versions are reported as missing.
-func LCatalogPlanResolve(ffmpegBuildSettings LSettingsFFmpeg) (LResolvedVersionPlan, bool, error) {
+func LCatalogPlanResolve(ffmpegBuildSettings LSettingsFfmpeg) (LResolvedVersionPlan, bool, error) {
 	ffmpegVersion := LVersionArchiveParse(ffmpegBuildSettings.FfmpegSourceArchiveUrl)
 	if ffmpegVersion == "" {
 		return LResolvedVersionPlan{}, false, nil
@@ -113,7 +113,7 @@ func LCatalogPlanResolve(ffmpegBuildSettings LSettingsFFmpeg) (LResolvedVersionP
 	return resolvedPlan, true, nil
 }
 
-func LCatalogBuildResolve(ffmpegBuildSettings LSettingsFFmpeg, resolvedVersionPlan LResolvedVersionPlan) LResolvedBuildPlan {
+func LCatalogBuildResolve(ffmpegBuildSettings LSettingsFfmpeg, resolvedVersionPlan LResolvedVersionPlan) LResolvedBuildPlan {
 	selectedById := map[string]LResolvedLibrary{}
 	for _, library := range resolvedVersionPlan.VisibleLibraries {
 		selectedById[library.LibraryId] = library

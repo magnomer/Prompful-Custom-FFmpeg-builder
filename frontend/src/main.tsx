@@ -17,9 +17,9 @@ import { LLocaleGet, LLocaleSet, LLocaleTextGet, LLocaleStatusGet, type LLocaleC
 import sourceIcon from "./assets/tab-icons/Source.svg";
 import buildConfigurationIcon from "./assets/tab-icons/BuildConfiguration.svg";
 import prepIcon from "./assets/tab-icons/Prep.svg";
-import ffmpegLibrariesIcon from "./assets/tab-icons/FFmpegLibraries.svg";
-import ffmpegOptionsIcon from "./assets/tab-icons/FFmpegOptions.svg";
-import buildFfmpegIcon from "./assets/tab-icons/BuildFFmpeg.svg";
+import ffmpegLibrariesIcon from "./assets/tab-icons/FfmpegLibraries.svg";
+import ffmpegOptionsIcon from "./assets/tab-icons/FfmpegOptions.svg";
+import buildFfmpegIcon from "./assets/tab-icons/BuildFfmpeg.svg";
 import resultIcon from "./assets/tab-icons/Result.svg";
 import logsIcon from "./assets/tab-icons/Logs.svg";
 import aboutIcon from "./assets/tab-icons/About.svg";
@@ -164,7 +164,7 @@ function PProgramRender() {
               ffmpegBuildSettings={s.ffmpegBuildSettings}
               supportedFfmpegReleases={s.initialProgramState.supportedFfmpegReleases}
               LSettingsToolchainUpdate={s.LSettingsToolchainUpdate}
-              LSettingsFFmpegUpdate={s.LSettingsFFmpegUpdate}
+              LSettingsFfmpegUpdate={s.LSettingsFfmpegUpdate}
               LMSYSArchiveUpdate={s.LMSYSArchiveUpdate}
               chooseWorkspaceDirectory={s.chooseWorkspaceDirectory}
               openInUserBrowser={s.openInUserBrowser}
@@ -230,7 +230,7 @@ function PProgramRender() {
               initialProgramState={s.initialProgramState}
               extraConfigureFlagText={s.extraConfigureFlagText}
               onExtraFlagTextChange={s.LFlagExtraUpdate}
-              LSettingsFFmpegUpdate={s.LSettingsFFmpegUpdate}
+              LSettingsFfmpegUpdate={s.LSettingsFfmpegUpdate}
               LOptionToggle={s.LOptionToggle}
               LPresetOptionApply={s.LPresetOptionApply}
               optionsDetailedView={s.optionsDetailedView}

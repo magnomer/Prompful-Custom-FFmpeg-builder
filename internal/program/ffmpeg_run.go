@@ -17,14 +17,14 @@ import (
 	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
-const LSignatureFFmpegUrl = "https://ffmpeg.org/ffmpeg-devel.asc"
-const LSignatureFFmpegFingerprint = "FCF986EA15E6E293A5644F10B4322F04D67658D8"
+const LSignatureFfmpegUrl = "https://ffmpeg.org/ffmpeg-devel.asc"
+const LSignatureFfmpegFingerprint = "FCF986EA15E6E293A5644F10B4322F04D67658D8"
 
-func LSignatureFFmpegVerify(signaturePath string, archivePath string, publicKeyPath string, emitProgress func(string, string)) error {
-	return LSignatureDetachedVerify(signaturePath, archivePath, publicKeyPath, LSignatureFFmpegFingerprint, "FFmpeg .asc", emitProgress)
+func LSignatureFfmpegVerify(signaturePath string, archivePath string, publicKeyPath string, emitProgress func(string, string)) error {
+	return LSignatureDetachedVerify(signaturePath, archivePath, publicKeyPath, LSignatureFfmpegFingerprint, "FFmpeg .asc", emitProgress)
 }
 
-func (program *LProgram) LFFmpegCompile(LContext context.Context, LRunId string, plan planning.LPlanFFmpeg, userLConsentFFmpeg consent.LConsentFFmpeg, userLConsentArchive consent.LArchiveConsentState, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand) {
+func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string, plan planning.LPlanFfmpeg, userLConsentFfmpeg consent.LConsentFfmpeg, userLConsentArchive consent.LArchiveConsentState, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand) {
 	actionSucceeded := false
 	copyFailed := false
 	stalledHalt := false
@@ -50,7 +50,7 @@ func (program *LProgram) LFFmpegCompile(LContext context.Context, LRunId string,
 			program.LActionApprovedFinish("stalled")
 			return
 		}
-		program.LFFmpegFailureClean(plan, workspaceLayout, sourceRootDirectory)
+		program.LFfmpegFailureClean(plan, workspaceLayout, sourceRootDirectory)
 		program.LActionApprovedFinish("failed")
 	}()
 	program.LStatusEmit("building-ffmpeg")
@@ -69,23 +69,23 @@ func (program *LProgram) LFFmpegCompile(LContext context.Context, LRunId string,
 
 	archivePath := filepath.Join(workspaceLayout.DownloadsDirectory, "ffmpeg-approved-source"+LArchiveExtensionResolve(plan.FfmpegSourceArchiveUrl))
 	downloadPlan := download.LDownloadPlanState{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "FFmpeg", DownloadUrl: plan.FfmpegSourceArchiveUrl, ExpectedSha256Hash: plan.FfmpegSourceSha256Hash, DestinationFilePath: archivePath, AllowedHosts: []string{"ffmpeg.org", "www.ffmpeg.org"}, ExpectedFileSizeMinimum: 1_000_000, ExpectedFileSizeMaximum: 200_000_000, LPolicyFile: LPolicyHashResolve(plan.FfmpegSourceSha256Hash)}
-	if err := download.LDownloadFFmpegRun(LContext, userLConsentFFmpeg, downloadPlan, emitProgress); err != nil {
+	if err := download.LDownloadFfmpegRun(LContext, userLConsentFfmpeg, downloadPlan, emitProgress); err != nil {
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSourceDownload", "FFmpeg source download failed", err)
 		return
 	}
 	signaturePath := filepath.Join(workspaceLayout.DownloadsDirectory, "ffmpeg-approved-source"+LArchiveExtensionResolve(plan.FfmpegSourceArchiveUrl)+".asc")
 	signatureDownloadPlan := download.LDownloadPlanState{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "FFmpeg signature", DownloadUrl: plan.FfmpegSourceSignatureUrl, DestinationFilePath: signaturePath, AllowedHosts: []string{"ffmpeg.org", "www.ffmpeg.org"}, ExpectedFileSizeMinimum: 100, ExpectedFileSizeMaximum: 100_000, LPolicyFile: download.LPolicyFileOverwrite}
-	if err := download.LDownloadFFmpegRun(LContext, userLConsentFFmpeg, signatureDownloadPlan, emitProgress); err != nil {
+	if err := download.LDownloadFfmpegRun(LContext, userLConsentFfmpeg, signatureDownloadPlan, emitProgress); err != nil {
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSignatureDownload", "FFmpeg source signature download failed", err)
 		return
 	}
 	publicKeyPath := filepath.Join(workspaceLayout.DownloadsDirectory, "ffmpeg-devel.asc")
-	publicKeyDownloadPlan := download.LDownloadPlanState{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "FFmpeg release signing key", DownloadUrl: LSignatureFFmpegUrl, DestinationFilePath: publicKeyPath, AllowedHosts: []string{"ffmpeg.org", "www.ffmpeg.org"}, ExpectedFileSizeMinimum: 1000, ExpectedFileSizeMaximum: 100_000, LPolicyFile: download.LPolicyFileOverwrite}
-	if err := download.LDownloadFFmpegRun(LContext, userLConsentFFmpeg, publicKeyDownloadPlan, emitProgress); err != nil {
+	publicKeyDownloadPlan := download.LDownloadPlanState{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "FFmpeg release signing key", DownloadUrl: LSignatureFfmpegUrl, DestinationFilePath: publicKeyPath, AllowedHosts: []string{"ffmpeg.org", "www.ffmpeg.org"}, ExpectedFileSizeMinimum: 1000, ExpectedFileSizeMaximum: 100_000, LPolicyFile: download.LPolicyFileOverwrite}
+	if err := download.LDownloadFfmpegRun(LContext, userLConsentFfmpeg, publicKeyDownloadPlan, emitProgress); err != nil {
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSigningKeyDownload", "FFmpeg signing key download failed", err)
 		return
 	}
-	if err := LSignatureFFmpegVerify(signaturePath, archivePath, publicKeyPath, emitProgress); err != nil {
+	if err := LSignatureFfmpegVerify(signaturePath, archivePath, publicKeyPath, emitProgress); err != nil {
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSignatureVerification", "FFmpeg source signature verification failed", err)
 		return
 	}
@@ -107,19 +107,19 @@ func (program *LProgram) LFFmpegCompile(LContext context.Context, LRunId string,
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegLibraryPackageInstall", "FFmpeg library package installation failed", err)
 		return
 	}
-	if err := program.LLibraryNonnativePrepare(LContext, plan, userLConsentFFmpeg, userLConsentArchive, userLibraryPackageInstallLConsent, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
+	if err := program.LLibraryNonnativePrepare(LContext, plan, userLConsentFfmpeg, userLConsentArchive, userLibraryPackageInstallLConsent, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.libraryPreparation", "Non-Native library preparation failed", err)
 		return
 	}
-	if err := program.LFFmpegConfigureRun(LContext, plan, ffmpegSourceDirectory, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
+	if err := program.LFfmpegConfigureRun(LContext, plan, ffmpegSourceDirectory, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegConfigure", "FFmpeg configure failed", err)
 		return
 	}
-	if err := program.LFFmpegMakeRun(LContext, plan, ffmpegSourceDirectory, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
+	if err := program.LFfmpegMakeRun(LContext, plan, ffmpegSourceDirectory, userExternalLConsentCommand, auditWriter, emitProgress); err != nil {
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegBuild", "FFmpeg build failed", err)
 		return
 	}
-	if err := LArtifactFFmpegCopy(ffmpegSourceDirectory, workspaceLayout, plan, emitProgress); err != nil {
+	if err := LArtifactFfmpegCopy(ffmpegSourceDirectory, workspaceLayout, plan, emitProgress); err != nil {
 		copyFailed = true
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.copyArtifacts", "Could not copy FFmpeg artifacts", err)
 		return
@@ -140,7 +140,7 @@ func (program *LProgram) LFFmpegCompile(LContext context.Context, LRunId string,
 // "stalled". Every other error is a genuine failure: an error-level "action-failed"
 // event and the localized failure status. Returns true when the stage stalled so
 // the caller can preserve the partial build for a later resume.
-func (program *LProgram) LActionFailureEmit(auditWriter *audit.LAuditWriter, plan planning.LPlanFFmpeg, messageKey string, fallback string, err error) bool {
+func (program *LProgram) LActionFailureEmit(auditWriter *audit.LAuditWriter, plan planning.LPlanFfmpeg, messageKey string, fallback string, err error) bool {
 	var stalled *execution.LErrorNetworkStalled
 	if errors.As(err, &stalled) {
 		message := LLocaleTextGetInternal("run.log.downloadStalled", map[string]string{"addresses": strings.Join(stalled.LNetworkAddresses, ", ")})
@@ -178,7 +178,7 @@ func (program *LProgram) LLogConfigurationSave(ffmpegSourceDirectory string, wor
 	program.LLogEmit("info", LLocaleTextGetInternal("run.log.configSaved", map[string]string{"path": destPath}))
 }
 
-func (program *LProgram) LFFmpegFailureClean(plan planning.LPlanFFmpeg, workspaceLayout workspace.LWorkspaceLayout, sourceRootDirectory string) {
+func (program *LProgram) LFfmpegFailureClean(plan planning.LPlanFfmpeg, workspaceLayout workspace.LWorkspaceLayout, sourceRootDirectory string) {
 	program.LLogEmit("warn", LLocaleTextGetInternal("run.log.cleaningFfmpegPartial", nil))
 	cleanupTargets := []string{
 		sourceRootDirectory,
@@ -196,7 +196,7 @@ func (program *LProgram) LFFmpegFailureClean(plan planning.LPlanFFmpeg, workspac
 	program.LWorkspaceTargetsClean(plan.WorkspaceDirectory, cleanupTargets)
 }
 
-func (program *LProgram) LLibraryPackageInstall(LContext context.Context, plan planning.LPlanFFmpeg, userLibraryPackageInstallLConsent consent.LConsentPacman, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+func (program *LProgram) LLibraryPackageInstall(LContext context.Context, plan planning.LPlanFfmpeg, userLibraryPackageInstallLConsent consent.LConsentPacman, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
 	if len(plan.RequiredMsys2PackageNames) == 0 {
 		emitProgress("info", "No extra MSYS2 library packages are required by the selected FFmpeg libraries.")
 		return nil
@@ -218,7 +218,7 @@ func (program *LProgram) LLibraryPackageInstall(LContext context.Context, plan p
 	return execution.LCommandPacmanRun(LContext, userLibraryPackageInstallLConsent, commandPlan, emitProgress)
 }
 
-func LPathPkgconfigResolve(plan planning.LPlanFFmpeg) string {
+func LPathPkgconfigResolve(plan planning.LPlanFfmpeg) string {
 	profileDirectoryName := strings.ToLower(plan.WindowsShellProfileName)
 	if profileDirectoryName == "" {
 		profileDirectoryName = "ucrt64"
@@ -240,7 +240,7 @@ func LPathPkgconfigResolve(plan planning.LPlanFFmpeg) string {
 
 // LPackagePathList returns the unix pkgconfig directories of every privately-installed
 // library in the plan (see planning.LLibraryPreparation.PrivatePrefixInstall), in plan order.
-func LPackagePathList(plan planning.LPlanFFmpeg) []string {
+func LPackagePathList(plan planning.LPlanFfmpeg) []string {
 	profileDirectoryName := strings.ToLower(plan.WindowsShellProfileName)
 	if profileDirectoryName == "" {
 		profileDirectoryName = "ucrt64"
@@ -255,7 +255,7 @@ func LPackagePathList(plan planning.LPlanFFmpeg) []string {
 	return dirs
 }
 
-func (program *LProgram) LFFmpegConfigureRun(LContext context.Context, plan planning.LPlanFFmpeg, ffmpegSourceDirectory string, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+func (program *LProgram) LFfmpegConfigureRun(LContext context.Context, plan planning.LPlanFfmpeg, ffmpegSourceDirectory string, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
 	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
 	scriptLines, err := scripting.LConfigureScriptCreate(plan.ConfigureFlags, LPackagePathList(plan), planning.LVersionArchiveParse(plan.FfmpegSourceArchiveUrl))
 	if err != nil {
@@ -265,12 +265,12 @@ func (program *LProgram) LFFmpegConfigureRun(LContext context.Context, plan plan
 	if err != nil {
 		return err
 	}
-	commandPlan := execution.LPlanCommand{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ExecutablePath: filepath.Join(plan.Msys2RootDirectory, "usr", "bin", "bash.exe"), ArgumentValues: []string{filepath.ToSlash(scriptFile.ScriptFilePath)}, WorkingDirectory: ffmpegSourceDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, Msys2RootDirectory: plan.Msys2RootDirectory, WindowsShellProfileName: plan.WindowsShellProfileName, EnvironmentVariables: map[string]string{"PKG_CONFIG_PATH": LPathPkgconfigResolve(plan)}, AllowedExecutableBasenames: []string{"bash.exe"}, LScriptKind: execution.LScriptFFmpegConfigure, ApprovedScriptFilePath: scriptFile.ScriptFilePath, ApprovedScriptSha256Hash: scriptFile.ScriptSha256Hash, RunLAuditDirectoryGet: auditWriter.LAuditDirectoryGet()}
+	commandPlan := execution.LPlanCommand{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ExecutablePath: filepath.Join(plan.Msys2RootDirectory, "usr", "bin", "bash.exe"), ArgumentValues: []string{filepath.ToSlash(scriptFile.ScriptFilePath)}, WorkingDirectory: ffmpegSourceDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, Msys2RootDirectory: plan.Msys2RootDirectory, WindowsShellProfileName: plan.WindowsShellProfileName, EnvironmentVariables: map[string]string{"PKG_CONFIG_PATH": LPathPkgconfigResolve(plan)}, AllowedExecutableBasenames: []string{"bash.exe"}, LScriptKind: execution.LScriptFfmpegConfigure, ApprovedScriptFilePath: scriptFile.ScriptFilePath, ApprovedScriptSha256Hash: scriptFile.ScriptSha256Hash, RunLAuditDirectoryGet: auditWriter.LAuditDirectoryGet()}
 	_ = auditWriter.LAuditEventWrite("command-started", plan.ActionName, plan.PlanHash, "info", "Running approved FFmpeg configure script.")
 	return execution.LCommandConsentRun(LContext, userExternalLConsentCommand, commandPlan, emitProgress)
 }
 
-func (program *LProgram) LFFmpegMakeRun(LContext context.Context, plan planning.LPlanFFmpeg, ffmpegSourceDirectory string, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
+func (program *LProgram) LFfmpegMakeRun(LContext context.Context, plan planning.LPlanFfmpeg, ffmpegSourceDirectory string, userExternalLConsentCommand consent.LConsentCommand, auditWriter *audit.LAuditWriter, emitProgress func(string, string)) error {
 	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
 	scriptLines, err := scripting.LMakeLinesCreate(plan.ParallelJobCount)
 	if err != nil {
@@ -280,7 +280,7 @@ func (program *LProgram) LFFmpegMakeRun(LContext context.Context, plan planning.
 	if err != nil {
 		return err
 	}
-	commandPlan := execution.LPlanCommand{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ExecutablePath: filepath.Join(plan.Msys2RootDirectory, "usr", "bin", "bash.exe"), ArgumentValues: []string{filepath.ToSlash(scriptFile.ScriptFilePath)}, WorkingDirectory: ffmpegSourceDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, Msys2RootDirectory: plan.Msys2RootDirectory, WindowsShellProfileName: plan.WindowsShellProfileName, EnvironmentVariables: map[string]string{}, AllowedExecutableBasenames: []string{"bash.exe"}, LScriptKind: execution.LFFmpegMakeScript, ApprovedScriptFilePath: scriptFile.ScriptFilePath, ApprovedScriptSha256Hash: scriptFile.ScriptSha256Hash, RunLAuditDirectoryGet: auditWriter.LAuditDirectoryGet()}
+	commandPlan := execution.LPlanCommand{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ExecutablePath: filepath.Join(plan.Msys2RootDirectory, "usr", "bin", "bash.exe"), ArgumentValues: []string{filepath.ToSlash(scriptFile.ScriptFilePath)}, WorkingDirectory: ffmpegSourceDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, Msys2RootDirectory: plan.Msys2RootDirectory, WindowsShellProfileName: plan.WindowsShellProfileName, EnvironmentVariables: map[string]string{}, AllowedExecutableBasenames: []string{"bash.exe"}, LScriptKind: execution.LFfmpegMakeScript, ApprovedScriptFilePath: scriptFile.ScriptFilePath, ApprovedScriptSha256Hash: scriptFile.ScriptSha256Hash, RunLAuditDirectoryGet: auditWriter.LAuditDirectoryGet()}
 	_ = auditWriter.LAuditEventWrite("command-started", plan.ActionName, plan.PlanHash, "info", "Running approved FFmpeg make script.")
 	return execution.LCommandConsentRun(LContext, userExternalLConsentCommand, commandPlan, emitProgress)
 }

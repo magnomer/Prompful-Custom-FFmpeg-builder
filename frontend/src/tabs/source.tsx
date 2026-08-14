@@ -3,7 +3,7 @@ import { LLocaleTextGet } from "../i18n";
 import { PTextDescriptionRender, PLinkExternalRender, PHeaderPageRender } from "./shared";
 import workspaceFolderIcon from "../assets/source-card-icons/WorkspaceFolder.svg";
 import buildEnvironmentIcon from "../assets/source-card-icons/BuildEnvironment.svg";
-import ffmpegSourceIcon from "../assets/source-card-icons/FFmpegSource.svg";
+import ffmpegSourceIcon from "../assets/source-card-icons/FfmpegSource.svg";
 import browseIcon from "../assets/button-icons/Browse.svg";
 import technicalDetailsIcon from "../assets/button-icons/TechnicalDetails.svg";
 
@@ -11,7 +11,7 @@ const LLinkOfficialTable = {
   msys2ArchiveList: "https://repo.msys2.org/distrib/x86_64/",
   msys2InstallerDocs: "https://www.msys2.org/docs/installer/",
   ffmpegDownload: "https://www.ffmpeg.org/download.html",
-  LReleaseFFmpegIndex: "https://ffmpeg.org/releases/",
+  LReleaseFfmpegIndex: "https://ffmpeg.org/releases/",
   ffmpegSigningKey: "https://ffmpeg.org/ffmpeg-devel.asc",
 };
 
@@ -35,16 +35,16 @@ function LReleaseOptionGet(release: LReleaseChoice, newestReleaseVersion: string
 
 export type LSourceProperties = {
   buildConfigSettings: LSettingsToolchain;
-  ffmpegBuildSettings: LSettingsFFmpeg;
+  ffmpegBuildSettings: LSettingsFfmpeg;
   supportedFfmpegReleases: LReleaseChoice[];
   LSettingsToolchainUpdate: (partial: Partial<LSettingsToolchain>) => void;
-  LSettingsFFmpegUpdate: (partial: Partial<LSettingsFFmpeg>) => void;
+  LSettingsFfmpegUpdate: (partial: Partial<LSettingsFfmpeg>) => void;
   LMSYSArchiveUpdate: (url: string) => void;
   chooseWorkspaceDirectory: () => Promise<void>;
   openInUserBrowser: (url: string) => Promise<void>;
 };
 
-export function PSourceRender({ buildConfigSettings, ffmpegBuildSettings, supportedFfmpegReleases, LSettingsToolchainUpdate, LSettingsFFmpegUpdate, LMSYSArchiveUpdate, chooseWorkspaceDirectory, openInUserBrowser }: LSourceProperties) {
+export function PSourceRender({ buildConfigSettings, ffmpegBuildSettings, supportedFfmpegReleases, LSettingsToolchainUpdate, LSettingsFfmpegUpdate, LMSYSArchiveUpdate, chooseWorkspaceDirectory, openInUserBrowser }: LSourceProperties) {
   const [isMsys2TechnicalOpen, setIsMsys2TechnicalOpen] = React.useState(false);
   const [isFfmpegTechnicalOpen, setIsFfmpegTechnicalOpen] = React.useState(false);
 
@@ -60,7 +60,7 @@ export function PSourceRender({ buildConfigSettings, ffmpegBuildSettings, suppor
         </div>
         <label className="card__control">
           <span className="card__label-hidden">{LLocaleTextGet("source.workspace.label")}</span>
-          <input className="card__input" value={buildConfigSettings.workspaceDirectory} onChange={(event) => { LSettingsToolchainUpdate({ workspaceDirectory: event.target.value }); LSettingsFFmpegUpdate({ workspaceDirectory: event.target.value }); }} placeholder={LLocaleTextGet("source.workspace.placeholder")} />
+          <input className="card__input" value={buildConfigSettings.workspaceDirectory} onChange={(event) => { LSettingsToolchainUpdate({ workspaceDirectory: event.target.value }); LSettingsFfmpegUpdate({ workspaceDirectory: event.target.value }); }} placeholder={LLocaleTextGet("source.workspace.placeholder")} />
           <button className="button card__action-btn" type="button" onClick={chooseWorkspaceDirectory}><img className="card__btn-icon" src={browseIcon} alt="" aria-hidden="true" />{LLocaleTextGet("actions.browse")}</button>
         </label>
       </section>
@@ -106,7 +106,7 @@ export function PSourceRender({ buildConfigSettings, ffmpegBuildSettings, suppor
         onToggleTechnical={() => setIsFfmpegTechnicalOpen((value) => !value)}
         onArchiveChange={(value) => {
           const matched = supportedFfmpegReleases.find((release) => release.archiveUrl === value.trim());
-          LSettingsFFmpegUpdate({ ffmpegSourceArchiveUrl: value, ffmpegSourceSignatureUrl: matched ? matched.signatureUrl : "" });
+          LSettingsFfmpegUpdate({ ffmpegSourceArchiveUrl: value, ffmpegSourceSignatureUrl: matched ? matched.signatureUrl : "" });
         }}
         versionSelect={(
           <label className="card__control">
@@ -118,10 +118,10 @@ export function PSourceRender({ buildConfigSettings, ffmpegBuildSettings, suppor
                 const selected = event.target.value;
                 const release = supportedFfmpegReleases.find((candidate) => candidate.version === selected);
                 if (!release) {
-                  LSettingsFFmpegUpdate({ ffmpegSourceArchiveUrl: "", ffmpegSourceSignatureUrl: "" });
+                  LSettingsFfmpegUpdate({ ffmpegSourceArchiveUrl: "", ffmpegSourceSignatureUrl: "" });
                   return;
                 }
-                LSettingsFFmpegUpdate({ ffmpegSourceArchiveUrl: release.archiveUrl, ffmpegSourceSignatureUrl: release.signatureUrl });
+                LSettingsFfmpegUpdate({ ffmpegSourceArchiveUrl: release.archiveUrl, ffmpegSourceSignatureUrl: release.signatureUrl });
               }}
             >
               {supportedFfmpegReleases.map((release) => (
@@ -133,7 +133,7 @@ export function PSourceRender({ buildConfigSettings, ffmpegBuildSettings, suppor
         )}
         links={[
           { label: LLocaleTextGet("source.links.ffmpegDownload"), url: LLinkOfficialTable.ffmpegDownload },
-          { label: LLocaleTextGet("source.links.ffmpegReleaseArchive"), url: LLinkOfficialTable.LReleaseFFmpegIndex },
+          { label: LLocaleTextGet("source.links.ffmpegReleaseArchive"), url: LLinkOfficialTable.LReleaseFfmpegIndex },
           { label: LLocaleTextGet("source.links.ffmpegSigningKey"), url: LLinkOfficialTable.ffmpegSigningKey },
         ]}
         openInUserBrowser={openInUserBrowser}
@@ -142,10 +142,10 @@ export function PSourceRender({ buildConfigSettings, ffmpegBuildSettings, suppor
         ]}
       >
         <PSourceTechnicalRender label={LLocaleTextGet("source.ffmpegSignature.label")} explanation={LLocaleTextGet("source.ffmpegSignature.hint")}>
-          <input className="card__input" value={ffmpegBuildSettings.ffmpegSourceSignatureUrl} onChange={(event) => LSettingsFFmpegUpdate({ ffmpegSourceSignatureUrl: event.target.value })} placeholder={LLocaleTextGet("source.ffmpegSignature.placeholder")} />
+          <input className="card__input" value={ffmpegBuildSettings.ffmpegSourceSignatureUrl} onChange={(event) => LSettingsFfmpegUpdate({ ffmpegSourceSignatureUrl: event.target.value })} placeholder={LLocaleTextGet("source.ffmpegSignature.placeholder")} />
         </PSourceTechnicalRender>
         <PSourceTechnicalRender label={LLocaleTextGet("source.ffmpegSha.label")} explanation={LLocaleTextGet("source.ffmpeg.technical.sha.text")}>
-          <input className="card__input card__input--mono" value={ffmpegBuildSettings.ffmpegSourceSha256Hash} onChange={(event) => LSettingsFFmpegUpdate({ ffmpegSourceSha256Hash: event.target.value })} placeholder={LLocaleTextGet("source.ffmpegSha.placeholder")} />
+          <input className="card__input card__input--mono" value={ffmpegBuildSettings.ffmpegSourceSha256Hash} onChange={(event) => LSettingsFfmpegUpdate({ ffmpegSourceSha256Hash: event.target.value })} placeholder={LLocaleTextGet("source.ffmpegSha.placeholder")} />
         </PSourceTechnicalRender>
       </PSourceArchiveRender>
     </section>

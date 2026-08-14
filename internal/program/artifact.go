@@ -14,8 +14,8 @@ import (
 	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
-func LArtifactFFmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace.LWorkspaceLayout, plan planning.LPlanFFmpeg, emitProgress func(string, string)) error {
-	if err := LFFmpegArtifactCheck(workspaceLayout, emitProgress); err != nil {
+func LArtifactFfmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace.LWorkspaceLayout, plan planning.LPlanFfmpeg, emitProgress func(string, string)) error {
+	if err := LFfmpegArtifactCheck(workspaceLayout, emitProgress); err != nil {
 		return err
 	}
 
@@ -55,7 +55,7 @@ func LArtifactFFmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace
 	// in libraries that omit selected encoders (for example libfdk_aac,
 	// libopenh264, libilbc, libtwolame, libvo_amrwbenc) and triggers FFmpeg's
 	// "library configuration mismatch" warning at runtime.
-	builtSharedLibraryPaths, err := LDllFFmpegCopy(ffmpegSourceDirectory, workspaceLayout, LPlanSharedCheck(plan), emitProgress)
+	builtSharedLibraryPaths, err := LDllFfmpegCopy(ffmpegSourceDirectory, workspaceLayout, LPlanSharedCheck(plan), emitProgress)
 	if err != nil {
 		return err
 	}
@@ -94,12 +94,12 @@ func LArtifactFFmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace
 	return LDllDependencyCopy(rootPePaths, preResolvedNames, dllIndex, workspaceLayout, emitProgress)
 }
 
-// LDllFFmpegCopy copies the FFmpeg shared libraries produced by
+// LDllFfmpegCopy copies the FFmpeg shared libraries produced by
 // this build (libav*/libsw*/libpostproc*) from the build directory into the
 // artifact directory. A shared, in-tree build places these DLLs in per-library
 // subdirectories, so they are located with a recursive walk. The returned paths
 // are the artifact-directory destinations.
-func LDllFFmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace.LWorkspaceLayout, isSharedBuild bool, emitProgress func(string, string)) ([]string, error) {
+func LDllFfmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace.LWorkspaceLayout, isSharedBuild bool, emitProgress func(string, string)) ([]string, error) {
 	copiedByBaseName := map[string]bool{}
 	var copiedPaths []string
 	walkErr := filepath.WalkDir(ffmpegSourceDirectory, func(path string, dirEntry os.DirEntry, walkErr error) error {
@@ -109,7 +109,7 @@ func LDllFFmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace.LWor
 		if dirEntry.IsDir() {
 			return nil
 		}
-		if !LDllFFmpegCheck(dirEntry.Name()) {
+		if !LDllFfmpegCheck(dirEntry.Name()) {
 			return nil
 		}
 		baseNameLower := strings.ToLower(dirEntry.Name())
@@ -147,7 +147,7 @@ func LDllFFmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace.LWor
 // build, i.e. its configure flags request --enable-shared. A static build (the default)
 // links the FFmpeg libraries into the executables, so the absence of libav*/libsw* DLLs
 // in the build directory is expected rather than a problem.
-func LPlanSharedCheck(plan planning.LPlanFFmpeg) bool {
+func LPlanSharedCheck(plan planning.LPlanFfmpeg) bool {
 	for _, configureFlag := range plan.ConfigureFlags {
 		if configureFlag == "--enable-shared" {
 			return true
@@ -156,10 +156,10 @@ func LPlanSharedCheck(plan planning.LPlanFFmpeg) bool {
 	return false
 }
 
-// LDllFFmpegCheck reports whether fileName is an FFmpeg shared library
+// LDllFfmpegCheck reports whether fileName is an FFmpeg shared library
 // such as libavcodec-62.dll or avutil-60.dll. It accepts the name with or
 // without the "lib" prefix and requires a numeric ABI suffix.
-func LDllFFmpegCheck(fileName string) bool {
+func LDllFfmpegCheck(fileName string) bool {
 	lowerName := strings.ToLower(fileName)
 	if !strings.HasSuffix(lowerName, ".dll") {
 		return false
@@ -185,7 +185,7 @@ func LDllFFmpegCheck(fileName string) bool {
 	return false
 }
 
-func LFFmpegArtifactCheck(workspaceLayout workspace.LWorkspaceLayout, emitProgress func(string, string)) error {
+func LFfmpegArtifactCheck(workspaceLayout workspace.LWorkspaceLayout, emitProgress func(string, string)) error {
 	if workspaceLayout.ArtifactsDirectory == "" {
 		return errors.New("FFmpeg artifact directory is empty")
 	}

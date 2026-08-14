@@ -1,13 +1,13 @@
 import React from "react";
 import { PHeaderPageRender, PProgressLiveRender, PTextDescriptionRender } from "./shared";
-import { LPipelineFFmpegGet } from "./logutils";
+import { LPipelineFfmpegGet } from "./logutils";
 import { LLocaleTextGet } from "../i18n";
 import { LOptionTextGet, LLicenseLabelGet, LLibraryTextGet } from "../catalogText";
 import type { LProgressLive } from "./logs";
 import emptyStateBlueIcon from "../assets/empty-card-icons/EmptyStateBlue.svg";
 
 export type LBuildProperties = {
-  ffmpegBuildPlanReview: LReviewFFmpeg | null;
+  ffmpegBuildPlanReview: LReviewFfmpeg | null;
   ffmpegLogEntries: { timestamp: string; level: "info" | "warn" | "error"; message: string }[];
   approvedActionPhase: "toolchain" | "ffmpeg" | null;
   approvedActionStatus: string;
@@ -133,7 +133,7 @@ function PPanelConfirmationRender(props: { planHash: string; expectedLConsentTex
   );
 }
 
-function PCardBuildRender(props: { review: LReviewFFmpeg }) {
+function PCardBuildRender(props: { review: LReviewFfmpeg }) {
   const [activeTabId, setActiveTabId] = React.useState<LBuildPlanIdentifier>("libraries");
   const plan = props.review.plan;
   const selectedLibraries = LListEmptyNormalize(plan.selectedLibraries);
@@ -244,7 +244,7 @@ export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approved
           isActive={isFfmpegRunning}
           approvedActionStatus={approvedActionStatus}
           progress={ffmpegProgress}
-          pipeline={LPipelineFFmpegGet()}
+          pipeline={LPipelineFfmpegGet()}
           completionLabel={LLocaleTextGet("ffmpegBuild.progress.completionLabel")}
           onCancel={cancelApprovedAction}
           canCancel={canCancelFfmpeg}
