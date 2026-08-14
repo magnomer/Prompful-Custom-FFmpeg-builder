@@ -4,30 +4,17 @@ import {
   LFFmpegCompilationLaunch,
   LPlanToolchainApprove,
   LActionApprovedCancel,
-  LToolchainEnvironmentClear,
-  LResultBuildGet,
-  LVerificationBuildRun,
   LStateInitialGet,
-  LStatusToolchainGet,
-  LToolchainProfileList,
-  LRecordLogGet,
-  LLogRecordList,
-  LFolderRecordOpen,
-  LFileRecordOpen,
-  LFolderLogOpen,
-  LToolchainInstallVerify,
   LCatalogSourceGet,
   LPresetSourceGet,
   LStateUiLoad,
   LStateUiSave,
   LPlanFFmpegRequest,
   LPlanToolchainRequest,
-  LDirectoryResultOpen,
-  LReportResultOpen,
   LWorkspaceSelect,
   LLocaleSet,
 } from "../wailsjs/go/program/LProgram";
-import { BrowserOpenURL, EventsOn, WindowGetPosition, WindowGetSize, WindowSetPosition, WindowSetSize } from "../wailsjs/runtime/runtime";
+import { BrowserOpenURL, EventsOn } from "../wailsjs/runtime/runtime";
 import { planning } from "../wailsjs/go/models";
 
 import { LLogSecurityEntry, LLogSecurityPayload, LStatusActionPayload, LStalledActionPayload, LProgressLive, LProgressGet } from "./tabs/logutils";
@@ -39,46 +26,17 @@ import {
 } from "./tabs/libraries";
 import { LPresetOptionId, LPresetOptionCatalog } from "./tabs/options";
 import {
-  LTabIdentifier, LStateUiSaved, LStateWindowSaved, LStateWindowKey,
+  LTabIdentifier, LStateUiSaved,
   LSettingsBuildEmpty, LSettingsFFmpegEmpty, LStateInitialDefault,
   LTextLineSplit, LLogLevelNormalize, LTabIdValidate,
-  LRequestApprovalCreate, LStateUiParse, LStateWindowRead,
+  LRequestApprovalCreate, LStateUiParse,
   LPackagePrefixUpdate, LSettingsBuildNormalize, LSettingsFFmpegNormalize, LStateInitialNormalize,
 } from "./programstate";
-import { LLocaleTextGet, LLocaleGet } from "./i18n";
-
-// ─── Window state helpers ─────────────────────────────────────────────────────
-
-function LRuntimeNumberRead(value: unknown, tupleIndex: number, primary: string, fallback: string): number {
-  if (Array.isArray(value)) return Number(value[tupleIndex]);
-  if (value && typeof value === "object") {
-    const r = value as Record<string, unknown>;
-    return Number(r[primary] ?? r[fallback] ?? 0);
-  }
-  return 0;
-}
-
-function LStateWindowRestore() {
-  const s = LStateWindowRead();
-  if (Number.isFinite(s.width) && Number.isFinite(s.height)) WindowSetSize(Number(s.width), Number(s.height));
-  if (Number.isFinite(s.x) && Number.isFinite(s.y)) WindowSetPosition(Number(s.x), Number(s.y));
-}
-
-async function LStateWindowSave() {
-  try {
-    const sz = await WindowGetSize();
-    const pos = await WindowGetPosition();
-    const width  = LRuntimeNumberRead(sz,  0, "w", "width");
-    const height = LRuntimeNumberRead(sz,  1, "h", "height");
-    const x = LRuntimeNumberRead(pos, 0, "x", "left");
-    const y = LRuntimeNumberRead(pos, 1, "y", "top");
-    window.localStorage.setItem(LStateWindowKey, JSON.stringify({ width, height, x, y } satisfies LStateWindowSaved));
-  } catch {
-    // Window persistence is best-effort. Never block the program if the runtime is unavailable.
-  }
-}
-
-// ─── Hook ────────────────────────────────────────────────────────────────────
+import { LLocaleGet } from "./i18n";
+import { LStateWindowRestore, LStateWindowUse } from "./builderwindowstate";
+import { LStateResultUse } from "./builderresultstate";
+import { LStateLogUse } from "./builderlogstate";
+import { LStateToolchainStatusUse } from "./buildertoolchainstate";
 
 export function LStateBuilderUse() {
   const [activeTabId, setActiveTabId] = useState<LTabIdentifier>("source");
@@ -117,19 +75,24 @@ export function LStateBuilderUse() {
   const pFfmpegRunLast = useRef<{ plan: planning.LPlanFFmpeg; approval: LRequestApproval } | null>(null);
   const [toolchainLogEntries, setToolchainLogEntries] = useState<LLogSecurityEntry[]>([]);
   const [ffmpegLogEntries, setFfmpegLogEntries] = useState<LLogSecurityEntry[]>([]);
-  const [localLogRecords, setLocalLogRecords] = useState<LRecordLog[]>([]);
-  const [localLogRecordsError, setLocalLogRecordsError] = useState("");
-  const [buildResult, setBuildResult] = useState<LResultState | null>(null);
-  const [buildResultError, setBuildResultError] = useState("");
-  const [isLoadingBuildResult, setIsLoadingBuildResult] = useState(false);
-  const [buildVerification, setBuildVerification] = useState<LVerificationState | null>(null);
-  const [buildVerificationError, setBuildVerificationError] = useState("");
-  const [isVerifyingBuild, setIsVerifyingBuild] = useState(false);
-  const [toolchainStatus, setToolchainStatus] = useState<LStatusToolchain | null>(null);
-  const [installedToolchainProfiles, setInstalledToolchainProfiles] = useState<LStatusToolchain[]>([]);
-  const [toolchainVerification, setToolchainVerification] = useState<LVerificationToolchain | null>(null);
-  const [isVerifyingToolchain, setIsVerifyingToolchain] = useState(false);
 
+  // Workspace directory shared by result, log, and toolchain state.
+  const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
+  const {
+    buildResult, buildResultError, isLoadingBuildResult,
+    buildVerification, buildVerificationError, isVerifyingBuild,
+    LResultClear, refreshBuildResult, verifyBuildResult, openResultFolder, openResultReport,
+  } = LStateResultUse(dir);
+  const {
+    localLogRecords, localLogRecordsError, setLocalLogRecordsError,
+    refreshLocalLogRecords, loadLocalLogRecord,
+    openLocalLogsFolder, openLocalLogRecordFolder, openLocalLogRecordFile,
+  } = LStateLogUse(dir);
+  const {
+    toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain,
+    refreshToolchainStatus, verifyToolchain, clearBuildEnvironments,
+  } = LStateToolchainStatusUse(dir, buildConfigSettings.windowsShellProfileName);
+  LStateWindowUse();
   const approvedActionPhaseRef = useRef<"toolchain" | "ffmpeg" | null>(null);
   const libraryPresetIdRef = useRef<LPresetLibraryId>("default");
   approvedActionPhaseRef.current = approvedActionPhase;
@@ -203,8 +166,8 @@ export function LStateBuilderUse() {
     });
     const removeStatusListener = EventsOn("approved-action-status", (payload: LStatusActionPayload) => {
       setApprovedActionStatus(payload.status);
-      if (payload.status === "failed") { setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null); setBuildResult(null); }
-      if (payload.status === "completed") { setBuildResult(null); setApprovedActionPhase(null); }
+      if (payload.status === "failed") { setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null); LResultClear(); }
+      if (payload.status === "completed") { LResultClear(); setApprovedActionPhase(null); }
       // A stall halts the run in a non-active retryable state: drop the "ffmpeg"
       // phase so the live progress stops reading as in-flight and the orange
       // stalled banner (not a spinner) becomes the authoritative signal.
@@ -262,12 +225,6 @@ export function LStateBuilderUse() {
   }, [activeTabId, buildConfigSettings, ffmpegBuildSettings, msys2PackageText, extraConfigureFlagText, libraryPresetId, extendedLibraries, libraryDetailedView, optionsDetailedView, libraryTechnicalDetails, optionsTechnicalDetails, librarySectionFilters]);
 
   useEffect(() => {
-    const id = window.setInterval(() => { LStateWindowSave(); }, 2000);
-    window.addEventListener("beforeunload", LStateWindowSave);
-    return () => { window.clearInterval(id); window.removeEventListener("beforeunload", LStateWindowSave); LStateWindowSave(); };
-  }, []);
-
-  useEffect(() => {
     if (activeTabId === "result") refreshBuildResult();
     if (activeTabId === "logs") refreshLocalLogRecords();
   }, [activeTabId, buildConfigSettings.workspaceDirectory]);
@@ -278,10 +235,6 @@ export function LStateBuilderUse() {
   useEffect(() => {
     if (activeTabId === "prep") refreshToolchainStatus();
   }, [activeTabId, buildConfigSettings.workspaceDirectory, buildConfigSettings.windowsShellProfileName]);
-
-  useEffect(() => {
-    setToolchainVerification(null);
-  }, [buildConfigSettings.workspaceDirectory, buildConfigSettings.windowsShellProfileName]);
 
   // After a toolchain run finishes, re-read disk so the recovery card reflects
   // the fresh install. This effect re-runs with current settings, avoiding the
@@ -310,127 +263,6 @@ export function LStateBuilderUse() {
       ? tabScrollPositions.current[activeTabId] ?? 0
       : 0;
   }, [activeTabId]);
-
-  async function refreshLocalLogRecords() {
-    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
-    if (!dir) { setLocalLogRecords([]); setLocalLogRecordsError(""); return; }
-    try {
-      const records = await LLogRecordList(dir);
-      setLocalLogRecords((previousRecords) => {
-        const previousByRunId = new Map(previousRecords.map((record) => [record.runId, record]));
-        return records.map((record) => {
-          const previous = previousByRunId.get(record.runId);
-          const normalizedRecord = {
-            ...record,
-            entries: (record.entries ?? []).map((entry) => ({ ...entry, level: LLogLevelNormalize(entry.level) })),
-          };
-          if (previous && ((previous.entries?.length ?? 0) > 0 || (previous.rawText ?? "").trim())) {
-            return { ...normalizedRecord, entries: previous.entries, rawText: previous.rawText };
-          }
-          return normalizedRecord;
-        });
-      });
-      setLocalLogRecordsError("");
-    }
-    catch (err) { setLocalLogRecords([]); setLocalLogRecordsError(err instanceof Error ? err.message : String(err)); }
-  }
-
-  async function loadLocalLogRecord(runId: string) {
-    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
-    if (!dir || !runId || runId.startsWith("live-")) return;
-    const existing = localLogRecords.find((record) => record.runId === runId);
-    if (existing && ((existing.entries?.length ?? 0) > 0 || (existing.rawText ?? "").trim())) return;
-    try {
-      const record = await LRecordLogGet(dir, runId);
-      const normalizedRecord = {
-        ...record,
-        entries: (record.entries ?? []).map((entry) => ({ ...entry, level: LLogLevelNormalize(entry.level) })),
-      };
-      setLocalLogRecords((records) => records.map((item) => item.runId === runId ? normalizedRecord : item));
-      setLocalLogRecordsError("");
-    }
-    catch (err) { setLocalLogRecordsError(err instanceof Error ? err.message : String(err)); }
-  }
-
-  async function refreshBuildResult() {
-    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
-    if (!dir) { setBuildResult(null); setBuildResultError(LLocaleTextGet("result.error.chooseWorkspaceFirst")); return; }
-    setBuildVerification(null); setBuildVerificationError("");
-    setIsLoadingBuildResult(true);
-    try { const r = await LResultBuildGet(dir); setBuildResult(r); setBuildResultError(""); }
-    catch (err) { setBuildResult(null); setBuildResultError(err instanceof Error ? err.message : String(err)); }
-    finally { setIsLoadingBuildResult(false); }
-  }
-
-  async function verifyBuildResult() {
-    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
-    if (!dir) { setBuildVerificationError(LLocaleTextGet("result.error.chooseWorkspaceFirst")); return; }
-    setIsVerifyingBuild(true);
-    setBuildVerificationError("");
-    try { setBuildVerification(await LVerificationBuildRun(dir)); }
-    catch (err) { setBuildVerification(null); setBuildVerificationError(err instanceof Error ? err.message : String(err)); }
-    finally { setIsVerifyingBuild(false); }
-  }
-
-  async function refreshToolchainStatus() {
-    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
-    if (!dir) { setToolchainStatus(null); setInstalledToolchainProfiles([]); return; }
-    try { setToolchainStatus(await LStatusToolchainGet(dir, buildConfigSettings.windowsShellProfileName)); }
-    catch { setToolchainStatus(null); }
-    try { setInstalledToolchainProfiles(await LToolchainProfileList(dir)); }
-    catch { setInstalledToolchainProfiles([]); }
-  }
-
-
-  async function clearBuildEnvironments() {
-    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
-    if (!dir) return;
-    const confirmed = window.confirm(LLocaleTextGet("prep.profiles.clearConfirm"));
-    if (!confirmed) return;
-    setToolchainVerification(null);
-    await LToolchainEnvironmentClear(dir);
-    await refreshToolchainStatus();
-  }
-
-  async function verifyToolchain() {
-    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
-    if (!dir) return;
-    setIsVerifyingToolchain(true);
-    setToolchainVerification(null);
-    try { setToolchainVerification(await LToolchainInstallVerify(dir, buildConfigSettings.windowsShellProfileName)); }
-    catch (err) { setToolchainVerification({ verified: false, checkedPackageCount: 0, missingPackageNames: [], message: err instanceof Error ? err.message : String(err) }); }
-    finally { setIsVerifyingToolchain(false); }
-  }
-
-  async function openResultFolder() {
-    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
-    if (!dir) { setBuildResultError(LLocaleTextGet("result.error.chooseWorkspaceFirst")); return; }
-    await LDirectoryResultOpen(dir);
-  }
-
-  async function openResultReport() {
-    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
-    if (!dir) { setBuildResultError(LLocaleTextGet("result.error.chooseWorkspaceFirst")); return; }
-    await LReportResultOpen(dir);
-  }
-
-  async function openLocalLogsFolder() {
-    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
-    if (!dir) return;
-    await LFolderLogOpen(dir);
-  }
-
-  async function openLocalLogRecordFolder(runId: string) {
-    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
-    if (!dir || !runId || runId.startsWith("live-")) return;
-    await LFolderRecordOpen(dir, runId);
-  }
-
-  async function openLocalLogRecordFile(runId: string, fileName: string) {
-    const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
-    if (!dir || !runId || runId.startsWith("live-")) return;
-    await LFileRecordOpen(dir, runId, fileName);
-  }
 
   function LSettingsToolchainUpdate(next: Partial<LSettingsToolchain>) {
     setBuildConfigSettings((s) => ({ ...s, ...next }));
@@ -470,10 +302,10 @@ export function LStateBuilderUse() {
   }
 
   async function chooseWorkspaceDirectory() {
-    const dir = await LWorkspaceSelect();
-    if (!dir) return;
-    LSettingsToolchainUpdate({ workspaceDirectory: dir });
-    LSettingsFFmpegUpdate({ workspaceDirectory: dir });
+    const nextDir = await LWorkspaceSelect();
+    if (!nextDir) return;
+    LSettingsToolchainUpdate({ workspaceDirectory: nextDir });
+    LSettingsFFmpegUpdate({ workspaceDirectory: nextDir });
   }
 
   async function addBuildConfigPlanAndContinueToPrep() {
@@ -548,7 +380,7 @@ export function LStateBuilderUse() {
   function LActionApprovedClear() {
     setToolchainLogEntries([]); setFfmpegLogEntries([]); setFfmpegStalledAddresses([]);
     setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null);
-    setBuildResult(null); setBuildResultError("");
+    LResultClear();
     setApprovedActionPhase(null); setApprovedActionStatus("idle");
   }
   async function openInUserBrowser(url: string) { BrowserOpenURL(url); }
@@ -620,7 +452,6 @@ export function LStateBuilderUse() {
 
   function LMSYSPackageUpdate(text: string) { setMsys2PackageText(text); setToolchainPreparationPlanReview(null); }
   function LFlagExtraUpdate(text: string) { setExtraConfigureFlagText(text); setFfmpegBuildPlanReview(null); }
-
   return {
     tabPanelRef,
     activeTabId, setActiveTabId,
