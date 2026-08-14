@@ -1312,6 +1312,13 @@ func LCMakeScriptCreate(spec LLibraryBuildSpec) ([]string, error) {
 	// to work around an upstream portability bug that no CMake flag can fix). No-op when none.
 	scriptLines = append(scriptLines, LSourceScriptCreate(spec)...)
 	scriptLines = append(scriptLines, LScriptPatchCreate(spec)...)
+	// Exported (not only passed as -D on the configure line below) so nested cmake invocations
+	// the build itself spawns inherit it. OpenCV's pkg-config generation re-runs cmake in script
+	// mode (cmake -P OpenCVGenPkgconfig.cmake) at build time; that child does not receive the
+	// configure cache's CMAKE_POLICY_VERSION_MINIMUM, so a CMake that removed pre-3.5 policy
+	// compatibility aborts on the script's old cmake_minimum_required. The env var reaches every
+	// child cmake and is harmless where it is not needed.
+	scriptLines = append(scriptLines, `export CMAKE_POLICY_VERSION_MINIMUM=3.5`)
 	scriptLines = append(scriptLines, `cmake -S "${src_dir}" -B "${build_dir}" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${install_prefix_win}" -DCMAKE_POLICY_VERSION_MINIMUM=3.5.0 "${cmake_options[@]}" -Wno-dev 2>&1`)
 	// Build either the named targets a recipe requests (e.g. a header-only project whose
 	// generated headers come from a target that is not in the default build) or, by
