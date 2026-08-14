@@ -10,7 +10,7 @@ func LLibraryLibjxlPrepare(plan *shared.LPreparationPlan) {
 	plan.VersionSpecificGoFile = "versions/5.1.9/libjxl.go"
 	plan.LSourceCompilationUse("JPEG XL", "cmake")
 	plan.LBuildPackageRequire("brotli", "cmake", "highway", "lcms2", "ninja", "pkgconf")
-	plan.LCMakeOptionAdd(
+	plan.LCmakeOptionAdd(
 		"-DBUILD_SHARED_LIBS=OFF",
 		"-DBUILD_TESTING=OFF",
 		"-DJPEGXL_ENABLE_BENCHMARK=OFF",

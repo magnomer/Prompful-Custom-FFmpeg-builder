@@ -9,7 +9,7 @@ func LSvtav1Prepare(plan *shared.LPreparationPlan) {
 	plan.VersionSpecificGoFile = "versions/4.4.8/svt_av1.go"
 	plan.LSourceCompilationUse("SVT-AV1", "cmake")
 	plan.LBuildPackageRequire("nasm")
-	plan.LCMakeOptionAdd("-DBUILD_SHARED_LIBS=OFF", "-DBUILD_APPS=OFF", "-DBUILD_TESTING=OFF")
+	plan.LCmakeOptionAdd("-DBUILD_SHARED_LIBS=OFF", "-DBUILD_APPS=OFF", "-DBUILD_TESTING=OFF")
 	plan.LPackageConfigurationUse("SvtAv1Enc")
 	plan.LCommandVerify("svt-av1/EbSvtAv1Enc.h", "SvtAv1Enc")
 }

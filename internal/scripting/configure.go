@@ -285,7 +285,7 @@ int main(void){return 0;}
 		scriptLines = append(scriptLines, "if ! try_enable_vapoursynth; then vapoursynth_disabled=1; remove_configure_flag --enable-vapoursynth; fi")
 	}
 	if LFlagConfigureCheck(configureFlags, "--enable-libopencv") {
-		scriptLines = append(scriptLines, LOpenCVScriptCreate()...)
+		scriptLines = append(scriptLines, LOpencvScriptCreate()...)
 	}
 	if LFlagConfigureCheck(configureFlags, "--enable-libonnxruntime") {
 		scriptLines = append(scriptLines, LOnnxRuntimeScriptCreate()...)

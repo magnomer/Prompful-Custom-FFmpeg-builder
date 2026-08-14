@@ -124,7 +124,7 @@ func LPlanToolchainCreate(buildConfigSettings LSettingsToolchain) (LPlanToolchai
 	} else if buildConfigSettings.Msys2ArchiveUrl != "" && buildConfigSettings.Msys2ArchiveSignatureUrl != buildConfigSettings.Msys2ArchiveUrl+".sig" {
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskWarning, "plan.warnings.msys2SignatureMismatch", "MSYS2 signature URL does not exactly match the archive URL plus .sig. This may be intentional, but usually the signature URL should be the archive URL followed by .sig.", nil))
 	}
-	if buildConfigSettings.Msys2ArchiveSha256Hash != "" && !LHashSHA256Check(buildConfigSettings.Msys2ArchiveSha256Hash) {
+	if buildConfigSettings.Msys2ArchiveSha256Hash != "" && !LHashShaCheck(buildConfigSettings.Msys2ArchiveSha256Hash) {
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskBlocked, "plan.warnings.msys2ShaBad", "MSYS2 SHA-256 must be exactly 64 hexadecimal characters. If you pasted a .sig file, remove it; .sig is a signature file, not a hash.", nil))
 		isExecutable = false
 	}
@@ -192,7 +192,7 @@ func LPlanFfmpegCreate(ffmpegBuildSettings LSettingsFfmpeg) (LPlanFfmpeg, error)
 	}
 	warnings := LWorkspaceWindowsValidate(ffmpegBuildSettings.WorkspaceDirectory)
 	isExecutable := !LWarningBlockedCheck(warnings)
-	ffmpegVersion := LArchiveURLParse(ffmpegBuildSettings.FfmpegSourceArchiveUrl)
+	ffmpegVersion := LArchiveUrlParse(ffmpegBuildSettings.FfmpegSourceArchiveUrl)
 	compatibilityFfmpegVersion := ffmpegVersion
 	if hasResolvedVersionPlan {
 		compatibilityFfmpegVersion = resolvedVersionPlan.FfmpegVersion
@@ -282,7 +282,7 @@ func LPlanFfmpegCreate(ffmpegBuildSettings LSettingsFfmpeg) (LPlanFfmpeg, error)
 	}
 	if ffmpegBuildSettings.FfmpegSourceSha256Hash == "" {
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskInfo, "plan.warnings.ffmpegShaMissing", "No FFmpeg SHA-256 was supplied. This is normal for the official release page: the program will verify the .asc PGP signature and calculate SHA-256 for the log.", nil))
-	} else if !LHashSHA256Check(ffmpegBuildSettings.FfmpegSourceSha256Hash) {
+	} else if !LHashShaCheck(ffmpegBuildSettings.FfmpegSourceSha256Hash) {
 		warnings = append(warnings, LWarningLocalizedCreate(LRiskBlocked, "plan.warnings.ffmpegShaBad", "FFmpeg SHA-256 must be exactly 64 hexadecimal characters. If you have a .asc or .sig file, do not paste it into this field; it is a signature file, not a hash.", nil))
 		isExecutable = false
 	}
@@ -591,7 +591,7 @@ func LNumberMaxGet(left int, right int) int {
 	return right
 }
 
-func LHashSHA256Check(value string) bool {
+func LHashShaCheck(value string) bool {
 	if len(value) != 64 {
 		return false
 	}

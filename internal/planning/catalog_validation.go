@@ -327,14 +327,14 @@ func LSourcePathCheck(report *LCatalogValidationReport, file LCatalogEmbeddedFil
 		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueWarning, file, fmt.Sprintf("source path %q is not a recognized version work path", sourcePath)))
 		return
 	}
-	pathVersion := LSourcePathVersionGet(cleanPath)
+	pathVersion := LSourceVersionGet(cleanPath)
 	if expectedVersion != "" && pathVersion != expectedVersion {
 		report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("source path %q targets FFmpeg version %q but the owning record is FFmpeg %q", sourcePath, pathVersion, expectedVersion)))
 	}
 }
 
-// LSourcePathVersionGet extracts the version segment of a "versions/<version>/<file>.go" path.
-func LSourcePathVersionGet(cleanPath string) string {
+// LSourceVersionGet extracts the version segment of a "versions/<version>/<file>.go" path.
+func LSourceVersionGet(cleanPath string) string {
 	segments := strings.Split(cleanPath, "/")
 	if len(segments) < 3 {
 		return ""

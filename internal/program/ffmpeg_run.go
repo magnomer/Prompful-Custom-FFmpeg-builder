@@ -89,7 +89,7 @@ func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string,
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSignatureVerification", "FFmpeg source signature verification failed", err)
 		return
 	}
-	extractPlan := extraction.LPlanExtraction{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ArchiveFilePath: archivePath, DestinationDirectory: sourceRootDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, LArchiveKind: LArchiveFormatResolve(plan.FfmpegSourceArchiveUrl), LPolicyExtraction: extraction.LNewDirectoryPolicy, LPolicyFilemode: extraction.LExecutablePreservePolicy, MaximumFileCount: 50000, MaximumExtractedByteCount: 2_000_000_000, MaximumSingleFileByteCount: 500_000_000}
+	extractPlan := extraction.LPlanExtraction{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ArchiveFilePath: archivePath, DestinationDirectory: sourceRootDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, LArchiveKind: LArchiveFormatResolve(plan.FfmpegSourceArchiveUrl), LPolicyExtraction: extraction.LPolicyExtractionNew, LPolicyFilemode: extraction.LPolicyFilemodeExecutable, MaximumFileCount: 50000, MaximumExtractedByteCount: 2_000_000_000, MaximumSingleFileByteCount: 500_000_000}
 	if err := extraction.LArchiveConsentExtract(LContext, userLConsentArchive, extractPlan, emitProgress); err != nil {
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSourceExtraction", "FFmpeg source extraction failed", err)
 		return

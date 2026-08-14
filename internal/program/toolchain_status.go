@@ -58,7 +58,7 @@ type LVerificationToolchain struct {
 	Message             string   `json:"message"`
 }
 
-func LMSYSRootResolve(workspaceDirectory string, windowsShellProfileName string) string {
+func LMsysRootResolve(workspaceDirectory string, windowsShellProfileName string) string {
 	return planning.LDirectoryProfileResolve(workspaceDirectory, windowsShellProfileName)
 }
 
@@ -109,7 +109,7 @@ func LToolchainPreparedCheck(workspaceDirectory string, buildShellProfileName st
 	if workspaceDirectory == "" {
 		return errors.New("workspace directory is empty")
 	}
-	msys2RootDirectory := LMSYSRootResolve(workspaceDirectory, buildShellProfileName)
+	msys2RootDirectory := LMsysRootResolve(workspaceDirectory, buildShellProfileName)
 	if !LFileExistCheck(LBashPathResolve(msys2RootDirectory)) {
 		return fmt.Errorf("%s", LLocaleTextGetInternal("run.failure.toolchainNotPreparedForProfile", map[string]string{
 			"profile": buildShellProfileName,
@@ -127,7 +127,7 @@ func (program *LProgram) LStatusToolchainGet(workspaceDirectory string, windowsS
 	if workspaceDirectory == "" {
 		return status, nil
 	}
-	msys2RootDirectory := LMSYSRootResolve(workspaceDirectory, windowsShellProfileName)
+	msys2RootDirectory := LMsysRootResolve(workspaceDirectory, windowsShellProfileName)
 	status.Msys2RootDirectory = msys2RootDirectory
 	if err := workspace.LPathWorkspaceCheck(workspaceDirectory, msys2RootDirectory); err != nil {
 		return status, err
@@ -217,7 +217,7 @@ func (program *LProgram) LToolchainInstallVerify(workspaceDirectory string, wind
 	if workspaceDirectory == "" {
 		return verification, errors.New("workspace directory is empty")
 	}
-	msys2RootDirectory := LMSYSRootResolve(workspaceDirectory, windowsShellProfileName)
+	msys2RootDirectory := LMsysRootResolve(workspaceDirectory, windowsShellProfileName)
 	if err := workspace.LPathRealCheck(workspaceDirectory, msys2RootDirectory); err != nil {
 		return verification, err
 	}

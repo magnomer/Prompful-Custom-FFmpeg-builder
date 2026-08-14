@@ -8,7 +8,7 @@ import "promptfulcustomffmpegbuilder/versions/shared"
 //	    archive to download and verify; they do not describe build manipulation.
 //	(2) Version/library manipulation is executable Go code under /versions/x.x.x/.
 //	    Those hooks change the build plan by calling explicit operations such as
-//	    LCMakeOptionAdd, LPreparationModificationAdd, LLibraryLineOverride, or LInstallPrivateUse.
+//	    LCmakeOptionAdd, LPreparationModificationAdd, LLibraryLineOverride, or LInstallPrivateUse.
 //	(3) This package only dispatches the hook and projects the result into the
 //	    script-facing LLibraryPreparation structure.
 
@@ -74,38 +74,38 @@ const (
 // LLibrarySpec is layer (2): version-independent, item-specific.
 type LLibrarySpec struct {
 	LLibraryId   string
-	LDisplayName string
+	LNameDisplay string
 	LTrackName   LLibraryTrack
 	LMethod      LLibraryMethod
 
-	// LPackagesBuildDependency lists MSYS2 mingw package suffixes (e.g. "python") that
+	// LPackageBuildDependency lists MSYS2 mingw package suffixes (e.g. "python") that
 	// must be installed into the build environment before this library's source build
 	// runs, for libraries whose build system find_package()s another library at configure
 	// time. They are profile-prefixed at plan time (mingw-w64-<profile>-x86_64-<suffix>),
 	// so the recipe stays profile-independent. Most recipes need none.
-	LPackagesBuildDependency []string
+	LPackageBuildDependency []string
 
-	// LMSYSBuildDependency lists MSYS2 base ("msys" repo) package names installed
+	// LMsysBuildDependency lists MSYS2 base ("msys" repo) package names installed
 	// verbatim ??not profile-prefixed ??before the build runs. These are build-time tools
 	// that live in /usr/bin rather than the mingw prefix, e.g. the autotools an autogen
 	// recipe needs (autoconf-wrapper, automake-wrapper, libtool); modern base-devel no longer
 	// pulls them. Most recipes need none.
-	LMSYSBuildDependency []string
+	LMsysBuildDependency []string
 
-	// LFlagsC are extra C compiler flags exported as CFLAGS for the build. Used to demote a
+	// LCFlag are extra C compiler flags exported as CFLAGS for the build. Used to demote a
 	// GCC-14 hard error back to a warning for an older C library that predates it (e.g. libvmaf
 	// 1.5.2's implicit function declarations). Honored by the meson generator. Most recipes
 	// need none.
-	LFlagsC []string
+	LCFlag []string
 
 	// internal source build (cmake)
 	LBuildSystem       LLibraryBuildsystem
-	LOptionsCmake      []string // intrinsic to the library, not to a version
-	LCMakeBuildTargets []string // named targets to build; empty = the default target
+	LCmakeOption       []string // intrinsic to the library, not to a version
+	LCmakeBuildTargets []string // named targets to build; empty = the default target
 
 	// internal source build (configure-make)
-	LSubdirConfigure    string   // dir holding ./configure, relative to source root (e.g. "build/linux")
-	LOptionsConfigure   []string // intrinsic configure flags (--prefix is added automatically)
+	LConfigureSubdirectory string   // dir holding ./configure, relative to source root (e.g. "build/linux")
+	LConfigureOption       []string // intrinsic configure flags (--prefix is added automatically)
 	LMakeBuildTargets   []string // make targets for the build step; empty = default target
 	LMakeInstallTargets []string // make targets for the install step; empty = "install"
 	// LAutogenCommand bootstraps an autotools project whose tag tarball ships no generated
@@ -119,24 +119,24 @@ type LLibrarySpec struct {
 	// NAME=VALUE command-line overrides that skip the makefile's own (e.g. SDL_CFLAGS=).
 	LMakeVariables      []string
 	LMakeInstallHeaders []string
-	LStaticLibraryFile  string
+	LLibraryStaticFile  string
 
 	// external vendor import
-	LSubdirImportInclude string
-	LSubdirImportLib     string
+	LSubdirectoryImportInclude string
+	LSubdirectoryImportLibrary string
 
 	// LNamePkgconfig is the installed pkg-config module (e.g. "lcevc_dec", "libvvenc") ??	// the same module FFmpeg's require_pkg_config looks up. It is used both to validate
 	// the pinned version against FFmpeg's required minimum (the preflight safety net) and,
-	// when LLibrariesAppendLine is set, to patch that .pc. LLibrariesAppendLine lists bare
+	// when LLibraryExtraLine is set, to patch that .pc. LLibraryExtraLine lists bare
 	// link libraries (e.g. "stdc++", "m") appended to the .pc's Libs line after install:
 	// some CMake projects emit a static .pc that lists the C++/math runtime BEFORE their
 	// own static archives, so GNU ld discards it too early and the link fails with
 	// undefined std::/operator new references; appending the runtime at the END fixes the
 	// static link order. Leave LNamePkgconfig empty for libraries FFmpeg does not
 	// version-check via pkg-config (header-only or vendor-imported).
-	LNamePkgconfig       string
-	LLibrariesAppendLine []string
-	LCompilerFlagLine    []string
+	LNamePkgconfig    string
+	LLibraryExtraLine []string
+	LCompilerFlagLine []string
 
 	// LLinePkgconfigLibs, when set, replaces the installed .pc's whole "Libs:" line value.
 	// Needed when a bare -l<name> in the .pc would resolve to a same-named shared import
@@ -157,18 +157,18 @@ type LLibrarySpec struct {
 	// transitive module re-introduces the shared-prefix archive.
 	LPrivateInstallPrefix bool
 
-	// LPatchesSource are exact full-line edits applied to the extracted source before the
+	// LPatchSource are exact full-line edits applied to the extracted source before the
 	// build runs, for upstream portability bugs no build flag can fix. Most recipes need none.
-	LPatchesSource []LSourcePatch
+	LPatchSource []LSourcePatch
 
-	// LFilesGeneratedSource are files written into the extracted source before the build, for a
+	// LFileGeneratedSource are files written into the extracted source before the build, for a
 	// file a release tarball omits because upstream generates it from a .git checkout (e.g.
 	// libvmaf's vcs_version.h). Most recipes need none.
-	LFilesGeneratedSource []LFileGenerated
+	LFileGeneratedSource []LFileGenerated
 
 	// verification (both methods)
-	LHeaderPathRelative string
-	LStemVerifyLib      string
+	LHeaderPathRelative      string
+	LLibraryStemVerification string
 }
 
 // LLibraryPreparation is the flattened, plan-facing projection of an item paired with its
@@ -239,46 +239,46 @@ type LLibraryPreparation struct {
 // LPreparationBuildCreate projects an item plus its resolved version source into a plan-facing
 // LLibraryPreparation.
 func LPreparationBuildCreate(item LLibrarySpec, source LLibrarySourcePin) LLibraryPreparation {
-	LOptionsCmake := append(append([]string{}, item.LOptionsCmake...), source.ExtraCMakeOptions...)
-	if len(LOptionsCmake) == 0 {
-		LOptionsCmake = nil
+	LCmakeOption := append(append([]string{}, item.LCmakeOption...), source.ExtraCMakeOptions...)
+	if len(LCmakeOption) == 0 {
+		LCmakeOption = nil
 	}
 	return LLibraryPreparation{
 		LibraryId:                   item.LLibraryId,
-		DisplayName:                 item.LDisplayName,
+		DisplayName:                 item.LNameDisplay,
 		TrackName:                   item.LTrackName,
 		Method:                      item.LMethod,
 		BuildSystem:                 item.LBuildSystem,
-		CFlags:                      append([]string{}, item.LFlagsC...),
+		CFlags:                      append([]string{}, item.LCFlag...),
 		Version:                     source.Version,
-		BuildDependencyPackages:     append([]string{}, item.LPackagesBuildDependency...),
-		MsysBuildDependencyPackages: append([]string{}, item.LMSYSBuildDependency...),
+		BuildDependencyPackages:     append([]string{}, item.LPackageBuildDependency...),
+		MsysBuildDependencyPackages: append([]string{}, item.LMsysBuildDependency...),
 		ArchiveUrl:                  source.Url,
 		ArchiveSha256Hash:           source.Sha256,
 		AllowedDownloadHost:         source.Host,
 		LArchiveKind:                source.Format,
-		CMakeOptions:                LOptionsCmake,
-		CMakeBuildTargets:           item.LCMakeBuildTargets,
-		ConfigureSubdir:             item.LSubdirConfigure,
-		ConfigureOptions:            item.LOptionsConfigure,
+		CMakeOptions:                LCmakeOption,
+		CMakeBuildTargets:           item.LCmakeBuildTargets,
+		ConfigureSubdir:             item.LConfigureSubdirectory,
+		ConfigureOptions:            item.LConfigureOption,
 		MakeBuildTargets:            item.LMakeBuildTargets,
 		MakeInstallTargets:          item.LMakeInstallTargets,
 		RunAutogen:                  item.LAutogenCommand,
 		MakeVariables:               append([]string{}, item.LMakeVariables...),
 		MakeInstallHeaderFiles:      append([]string{}, item.LMakeInstallHeaders...),
-		MakeStaticLibFile:           item.LStaticLibraryFile,
-		ImportIncludeSubdir:         item.LSubdirImportInclude,
-		ImportLibSubdir:             item.LSubdirImportLib,
+		MakeStaticLibFile:           item.LLibraryStaticFile,
+		ImportIncludeSubdir:         item.LSubdirectoryImportInclude,
+		ImportLibSubdir:             item.LSubdirectoryImportLibrary,
 		PkgConfigName:               item.LNamePkgconfig,
-		PkgConfigAppendLibs:         append([]string{}, item.LLibrariesAppendLine...),
+		PkgConfigAppendLibs:         append([]string{}, item.LLibraryExtraLine...),
 		PkgConfigAppendCFlags:       append([]string{}, item.LCompilerFlagLine...),
 		PkgConfigLibsLine:           item.LLinePkgconfigLibs,
 		PkgConfigLibsLinePatches:    nil,
 		PrivatePrefixInstall:        item.LPrivateInstallPrefix,
 		VerifyHeaderRelativePath:    item.LHeaderPathRelative,
-		VerifyLibStem:               item.LStemVerifyLib,
-		SourcePatches:               append([]LSourcePatch{}, item.LPatchesSource...),
-		GeneratedSourceFiles:        append([]LFileGenerated{}, item.LFilesGeneratedSource...),
+		VerifyLibStem:               item.LLibraryStemVerification,
+		SourcePatches:               append([]LSourcePatch{}, item.LPatchSource...),
+		GeneratedSourceFiles:        append([]LFileGenerated{}, item.LFileGeneratedSource...),
 	}
 }
 

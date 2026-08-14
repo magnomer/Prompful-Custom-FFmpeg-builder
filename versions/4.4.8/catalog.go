@@ -12,7 +12,7 @@ var LPreparationCatalog = map[string]shared.LPreparationManipulator{
 	"libtls":       LLibraryLibtlsPrepare,
 	"svt-av1":      LSvtav1Prepare,
 	"tensorflow":   LLibraryTensorflowPrepare,
-	"uavs3d":       LUavs3dPrepare,
+	"uavs3d":       LUavsPrepare,
 	"vmaf":         LLibraryVmafPrepare,
 	"xavs2":        LXavs2Prepare,
 }

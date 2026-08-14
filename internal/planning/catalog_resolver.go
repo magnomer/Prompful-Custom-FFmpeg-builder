@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	LPresetModeName                        = "normal"
-	LCatalogDefaultWindowsShellProfileName = "ucrt64"
+	LPresetModeName      = "normal"
+	LShellProfileDefault = "ucrt64"
 )
 
 // LCatalogResolutionSettings describes one version-aware catalog resolution request.
@@ -157,7 +157,7 @@ func LCatalogSettingsNormalize(settings LCatalogResolutionSettings) LCatalogReso
 		settings.PresetModeName = LPresetModeName
 	}
 	if settings.WindowsShellProfileName == "" {
-		settings.WindowsShellProfileName = LCatalogDefaultWindowsShellProfileName
+		settings.WindowsShellProfileName = LShellProfileDefault
 	}
 	settings.SelectedLibraryIds = LStringsSortedGet(settings.SelectedLibraryIds)
 	return settings
@@ -171,8 +171,8 @@ func (resolver LCatalogResolver) LBuildPlanCreate(settings LCatalogResolutionSet
 	}
 	versionRecord := resolver.VersionRecords[resolvedVersionPlan.FfmpegVersion]
 	ffmpegObject, _ := versionRecord["ffmpeg"].(map[string]any)
-	ffmpegSourceArchiveUrl := LArchiveURLResolve(settings.FfmpegVersion, resolvedVersionPlan.FfmpegVersion, ffmpegObject)
-	ffmpegSourceSignatureUrl := LSignatureURLResolve(settings.FfmpegVersion, resolvedVersionPlan.FfmpegVersion, ffmpegObject, ffmpegSourceArchiveUrl)
+	ffmpegSourceArchiveUrl := LArchiveUrlResolve(settings.FfmpegVersion, resolvedVersionPlan.FfmpegVersion, ffmpegObject)
+	ffmpegSourceSignatureUrl := LSignatureUrlResolve(settings.FfmpegVersion, resolvedVersionPlan.FfmpegVersion, ffmpegObject, ffmpegSourceArchiveUrl)
 	resolvedLibrariesById := map[string]LResolvedLibrary{}
 	for _, resolvedLibrary := range resolvedVersionPlan.VisibleLibraries {
 		resolvedLibrariesById[resolvedLibrary.LibraryId] = resolvedLibrary

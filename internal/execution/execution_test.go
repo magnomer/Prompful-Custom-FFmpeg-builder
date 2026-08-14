@@ -74,7 +74,7 @@ func TestLNetworkStalledCreateMergesCatalogAndParsedHosts(t *testing.T) {
 		t.Fatal("expected the stalled error to unwrap to its cause")
 	}
 	// Every authored mirror base is listed first, in order.
-	for index, mirror := range scripting.LMSYSMirrorCatalog {
+	for index, mirror := range scripting.LMsysMirrorCatalog {
 		if stalled.LNetworkAddresses[index] != mirror {
 			t.Fatalf("expected authored mirror %q at position %d, got %q", mirror, index, stalled.LNetworkAddresses[index])
 		}

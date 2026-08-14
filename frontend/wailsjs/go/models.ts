@@ -1,7 +1,7 @@
 export namespace audit {
 	
 	export class LAuditWriter {
-	    LRunId: string;
+	    LIdentifierRun: string;
 	    LDirectoryLog: string;
 	    // Go type: sync
 	    LMutex: any;
@@ -12,7 +12,7 @@ export namespace audit {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.LRunId = source["LRunId"];
+	        this.LIdentifierRun = source["LIdentifierRun"];
 	        this.LDirectoryLog = source["LDirectoryLog"];
 	        this.LMutex = this.convertValues(source["LMutex"], null);
 	    }

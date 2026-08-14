@@ -140,11 +140,11 @@ func LFfmpegWarningAppend(warnings []LWarningPlan, ffmpegVersion string) []LWarn
 // archive filename, e.g. ".../ffmpeg-8.1.2.tar.xz" -> "8.1.2".
 var LFfmpegVersionPattern = regexp.MustCompile(`ffmpeg-(\d+(?:\.\d+){0,2})`)
 
-// LArchiveURLParse derives the FFmpeg version from its source archive URL so
+// LArchiveUrlParse derives the FFmpeg version from its source archive URL so
 // the library version layer can be resolved for that release. Returns "" when the URL
 // carries no recognizable version; callers must treat that as missing, not as a cue to
 // substitute another release.
-func LArchiveURLParse(archiveUrl string) string {
+func LArchiveUrlParse(archiveUrl string) string {
 	match := LFfmpegVersionPattern.FindStringSubmatch(archiveUrl)
 	if match == nil {
 		return ""
@@ -156,7 +156,7 @@ func LArchiveURLParse(archiveUrl string) string {
 // configure-script builder) to derive the FFmpeg version from a plan's source archive URL so
 // the build-time pkg-config floors can be resolved per release. Returns "" for a snapshot URL.
 func LVersionArchiveParse(archiveUrl string) string {
-	return LArchiveURLParse(archiveUrl)
+	return LArchiveUrlParse(archiveUrl)
 }
 
 func LOptionConfigureSelect(selectedOptionIds []string) ([]LOptionChoice, []string) {

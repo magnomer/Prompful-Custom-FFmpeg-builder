@@ -11,12 +11,12 @@ import (
 // mirror failure cannot affect ??or appear in ??the build.
 var LRepoMingwNames = []string{"mingw32", "mingw64", "ucrt64", "clang64", "clangarm64"}
 
-// LMSYSMirrorCatalog are the upstream package servers pacman tries in order. The first two
+// LMsysMirrorCatalog are the upstream package servers pacman tries in order. The first two
 // are MSYS2's own origin and CDN; the rest are long-lived independent mirrors. Listing
 // several lets a per-file 404 fall through to the next server when one mirror has not
 // yet propagated a just-published package (mirror/CDN skew) instead of failing the
 // build. The list is fixed and ordered so the generated, hash-pinned script is stable.
-var LMSYSMirrorCatalog = []string{
+var LMsysMirrorCatalog = []string{
 	"https://repo.msys2.org",
 	"https://mirror.msys2.org",
 	"https://mirrors.tuna.tsinghua.edu.cn/msys2",
@@ -27,7 +27,7 @@ var LMSYSMirrorCatalog = []string{
 // appended to every mirror base. Ordered for a deterministic script. The "mingw"
 // entry writes mirrorlist.mingw, the file stock pacman.conf actually Includes for
 // every mingw-family repo (ucrt64/mingw64/clang64/etc.); $repo is a pacman variable
-// so one file serves them all and the ordered LMSYSMirrorCatalog finally takes effect.
+// so one file serves them all and the ordered LMsysMirrorCatalog finally takes effect.
 // The per-profile files are kept (harmless, deterministic) for any logic/tests that
 // reference their names.
 var LRepoMirrorlistMsys = []struct {
@@ -50,7 +50,7 @@ func LMirrorScriptCreate() []string {
 	lines := []string{}
 	for _, repo := range LRepoMirrorlistMsys {
 		lines = append(lines, "cat > /etc/pacman.d/mirrorlist."+repo.mirrorlistName+" <<'EOF'")
-		for _, mirror := range LMSYSMirrorCatalog {
+		for _, mirror := range LMsysMirrorCatalog {
 			lines = append(lines, "Server = "+mirror+repo.repoPath)
 		}
 		lines = append(lines, "EOF")
@@ -191,12 +191,12 @@ func LPackageScriptCreate(packageNames []string) ([]string, error) {
 		// Install ordering re-runs the prep afterward, so the prep-provided files win in the end.
 		"pacman -S --noconfirm --overwrite '*' "+strings.Join(quotedPackageNames, " "),
 	)
-	scriptLines = append(scriptLines, LRabbitMQScriptClean()...)
-	scriptLines = append(scriptLines, LOAPVPackageRepair()...)
+	scriptLines = append(scriptLines, LRabbitmqScriptClean()...)
+	scriptLines = append(scriptLines, LOapvPackageRepair()...)
 	return scriptLines, nil
 }
 
-// LRabbitMQScriptClean repairs the MSYS2 librabbitmq.pc. The rabbitmq-c
+// LRabbitmqScriptClean repairs the MSYS2 librabbitmq.pc. The rabbitmq-c
 // CMake build composes Libs.private by looping its socket libraries as "-l<lib>"; an
 // empty list element leaves a stray, name-less "-l" token (the shipped 0.15 .pc reads
 // "Libs.private: ... -lws2_32 -l -lssl -lcrypto"). With the build's default
@@ -204,7 +204,7 @@ func LPackageScriptCreate(packageNames []string) ([]string, error) {
 // gcc, the link fails, and configure reports "librabbitmq >= 0.7.1 not found".
 // Stripping the empty "-l" namespec from the Libs lines makes the static link valid.
 // Guarded by file existence, so it is a no-op when rabbitmq-c was not installed.
-func LRabbitMQScriptClean() []string {
+func LRabbitmqScriptClean() []string {
 	return []string{
 		`rabbitmq_pc="${MSYSTEM_PREFIX:-/ucrt64}/lib/pkgconfig/librabbitmq.pc"`,
 		`if [ -f "${rabbitmq_pc}" ]; then`,
@@ -215,7 +215,7 @@ func LRabbitMQScriptClean() []string {
 	}
 }
 
-// LOAPVPackageRepair repairs the MSYS2 openapv pkg-config file.
+// LOapvPackageRepair repairs the MSYS2 openapv pkg-config file.
 // The current MSYS2 package installs the archives under lib/oapv/ (and the import
 // library under lib/oapv/import/) while the pkg-config file can advertise the
 // ordinary profile lib directory. FFmpeg's configure then sees the oapv module
@@ -226,7 +226,7 @@ func LRabbitMQScriptClean() []string {
 // probe does not request private cflags; without that define the header declares
 // dllimport symbols and the static link fails with __imp_oapve_encode unresolved.
 // Guarded by file existence, so it is a no-op when openapv was not selected/installed.
-func LOAPVPackageRepair() []string {
+func LOapvPackageRepair() []string {
 	return []string{
 		`oapv_pc="${MSYSTEM_PREFIX:-/ucrt64}/lib/pkgconfig/oapv.pc"`,
 		`if [ -f "${oapv_pc}" ]; then`,

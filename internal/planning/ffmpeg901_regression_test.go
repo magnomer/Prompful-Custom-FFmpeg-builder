@@ -2,8 +2,8 @@ package planning
 
 import "testing"
 
-// LCatalogResolverTestLoad loads the embedded catalog resolver or fails the test.
-func LCatalogResolverTestLoad(t *testing.T) LCatalogResolver {
+// LCatalogTestLoad loads the embedded catalog resolver or fails the test.
+func LCatalogTestLoad(t *testing.T) LCatalogResolver {
 	t.Helper()
 	resolver, _, err := LCatalogResolverLoad()
 	if err != nil {
@@ -12,12 +12,12 @@ func LCatalogResolverTestLoad(t *testing.T) LCatalogResolver {
 	return resolver
 }
 
-// LLibraryConfigureFlagsGet resolves one library for an FFmpeg version and returns
+// LLibraryFlagsGet resolves one library for an FFmpeg version and returns
 // its configure flags, bypassing selection conflict normalization so a removed
 // flag is observed directly on the library record.
-func LLibraryConfigureFlagsGet(t *testing.T, resolver LCatalogResolver, ffmpegVersion string, libraryId string) []string {
+func LLibraryFlagsGet(t *testing.T, resolver LCatalogResolver, ffmpegVersion string, libraryId string) []string {
 	t.Helper()
-	resolvedLibrary, err := resolver.LLibraryResolve(ffmpegVersion, libraryId, LCatalogDefaultWindowsShellProfileName)
+	resolvedLibrary, err := resolver.LLibraryResolve(ffmpegVersion, libraryId, LShellProfileDefault)
 	if err != nil {
 		t.Fatalf("resolve library %q for FFmpeg %q: %v", libraryId, ffmpegVersion, err)
 	}
@@ -74,7 +74,7 @@ func TestLRelease901OrdersFirst(t *testing.T) {
 
 // Section 2 — library catalog completeness.
 func TestLLibraryCatalog901Complete(t *testing.T) {
-	resolver := LCatalogResolverTestLoad(t)
+	resolver := LCatalogTestLoad(t)
 	if len(resolver.LibraryRecords) == 0 {
 		t.Fatalf("no library records loaded")
 	}
@@ -95,7 +95,7 @@ func TestLLibraryCatalog901Complete(t *testing.T) {
 
 // Section 3 — preset completeness.
 func TestLPreset901Complete(t *testing.T) {
-	resolver := LCatalogResolverTestLoad(t)
+	resolver := LCatalogTestLoad(t)
 	if len(resolver.PresetRecords) == 0 {
 		t.Fatalf("no preset records loaded")
 	}
@@ -134,11 +134,11 @@ func TestLPreset901Complete(t *testing.T) {
 
 // Section 4 — removed configure flags (shaderc / glslang).
 func TestLConfigureFlags901ShadercGlslangRemoved(t *testing.T) {
-	resolver := LCatalogResolverTestLoad(t)
+	resolver := LCatalogTestLoad(t)
 
 	flags901 := append(
-		LLibraryConfigureFlagsGet(t, resolver, "9.0.1", "shaderc"),
-		LLibraryConfigureFlagsGet(t, resolver, "9.0.1", "glslang")...,
+		LLibraryFlagsGet(t, resolver, "9.0.1", "shaderc"),
+		LLibraryFlagsGet(t, resolver, "9.0.1", "glslang")...,
 	)
 	if LStringsContainCheck(flags901, "--enable-libshaderc") {
 		t.Fatalf("9.0.1 flags contain removed --enable-libshaderc: %v", flags901)
@@ -148,8 +148,8 @@ func TestLConfigureFlags901ShadercGlslangRemoved(t *testing.T) {
 	}
 
 	flags812 := append(
-		LLibraryConfigureFlagsGet(t, resolver, "8.1.2", "shaderc"),
-		LLibraryConfigureFlagsGet(t, resolver, "8.1.2", "glslang")...,
+		LLibraryFlagsGet(t, resolver, "8.1.2", "shaderc"),
+		LLibraryFlagsGet(t, resolver, "8.1.2", "glslang")...,
 	)
 	if !LStringsContainCheck(flags812, "--enable-libshaderc") {
 		t.Fatalf("8.1.2 flags missing --enable-libshaderc (regression): %v", flags812)
@@ -161,20 +161,20 @@ func TestLConfigureFlags901ShadercGlslangRemoved(t *testing.T) {
 
 // Section 5 — ONNX Runtime flag emission and shell-profile availability.
 func TestLOnnxRuntime901Flag(t *testing.T) {
-	resolver := LCatalogResolverTestLoad(t)
+	resolver := LCatalogTestLoad(t)
 
-	flags901 := LLibraryConfigureFlagsGet(t, resolver, "9.0.1", "onnxruntime")
+	flags901 := LLibraryFlagsGet(t, resolver, "9.0.1", "onnxruntime")
 	if !LStringsContainCheck(flags901, "--enable-libonnxruntime") {
 		t.Fatalf("9.0.1 onnxruntime missing --enable-libonnxruntime: %v", flags901)
 	}
-	flags812 := LLibraryConfigureFlagsGet(t, resolver, "8.1.2", "onnxruntime")
+	flags812 := LLibraryFlagsGet(t, resolver, "8.1.2", "onnxruntime")
 	if LStringsContainCheck(flags812, "--enable-libonnxruntime") {
 		t.Fatalf("8.1.2 onnxruntime unexpectedly emits --enable-libonnxruntime: %v", flags812)
 	}
 }
 
 func TestLOnnxRuntime901ShellProfiles(t *testing.T) {
-	resolver := LCatalogResolverTestLoad(t)
+	resolver := LCatalogTestLoad(t)
 	for _, shellProfileName := range []string{"ucrt64", "clang64"} {
 		resolvedLibrary, err := resolver.LLibraryResolve("9.0.1", "onnxruntime", shellProfileName)
 		if err != nil {
@@ -201,10 +201,10 @@ func TestLOnnxRuntime901ShellProfiles(t *testing.T) {
 
 // Section 6 — libplacebo minimum pkg-config version.
 func TestLLibplacebo901Minimum(t *testing.T) {
-	resolver := LCatalogResolverTestLoad(t)
+	resolver := LCatalogTestLoad(t)
 	cases := map[string]string{"9.0.1": "7.351.0", "8.1.2": "5.229.0"}
 	for ffmpegVersion, wantMinimum := range cases {
-		resolvedLibrary, err := resolver.LLibraryResolve(ffmpegVersion, "libplacebo", LCatalogDefaultWindowsShellProfileName)
+		resolvedLibrary, err := resolver.LLibraryResolve(ffmpegVersion, "libplacebo", LShellProfileDefault)
 		if err != nil {
 			t.Fatalf("resolve libplacebo for %q: %v", ffmpegVersion, err)
 		}

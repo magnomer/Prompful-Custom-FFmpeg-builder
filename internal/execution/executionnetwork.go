@@ -55,7 +55,7 @@ func (collector *LNetworkAddressCollector) LNetworkHostAdd(host string) {
 	collector.LNetworkHosts = append(collector.LNetworkHosts, host)
 }
 
-func (collector *LNetworkAddressCollector) LNetworkHostListGet() []string {
+func (collector *LNetworkAddressCollector) LNetworkHostList() []string {
 	if collector == nil {
 		return nil
 	}
@@ -83,12 +83,12 @@ func LNetworkHostParse(line string) string {
 // attaching the authored mirror bases (the servers pacman was configured to try in
 // order) followed by any distinct hosts parsed from the streamed failures.
 func LNetworkStalledCreate(cause error, addressCollector *LNetworkAddressCollector) error {
-	addresses := append([]string{}, scripting.LMSYSMirrorCatalog...)
+	addresses := append([]string{}, scripting.LMsysMirrorCatalog...)
 	seen := map[string]bool{}
 	for _, address := range addresses {
 		seen[address] = true
 	}
-	for _, host := range addressCollector.LNetworkHostListGet() {
+	for _, host := range addressCollector.LNetworkHostList() {
 		if !seen[host] {
 			seen[host] = true
 			addresses = append(addresses, host)

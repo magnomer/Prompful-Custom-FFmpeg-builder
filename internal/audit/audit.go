@@ -9,9 +9,9 @@ import (
 )
 
 type LAuditWriter struct {
-	LRunId        string
-	LDirectoryLog string
-	LMutex        sync.Mutex
+	LIdentifierRun string
+	LDirectoryLog  string
+	LMutex         sync.Mutex
 }
 
 type LAuditEvent struct {
@@ -36,7 +36,7 @@ func LAuditWriterCreate(workspaceLogsDirectory string, LRunId string) (*LAuditWr
 	if fileInfo.Mode()&os.ModeSymlink != 0 {
 		return nil, os.ErrPermission
 	}
-	return &LAuditWriter{LRunId: LRunId, LDirectoryLog: LDirectoryLog}, nil
+	return &LAuditWriter{LIdentifierRun: LRunId, LDirectoryLog: LDirectoryLog}, nil
 }
 
 func (writer *LAuditWriter) LAuditDirectoryGet() string {
@@ -52,7 +52,7 @@ func (writer *LAuditWriter) LAuditEventWrite(eventName string, actionName string
 	}
 	writer.LMutex.Lock()
 	defer writer.LMutex.Unlock()
-	event := LAuditEvent{RunId: writer.LRunId, LAuditEventName: eventName, ActionName: actionName, PlanHash: planHash, Level: level, Message: message, CreatedAt: time.Now().UTC().Format(time.RFC3339)}
+	event := LAuditEvent{RunId: writer.LIdentifierRun, LAuditEventName: eventName, ActionName: actionName, PlanHash: planHash, Level: level, Message: message, CreatedAt: time.Now().UTC().Format(time.RFC3339)}
 	eventBytes, err := json.Marshal(event)
 	if err != nil {
 		return err

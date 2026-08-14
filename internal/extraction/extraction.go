@@ -28,19 +28,19 @@ type LPolicyExtraction string
 type LPolicyFilemode string
 
 const (
-	LTarBzipArchive LArchiveKind = "tar-bz2"
+	LArchiveTarBzip LArchiveKind = "tar-bz2"
 	LArchiveTarGz   LArchiveKind = "tar-gz"
 	LArchiveTarXz   LArchiveKind = "tar-xz"
 	LArchiveTarZst  LArchiveKind = "tar-zst"
 	LArchiveTar     LArchiveKind = "tar"
 	LArchiveZip     LArchiveKind = "zip"
 
-	LNewDirectoryPolicy        LPolicyExtraction = "must-not-exist"
-	LEmptyDestinationPolicy    LPolicyExtraction = "must-be-empty"
+	LPolicyExtractionNew        LPolicyExtraction = "must-not-exist"
+	LPolicyExtractionEmpty    LPolicyExtraction = "must-be-empty"
 	LPolicyExtractionOverwrite LPolicyExtraction = "overwrite-approved"
 
-	LExecutablePreservePolicy LPolicyFilemode = "preserve-safe-executable-bits"
-	LRegularOnlyPolicy        LPolicyFilemode = "regular-files-not-executable"
+	LPolicyFilemodeExecutable LPolicyFilemode = "preserve-safe-executable-bits"
+	LPolicyFilemodeRegular        LPolicyFilemode = "regular-files-not-executable"
 )
 
 type LPlanExtraction struct {
@@ -78,10 +78,10 @@ func LArchiveConsentExtract(LContext context.Context, userLConsentArchive consen
 
 func LExtractionDefaultApply(extractPlan LPlanExtraction) LPlanExtraction {
 	if extractPlan.LPolicyExtraction == "" {
-		extractPlan.LPolicyExtraction = LNewDirectoryPolicy
+		extractPlan.LPolicyExtraction = LPolicyExtractionNew
 	}
 	if extractPlan.LPolicyFilemode == "" {
-		extractPlan.LPolicyFilemode = LExecutablePreservePolicy
+		extractPlan.LPolicyFilemode = LPolicyFilemodeExecutable
 	}
 	if extractPlan.MaximumFileCount <= 0 {
 		extractPlan.MaximumFileCount = 250000
@@ -138,9 +138,9 @@ func LPolicyExtractionCheck(extractPlan LPlanExtraction) error {
 		return errors.New("archive extraction destination exists and is not a directory")
 	}
 	switch extractPlan.LPolicyExtraction {
-	case LNewDirectoryPolicy:
+	case LPolicyExtractionNew:
 		return errors.New("archive extraction destination already exists")
-	case LEmptyDestinationPolicy:
+	case LPolicyExtractionEmpty:
 		entries, err := os.ReadDir(extractPlan.DestinationDirectory)
 		if err != nil {
 			return err
@@ -409,7 +409,7 @@ func LArchiveEntryWrite(zipEntry *zip.File, targetPath string, entrySize int64, 
 
 func LArchiveReaderOpen(archiveFile *os.File, archiveFormatName LArchiveKind) (io.Reader, func(), error) {
 	switch archiveFormatName {
-	case LTarBzipArchive:
+	case LArchiveTarBzip:
 		return bzip2.NewReader(archiveFile), nil, nil
 	case LArchiveTarGz:
 		gzipReader, err := gzip.NewReader(archiveFile)
@@ -508,9 +508,9 @@ func LTargetExtractionCheck(destinationDirectory string, targetPath string, orig
 
 func LModeFileResolve(fileMode os.FileMode, fileModePolicyName LPolicyFilemode) os.FileMode {
 	switch fileModePolicyName {
-	case LRegularOnlyPolicy:
+	case LPolicyFilemodeRegular:
 		return fileMode & 0o644
-	case LExecutablePreservePolicy, "":
+	case LPolicyFilemodeExecutable, "":
 		return fileMode & 0o755
 	default:
 		return fileMode & 0o755

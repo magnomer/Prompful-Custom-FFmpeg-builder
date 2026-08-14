@@ -6,7 +6,7 @@ import "promptfulcustomffmpegbuilder/versions/shared"
 // OpenCV is source-built (pinned 4.x) because FFmpeg's --enable-libopencv needs the legacy
 // C API (opencv2/core/core_c.h + cvCreateImageHeader), which MSYS2's current OpenCV 5 package
 // no longer ships. The build installs the standard opencv4 layout (opencv4.pc + headers under
-// include/opencv4 + unversioned libopencv_core/imgproc) so the existing LOpenCVScriptCreate
+// include/opencv4 + unversioned libopencv_core/imgproc) so the existing LOpencvScriptCreate
 // FFmpeg-configure shim keeps satisfying the legacy probe. cmake flags live in the source pin.
 func LOpencvPrepare(plan *shared.LPreparationPlan) {
 	plan.FfmpegVersion = "7.0.3"

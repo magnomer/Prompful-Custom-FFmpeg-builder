@@ -119,8 +119,8 @@ type LSourcePatch struct {
 
 var LLibraryPathPattern = regexp.MustCompile(`^[A-Za-z0-9_+-]+$`)
 var LLibraryHeaderPattern = regexp.MustCompile(`^[A-Za-z0-9_./+-]+$`)
-var LCMakeOptionPattern = regexp.MustCompile(`^-D[A-Za-z0-9_]+=[A-Za-z0-9_./:+-]*$`)
-var LCMakeTargetPattern = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
+var LCmakeOptionPattern = regexp.MustCompile(`^-D[A-Za-z0-9_]+=[A-Za-z0-9_./:+-]*$`)
+var LCmakeTargetPattern = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
 var LConfigureOptionPattern = regexp.MustCompile(`^--[A-Za-z0-9][A-Za-z0-9=._/+-]*$`)
 
 // LCompilerFlagPattern matches a single C compiler flag exported as CFLAGS (e.g.
@@ -150,12 +150,12 @@ func LLibrarySpecValidate(spec LLibraryBuildSpec, requireImportSubdirs bool) err
 		return fmt.Errorf("library preparation verify header path is unsafe: %s", spec.VerifyHeaderRelativePath)
 	}
 	for _, cmakeOption := range spec.CMakeOptions {
-		if !LCMakeOptionPattern.MatchString(cmakeOption) {
+		if !LCmakeOptionPattern.MatchString(cmakeOption) {
 			return fmt.Errorf("library preparation cmake option is unsafe: %s", cmakeOption)
 		}
 	}
 	for _, buildTarget := range spec.CMakeBuildTargets {
-		if !LCMakeTargetPattern.MatchString(buildTarget) {
+		if !LCmakeTargetPattern.MatchString(buildTarget) {
 			return fmt.Errorf("library preparation cmake build target is unsafe: %s", buildTarget)
 		}
 	}

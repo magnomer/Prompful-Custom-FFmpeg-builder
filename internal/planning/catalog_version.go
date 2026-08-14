@@ -68,7 +68,7 @@ func (resolver LCatalogResolver) LReleaseHighestResolve() (string, string, bool)
 	return bestLineKey, bestVersion, bestVersion != ""
 }
 
-func LArchiveURLResolve(requestedVersion string, resolvedCatalogVersion string, ffmpegObject map[string]any) string {
+func LArchiveUrlResolve(requestedVersion string, resolvedCatalogVersion string, ffmpegObject map[string]any) string {
 	requestedVersion = strings.TrimSpace(requestedVersion)
 	resolvedCatalogVersion = strings.TrimSpace(resolvedCatalogVersion)
 	if requestedVersion == "" || requestedVersion == resolvedCatalogVersion {
@@ -80,7 +80,7 @@ func LArchiveURLResolve(requestedVersion string, resolvedCatalogVersion string, 
 	return LReleaseArchiveResolve(requestedVersion)
 }
 
-func LSignatureURLResolve(requestedVersion string, resolvedCatalogVersion string, ffmpegObject map[string]any, archiveUrl string) string {
+func LSignatureUrlResolve(requestedVersion string, resolvedCatalogVersion string, ffmpegObject map[string]any, archiveUrl string) string {
 	requestedVersion = strings.TrimSpace(requestedVersion)
 	resolvedCatalogVersion = strings.TrimSpace(resolvedCatalogVersion)
 	if requestedVersion == "" || requestedVersion == resolvedCatalogVersion {

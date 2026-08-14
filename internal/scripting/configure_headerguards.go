@@ -1,6 +1,6 @@
 package scripting
 
-// LOpenCVScriptCreate makes FFmpeg's libopencv detection work against MSYS2's
+// LOpencvScriptCreate makes FFmpeg's libopencv detection work against MSYS2's
 // OpenCV 4 package on FFmpeg releases <= 8.0. Those configure scripts probe the legacy
 // pkg-config module name "opencv" (OpenCV 2.x) and run a bare `check_headers
 // opencv2/core/core_c.h` (no pkg-config cflags) before any pkg-config branch. MSYS2 ships the
@@ -21,7 +21,7 @@ package scripting
 // `require libopencv ... -lopencv_core -lopencv_imgproc` branch links and libopencv enables.
 // Both steps are guarded so they are no-ops when OpenCV 4 is absent (or an opencv.pc already
 // exists), which also keeps them harmless on FFmpeg 8.1+.
-func LOpenCVScriptCreate() []string {
+func LOpencvScriptCreate() []string {
 	return []string{
 		`opencv4_pc="${MSYSTEM_PREFIX:-/ucrt64}/lib/pkgconfig/opencv4.pc"`,
 		`opencv_pc="${MSYSTEM_PREFIX:-/ucrt64}/lib/pkgconfig/opencv.pc"`,

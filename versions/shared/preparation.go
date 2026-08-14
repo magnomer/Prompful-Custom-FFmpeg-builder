@@ -91,7 +91,7 @@ func (plan *LPreparationPlan) LBuildPackageRequire(packageSuffixes ...string) {
 	plan.BuildDependencyPackages = append(plan.BuildDependencyPackages, packageSuffixes...)
 }
 
-func (plan *LPreparationPlan) LMSYSPackageRequire(packageNames ...string) {
+func (plan *LPreparationPlan) LMsysPackageRequire(packageNames ...string) {
 	plan.MsysBuildDependencyPackages = append(plan.MsysBuildDependencyPackages, packageNames...)
 }
 
@@ -99,11 +99,11 @@ func (plan *LPreparationPlan) LCompilerFlagAdd(flags ...string) {
 	plan.CFlags = append(plan.CFlags, flags...)
 }
 
-func (plan *LPreparationPlan) LCMakeOptionAdd(options ...string) {
+func (plan *LPreparationPlan) LCmakeOptionAdd(options ...string) {
 	plan.CMakeOptions = append(plan.CMakeOptions, options...)
 }
 
-func (plan *LPreparationPlan) LCMakeTargetAdd(targets ...string) {
+func (plan *LPreparationPlan) LCmakeTargetAdd(targets ...string) {
 	plan.CMakeBuildTargets = append(plan.CMakeBuildTargets, targets...)
 }
 

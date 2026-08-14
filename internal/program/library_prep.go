@@ -82,8 +82,8 @@ func (program *LProgram) LLibrarySinglePrepare(LContext context.Context, plan pl
 		DestinationDirectory:       extractRootDirectory,
 		WorkspaceDirectory:         plan.WorkspaceDirectory,
 		LArchiveKind:               archiveFormat,
-		LPolicyExtraction:          extraction.LNewDirectoryPolicy,
-		LPolicyFilemode:            extraction.LExecutablePreservePolicy,
+		LPolicyExtraction:          extraction.LPolicyExtractionNew,
+		LPolicyFilemode:            extraction.LPolicyFilemodeExecutable,
 		MaximumFileCount:           250000,
 		MaximumExtractedByteCount:  10_000_000_000,
 		MaximumSingleFileByteCount: 2_000_000_000,
@@ -317,7 +317,7 @@ func LArchivePreparationResolve(archiveFormatName string) (extraction.LArchiveKi
 	case "tar.zst":
 		return extraction.LArchiveTarZst, ".tar.zst", nil
 	case "tar.bz2":
-		return extraction.LTarBzipArchive, ".tar.bz2", nil
+		return extraction.LArchiveTarBzip, ".tar.bz2", nil
 	case "zip":
 		return extraction.LArchiveZip, ".zip", nil
 	default:

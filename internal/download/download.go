@@ -49,32 +49,32 @@ type LProgressFunc func(level string, message string)
 // mirror), so the server is free to redirect to a healthier mirror. These
 // constants bound the retries and define when a transfer counts as stalled.
 const (
-	LDownloadAttemptMax        = 10
-	LDownloadRetryInitialDelay = 5 * time.Second
-	LRetryMaximumDelay         = 60 * time.Second
+	LDownloadAttemptMax = 10
+	LRetryDelayInitial  = 5 * time.Second
+	LRetryDelayMaximum  = 60 * time.Second
 
-	// LDownloadStallPollInterval is how often the watchdog samples transfer progress.
-	LDownloadStallPollInterval = 2 * time.Second
+	// LStallPollInterval is how often the watchdog samples transfer progress.
+	LStallPollInterval = 2 * time.Second
 
 	// Cap 1 ??zero download: abort when not a single byte arrives within this
 	// window. Catches a fully dead transfer (DNS resolved, connection open, but
 	// nothing flowing) without waiting for the overall client Timeout.
-	LDownloadZeroDataTimeout = 10 * time.Second
+	LStallZeroTimeout = 10 * time.Second
 
 	// Cap 2 ??too slow: abort when the average speed over a sliding window stays
 	// below the floor. Catches a transfer that trickles (so it never trips the
 	// zero-data cap) yet is effectively never going to finish. Mirrors pacman's
 	// low-speed-limit/low-speed-time behavior.
-	LLowSpeedWindow                      = 20 * time.Second
-	LDownloadLowSpeedFloorBytesPerSecond = 1024 // 1 KiB/s averaged over the window
+	LStallSlowWindow = 20 * time.Second
+	LStallSlowFloor  = 1024 // 1 KiB/s averaged over the window
 )
 
 // Stall kinds reported by the watchdog so the failure message can tell a fully
 // dead transfer apart from a merely too-slow one.
 const (
-	LDownloadStallNone int32 = iota
-	LDownloadStallZeroData
-	LDownloadStallTooSlow
+	LStallNone int32 = iota
+	LStallZero
+	LStallSlow
 )
 
 func LDownloadMsysRun(LContext context.Context, userDownloadLConsent consent.LConsentMsys, downloadPlan LDownloadPlanState, emitProgress LProgressFunc) error {
@@ -141,7 +141,7 @@ func LDownloadFileRun(LContext context.Context, downloadPlan LDownloadPlanState,
 		return err
 	}
 
-	retryDelay := LDownloadRetryInitialDelay
+	retryDelay := LRetryDelayInitial
 	for attemptNumber := 1; ; attemptNumber++ {
 		transientFailure, err := LDownloadAttemptRun(LContext, downloadPlan, temporaryPath, emitProgress)
 		if err == nil {
@@ -162,8 +162,8 @@ func LDownloadFileRun(LContext context.Context, downloadPlan LDownloadPlanState,
 			return err
 		case <-time.After(retryDelay):
 		}
-		if retryDelay *= 2; retryDelay > LRetryMaximumDelay {
-			retryDelay = LRetryMaximumDelay
+		if retryDelay *= 2; retryDelay > LRetryDelayMaximum {
+			retryDelay = LRetryDelayMaximum
 		}
 	}
 }
@@ -184,7 +184,7 @@ func LDownloadAttemptRun(LContext context.Context, downloadPlan LDownloadPlanSta
 	var stallKind atomic.Int32
 	watchdogDone := make(chan struct{})
 	go func() {
-		ticker := time.NewTicker(LDownloadStallPollInterval)
+		ticker := time.NewTicker(LStallPollInterval)
 		defer ticker.Stop()
 		now := time.Now()
 		// Cap 1 (zero data): bytes seen at the last poll and when they last moved.
@@ -207,17 +207,17 @@ func LDownloadAttemptRun(LContext context.Context, downloadPlan LDownloadPlanSta
 				if currentBytes > lastSeenBytes {
 					lastSeenBytes = currentBytes
 					lastProgressTime = now
-				} else if now.Sub(lastProgressTime) >= LDownloadZeroDataTimeout {
-					stallKind.Store(LDownloadStallZeroData)
+				} else if now.Sub(lastProgressTime) >= LStallZeroTimeout {
+					stallKind.Store(LStallZero)
 					cancelAttempt()
 					return
 				}
 
 				// Cap 2 ??too slow: average speed over a full window below the floor.
-				if elapsed := now.Sub(windowStartTime); elapsed >= LLowSpeedWindow {
+				if elapsed := now.Sub(windowStartTime); elapsed >= LStallSlowWindow {
 					averageBytesPerSecond := float64(currentBytes-windowStartBytes) / elapsed.Seconds()
-					if averageBytesPerSecond < LDownloadLowSpeedFloorBytesPerSecond {
-						stallKind.Store(LDownloadStallTooSlow)
+					if averageBytesPerSecond < LStallSlowFloor {
+						stallKind.Store(LStallSlow)
 						cancelAttempt()
 						return
 					}
@@ -323,10 +323,10 @@ func (r *LReaderActivity) Read(p []byte) (int, error) {
 // two cases apart. With no stall it returns the underlying error unchanged.
 func LErrorStallGet(stallKind int32, baseErr error) error {
 	switch stallKind {
-	case LDownloadStallZeroData:
-		return fmt.Errorf("download stalled: no data received for %s: %w", LDownloadZeroDataTimeout, baseErr)
-	case LDownloadStallTooSlow:
-		return fmt.Errorf("download too slow: averaged under %d bytes/sec over %s: %w", LDownloadLowSpeedFloorBytesPerSecond, LLowSpeedWindow, baseErr)
+	case LStallZero:
+		return fmt.Errorf("download stalled: no data received for %s: %w", LStallZeroTimeout, baseErr)
+	case LStallSlow:
+		return fmt.Errorf("download too slow: averaged under %d bytes/sec over %s: %w", LStallSlowFloor, LStallSlowWindow, baseErr)
 	default:
 		return baseErr
 	}
@@ -378,7 +378,7 @@ func LPlanDownloadCheck(downloadPlan LDownloadPlanState) error {
 	if downloadPlan.DownloadUrl == "" {
 		return errors.New("download url is empty")
 	}
-	if downloadPlan.ExpectedSha256Hash != "" && !LHashSHA256Check(downloadPlan.ExpectedSha256Hash) {
+	if downloadPlan.ExpectedSha256Hash != "" && !LHashShaCheck(downloadPlan.ExpectedSha256Hash) {
 		return errors.New("expected sha256 hash must be exactly 64 hexadecimal characters")
 	}
 	if downloadPlan.WorkspaceDirectory == "" {
@@ -456,7 +456,7 @@ func LHostAllowedCheck(hostName string, allowedHostNames []string) bool {
 	return false
 }
 
-func LHashSHA256Check(value string) bool {
+func LHashShaCheck(value string) bool {
 	if len(value) != 64 {
 		return false
 	}

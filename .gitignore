@@ -28,6 +28,7 @@
 *.bak
 
 # Go test/build outputs
+*.exe
 *.test
 *.cover
 coverage.out

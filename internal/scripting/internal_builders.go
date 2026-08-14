@@ -13,7 +13,7 @@ import (
 func LScriptInternalCreate(spec LLibraryBuildSpec) ([]string, error) {
 	switch spec.BuildSystem {
 	case "", "cmake":
-		return LCMakeScriptCreate(spec)
+		return LCmakeScriptCreate(spec)
 	case "configure-make":
 		return LConfigureMakeCreate(spec)
 	case "make":
@@ -97,7 +97,7 @@ func LMesonScriptCreate(spec LLibraryBuildSpec) ([]string, error) {
 	return scriptLines, nil
 }
 
-func LCMakeScriptCreate(spec LLibraryBuildSpec) ([]string, error) {
+func LCmakeScriptCreate(spec LLibraryBuildSpec) ([]string, error) {
 	if err := LLibrarySpecValidate(spec, false); err != nil {
 		return nil, err
 	}

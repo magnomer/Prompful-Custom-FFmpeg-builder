@@ -21,7 +21,7 @@ import (
 	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
-const LMSYSKeyURL = "https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&search=0x0EBF782C5D53F7E5FB02A66746BD761F7A49B0EC"
+const LMsysKeyUrl = "https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&search=0x0EBF782C5D53F7E5FB02A66746BD761F7A49B0EC"
 const LSignatureMsysFingerprint = "0EBF782C5D53F7E5FB02A66746BD761F7A49B0EC"
 
 func LSignatureMsysVerify(signaturePath string, archivePath string, publicKeyPath string, emitProgress func(string, string)) error {
@@ -69,7 +69,7 @@ func (program *LProgram) LToolchainPrepare(LContext context.Context, LRunId stri
 			return
 		}
 		publicKeyPath := filepath.Join(workspaceLayout.DownloadsDirectory, "msys2-installer-signing-key.asc")
-		publicKeyDownloadPlan := download.LDownloadPlanState{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "MSYS2 installer signing key", DownloadUrl: LMSYSKeyURL, DestinationFilePath: publicKeyPath, AllowedHosts: []string{"keyserver.ubuntu.com"}, ExpectedFileSizeMinimum: 1000, ExpectedFileSizeMaximum: 1_000_000, LPolicyFile: download.LPolicyFileOverwrite}
+		publicKeyDownloadPlan := download.LDownloadPlanState{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "MSYS2 installer signing key", DownloadUrl: LMsysKeyUrl, DestinationFilePath: publicKeyPath, AllowedHosts: []string{"keyserver.ubuntu.com"}, ExpectedFileSizeMinimum: 1000, ExpectedFileSizeMaximum: 1_000_000, LPolicyFile: download.LPolicyFileOverwrite}
 		if err := download.LDownloadMsysRun(LContext, userLConsentMsys, publicKeyDownloadPlan, emitProgress); err != nil {
 			_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
 			program.LErrorLocalizedEmit("run.failure.msys2SigningKeyDownload", "MSYS2 signing key download failed", err)
@@ -86,13 +86,13 @@ func (program *LProgram) LToolchainPrepare(LContext context.Context, LRunId stri
 		program.LErrorLocalizedEmit("run.failure.msys2Cleanup", "MSYS2 private toolchain folder cleanup failed", err)
 		return
 	}
-	extractPlan := extraction.LPlanExtraction{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ArchiveFilePath: archivePath, DestinationDirectory: plan.Msys2RootDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, LArchiveKind: LArchiveFormatResolve(plan.Msys2ArchiveUrl), LPolicyExtraction: extraction.LNewDirectoryPolicy, LPolicyFilemode: extraction.LExecutablePreservePolicy, MaximumFileCount: 250000, MaximumExtractedByteCount: 10_000_000_000, MaximumSingleFileByteCount: 2_000_000_000}
+	extractPlan := extraction.LPlanExtraction{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ArchiveFilePath: archivePath, DestinationDirectory: plan.Msys2RootDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, LArchiveKind: LArchiveFormatResolve(plan.Msys2ArchiveUrl), LPolicyExtraction: extraction.LPolicyExtractionNew, LPolicyFilemode: extraction.LPolicyFilemodeExecutable, MaximumFileCount: 250000, MaximumExtractedByteCount: 10_000_000_000, MaximumSingleFileByteCount: 2_000_000_000}
 	if err := extraction.LArchiveConsentExtract(LContext, userLConsentArchive, extractPlan, emitProgress); err != nil {
 		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
 		program.LErrorLocalizedEmit("run.failure.msys2Extraction", "MSYS2 archive extraction failed", err)
 		return
 	}
-	if err := LMSYSRootNormalize(plan.Msys2RootDirectory, emitProgress); err != nil {
+	if err := LMsysRootNormalize(plan.Msys2RootDirectory, emitProgress); err != nil {
 		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
 		program.LErrorLocalizedEmit("run.failure.msys2Layout", "MSYS2 archive layout check failed", err)
 		return
@@ -126,7 +126,7 @@ func (program *LProgram) LToolchainFreshPrepare(workspaceDirectory string, msys2
 		return fmt.Errorf("existing private MSYS2 folder is unsafe to clean: %w", err)
 	}
 	emitProgress("warn", LLocaleTextGetInternal("run.log.previousMsys2Exists", nil))
-	LMSYSProcessStop(msys2RootDirectory, emitProgress)
+	LMsysProcessStop(msys2RootDirectory, emitProgress)
 	if err := LPathRetryRemove(msys2RootDirectory); err != nil {
 		return fmt.Errorf("could not remove previous private MSYS2 folder: %w", err)
 	}
@@ -134,7 +134,7 @@ func (program *LProgram) LToolchainFreshPrepare(workspaceDirectory string, msys2
 	return nil
 }
 
-func LMSYSRootNormalize(msys2RootDirectory string, emitProgress func(string, string)) error {
+func LMsysRootNormalize(msys2RootDirectory string, emitProgress func(string, string)) error {
 	if LFileExistCheck(filepath.Join(msys2RootDirectory, "usr", "bin", "bash.exe")) {
 		emitProgress("info", LLocaleTextGetInternal("run.log.msys2LayoutConfirmed", nil))
 		return nil
@@ -245,7 +245,7 @@ func (program *LProgram) LWorkspaceTargetsClean(workspaceDirectory string, targe
 			program.LLogEmit("warn", LLocaleTextGetInternal("run.log.cleanupUnsafe", map[string]string{"message": err.Error()}))
 			continue
 		}
-		LMSYSProcessStop(targetPath, program.LLogEmit)
+		LMsysProcessStop(targetPath, program.LLogEmit)
 		if err := LPathRetryRemove(targetPath); err != nil {
 			program.LLogEmit("warn", LLocaleTextGetInternal("run.log.cleanupRemoveFailed", map[string]string{"message": err.Error()}))
 			continue
@@ -254,7 +254,7 @@ func (program *LProgram) LWorkspaceTargetsClean(workspaceDirectory string, targe
 	}
 }
 
-func LMSYSProcessStop(msys2RootDirectory string, emitProgress func(string, string)) {
+func LMsysProcessStop(msys2RootDirectory string, emitProgress func(string, string)) {
 	bashPath := filepath.Join(msys2RootDirectory, "usr", "bin", "bash.exe")
 	if !LFileExistCheck(bashPath) {
 		return
@@ -310,7 +310,7 @@ func LArchiveFormatResolve(downloadUrl string) extraction.LArchiveKind {
 	lowerUrl := strings.ToLower(downloadUrl)
 	switch {
 	case strings.HasSuffix(lowerUrl, ".tar.bz2"):
-		return extraction.LTarBzipArchive
+		return extraction.LArchiveTarBzip
 	case strings.HasSuffix(lowerUrl, ".tar.gz") || strings.HasSuffix(lowerUrl, ".tgz"):
 		return extraction.LArchiveTarGz
 	case strings.HasSuffix(lowerUrl, ".tar.zst"):

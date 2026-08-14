@@ -9,7 +9,7 @@ func LLibraryKlvancPrepare(plan *shared.LPreparationPlan) {
 	plan.VersionSpecificGoFile = "versions/9.0.1/klvanc.go"
 	plan.LSourceCompilationUse("libklvanc", "configure-make")
 	plan.LAutogenBeforeRun()
-	plan.LMSYSPackageRequire("autoconf-wrapper", "automake-wrapper", "libtool")
+	plan.LMsysPackageRequire("autoconf-wrapper", "automake-wrapper", "libtool")
 	plan.LConfigureOptionAdd("--enable-shared=no")
 	plan.LMakeVariableAdd("SUBDIRS=src")
 	plan.LPreparationModificationAdd("src/core-private.h", "#include <sys/errno.h>", "#include <errno.h>")

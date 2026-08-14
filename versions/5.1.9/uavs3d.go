@@ -2,8 +2,8 @@ package version519
 
 import "promptfulcustomffmpegbuilder/versions/shared"
 
-// LUavs3dPrepare performs the coded preparation manipulation for uavs3d on FFmpeg 5.1.9.
-func LUavs3dPrepare(plan *shared.LPreparationPlan) {
+// LUavsPrepare performs the coded preparation manipulation for uavs3d on FFmpeg 5.1.9.
+func LUavsPrepare(plan *shared.LPreparationPlan) {
 	plan.FfmpegVersion = "5.1.9"
 	plan.LibraryId = "uavs3d"
 	plan.VersionSpecificGoFile = "versions/5.1.9/uavs3d.go"

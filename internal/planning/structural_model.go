@@ -26,7 +26,7 @@ const (
 	LLibrarySupportReplaced    LLibrarySupportState = "replaced"
 	LSourceBuildRequired       LLibrarySupportState = "source-build-required"
 	LPreparationMissing        LLibrarySupportState = "preparation-unimplemented"
-	LUIDisabledSupport         LLibrarySupportState = "ui-disabled"
+	LUiDisabled                LLibrarySupportState = "ui-disabled"
 )
 
 // LWorkPhaseName identifies when version-specific library work is allowed

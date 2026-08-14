@@ -22,10 +22,10 @@ import (
 // command is safe. These constants bound how many times and how long apart a
 // command is retried before its failure is treated as real.
 const (
-	LCommandAttemptMax         = 10
-	LCommandInitialDelay       = 5 * time.Second
-	LCommandRetryBackoffFactor = 2
-	LCommandMaximumDelay       = 60 * time.Second
+	LCommandAttemptMax    = 10
+	LCommandInitialDelay  = 5 * time.Second
+	LCommandBackoffFactor = 2
+	LCommandMaximumDelay  = 60 * time.Second
 )
 
 type LScriptKind string
@@ -124,7 +124,7 @@ func LCommandRun(LContext context.Context, commandPlan LPlanCommand, emitProgres
 			return runErr
 		case <-time.After(retryDelay):
 		}
-		if retryDelay *= LCommandRetryBackoffFactor; retryDelay > LCommandMaximumDelay {
+		if retryDelay *= LCommandBackoffFactor; retryDelay > LCommandMaximumDelay {
 			retryDelay = LCommandMaximumDelay
 		}
 	}

@@ -60,7 +60,7 @@ func LCatalogSupportResolve(versionObject map[string]any, preparationStatus *LLi
 		return LLibrarySupportUnavailable
 	}
 	if LCatalogReasonCheck(versionObject, "disabled-in-current-catalog-ui") {
-		return LUIDisabledSupport
+		return LUiDisabled
 	}
 	if preparationStatus != nil && preparationStatus.Required {
 		if !preparationStatus.Implemented {
