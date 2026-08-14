@@ -11,7 +11,7 @@
 <main class="main">
 <section class="hero">
 <h1>Build Process Transparency <span class="lang-pill">EN</span></h1>
-<p class="hero-desc">What the builder shows, checks, and records during local FFmpeg builds.</p>
+<p class="hero-desc">What the build plan shows, what execution verifies, and how retryable stalls are recorded.</p>
 </section>
 <section aria-label="Document section highlights" class="section-cards">
 <a class="section-card" href="#information-available-for-review"><span class="card-icon">1</span><span><strong>Information available for review</strong></span></a>
@@ -47,14 +47,15 @@
 <p>The program works inside the workspace selected by the user. Downloads, extracted files, generated scripts, logs, reports, private MSYS2 files, and copied build artifacts are checked so they remain inside that workspace.</p>
 <p>Approval does not remove path validation. Approval means that the user approved the planned operation; workspace checks still restrict where that operation can write, extract, copy, or delete files.</p>
 <h2 id="downloads-and-source-verification">Downloads and source verification</h2>
-<p>Download steps are shown in the reviewed plan. The program records the URL, destination, and available verification information. During download, it checks HTTPS use, workspace-contained destinations, file-size limits, redirect limits, optional SHA-256 verification, and signature/key downloads where the plan includes them.</p>
+<p>Download steps are shown in the reviewed plan. The program records the URL, destination, and available verification information. During download, it checks HTTPS use, workspace-contained destinations, file-size limits, redirect limits, optional SHA-256 verification, and signature/key downloads where the plan includes them. MSYS2 package-install scripts also configure an ordered set of package mirrors and a bounded <code>curl</code> transfer command so a stalled mirror can fail over instead of leaving the build hanging indefinitely.</p>
 <p>A previously downloaded file may be reused only when reuse is allowed by the plan and, when an expected hash exists, the existing file matches that hash.</p>
 <h2 id="generated-scripts">Generated scripts</h2>
 <p>FFmpeg builds require shell scripts for package installation, configure, make, and some prepared-library work. The program writes those scripts inside the selected workspace and records their SHA-256 hashes.</p>
 <p>Before a generated script is executed, the execution layer verifies that the file still matches the approved hash. This keeps generated scripts within the reviewed build plan instead of treating them as untracked execution details.</p>
-<p>Some compatibility handling happens inside generated configure scripts. For example, selected flags such as <code>--enable-libsvtjpegxs</code>, <code>--enable-liblensfun</code>, and <code>--enable-vapoursynth</code> may be probed and removed with a warning if the installed package does not expose the API expected by the selected FFmpeg source. This is a specific compatibility fallback, not a general promise that every unavailable library can be repaired automatically.</p>
+<p>Some compatibility handling happens inside generated configure scripts. For example, selected flags such as <code>--enable-libsvtjpegxs</code>, <code>--enable-liblensfun</code>, and <code>--enable-vapoursynth</code> may be probed and removed with a warning if the installed package does not expose the API expected by the selected FFmpeg source. FFmpeg 9 handling also adds the nested MSYS2 ONNX Runtime include directory when <code>--enable-libonnxruntime</code> is selected, rejects AMF headers older than 1.5.2.0, and rejects ffnvcodec/NVENC headers older than NVENC SDK 11.1 before configure. This is specific compatibility handling, not a general promise that every unavailable library can be repaired automatically.</p>
 <h2 id="execution-plans">Execution plans</h2>
 <p>Package installation and build operations are run through managed execution plans. The program constrains executable paths, working directories, MSYS2 roots, log directories, executable names, and generated-script hashes.</p>
+<p>Transient network exhaustion has its own terminal state. When the execution layer identifies only retryable network failures after exhausting its command retry budget, it emits a <code>stalled</code> event with the mirror/host addresses that were tried. The run is no longer treated as active, but it is also not recorded as an ordinary build failure. For an FFmpeg build, the UI can relaunch the same previously approved plan so cache-resumable work can continue.</p>
 <p>Auxiliary actions are limited and fixed-purpose. Opening folders, opening reports, opening saved logs, checking installed packages, probing a produced FFmpeg binary, or stopping private MSYS2 helper processes are not treated as arbitrary shell execution.</p>
 <h2 id="logs-reports-and-approval-records">Logs, reports, and approval records</h2>
 <p>The program leaves several kinds of local records:</p>
@@ -72,7 +73,7 @@
 </tr>
 <tr>
   <td>Saved local log records</td>
-  <td>Keep previous local logs available for later review</td>
+  <td>Keep previous local logs available for later review, including the distinct <code>stalled</code> terminal state</td>
 </tr>
 <tr>
   <td>Build report JSON</td>

@@ -54,8 +54,9 @@ FFmpeg 기본 포함 항목은 FFmpeg 소스 자체에서 빌드되므로 항상
 - `klvanc`
 - `libtls`
 - `libmfx`
+- `opencv`
 
-`libmfx`도 이 구현된 그룹에 속합니다. `libmfx`는 선택한 FFmpeg 버전과 프로필에서 레거시 Intel Media SDK 경로가 필요할 때 쓰는 백엔드입니다. 최신 oneVPL 경로인 `libvpl`과 동시에 쓰지 않습니다. `dc1394`나 `pocketsphinx`처럼 내부 트랙에 속하더라도 안전한 일반 준비 절차가 없으면 여전히 차단될 수 있습니다.
+`libmfx`도 이 구현된 그룹에 속합니다. `libmfx`는 선택한 FFmpeg 버전과 프로필에서 레거시 Intel Media SDK 경로가 필요할 때 쓰는 백엔드이며 최신 oneVPL 경로인 `libvpl`과 동시에 쓰지 않습니다. `opencv`도 내부에서 준비합니다. 현재 MSYS2 OpenCV 5에서는 FFmpeg의 `--enable-libopencv`가 요구하는 레거시 C API가 제거되어 이 프로그램은 OpenCV 4.11.0을 고정해 소스에서 빌드합니다. `dc1394`나 `pocketsphinx`처럼 내부 트랙에 속하더라도 안전한 일반 준비 절차가 없으면 여전히 차단될 수 있습니다.
 
 ## 외부 또는 차단 항목
 
@@ -87,8 +88,9 @@ FFmpeg 기본 포함 항목은 FFmpeg 소스 자체에서 빌드되므로 항상
 - `libvpl`은 최신 FFmpeg 계열에서 쓰는 Intel oneVPL 경로입니다.
 - `libmfx`는 레거시 Intel Media SDK 경로이며 `libvpl`과 함께 켤 수 없습니다.
 - `lensfun`은 사용 가능한 패키지가 선택한 FFmpeg 버전의 요구 API를 만족하지 못하면 차단됩니다.
-- `onnxruntime`은 현재 적용한 공식 FFmpeg 릴리스 범위에서 일반 지원 항목으로 다루지 않으며, `mingw64`에서도 사용할 수 없습니다.
-- `svtjpegxs`는 FFmpeg 버전 요구 사항과 pkg-config 결과에 따라 달라집니다.
+- `onnxruntime`은 FFmpeg 9.0.1의 `ucrt64`와 `clang64`에서 지원되며 `--enable-libonnxruntime`을 사용합니다. `mingw64`에서는 사용할 수 없고, 현재 카탈로그의 이전 FFmpeg 릴리스에서는 지원되지 않습니다.
+- `svtjpegxs`는 9.0.1을 포함한 최신 지원 FFmpeg 계열에서 사용할 수 있으며 이전 릴리스에서는 버전 조건이 적용됩니다.
+- FFmpeg 9.0.1에서는 `shaderc`와 `glslang` 패키지를 셰이더 도구로 선택할 수 있지만 FFmpeg 9에서 `--enable-libshaderc`, `--enable-libglslang` 스위치가 제거되어 해당 플래그를 생성하지 않습니다.
 
 ## 공개 라이브러리 프리셋
 
@@ -129,7 +131,7 @@ Extended 토글은 별도 프리셋이 아닙니다. 더 넓은 공개 프리셋
 | `efficiency` | `vvenc`, `lcevc-dec` |
 | `compatibility` | `davs2`, `uavs3d`, `xavs2`, `avisynthplus`, `klvanc` |
 | `editor` | `avisynthplus`, `lcevc-dec`, `quirc` |
-| `full` | `vvenc`, `lcevc-dec`, `davs2`, `uavs3d`, `xavs2`, `avisynthplus`, `mpeghdec`, `quirc`, `klvanc` |
+| `full` | `vvenc`, `lcevc-dec`, `davs2`, `uavs3d`, `xavs2`, `avisynthplus`, `mpeghdec`, `quirc`, `klvanc`에 더해 8.1.2/9.0.1에서는 `svtjpegxs`, 9.0.1에서는 `onnxruntime`이 추가됩니다. |
 
 Extended 항목은 최종 라이선스를 바꿀 수 있습니다. 예를 들어 `xavs2`, `davs2`, `avisynthplus`는 GPL 영향을 만들고, `mpeghdec`는 nonfree 영향을 만듭니다.
 

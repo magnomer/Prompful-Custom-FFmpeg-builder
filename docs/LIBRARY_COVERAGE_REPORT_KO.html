@@ -11,10 +11,10 @@
 <main class="main">
 <section class="hero">
 <h1>라이브러리 지원 범위 보고서 <span class="lang-pill">KO</span></h1>
-<p class="hero-desc">현재 카탈로그의 라이브러리 지원 범위, 선택 가능 조건, 제한 항목, 라이선스를 정리합니다.</p>
+<p class="hero-desc">현재 카탈로그와 FFmpeg 9.0.1 호환성, 프리셋 및 제한 항목을 설명합니다.</p>
 </section>
-<section aria-label="문서 주요 섹션" class="section-cards">
-<a class="section-card" href="#요약-ffmpeg-901-기준"><span class="card-icon">1</span><span><strong>요약 (FFmpeg 9.0.1 기준)</strong></span></a>
+<section aria-label="Document section highlights" class="section-cards">
+<a class="section-card" href="#요약-ffmpeg-9-0-1-기준"><span class="card-icon">1</span><span><strong>요약 (FFmpeg 9.0.1 기준)</strong></span></a>
 <a class="section-card" href="#사용-용어"><span class="card-icon">2</span><span><strong>사용 용어</strong></span></a>
 <a class="section-card" href="#카테고리-일람"><span class="card-icon">3</span><span><strong>카테고리 일람</strong></span></a>
 <a class="section-card" href="#프리셋-일람"><span class="card-icon">4</span><span><strong>프리셋 일람</strong></span></a>
@@ -23,431 +23,370 @@
 </section>
 <article class="doc-content">
 <h1 id="라이브러리-지원-범위-보고서">라이브러리 지원 범위 보고서</h1>
-<p>이 문서는 이 버전의 Promptful Custom FFmpeg Builder에 어떤 FFmpeg
-라이브러리가 등록되어 있는지, 어떤 항목을 선택할 수 있는지, 어떤 항목의
-선택이 제한되는지를 설명합니다.</p>
-<p>이 문서에서 다루는 지원 범위는 대체로 선택 가능한 항목을 다루나,
-단순히 이 프로그램의 카탈로그에 라이브러리가 등록되어 있다고 해서 선택
-가능한 것은 아닙니다. FFmpeg 버전이나 MSYS2 프로필에 따라 선택이
-불가능하거나 최종 빌드 계획에서 제외될 수 있습니다.</p>
-<h2 id="요약-ffmpeg-901-기준">요약 (FFmpeg 9.0.1 기준)</h2>
+<p>이 문서는 이 버전의 Promptful Custom FFmpeg Builder에 어떤 FFmpeg 라이브러리가 등록되어 있는지, 어떤 항목을 선택할 수 있는지, 어떤 항목의 선택이 제한되는지를 설명합니다.</p>
+<p>이 문서에서 다루는 지원 범위는 대체로 선택 가능한 항목을 다루나, 단순히 이 프로그램의 카탈로그에 라이브러리가 등록되어 있다고 해서 선택 가능한 것은 아닙니다. FFmpeg 버전이나 MSYS2 프로필에 따라 선택이 불가능하거나 최종 빌드 계획에서 제외될 수 있습니다.</p>
+<h2 id="요약-ffmpeg-9-0-1-기준">요약 (FFmpeg 9.0.1 기준)</h2>
 <ul>
 <li>전체 카탈로그 항목: <strong>125</strong>.</li>
 <li>공식 FFmpeg 소스에 기본 포함된 항목: <strong>10</strong>.</li>
-<li>MSYS2 패키지가 사용 가능한 항목: <strong>96</strong>.</li>
-<li>프로그램 내부에서 소스를 준비하는 항목: <strong>13</strong>.</li>
-<li>외부 SDK 또는 별도 가져오기 경로로 분류된 항목:
-<strong>6</strong>.</li>
-<li>일반 UI에서 전역으로 비활성화된 항목: <strong>2 —
-<code>tensorflow</code>, <code>vapoursynth</code></strong>.</li>
-<li>빌드가 구현되지 않아 제한된 항목: <strong>7 —
-<code>smbclient</code>, <code>openvino</code>, <code>torch</code>,
-<code>pocketsphinx</code>, <code>dc1394</code>, <code>decklink</code>,
-<code>cuda-nvcc</code></strong>.</li>
+<li>FFmpeg 소스 기본 포함 항목 10개를 제외한 MSYS2 패키지 경로 항목: <strong>95</strong>.</li>
+<li>내부 준비 트랙 항목: <strong>14</strong>이며, 이 가운데 <strong>12개</strong>는 현재 소스 준비 절차가 구현되어 있습니다.</li>
+<li>외부 SDK 또는 별도 가져오기 경로로 분류된 항목: <strong>6</strong>.</li>
+<li>일반 UI에서 전역으로 비활성화된 항목: <strong>2 — <code>tensorflow</code>, <code>vapoursynth</code></strong>.</li>
+<li>빌드가 구현되지 않아 제한된 항목: <strong>7 — <code>smbclient</code>, <code>openvino</code>, <code>torch</code>, <code>pocketsphinx</code>, <code>dc1394</code>, <code>decklink</code>, <code>cuda-nvcc</code></strong>.</li>
 </ul>
-<p>선택 가능 여부는 선택한 FFmpeg 버전과 MSYS2 셸 프로필에 따라 달라질
-수 있습니다. 이 프로그램은 configure 전에 선택한 항목을 다시 확인하여
-FFmpeg가 지원하지 않는 버전 혹은 프로필 조합이 빌드되지 않도록
-처리합니다.</p>
+<p>위 트랙 수치는 현재 <strong>FFmpeg 9.0.1</strong> 카탈로그 분류를 기준으로 합니다. 이전 지원 FFmpeg 버전에서는 일부 항목의 지원 상태나 준비 방식이 달라질 수 있습니다. FFmpeg 9.0.1에서 <code>onnxruntime</code>은 <code>ucrt64</code>와 <code>clang64</code>에서 선택할 수 있지만 <code>mingw64</code>에서는 사용할 수 없고, <code>lensfun</code>은 현재 패키지/API 조건 때문에 사용할 수 없습니다. <code>svtjpegxs</code>는 FFmpeg 9.0.1에서 선택할 수 있습니다.</p>
+<p>선택 가능 여부는 선택한 FFmpeg 버전과 MSYS2 셸 프로필에 따라 달라질 수 있습니다. 이 프로그램은 configure 전에 선택한 항목을 다시 확인하여 FFmpeg가 지원하지 않는 버전 혹은 프로필 조합이 빌드되지 않도록 처리합니다.</p>
 <h2 id="사용-용어">사용 용어</h2>
 <table>
 <thead>
-<tr class="header">
-<th>구분</th>
-<th>설명</th>
+<tr>
+  <th>구분</th>
+  <th>설명</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>FFmpeg 기본 포함</td>
-<td>공식 FFmpeg 소스 트리에서 함께 빌드되는 항목이며 항상 켜져
-있습니다.</td>
+<tr>
+  <td>FFmpeg 기본 포함</td>
+  <td>공식 FFmpeg 소스 트리에서 함께 빌드되는 항목이며 항상 켜져 있습니다.</td>
 </tr>
-<tr class="even">
-<td>MSYS2 패키지</td>
-<td>MSYS2 패키지와 일반 FFmpeg configure 플래그로 준비되는
-항목입니다.</td>
+<tr>
+  <td>MSYS2 패키지</td>
+  <td>MSYS2 패키지를 사용하며, 선택한 FFmpeg 버전이 해당 스위치를 제공하는 경우 configure 플래그를 추가합니다.</td>
 </tr>
-<tr class="odd">
-<td>내부 소스 준비</td>
-<td>프로그램이 개인용 빌드 환경 안에서 소스나 import 파일을 준비하는
-항목입니다.</td>
+<tr>
+  <td>내부 소스 준비</td>
+  <td>프로그램이 개인용 빌드 환경 안에서 소스나 import 파일을 준비하는 항목입니다.</td>
 </tr>
-<tr class="even">
-<td>외부 SDK/가져오기</td>
-<td>외부 SDK, import 라이브러리, 또는 일반 패키지 선택이 아닌 별도 준비
-경로가 필요한 항목입니다.</td>
+<tr>
+  <td>외부 SDK/가져오기</td>
+  <td>외부 SDK, import 라이브러리, 또는 일반 패키지 선택이 아닌 별도 준비 경로가 필요한 항목입니다.</td>
 </tr>
-<tr class="odd">
-<td>UI 비활성화</td>
-<td>프로그램이 알고 있지만 일반 UI에서는 선택할 수 없게 막은
-항목입니다.</td>
+<tr>
+  <td>UI 비활성화</td>
+  <td>프로그램이 알고 있지만 일반 UI에서는 선택할 수 없게 막은 항목입니다.</td>
 </tr>
-<tr class="even">
-<td>차단</td>
-<td>프로그램이 알고 있지만 아직 안전한 일반 빌드/가져오기 절차가 없는
-항목입니다.</td>
+<tr>
+  <td>차단</td>
+  <td>프로그램이 알고 있지만 아직 안전한 일반 빌드/가져오기 절차가 없는 항목입니다.</td>
 </tr>
-<tr class="odd">
-<td>버전/프로필 제한</td>
-<td>특정 FFmpeg 버전이나 MSYS2 셸 프로필에서만 가능한 항목입니다.</td>
+<tr>
+  <td>버전/프로필 제한</td>
+  <td>특정 FFmpeg 버전이나 MSYS2 셸 프로필에서만 가능한 항목입니다.</td>
 </tr>
 </tbody>
 </table>
-<p>단순히 FFmpeg에 configure 플래그가 존재한다고 해서 이 프로그램에서
-실제로 빌드할 수 있는 것은 아니기에 위와 같이 라이브러리의 등록 상태가
-구분되어 있습니다.</p>
+<p>단순히 FFmpeg에 configure 플래그가 존재한다고 해서 이 프로그램에서 실제로 빌드할 수 있는 것은 아니기에 위와 같이 라이브러리의 등록 상태가 구분되어 있습니다.</p>
 <h2 id="카테고리-일람">카테고리 일람</h2>
 <table>
 <thead>
-<tr class="header">
-<th>카테고리</th>
-<th style="text-align: right;">항목 수</th>
-<th>설명</th>
+<tr>
+  <th>카테고리</th>
+  <th style="text-align:right">항목 수</th>
+  <th>설명</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>FFmpeg 기본 포함</td>
-<td style="text-align: right;">10</td>
-<td>고정되는 기본 프로그램과 핵심 FFmpeg 라이브러리입니다.</td>
+<tr>
+  <td>FFmpeg 기본 포함</td>
+  <td style="text-align:right">10</td>
+  <td>고정되는 기본 프로그램과 핵심 FFmpeg 라이브러리입니다.</td>
 </tr>
-<tr class="even">
-<td>비디오 인코더</td>
-<td style="text-align: right;">19</td>
-<td>소프트웨어 인코더, 코덱 라이브러리, 특수 인코더 연동입니다.</td>
+<tr>
+  <td>비디오 인코더</td>
+  <td style="text-align:right">19</td>
+  <td>소프트웨어 인코더, 코덱 라이브러리, 특수 인코더 연동입니다.</td>
 </tr>
-<tr class="odd">
-<td>하드웨어 인코더</td>
-<td style="text-align: right;">5</td>
-<td>윈도우에서 자주 쓰는 하드웨어 인코더 경로의 헤더/API
-연동입니다.</td>
+<tr>
+  <td>하드웨어 인코더</td>
+  <td style="text-align:right">5</td>
+  <td>윈도우에서 자주 쓰는 하드웨어 인코더 경로의 헤더/API 연동입니다.</td>
 </tr>
-<tr class="even">
-<td>비디오 디코더</td>
-<td style="text-align: right;">8</td>
-<td>외부 디코더 라이브러리와 래퍼 디코더입니다.</td>
+<tr>
+  <td>비디오 디코더</td>
+  <td style="text-align:right">8</td>
+  <td>외부 디코더 라이브러리와 래퍼 디코더입니다.</td>
 </tr>
-<tr class="odd">
-<td>이미지 코덱</td>
-<td style="text-align: right;">11</td>
-<td>정지 이미지와 이미지 시퀀스 작업을 돕는 항목입니다.</td>
+<tr>
+  <td>이미지 코덱</td>
+  <td style="text-align:right">11</td>
+  <td>정지 이미지와 이미지 시퀀스 작업을 돕는 항목입니다.</td>
 </tr>
-<tr class="even">
-<td>필터와 처리</td>
-<td style="text-align: right;">17</td>
-<td>스케일링, 필터, 색 처리, 분석, GPU/필터 보조, 플러그인
-경로입니다.</td>
+<tr>
+  <td>필터와 처리</td>
+  <td style="text-align:right">17</td>
+  <td>스케일링, 필터, 색 처리, 분석, GPU/필터 보조, 플러그인 경로입니다.</td>
 </tr>
-<tr class="odd">
-<td>오디오</td>
-<td style="text-align: right;">25</td>
-<td>오디오 코덱, 분석, 효과, 장치/서버 연동입니다.</td>
+<tr>
+  <td>오디오</td>
+  <td style="text-align:right">25</td>
+  <td>오디오 코덱, 분석, 효과, 장치/서버 연동입니다.</td>
 </tr>
-<tr class="even">
-<td>자막과 텍스트</td>
-<td style="text-align: right;">11</td>
-<td>글꼴 처리, 자막 렌더링, 캡션, 텔레텍스트, OCR 관련 텍스트
-지원입니다.</td>
+<tr>
+  <td>자막과 텍스트</td>
+  <td style="text-align:right">11</td>
+  <td>글꼴 처리, 자막 렌더링, 캡션, 텔레텍스트, OCR 관련 텍스트 지원입니다.</td>
 </tr>
-<tr class="odd">
-<td>디스크 및 장치 입력</td>
-<td style="text-align: right;">8</td>
-<td>광학 미디어, 캡처, 플랫폼 입력 연동입니다.</td>
+<tr>
+  <td>디스크 및 장치 입력</td>
+  <td style="text-align:right">8</td>
+  <td>광학 미디어, 캡처, 플랫폼 입력 연동입니다.</td>
 </tr>
-<tr class="even">
-<td>네트워크</td>
-<td style="text-align: right;">7</td>
-<td>TLS 백엔드를 제외한 전송/프로토콜 라이브러리입니다.</td>
+<tr>
+  <td>네트워크</td>
+  <td style="text-align:right">7</td>
+  <td>TLS 백엔드를 제외한 전송/프로토콜 라이브러리입니다.</td>
 </tr>
-<tr class="odd">
-<td>보안 네트워크(TLS)</td>
-<td style="text-align: right;">4</td>
-<td>서로 함께 켤 수 없는 TLS 백엔드 후보입니다.</td>
+<tr>
+  <td>보안 네트워크(TLS)</td>
+  <td style="text-align:right">4</td>
+  <td>서로 함께 켤 수 없는 TLS 백엔드 후보입니다.</td>
 </tr>
 </tbody>
 </table>
 <h2 id="프리셋-일람">프리셋 일람</h2>
-<p>이 프로그램은 사용자들이 쉽게 선택할 수 있도록 프리셋을
-제공합니다.</p>
+<p>이 프로그램은 사용자들이 쉽게 선택할 수 있도록 프리셋을 제공합니다.</p>
 <table>
 <thead>
-<tr class="header">
-<th>프리셋</th>
-<th>목적</th>
-<th>대표적인 차이점</th>
+<tr>
+  <th>프리셋</th>
+  <th>목적</th>
+  <th>대표적인 차이점</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>최소 구성</td>
-<td>공식 FFmpeg 소스에 기본적으로 포함된 기능만 제공합니다.</td>
-<td>고정 FFmpeg 프로그램과 핵심 라이브러리</td>
+<tr>
+  <td>최소 구성</td>
+  <td>공식 FFmpeg 소스에 기본적으로 포함된 기능만 제공합니다.</td>
+  <td>고정 FFmpeg 프로그램과 핵심 라이브러리</td>
 </tr>
-<tr class="even">
-<td>기본</td>
-<td>일반적인 인코딩, 디코딩, 자막, 오디오, 처리, 네트워크 보조 기능을
-제공하는 프리셋입니다.</td>
-<td><code>nvenc</code>, <code>amf</code>, <code>libvpl</code>,
-<code>libmfx</code>, <code>x264</code>, <code>x265</code>,
-<code>libvpx</code>, <code>aom</code>, <code>svt-av1</code>,
-<code>dav1d</code>, <code>opus</code>, <code>mp3lame</code>,
-<code>ass</code>, <code>freetype</code>, <code>zimg</code>,
-<code>vmaf</code>, <code>srt</code>, <code>ssh</code> 등</td>
+<tr>
+  <td>기본</td>
+  <td>일반적인 인코딩, 디코딩, 자막, 오디오, 처리, 네트워크 보조 기능을 제공하는 프리셋입니다.</td>
+  <td><code>nvenc</code>, <code>amf</code>, <code>libvpl</code>, <code>libmfx</code>, <code>x264</code>, <code>x265</code>, <code>libvpx</code>, <code>aom</code>, <code>svt-av1</code>, <code>dav1d</code>, <code>opus</code>, <code>mp3lame</code>, <code>ass</code>, <code>freetype</code>, <code>zimg</code>, <code>vmaf</code>, <code>srt</code>, <code>ssh</code> 등</td>
 </tr>
-<tr class="odd">
-<td>최대 효율</td>
-<td><code>기본</code>에 압축 효율과 품질 대비 용량을 향상시킬 수 있는
-항목이 추가되어 있습니다.</td>
-<td><code>fdk-aac</code>, <code>soxr</code>, <code>rav1e</code></td>
+<tr>
+  <td>최대 효율</td>
+  <td><code>기본</code>에 압축 효율과 품질 대비 용량을 향상시킬 수 있는 항목이 추가되어 있습니다.</td>
+  <td><code>fdk-aac</code>, <code>soxr</code>, <code>rav1e</code></td>
 </tr>
-<tr class="even">
-<td>최대 호환성</td>
-<td><code>기본</code>에 코덱, 자막, 캡션, 이미지, 음성, 프로토콜
-호환성을 더할 수 있는 항목이 추가되어 있습니다.</td>
-<td><code>openh264</code>, <code>xeve</code>, <code>xevd</code>,
-<code>oapv</code>, <code>xavs</code>, <code>ilbc</code>,
-<code>twolame</code>, <code>shine</code>, <code>codec2</code>,
-<code>lc3</code>, <code>snappy</code>, <code>rsvg</code>,
-<code>zvbi</code>, <code>aribb24</code>, <code>aribcaption</code>,
-<code>rtmp</code></td>
+<tr>
+  <td>최대 호환성</td>
+  <td><code>기본</code>에 코덱, 자막, 캡션, 이미지, 음성, 프로토콜 호환성을 더할 수 있는 항목이 추가되어 있습니다.</td>
+  <td><code>openh264</code>, <code>xeve</code>, <code>xevd</code>, <code>oapv</code>, <code>xavs</code>, <code>ilbc</code>, <code>twolame</code>, <code>shine</code>, <code>codec2</code>, <code>lc3</code>, <code>snappy</code>, <code>rsvg</code>, <code>zvbi</code>, <code>aribb24</code>, <code>aribcaption</code>, <code>rtmp</code></td>
 </tr>
-<tr class="odd">
-<td>오디오/비디오 편집</td>
-<td><code>기본</code>에 편집, 필터, 색 관리, 오디오 분석, 자막, 전사,
-이미지 작업을 보강할 수 있는 항목이 추가되어 있습니다.</td>
-<td><code>png</code>, <code>libjxl</code>, <code>lcms2</code>,
-<code>libplacebo</code>, <code>shaderc</code>, <code>frei0r</code>,
-<code>opencv</code>, <code>opencolorio</code>, <code>xml2</code>,
-<code>mysofa</code>, <code>bs2b</code>, <code>ladspa</code>,
-<code>lv2</code>, <code>chromaprint</code>, <code>qrencode</code>,
-<code>whisper</code></td>
+<tr>
+  <td>오디오/비디오 편집</td>
+  <td><code>기본</code>에 편집, 필터, 색 관리, 오디오 분석, 자막, 전사, 이미지 작업을 보강할 수 있는 항목이 추가되어 있습니다.</td>
+  <td><code>png</code>, <code>libjxl</code>, <code>lcms2</code>, <code>libplacebo</code>, <code>shaderc</code>, <code>frei0r</code>, <code>opencv</code>, <code>opencolorio</code>, <code>xml2</code>, <code>mysofa</code>, <code>bs2b</code>, <code>ladspa</code>, <code>lv2</code>, <code>chromaprint</code>, <code>qrencode</code>, <code>whisper</code></td>
 </tr>
-<tr class="even">
-<td>전체</td>
-<td>호환되지 않는 항목들을 제외한 가능한 폭넓은 프리셋입니다.</td>
-<td>효율, 호환성, 편집 추가 항목 전체와 <code>kvazaar</code>,
-<code>bluray</code>, <code>dvdread</code>, <code>dvdnav</code>,
-<code>cdio</code>, <code>modplug</code>, <code>opengl</code>,
-<code>openssl</code>, <code>rist</code>, <code>rabbitmq</code>,
-<code>tesseract</code>, <code>jack</code>, <code>pulse</code>,
-<code>caca</code>, <code>opencl</code></td>
+<tr>
+  <td>전체</td>
+  <td>호환되지 않는 항목들을 제외한 가능한 폭넓은 프리셋입니다.</td>
+  <td>효율, 호환성, 편집 추가 항목 전체와 <code>kvazaar</code>, <code>bluray</code>, <code>dvdread</code>, <code>dvdnav</code>, <code>cdio</code>, <code>modplug</code>, <code>opengl</code>, <code>openssl</code>, <code>rist</code>, <code>rabbitmq</code>, <code>tesseract</code>, <code>jack</code>, <code>pulse</code>, <code>caca</code>, <code>opencl</code></td>
 </tr>
 </tbody>
 </table>
-<p><code>최대 효율</code>, <code>최대 호환성</code>,
-<code>오디오/비디오 편집</code>은 각각 <code>기본</code>을 바탕으로 하여
-각각의 목적에 맞는 항목을 추가한 프리셋입니다. <code>전체</code>는
-최대한 다양한 라이브러리 항목을 포함합니다.</p>
-<p>이 프로그램은 프리셋과는 별도로 빌드하고자 하는 FFmpeg 버전과 MSYS2
-셸 프로필에 맞게 최종 선택을 정리합니다. 예를 들어 Intel 하드웨어 가속에
-있어서 <code>libvpl</code>과 <code>libmfx</code>의 두 가지 선택이 있을
-수 있더라도 최종 빌드 계획 단계에서 FFmpeg 버전 및 프로필에 부합하는
-경우만 남기며 두 라이브러리를 동시에 빌드하지는 않습니다.</p>
+<p><code>최대 효율</code>, <code>최대 호환성</code>, <code>오디오/비디오 편집</code>은 각각 <code>기본</code>을 바탕으로 하여 각각의 목적에 맞는 항목을 추가한 프리셋입니다. <code>전체</code>는 최대한 다양한 라이브러리 항목을 포함합니다.</p>
+<p>이 프로그램은 프리셋과는 별도로 빌드하고자 하는 FFmpeg 버전과 MSYS2 셸 프로필에 맞게 최종 선택을 정리합니다. 예를 들어 Intel 하드웨어 가속에 있어서 <code>libvpl</code>과 <code>libmfx</code>의 두 가지 선택이 있을 수 있더라도 최종 빌드 계획 단계에서 FFmpeg 버전 및 프로필에 부합하는 경우만 남기며 두 라이브러리를 동시에 빌드하지는 않습니다.</p>
 <h2 id="확장-프리셋-모드">확장 프리셋 모드</h2>
-<p>확장 프리셋 모드는 프리셋에 일부 항목을 추가합니다. 다만
-<code>최소 구성</code>과 <code>기본</code>은 바뀌지 않습니다.</p>
+<p>확장 프리셋 모드는 프리셋에 일부 항목을 추가합니다. 다만 <code>최소 구성</code>과 <code>기본</code>은 바뀌지 않습니다.</p>
 <table>
 <thead>
-<tr class="header">
-<th>프리셋</th>
-<th>추가되는 항목</th>
+<tr>
+  <th>프리셋</th>
+  <th>추가되는 항목</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>최대 효율</td>
-<td><code>vvenc</code>, <code>lcevc-dec</code></td>
+<tr>
+  <td>최대 효율</td>
+  <td><code>vvenc</code>, <code>lcevc-dec</code></td>
 </tr>
-<tr class="even">
-<td>최대 호환성</td>
-<td><code>davs2</code>, <code>uavs3d</code>, <code>xavs2</code>,
-<code>avisynthplus</code>, <code>klvanc</code></td>
+<tr>
+  <td>최대 호환성</td>
+  <td><code>davs2</code>, <code>uavs3d</code>, <code>xavs2</code>, <code>avisynthplus</code>, <code>klvanc</code></td>
 </tr>
-<tr class="odd">
-<td>오디오/비디오 편집</td>
-<td><code>avisynthplus</code>, <code>lcevc-dec</code>,
-<code>quirc</code></td>
+<tr>
+  <td>오디오/비디오 편집</td>
+  <td><code>avisynthplus</code>, <code>lcevc-dec</code>, <code>quirc</code></td>
 </tr>
-<tr class="even">
-<td>전체</td>
-<td><code>vvenc</code>, <code>lcevc-dec</code>, <code>davs2</code>,
-<code>uavs3d</code>, <code>xavs2</code>, <code>avisynthplus</code>,
-<code>mpeghdec</code>, <code>quirc</code>, <code>klvanc</code></td>
+<tr>
+  <td>전체</td>
+  <td><code>vvenc</code>, <code>lcevc-dec</code>, <code>davs2</code>, <code>uavs3d</code>, <code>xavs2</code>, <code>avisynthplus</code>, <code>mpeghdec</code>, <code>quirc</code>, <code>klvanc</code>에 더해 FFmpeg 8.1.2/9.0.1에서는 <code>svtjpegxs</code>, FFmpeg 9.0.1에서는 <code>onnxruntime</code>이 추가됩니다.</td>
 </tr>
 </tbody>
 </table>
-<p>이러한 확장 프리셋들은 다른 라이선스를 가질 수 있습니다. 예를 들어
-<code>xavs2</code>, <code>davs2</code>, <code>avisynthplus</code>가
-추가될 경우 라이선스는 GPL이 되며, <code>mpeghdec</code>가 추가될 경우
-라이선스는 비자유 로컬이 됩니다.</p>
+<p>이러한 확장 프리셋들은 다른 라이선스를 가질 수 있습니다. 예를 들어 <code>xavs2</code>, <code>davs2</code>, <code>avisynthplus</code>가 추가될 경우 라이선스는 GPL이 되며, <code>mpeghdec</code>가 추가될 경우 라이선스는 비자유 로컬이 됩니다.</p>
 <h2 id="충돌-방지">충돌 방지</h2>
 <p>일부 항목은 동시에 빌드할 수 없습니다.</p>
 <table>
 <thead>
-<tr class="header">
-<th>그룹</th>
-<th>항목</th>
-<th>기본 규칙</th>
+<tr>
+  <th>그룹</th>
+  <th>항목</th>
+  <th>기본 규칙</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>Intel 하드웨어 가속</td>
-<td><code>libvpl</code>, <code>libmfx</code></td>
-<td>선택한 FFmpeg 버전과 프로필에서 유효한 라이브러리 하나를
-고릅니다.</td>
+<tr>
+  <td>Intel 하드웨어 가속</td>
+  <td><code>libvpl</code>, <code>libmfx</code></td>
+  <td>선택한 FFmpeg 버전과 프로필에서 유효한 라이브러리 하나를 고릅니다.</td>
 </tr>
-<tr class="even">
-<td>TLS 백엔드</td>
-<td><code>openssl</code>, <code>gnutls</code>, <code>mbedtls</code>,
-<code>libtls</code></td>
-<td>하나만 고릅니다.</td>
+<tr>
+  <td>TLS 백엔드</td>
+  <td><code>openssl</code>, <code>gnutls</code>, <code>mbedtls</code>, <code>libtls</code></td>
+  <td>하나만 고릅니다.</td>
 </tr>
-<tr class="odd">
-<td>런타임 셰이더 컴파일러</td>
-<td><code>shaderc</code>, <code>glslang</code></td>
-<td>최대 하나만 고릅니다.</td>
+<tr>
+  <td>런타임 셰이더 컴파일러</td>
+  <td><code>shaderc</code>, <code>glslang</code></td>
+  <td>최대 하나만 고릅니다.</td>
 </tr>
-<tr class="even">
-<td>EVC 디코더 바인딩</td>
-<td><code>xevd</code>, <code>xevdb</code></td>
-<td>프로필 바인딩 하나만 고릅니다.</td>
+<tr>
+  <td>EVC 디코더 바인딩</td>
+  <td><code>xevd</code>, <code>xevdb</code></td>
+  <td>프로필 바인딩 하나만 고릅니다.</td>
 </tr>
-<tr class="odd">
-<td>EVC 인코더 바인딩</td>
-<td><code>xeve</code>, <code>xeveb</code></td>
-<td>프로필 바인딩 하나만 고릅니다.</td>
+<tr>
+  <td>EVC 인코더 바인딩</td>
+  <td><code>xeve</code>, <code>xeveb</code></td>
+  <td>프로필 바인딩 하나만 고릅니다.</td>
 </tr>
 </tbody>
 </table>
 <h2 id="소스-준비가-필요한-항목">소스 준비가 필요한 항목</h2>
-<p>아래 항목은 일반 MSYS2 패키지로는 빌드가 불가능하기에 필요한 소스
-파일을 다운로드하거나 가져오고, 가능한 경우 SHA-256 해시를 사용해서
-다운로드한 소스 파일을 확인합니다. 경우에 따라서 필요한 다른
-라이브러리를 빌드하거나 준비한 뒤, 헤더와 라이브러리를 확인하여 FFmpeg
-configure에 전달합니다.</p>
+<p>아래 항목은 일반 MSYS2 패키지로는 빌드가 불가능하기에 필요한 소스 파일을 다운로드하거나 가져오고, 가능한 경우 SHA-256 해시를 사용해서 다운로드한 소스 파일을 확인합니다. 경우에 따라서 필요한 다른 라이브러리를 빌드하거나 준비한 뒤, 헤더와 라이브러리를 확인하여 FFmpeg configure에 전달합니다.</p>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>버전 고정</th>
-<th>방식</th>
-<th>빌드/가져오기 방식</th>
-<th>상태</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>버전 고정</th>
+  <th>방식</th>
+  <th>빌드/가져오기 방식</th>
+  <th>상태</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>avisynthplus</code></td>
-<td>AviSynth+ / 스크립트 기반 비디오 처리</td>
-<td>내부 소스 준비</td>
-<td>3.7.5</td>
-<td>내부 소스 빌드</td>
-<td>CMake</td>
-<td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
+<tr>
+  <td><code>avisynthplus</code></td>
+  <td>AviSynth+ / 스크립트 기반 비디오 처리</td>
+  <td>내부 소스 준비</td>
+  <td>3.7.5</td>
+  <td>내부 소스 빌드</td>
+  <td>CMake</td>
+  <td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
 </tr>
-<tr class="even">
-<td><code>davs2</code></td>
-<td>libdavs2 / AVS2 디코딩</td>
-<td>내부 소스 준비</td>
-<td>1.7</td>
-<td>내부 소스 빌드</td>
-<td>configure + make</td>
-<td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
+<tr>
+  <td><code>davs2</code></td>
+  <td>libdavs2 / AVS2 디코딩</td>
+  <td>내부 소스 준비</td>
+  <td>1.7</td>
+  <td>내부 소스 빌드</td>
+  <td>configure + make</td>
+  <td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
 </tr>
-<tr class="odd">
-<td><code>xavs2</code></td>
-<td>xavs2</td>
-<td>내부 소스 준비</td>
-<td>1.4</td>
-<td>내부 소스 빌드</td>
-<td>configure + make</td>
-<td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
+<tr>
+  <td><code>xavs2</code></td>
+  <td>xavs2</td>
+  <td>내부 소스 준비</td>
+  <td>1.4</td>
+  <td>내부 소스 빌드</td>
+  <td>configure + make</td>
+  <td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
 </tr>
-<tr class="even">
-<td><code>uavs3d</code></td>
-<td>libuavs3d / AVS3 디코딩</td>
-<td>내부 소스 준비</td>
-<td>master</td>
-<td>내부 소스 빌드</td>
-<td>CMake</td>
-<td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
+<tr>
+  <td><code>uavs3d</code></td>
+  <td>libuavs3d / AVS3 디코딩</td>
+  <td>내부 소스 준비</td>
+  <td>master</td>
+  <td>내부 소스 빌드</td>
+  <td>CMake</td>
+  <td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
 </tr>
-<tr class="odd">
-<td><code>lcevc-dec</code></td>
-<td>liblcevc-dec / LCEVC 디코딩</td>
-<td>내부 소스 준비</td>
-<td>4.2.0</td>
-<td>내부 소스 빌드</td>
-<td>CMake</td>
-<td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
+<tr>
+  <td><code>lcevc-dec</code></td>
+  <td>liblcevc-dec / LCEVC 디코딩</td>
+  <td>내부 소스 준비</td>
+  <td>4.2.0</td>
+  <td>내부 소스 빌드</td>
+  <td>CMake</td>
+  <td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
 </tr>
-<tr class="even">
-<td><code>vvenc</code></td>
-<td>vvenc (VVC/H.266)</td>
-<td>내부 소스 준비</td>
-<td>1.14.0</td>
-<td>내부 소스 빌드</td>
-<td>CMake</td>
-<td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
+<tr>
+  <td><code>vvenc</code></td>
+  <td>vvenc (VVC/H.266)</td>
+  <td>내부 소스 준비</td>
+  <td>1.14.0</td>
+  <td>내부 소스 빌드</td>
+  <td>CMake</td>
+  <td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
 </tr>
-<tr class="odd">
-<td><code>mpeghdec</code></td>
-<td>libmpeghdec / MPEG-H 오디오 디코딩</td>
-<td>내부 소스 준비</td>
-<td>r3.0.3</td>
-<td>내부 소스 빌드</td>
-<td>CMake</td>
-<td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
+<tr>
+  <td><code>mpeghdec</code></td>
+  <td>libmpeghdec / MPEG-H 오디오 디코딩</td>
+  <td>내부 소스 준비</td>
+  <td>r3.0.3</td>
+  <td>내부 소스 빌드</td>
+  <td>CMake</td>
+  <td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
 </tr>
-<tr class="even">
-<td><code>quirc</code></td>
-<td>libquirc / QR 코드 디코딩</td>
-<td>내부 소스 준비</td>
-<td>1.2</td>
-<td>내부 소스 빌드</td>
-<td>make</td>
-<td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
+<tr>
+  <td><code>quirc</code></td>
+  <td>libquirc / QR 코드 디코딩</td>
+  <td>내부 소스 준비</td>
+  <td>1.2</td>
+  <td>내부 소스 빌드</td>
+  <td>make</td>
+  <td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
 </tr>
-<tr class="odd">
-<td><code>klvanc</code></td>
-<td>libklvanc / 방송 메타데이터</td>
-<td>내부 소스 준비</td>
-<td>vid.obe.1.6.0</td>
-<td>내부 소스 빌드</td>
-<td>configure + make</td>
-<td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
+<tr>
+  <td><code>klvanc</code></td>
+  <td>libklvanc / 방송 메타데이터</td>
+  <td>내부 소스 준비</td>
+  <td>vid.obe.1.6.0</td>
+  <td>내부 소스 빌드</td>
+  <td>configure + make</td>
+  <td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
 </tr>
-<tr class="even">
-<td><code>libtls</code></td>
-<td>libtls / 보안 네트워크 접근</td>
-<td>내부 소스 준비</td>
-<td>4.3.2</td>
-<td>내부 소스 빌드</td>
-<td>CMake</td>
-<td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
+<tr>
+  <td><code>libtls</code></td>
+  <td>libtls / 보안 네트워크 접근</td>
+  <td>내부 소스 준비</td>
+  <td>4.3.2</td>
+  <td>내부 소스 빌드</td>
+  <td>CMake</td>
+  <td>선택한 버전/프로필에서 지원될 때 선택 가능</td>
 </tr>
-<tr class="odd">
-<td><code>libmfx</code></td>
-<td>libmfx / 레거시 Intel Media SDK</td>
-<td>내부 소스 준비</td>
-<td>1.35.1</td>
-<td>내부 소스 빌드</td>
-<td>CMake</td>
-<td>선택한 버전/프로필에서 지원될 때 선택 가능. <code>libvpl</code>과
-함께 켜지지 않음</td>
+<tr>
+  <td><code>libmfx</code></td>
+  <td>libmfx / 레거시 Intel Media SDK</td>
+  <td>내부 소스 준비</td>
+  <td>1.35.1</td>
+  <td>내부 소스 빌드</td>
+  <td>CMake</td>
+  <td>선택한 버전/프로필에서 지원될 때 선택 가능. <code>libvpl</code>과 함께 켜지지 않음</td>
 </tr>
-<tr class="even">
-<td><code>tensorflow</code></td>
-<td>TensorFlow / AI 모델 추론</td>
-<td>외부 SDK/가져오기</td>
-<td>2.16.1</td>
-<td>외부 가져오기</td>
-<td>아카이브 가져오기</td>
-<td>UI 비활성화</td>
+<tr>
+  <td><code>opencv</code></td>
+  <td>OpenCV</td>
+  <td>내부 소스 준비 경로</td>
+  <td>4.11.0</td>
+  <td>내부 소스 빌드</td>
+  <td>CMake (<code>core</code> + <code>imgproc</code>)</td>
+  <td>선택 가능. 현재 MSYS2 OpenCV 5에서 FFmpeg가 요구하는 레거시 C API가 제거되어 OpenCV 4.11.0을 고정해 소스에서 준비합니다.</td>
+</tr>
+<tr>
+  <td><code>tensorflow</code></td>
+  <td>TensorFlow / AI 모델 추론</td>
+  <td>외부 SDK/가져오기</td>
+  <td>2.16.1</td>
+  <td>외부 가져오기</td>
+  <td>아카이브 가져오기</td>
+  <td>UI 비활성화</td>
 </tr>
 </tbody>
 </table>
@@ -455,1713 +394,1550 @@ configure에 전달합니다.</p>
 <p>이 프로그램은 다음 세 가지 경우를 다르게 취급합니다.</p>
 <table>
 <thead>
-<tr class="header">
-<th>상태</th>
-<th>항목</th>
-<th>설명</th>
+<tr>
+  <th>상태</th>
+  <th>항목</th>
+  <th>설명</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>전역 UI 비활성화</td>
-<td><code>tensorflow</code>, <code>vapoursynth</code></td>
-<td>UI에서 선택할 수 없게 차단된 항목입니다.</td>
+<tr>
+  <td>전역 UI 비활성화</td>
+  <td><code>tensorflow</code>, <code>vapoursynth</code></td>
+  <td>UI에서 선택할 수 없게 차단된 항목입니다.</td>
 </tr>
-<tr class="even">
-<td>일반 준비 절차 없음</td>
-<td><code>smbclient</code>, <code>openvino</code>, <code>torch</code>,
-<code>pocketsphinx</code>, <code>dc1394</code>, <code>decklink</code>,
-<code>cuda-nvcc</code></td>
-<td>안전한 일반 빌드/가져오기 경로가 아직 구현되지 않은 경우입니다.</td>
+<tr>
+  <td>일반 준비 절차 없음</td>
+  <td><code>smbclient</code>, <code>openvino</code>, <code>torch</code>, <code>pocketsphinx</code>, <code>dc1394</code>, <code>decklink</code>, <code>cuda-nvcc</code></td>
+  <td>안전한 일반 빌드/가져오기 경로가 아직 구현되지 않은 경우입니다.</td>
 </tr>
-<tr class="odd">
-<td>버전/프로필 제한</td>
-<td>예: <code>lensfun</code>, <code>onnxruntime</code>,
-<code>svtjpegxs</code>, <code>libvpl</code>, <code>libmfx</code></td>
-<td>FFmpeg 버전, MSYS2 셸 프로필, 패키지/API 요구 사항, pkg-config
-결과에 따라 달라집니다.</td>
+<tr>
+  <td>버전/프로필 제한</td>
+  <td>예: <code>lensfun</code>, <code>onnxruntime</code>, <code>svtjpegxs</code>, <code>libvpl</code>, <code>libmfx</code></td>
+  <td>FFmpeg 버전, MSYS2 셸 프로필, 패키지/API 요구 사항, pkg-config 결과에 따라 달라집니다. 9.0.1에서는 <code>onnxruntime</code>이 <code>ucrt64</code>/<code>clang64</code>에서 가능하고 <code>lensfun</code>은 사용할 수 없습니다.</td>
 </tr>
 </tbody>
 </table>
 <h2 id="전체-라이브러리-카탈로그">전체 라이브러리 카탈로그</h2>
-<p>아래 표는 현재 라이브러리 카탈로그입니다. 패키지 이름의
-<code>&lt;profile&gt;</code>은 MSYS2 셸 프로필의 패키지 접두사에
-해당하며, 실제 빌드에서는 <code>mingw-w64-ucrt-x86_64</code>,
-<code>mingw-w64-x86_64</code>, <code>mingw-w64-clang-x86_64</code> 같이
-빌드 환경에 적절한 패키지를 사용합니다.</p>
-<h3 id="기본-포함-항목공식-ffmpeg-소스">기본 포함 항목(공식 FFmpeg
-소스)</h3>
+<p>아래 표는 현재 라이브러리 카탈로그입니다. 패키지 이름의 <code>&lt;profile&gt;</code>은 MSYS2 셸 프로필의 패키지 접두사에 해당하며, 실제 빌드에서는 <code>mingw-w64-ucrt-x86_64</code>, <code>mingw-w64-x86_64</code>, <code>mingw-w64-clang-x86_64</code> 같이 빌드 환경에 적절한 패키지를 사용합니다.</p>
+<h3 id="기본-포함-항목-공식-ffmpeg-소스">기본 포함 항목(공식 FFmpeg 소스)</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>ffmpeg-program</code></td>
-<td>ffmpeg.exe</td>
-<td>FFmpeg 기본 구성</td>
-<td>기본 포함 / 고정</td>
-<td>기본 포함</td>
-<td>없음</td>
-<td>FFmpeg 소스에 포함</td>
-<td>변환, 필터링, 녹화, 스트리밍, 패키징을 수행하는 기본 명령줄 미디어
-처리 프로그램입니다.</td>
+<tr>
+  <td><code>ffmpeg-program</code></td>
+  <td>ffmpeg.exe</td>
+  <td>FFmpeg 기본 구성</td>
+  <td>기본 포함 / 고정</td>
+  <td>기본 포함</td>
+  <td>없음</td>
+  <td>FFmpeg 소스에 포함</td>
+  <td>변환, 필터링, 녹화, 스트리밍, 패키징을 수행하는 기본 명령줄 미디어 처리 프로그램입니다.</td>
 </tr>
-<tr class="even">
-<td><code>ffprobe-program</code></td>
-<td>ffprobe.exe</td>
-<td>FFmpeg 기본 구성</td>
-<td>기본 포함 / 고정</td>
-<td>기본 포함</td>
-<td>없음</td>
-<td>FFmpeg 소스에 포함</td>
-<td>미디어 파일의 스트림, 코덱, 메타데이터, 챕터, 길이, 내부 구조를
-검사합니다.</td>
+<tr>
+  <td><code>ffprobe-program</code></td>
+  <td>ffprobe.exe</td>
+  <td>FFmpeg 기본 구성</td>
+  <td>기본 포함 / 고정</td>
+  <td>기본 포함</td>
+  <td>없음</td>
+  <td>FFmpeg 소스에 포함</td>
+  <td>미디어 파일의 스트림, 코덱, 메타데이터, 챕터, 길이, 내부 구조를 검사합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>libavutil</code></td>
-<td>libavutil</td>
-<td>FFmpeg 기본 구성</td>
-<td>기본 포함 / 고정</td>
-<td>기본 포함</td>
-<td>없음</td>
-<td>FFmpeg 소스에 포함</td>
-<td>코덱, 필터, 포맷, 도구 전반에서 공유되는 FFmpeg 공통 유틸리티
-코드입니다.</td>
+<tr>
+  <td><code>libavutil</code></td>
+  <td>libavutil</td>
+  <td>FFmpeg 기본 구성</td>
+  <td>기본 포함 / 고정</td>
+  <td>기본 포함</td>
+  <td>없음</td>
+  <td>FFmpeg 소스에 포함</td>
+  <td>코덱, 필터, 포맷, 도구 전반에서 공유되는 FFmpeg 공통 유틸리티 코드입니다.</td>
 </tr>
-<tr class="even">
-<td><code>libavcodec</code></td>
-<td>libavcodec</td>
-<td>FFmpeg 기본 구성</td>
-<td>기본 포함 / 고정</td>
-<td>기본 포함</td>
-<td>없음</td>
-<td>FFmpeg 소스에 포함</td>
-<td>다양한 미디어 형식의 디코딩과 인코딩을 담당하는 FFmpeg의 기본 코덱
-라이브러리입니다.</td>
+<tr>
+  <td><code>libavcodec</code></td>
+  <td>libavcodec</td>
+  <td>FFmpeg 기본 구성</td>
+  <td>기본 포함 / 고정</td>
+  <td>기본 포함</td>
+  <td>없음</td>
+  <td>FFmpeg 소스에 포함</td>
+  <td>다양한 미디어 형식의 디코딩과 인코딩을 담당하는 FFmpeg의 기본 코덱 라이브러리입니다.</td>
 </tr>
-<tr class="odd">
-<td><code>libavformat</code></td>
-<td>libavformat</td>
-<td>FFmpeg 기본 구성</td>
-<td>기본 포함 / 고정</td>
-<td>기본 포함</td>
-<td>없음</td>
-<td>FFmpeg 소스에 포함</td>
-<td>MP4, MOV, MKV, WAV, MPEG-TS 같은 컨테이너를 읽고 쓰는 FFmpeg의 기본
-컨테이너 라이브러리입니다.</td>
+<tr>
+  <td><code>libavformat</code></td>
+  <td>libavformat</td>
+  <td>FFmpeg 기본 구성</td>
+  <td>기본 포함 / 고정</td>
+  <td>기본 포함</td>
+  <td>없음</td>
+  <td>FFmpeg 소스에 포함</td>
+  <td>MP4, MOV, MKV, WAV, MPEG-TS 같은 컨테이너를 읽고 쓰는 FFmpeg의 기본 컨테이너 라이브러리입니다.</td>
 </tr>
-<tr class="even">
-<td><code>libavfilter</code></td>
-<td>libavfilter</td>
-<td>FFmpeg 기본 구성</td>
-<td>기본 포함 / 고정</td>
-<td>기본 포함</td>
-<td>없음</td>
-<td>FFmpeg 소스에 포함</td>
-<td>영상, 오디오, 자막, 스케일링, 오버레이, 효과 처리를 담당하는
-FFmpeg의 기본 필터 라이브러리입니다.</td>
+<tr>
+  <td><code>libavfilter</code></td>
+  <td>libavfilter</td>
+  <td>FFmpeg 기본 구성</td>
+  <td>기본 포함 / 고정</td>
+  <td>기본 포함</td>
+  <td>없음</td>
+  <td>FFmpeg 소스에 포함</td>
+  <td>영상, 오디오, 자막, 스케일링, 오버레이, 효과 처리를 담당하는 FFmpeg의 기본 필터 라이브러리입니다.</td>
 </tr>
-<tr class="odd">
-<td><code>libswscale</code></td>
-<td>libswscale</td>
-<td>FFmpeg 기본 구성</td>
-<td>기본 포함 / 고정</td>
-<td>기본 포함</td>
-<td>없음</td>
-<td>FFmpeg 소스에 포함</td>
-<td>영상 크기와 픽셀 형식을 변환합니다.</td>
+<tr>
+  <td><code>libswscale</code></td>
+  <td>libswscale</td>
+  <td>FFmpeg 기본 구성</td>
+  <td>기본 포함 / 고정</td>
+  <td>기본 포함</td>
+  <td>없음</td>
+  <td>FFmpeg 소스에 포함</td>
+  <td>영상 크기와 픽셀 형식을 변환합니다.</td>
 </tr>
-<tr class="even">
-<td><code>libswresample</code></td>
-<td>libswresample</td>
-<td>FFmpeg 기본 구성</td>
-<td>기본 포함 / 고정</td>
-<td>기본 포함</td>
-<td>없음</td>
-<td>FFmpeg 소스에 포함</td>
-<td>오디오 샘플레이트, 샘플 형식, 채널 레이아웃을 변환합니다.</td>
+<tr>
+  <td><code>libswresample</code></td>
+  <td>libswresample</td>
+  <td>FFmpeg 기본 구성</td>
+  <td>기본 포함 / 고정</td>
+  <td>기본 포함</td>
+  <td>없음</td>
+  <td>FFmpeg 소스에 포함</td>
+  <td>오디오 샘플레이트, 샘플 형식, 채널 레이아웃을 변환합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>native-codecs</code></td>
-<td>FFmpeg 기본 코덱</td>
-<td>FFmpeg 기본 구성</td>
-<td>기본 포함 / 고정</td>
-<td>기본 포함</td>
-<td>없음</td>
-<td>FFmpeg 소스에 포함</td>
-<td>외부 코덱 라이브러리를 더하기 전에 FFmpeg 내부 코덱 기능을
-사용합니다.</td>
+<tr>
+  <td><code>native-codecs</code></td>
+  <td>FFmpeg 기본 코덱</td>
+  <td>FFmpeg 기본 구성</td>
+  <td>기본 포함 / 고정</td>
+  <td>기본 포함</td>
+  <td>없음</td>
+  <td>FFmpeg 소스에 포함</td>
+  <td>외부 코덱 라이브러리를 더하기 전에 FFmpeg 내부 코덱 기능을 사용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>native-formats</code></td>
-<td>기본 형식 및 muxer</td>
-<td>FFmpeg 기본 구성</td>
-<td>기본 포함 / 고정</td>
-<td>기본 포함</td>
-<td>없음</td>
-<td>FFmpeg 소스에 포함</td>
-<td>많은 미디어 컨테이너를 읽고 쓰는 FFmpeg 내부 포맷 기능을
-사용합니다.</td>
+<tr>
+  <td><code>native-formats</code></td>
+  <td>기본 형식 및 muxer</td>
+  <td>FFmpeg 기본 구성</td>
+  <td>기본 포함 / 고정</td>
+  <td>기본 포함</td>
+  <td>없음</td>
+  <td>FFmpeg 소스에 포함</td>
+  <td>많은 미디어 컨테이너를 읽고 쓰는 FFmpeg 내부 포맷 기능을 사용합니다.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="비디오-인코더">비디오 인코더</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>x264</code></td>
-<td>x264 / H.264 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>GPL</td>
-<td><code>--enable-libx264</code></td>
-<td><code>&lt;profile&gt;-libx264</code></td>
-<td>H.264 소프트웨어 인코딩을 지원합니다. 품질, 성능, 폭넓은 호환성으로
-잘 알려진 대표적인 H.264/AVC 인코더입니다.</td>
+<tr>
+  <td><code>x264</code></td>
+  <td>x264 / H.264 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>GPL</td>
+  <td><code>--enable-libx264</code></td>
+  <td><code>&lt;profile&gt;-libx264</code></td>
+  <td>H.264 소프트웨어 인코딩을 지원합니다. 품질, 성능, 폭넓은 호환성으로 잘 알려진 대표적인 H.264/AVC 인코더입니다.</td>
 </tr>
-<tr class="even">
-<td><code>x265</code></td>
-<td>x265 / H.265 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>GPL</td>
-<td><code>--enable-libx265</code></td>
-<td><code>&lt;profile&gt;-x265</code></td>
-<td>비슷한 체감 품질에서 H.264보다 작은 파일을 목표로 하는 HEVC/H.265
-소프트웨어 인코딩을 지원합니다. 압축 효율이 중요할 때 유용합니다.</td>
+<tr>
+  <td><code>x265</code></td>
+  <td>x265 / H.265 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>GPL</td>
+  <td><code>--enable-libx265</code></td>
+  <td><code>&lt;profile&gt;-x265</code></td>
+  <td>비슷한 체감 품질에서 H.264보다 작은 파일을 목표로 하는 HEVC/H.265 소프트웨어 인코딩을 지원합니다. 압축 효율이 중요할 때 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>svt-av1</code></td>
-<td>svt-av1 / AV1 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libsvtav1</code></td>
-<td><code>&lt;profile&gt;-svt-av1</code></td>
-<td>실용적인 속도로 AV1 영상을 인코딩합니다. 최신 압축 효율과 사용
-가능한 처리량을 함께 원할 때 자주 쓰입니다.</td>
+<tr>
+  <td><code>svt-av1</code></td>
+  <td>svt-av1 / AV1 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libsvtav1</code></td>
+  <td><code>&lt;profile&gt;-svt-av1</code></td>
+  <td>실용적인 속도로 AV1 영상을 인코딩합니다. 최신 압축 효율과 사용 가능한 처리량을 함께 원할 때 자주 쓰입니다.</td>
 </tr>
-<tr class="even">
-<td><code>libvpx</code></td>
-<td>libvpx / VP8 및 VP9 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libvpx</code></td>
-<td><code>&lt;profile&gt;-libvpx</code></td>
-<td>WebM과 웹 배포에 자주 쓰이는 VP8, VP9 영상을 만듭니다.</td>
+<tr>
+  <td><code>libvpx</code></td>
+  <td>libvpx / VP8 및 VP9 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvpx</code></td>
+  <td><code>&lt;profile&gt;-libvpx</code></td>
+  <td>WebM과 웹 배포에 자주 쓰이는 VP8, VP9 영상을 만듭니다.</td>
 </tr>
-<tr class="odd">
-<td><code>aom</code></td>
-<td>aom / AV1 레퍼런스 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libaom</code></td>
-<td><code>&lt;profile&gt;-aom</code></td>
-<td>AV1 참조 계열 코덱으로 AV1 인코딩을 지원합니다. 속도보다 품질과 표준
-지향적인 결과가 중요한 경우에 어울립니다.</td>
+<tr>
+  <td><code>aom</code></td>
+  <td>aom / AV1 레퍼런스 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libaom</code></td>
+  <td><code>&lt;profile&gt;-aom</code></td>
+  <td>AV1 참조 계열 코덱으로 AV1 인코딩을 지원합니다. 속도보다 품질과 표준 지향적인 결과가 중요한 경우에 어울립니다.</td>
 </tr>
-<tr class="even">
-<td><code>openh264</code></td>
-<td>openh264 / OpenH264 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libopenh264</code></td>
-<td><code>&lt;profile&gt;-openh264</code></td>
-<td>x264보다 단순한 성격의 H.264 소프트웨어 인코딩을 제공합니다.
-기본적인 H.264 출력이 필요할 때 유용합니다.</td>
+<tr>
+  <td><code>openh264</code></td>
+  <td>openh264 / OpenH264 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopenh264</code></td>
+  <td><code>&lt;profile&gt;-openh264</code></td>
+  <td>x264보다 단순한 성격의 H.264 소프트웨어 인코딩을 제공합니다. 기본적인 H.264 출력이 필요할 때 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>rav1e</code></td>
-<td>rav1e / AV1 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-librav1e</code></td>
-<td><code>&lt;profile&gt;-rav1e</code></td>
-<td>Rust 기반 AV1 소프트웨어 인코딩을 제공합니다. AV1의 속도, 품질,
-인코더 특성을 비교할 때 유용합니다.</td>
+<tr>
+  <td><code>rav1e</code></td>
+  <td>rav1e / AV1 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-librav1e</code></td>
+  <td><code>&lt;profile&gt;-rav1e</code></td>
+  <td>Rust 기반 AV1 소프트웨어 인코딩을 제공합니다. AV1의 속도, 품질, 인코더 특성을 비교할 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>xvid</code></td>
-<td>xvid / MPEG-4 Part 2 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>GPL</td>
-<td><code>--enable-libxvid</code></td>
-<td><code>&lt;profile&gt;-xvidcore</code></td>
-<td>오래된 플레이어와 기기를 위한 MPEG-4 Part 2 영상을 만듭니다.</td>
+<tr>
+  <td><code>xvid</code></td>
+  <td>xvid / MPEG-4 Part 2 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>GPL</td>
+  <td><code>--enable-libxvid</code></td>
+  <td><code>&lt;profile&gt;-xvidcore</code></td>
+  <td>오래된 플레이어와 기기를 위한 MPEG-4 Part 2 영상을 만듭니다.</td>
 </tr>
-<tr class="odd">
-<td><code>theora</code></td>
-<td>theora / Theora 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libtheora</code></td>
-<td><code>&lt;profile&gt;-libtheora</code></td>
-<td>오래된 개방형 비디오 호환성을 위한 Ogg Theora 영상을 만듭니다.</td>
+<tr>
+  <td><code>theora</code></td>
+  <td>theora / Theora 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libtheora</code></td>
+  <td><code>&lt;profile&gt;-libtheora</code></td>
+  <td>오래된 개방형 비디오 호환성을 위한 Ogg Theora 영상을 만듭니다.</td>
 </tr>
-<tr class="even">
-<td><code>kvazaar</code></td>
-<td>Kvazaar (HEVC)</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libkvazaar</code></td>
-<td><code>&lt;profile&gt;-kvazaar</code></td>
-<td>x265가 아닌 경로로 HEVC/H.265 소프트웨어 인코딩을 제공합니다. 다른
-HEVC 인코더 특성이 필요할 때 유용합니다.</td>
+<tr>
+  <td><code>kvazaar</code></td>
+  <td>Kvazaar (HEVC)</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libkvazaar</code></td>
+  <td><code>&lt;profile&gt;-kvazaar</code></td>
+  <td>x265가 아닌 경로로 HEVC/H.265 소프트웨어 인코딩을 제공합니다. 다른 HEVC 인코더 특성이 필요할 때 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>xeve</code></td>
-<td>xeve / EVC 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libxeve</code></td>
-<td><code>&lt;profile&gt;-xeve</code></td>
-<td>테스트와 새로운 코덱 워크플로를 위한 EVC 영상을 만듭니다.</td>
+<tr>
+  <td><code>xeve</code></td>
+  <td>xeve / EVC 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libxeve</code></td>
+  <td><code>&lt;profile&gt;-xeve</code></td>
+  <td>테스트와 새로운 코덱 워크플로를 위한 EVC 영상을 만듭니다.</td>
 </tr>
-<tr class="even">
-<td><code>xeveb</code></td>
-<td>xeveb / EVC 기본 프로파일 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libxeveb</code></td>
-<td><code>&lt;profile&gt;-xeve</code></td>
-<td>EVC의 로열티 없는 부분집합인 EVC 기본 프로파일로 MPEG-5 EVC 인코딩을
-활성화합니다. 메인 xeve 행과 동일한 XEVE 패키지를 사용합니다.</td>
+<tr>
+  <td><code>xeveb</code></td>
+  <td>xeveb / EVC 기본 프로파일 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libxeveb</code></td>
+  <td><code>&lt;profile&gt;-xeve</code></td>
+  <td>EVC의 로열티 없는 부분집합인 EVC 기본 프로파일로 MPEG-5 EVC 인코딩을 활성화합니다. 메인 xeve 행과 동일한 XEVE 패키지를 사용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>oapv</code></td>
-<td>oapv / APV 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-liboapv</code></td>
-<td><code>&lt;profile&gt;-openapv</code></td>
-<td>전문 영상 작업에 쓰이는 APV 인코딩을 지원합니다. 특수한 프로덕션
-워크플로에 유용합니다.</td>
+<tr>
+  <td><code>oapv</code></td>
+  <td>oapv / APV 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-liboapv</code></td>
+  <td><code>&lt;profile&gt;-openapv</code></td>
+  <td>전문 영상 작업에 쓰이는 APV 인코딩을 지원합니다. 특수한 프로덕션 워크플로에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>xavs</code></td>
-<td>xavs / AVS1 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>GPL</td>
-<td><code>--enable-libxavs</code></td>
-<td><code>&lt;profile&gt;-xavs</code></td>
-<td>AVS1(중국 AVS) 형식으로 비디오를 인코딩합니다. AVS1 방송 또는 보관
-자료와 호환할 때 유용합니다. GPL이므로 빌드가 GPL 라이선스로
-이동합니다.</td>
+<tr>
+  <td><code>xavs</code></td>
+  <td>xavs / AVS1 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>GPL</td>
+  <td><code>--enable-libxavs</code></td>
+  <td><code>&lt;profile&gt;-xavs</code></td>
+  <td>AVS1(중국 AVS) 형식으로 비디오를 인코딩합니다. AVS1 방송 또는 보관 자료와 호환할 때 유용합니다. GPL이므로 빌드가 GPL 라이선스로 변경됩니다.</td>
 </tr>
-<tr class="odd">
-<td><code>vvenc</code></td>
-<td>vvenc / VVC/H.266 인코딩</td>
-<td>내부 소스 준비 경로</td>
-<td>선택 가능: 소스 준비/가져오기</td>
-<td>LGPL</td>
-<td><code>--enable-libvvenc</code></td>
-<td>고정된 소스/가져오기 절차로 준비</td>
-<td>차세대 코덱 테스트와 높은 압축 효율 실험을 위한 VVC/H.266 영상을
-만듭니다.</td>
+<tr>
+  <td><code>vvenc</code></td>
+  <td>vvenc / VVC/H.266 인코딩</td>
+  <td>내부 소스 준비 경로</td>
+  <td>선택 가능: 소스 준비/가져오기</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvvenc</code></td>
+  <td>고정된 소스/가져오기 절차로 준비</td>
+  <td>차세대 코덱 테스트와 높은 압축 효율 실험을 위한 VVC/H.266 영상을 만듭니다.</td>
 </tr>
-<tr class="even">
-<td><code>xavs2</code></td>
-<td>xavs2 / AVS2 인코딩</td>
-<td>내부 소스 준비 경로</td>
-<td>선택 가능: 소스 준비/가져오기</td>
-<td>GPL</td>
-<td><code>--enable-libxavs2</code></td>
-<td>고정된 소스/가져오기 절차로 준비</td>
-<td>AVS2 표준이 필요한 작업을 위해 AVS2 영상을 만듭니다. 호환성, 테스트,
-특수 배포에 유용합니다.</td>
+<tr>
+  <td><code>xavs2</code></td>
+  <td>xavs2 / AVS2 인코딩</td>
+  <td>내부 소스 준비 경로</td>
+  <td>선택 가능: 소스 준비/가져오기</td>
+  <td>GPL</td>
+  <td><code>--enable-libxavs2</code></td>
+  <td>고정된 소스/가져오기 절차로 준비</td>
+  <td>AVS2 표준이 필요한 작업을 위해 AVS2 영상을 만듭니다. 호환성, 테스트, 특수 배포에 유용합니다.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="하드웨어-인코더">하드웨어 인코더</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>nvenc</code></td>
-<td>nvenc / NVIDIA GPU 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-ffnvcodec</code></td>
-<td><code>&lt;profile&gt;-ffnvcodec-headers</code></td>
-<td>지원되는 NVIDIA 시스템에서 H.264, HEVC, AV1을 빠르게 인코딩합니다.
-CPU 부담을 낮춘 고속 출력에 유용합니다.</td>
+<tr>
+  <td><code>nvenc</code></td>
+  <td>nvenc / NVIDIA GPU 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-ffnvcodec</code></td>
+  <td><code>&lt;profile&gt;-ffnvcodec-headers</code></td>
+  <td>지원되는 NVIDIA 시스템에서 H.264, HEVC, AV1을 빠르게 인코딩합니다. CPU 부담을 낮춘 고속 출력에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>libvpl</code></td>
-<td>libvpl / Intel oneVPL 하드웨어 가속</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libvpl</code></td>
-<td><code>&lt;profile&gt;-onevpl</code></td>
-<td>최신 Intel Quick Sync 계열 하드웨어 인코딩·디코딩 경로입니다.
-지원되는 Intel GPU에서 낮은 CPU 사용량으로 빠른 영상 처리를 할 때
-유용합니다.</td>
+<tr>
+  <td><code>libvpl</code></td>
+  <td>libvpl / Intel oneVPL 하드웨어 가속</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvpl</code></td>
+  <td><code>&lt;profile&gt;-onevpl</code></td>
+  <td>최신 Intel Quick Sync 계열 하드웨어 인코딩·디코딩 경로입니다. 지원되는 Intel GPU에서 낮은 CPU 사용량으로 빠른 영상 처리를 할 때 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>amf</code></td>
-<td>amf / AMD GPU 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-amf</code></td>
-<td><code>&lt;profile&gt;-amf-headers</code></td>
-<td>지원되는 Radeon 시스템에서 H.264, HEVC, AV1을 빠르게 인코딩합니다.
-속도와 낮은 CPU 사용량이 중요한 작업에 잘 맞습니다.</td>
+<tr>
+  <td><code>amf</code></td>
+  <td>amf / AMD GPU 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-amf</code></td>
+  <td><code>&lt;profile&gt;-amf-headers</code></td>
+  <td>지원되는 Radeon 시스템에서 H.264, HEVC, AV1을 빠르게 인코딩합니다. 속도와 낮은 CPU 사용량이 중요한 작업에 잘 맞습니다.</td>
 </tr>
-<tr class="even">
-<td><code>libmfx</code></td>
-<td>libmfx / 레거시 Intel Media SDK</td>
-<td>내부 소스 준비 경로</td>
-<td>선택 가능: 선택한 FFmpeg 버전과 프로필에서 유효할 때 사용</td>
-<td>LGPL</td>
-<td><code>--enable-libmfx</code></td>
-<td>고정된 소스/가져오기 절차로 준비</td>
-<td>구형 Intel Media SDK 호환 경로입니다. 최신 oneVPL 경로인
-<code>libvpl</code>과 동시에 쓰지 않으며, 선택한 FFmpeg 버전과 MSYS2
-프로필에 맞춰 둘 중 하나만 최종 계획에 남습니다.</td>
+<tr>
+  <td><code>libmfx</code></td>
+  <td>libmfx / 레거시 Intel Media SDK</td>
+  <td>내부 소스 준비 경로</td>
+  <td>선택 가능: 선택한 FFmpeg 버전과 프로필에서 유효할 때 사용</td>
+  <td>LGPL</td>
+  <td><code>--enable-libmfx</code></td>
+  <td>고정된 소스/가져오기 절차로 준비</td>
+  <td>구형 Intel Media SDK 호환 경로입니다. 최신 oneVPL 경로인 <code>libvpl</code>과 동시에 쓰지 않으며, 선택한 FFmpeg 버전과 MSYS2 프로필에 맞춰 둘 중 하나만 최종 계획에 남습니다.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="비디오-디코더">비디오 디코더</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>dav1d</code></td>
-<td>dav1d / AV1 디코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libdav1d</code></td>
-<td><code>&lt;profile&gt;-dav1d</code></td>
-<td>AV1 영상을 빠르게 디코딩합니다. AV1 파일의 재생, 검사, 변환을
-부드럽게 처리할 때 유용합니다.</td>
+<tr>
+  <td><code>dav1d</code></td>
+  <td>dav1d / AV1 디코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libdav1d</code></td>
+  <td><code>&lt;profile&gt;-dav1d</code></td>
+  <td>AV1 영상을 빠르게 디코딩합니다. AV1 파일의 재생, 검사, 변환을 부드럽게 처리할 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>xevd</code></td>
-<td>xevd / EVC 디코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libxevd</code></td>
-<td><code>&lt;profile&gt;-xevd</code></td>
-<td>EVC 영상 스트림을 디코딩합니다. 새로운 Essential Video Coding 자료를
-읽을 때 유용합니다.</td>
+<tr>
+  <td><code>xevd</code></td>
+  <td>xevd / EVC 디코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libxevd</code></td>
+  <td><code>&lt;profile&gt;-xevd</code></td>
+  <td>EVC 영상 스트림을 디코딩합니다. 새로운 Essential Video Coding 자료를 읽을 때 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>xevdb</code></td>
-<td>xevdb / EVC 기본 프로파일 디코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libxevdb</code></td>
-<td><code>&lt;profile&gt;-xevd</code></td>
-<td>EVC 기본 프로파일로 MPEG-5 EVC 디코딩을 활성화합니다. 메인 xevd 행과
-동일한 XEVD 패키지를 사용합니다.</td>
+<tr>
+  <td><code>xevdb</code></td>
+  <td>xevdb / EVC 기본 프로파일 디코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libxevdb</code></td>
+  <td><code>&lt;profile&gt;-xevd</code></td>
+  <td>EVC 기본 프로파일로 MPEG-5 EVC 디코딩을 활성화합니다. 메인 xevd 행과 동일한 XEVD 패키지를 사용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>davs2</code></td>
-<td>libdavs2 / AVS2 디코딩</td>
-<td>내부 소스 준비 경로</td>
-<td>선택 가능: 소스 준비/가져오기</td>
-<td>GPL</td>
-<td><code>--enable-libdavs2</code></td>
-<td>고정된 소스/가져오기 절차로 준비</td>
-<td>AVS2 영상 스트림을 디코딩합니다. AVS2 자료가 포함된 지역 표준, 방송,
-호환성 작업에 유용합니다.</td>
+<tr>
+  <td><code>davs2</code></td>
+  <td>libdavs2 / AVS2 디코딩</td>
+  <td>내부 소스 준비 경로</td>
+  <td>선택 가능: 소스 준비/가져오기</td>
+  <td>GPL</td>
+  <td><code>--enable-libdavs2</code></td>
+  <td>고정된 소스/가져오기 절차로 준비</td>
+  <td>AVS2 영상 스트림을 디코딩합니다. AVS2 자료가 포함된 지역 표준, 방송, 호환성 작업에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>uavs3d</code></td>
-<td>libuavs3d / AVS3 디코딩</td>
-<td>내부 소스 준비 경로</td>
-<td>선택 가능: 소스 준비/가져오기</td>
-<td>LGPL</td>
-<td><code>--enable-libuavs3d</code></td>
-<td>고정된 소스/가져오기 절차로 준비</td>
-<td>AVS3 영상 스트림을 디코딩합니다. AVS3 테스트 자료, 지역 표준, 호환성
-작업에 유용합니다.</td>
+<tr>
+  <td><code>uavs3d</code></td>
+  <td>libuavs3d / AVS3 디코딩</td>
+  <td>내부 소스 준비 경로</td>
+  <td>선택 가능: 소스 준비/가져오기</td>
+  <td>LGPL</td>
+  <td><code>--enable-libuavs3d</code></td>
+  <td>고정된 소스/가져오기 절차로 준비</td>
+  <td>AVS3 영상 스트림을 디코딩합니다. AVS3 테스트 자료, 지역 표준, 호환성 작업에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>lcevc-dec</code></td>
-<td>liblcevc-dec / LCEVC 디코딩</td>
-<td>내부 소스 준비 경로</td>
-<td>선택 가능: 소스 준비/가져오기</td>
-<td>LGPL</td>
-<td><code>--enable-liblcevc-dec</code></td>
-<td>고정된 소스/가져오기 절차로 준비</td>
-<td>기본 영상 스트림을 보강하는 LCEVC 향상 계층을 디코딩합니다. 계층형
-영상 보강 콘텐츠에 유용합니다.</td>
+<tr>
+  <td><code>lcevc-dec</code></td>
+  <td>liblcevc-dec / LCEVC 디코딩</td>
+  <td>내부 소스 준비 경로</td>
+  <td>선택 가능: 소스 준비/가져오기</td>
+  <td>LGPL</td>
+  <td><code>--enable-liblcevc-dec</code></td>
+  <td>고정된 소스/가져오기 절차로 준비</td>
+  <td>기본 영상 스트림을 보강하는 LCEVC 향상 계층을 디코딩합니다. 계층형 영상 보강 콘텐츠에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>avisynthplus</code></td>
-<td>AviSynth+ / 스크립트 기반 비디오 처리</td>
-<td>내부 소스 준비 경로</td>
-<td>선택 가능: 소스 준비/가져오기</td>
-<td>GPL</td>
-<td><code>--enable-avisynth</code></td>
-<td>고정된 소스/가져오기 절차로 준비</td>
-<td>AviSynth 스크립트 기반 영상 처리 체인을 직접 엽니다. 기존 작업이
-AviSynth 필터나 스크립트 처리에 의존할 때 유용합니다.</td>
+<tr>
+  <td><code>avisynthplus</code></td>
+  <td>AviSynth+ / 스크립트 기반 비디오 처리</td>
+  <td>내부 소스 준비 경로</td>
+  <td>선택 가능: 소스 준비/가져오기</td>
+  <td>GPL</td>
+  <td><code>--enable-avisynth</code></td>
+  <td>고정된 소스/가져오기 절차로 준비</td>
+  <td>AviSynth 스크립트 기반 영상 처리 체인을 직접 엽니다. 기존 작업이 AviSynth 필터나 스크립트 처리에 의존할 때 유용합니다.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="이미지-코덱">이미지 코덱</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>png</code></td>
-<td>png / PNG 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td>없음</td>
-<td><code>&lt;profile&gt;-libpng</code></td>
-<td>무손실 정지 이미지와 이미지 시퀀스에 쓰이는 PNG 입력과 출력을
-처리합니다.</td>
+<tr>
+  <td><code>png</code></td>
+  <td>png / PNG 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td>없음</td>
+  <td><code>&lt;profile&gt;-libpng</code></td>
+  <td>무손실 정지 이미지와 이미지 시퀀스에 쓰이는 PNG 입력과 출력을 처리합니다.</td>
 </tr>
-<tr class="even">
-<td><code>webp</code></td>
-<td>webp / WebP 이미지 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libwebp</code></td>
-<td><code>&lt;profile&gt;-libwebp</code></td>
-<td>웹사이트에서 널리 쓰이는 WebP 이미지를 읽고 씁니다. 정지 이미지,
-썸네일, 이미지 시퀀스에 유용합니다.</td>
+<tr>
+  <td><code>webp</code></td>
+  <td>webp / WebP 이미지 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libwebp</code></td>
+  <td><code>&lt;profile&gt;-libwebp</code></td>
+  <td>웹사이트에서 널리 쓰이는 WebP 이미지를 읽고 씁니다. 정지 이미지, 썸네일, 이미지 시퀀스에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>openjpeg</code></td>
-<td>openjpeg / JPEG 2000 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libopenjpeg</code></td>
-<td><code>&lt;profile&gt;-openjpeg2</code></td>
-<td>아카이브, 디지털 시네마, 전문 이미징에서 쓰이는 JPEG 2000 이미지를
-읽고 씁니다.</td>
+<tr>
+  <td><code>openjpeg</code></td>
+  <td>openjpeg / JPEG 2000 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopenjpeg</code></td>
+  <td><code>&lt;profile&gt;-openjpeg2</code></td>
+  <td>아카이브, 디지털 시네마, 전문 이미징에서 쓰이는 JPEG 2000 이미지를 읽고 씁니다.</td>
 </tr>
-<tr class="even">
-<td><code>libjxl</code></td>
-<td>libjxl / JPEG XL 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libjxl</code></td>
-<td><code>&lt;profile&gt;-libjxl</code></td>
-<td>현대적인 고품질 정지 이미지 압축 형식인 JPEG XL을 읽고 씁니다.
-이미지 시퀀스와 고급 이미지 작업에 유용합니다.</td>
+<tr>
+  <td><code>libjxl</code></td>
+  <td>libjxl / JPEG XL 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libjxl</code></td>
+  <td><code>&lt;profile&gt;-libjxl</code></td>
+  <td>현대적인 고품질 정지 이미지 압축 형식인 JPEG XL을 읽고 씁니다. 이미지 시퀀스와 고급 이미지 작업에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>rsvg</code></td>
-<td>rsvg / SVG 렌더링</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-librsvg</code></td>
-<td><code>&lt;profile&gt;-librsvg</code></td>
-<td>SVG 벡터 그래픽을 일반 이미지 프레임으로 렌더링합니다. 로고,
-오버레이, 그래픽 자산에 유용합니다.</td>
+<tr>
+  <td><code>rsvg</code></td>
+  <td>rsvg / SVG 렌더링</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-librsvg</code></td>
+  <td><code>&lt;profile&gt;-librsvg</code></td>
+  <td>SVG 벡터 그래픽을 일반 이미지 프레임으로 렌더링합니다. 로고, 오버레이, 그래픽 자산에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>snappy</code></td>
-<td>snappy / Snappy 압축</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libsnappy</code></td>
-<td><code>&lt;profile&gt;-snappy</code></td>
-<td>일부 포맷 내부에서 쓰이는 빠른 Snappy 데이터 압축을 제공합니다.</td>
+<tr>
+  <td><code>snappy</code></td>
+  <td>snappy / Snappy 압축</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libsnappy</code></td>
+  <td><code>&lt;profile&gt;-snappy</code></td>
+  <td>일부 포맷 내부에서 쓰이는 빠른 Snappy 데이터 압축을 제공합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>lcms2</code></td>
-<td>lcms2 / 색상 관리</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-lcms2</code></td>
-<td><code>&lt;profile&gt;-lcms2</code></td>
-<td>색상 프로파일 관리를 적용해 더 정확한 색 변환을 수행합니다. 색
-표현을 보존해야 할 때 유용합니다.</td>
+<tr>
+  <td><code>lcms2</code></td>
+  <td>lcms2 / 색상 관리</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-lcms2</code></td>
+  <td><code>&lt;profile&gt;-lcms2</code></td>
+  <td>색상 프로파일 관리를 적용해 더 정확한 색 변환을 수행합니다. 색 표현을 보존해야 할 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>svtjpegxs</code></td>
-<td>svtjpegxs / JPEG XS 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>버전/프로필 조건에 따라 제외 또는 경고 처리</td>
-<td>LGPL</td>
-<td><code>--enable-libsvtjpegxs</code></td>
-<td><code>&lt;profile&gt;-svt-jpeg-xs</code>, <code>git</code>,
-<code>&lt;profile&gt;-cmake</code>, <code>&lt;profile&gt;-ninja</code>,
-<code>&lt;profile&gt;-yasm</code></td>
-<td>저지연 전문 미디어 작업을 위한 JPEG XS 영상을 만듭니다. 선택한
-FFmpeg 소스와 설치된 패키지가 요구 API를 맞출 때만 사용할 수 있는
-항목입니다.</td>
+<tr>
+  <td><code>svtjpegxs</code></td>
+  <td>svtjpegxs / JPEG XS 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>FFmpeg 9.0.1에서 선택 가능, 이전 버전은 버전 조건 적용</td>
+  <td>LGPL</td>
+  <td><code>--enable-libsvtjpegxs</code></td>
+  <td><code>&lt;profile&gt;-svt-jpeg-xs</code>, <code>git</code>, <code>&lt;profile&gt;-cmake</code>, <code>&lt;profile&gt;-ninja</code>, <code>&lt;profile&gt;-yasm</code></td>
+  <td>저지연 전문 미디어 작업을 위한 JPEG XS 영상을 만듭니다.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="필터와-처리">필터와 처리</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>zimg</code></td>
-<td>zimg / 고품질 스케일링</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libzimg</code></td>
-<td><code>&lt;profile&gt;-zimg</code></td>
-<td>이미지 리사이즈, 픽셀 형식 변환, 색 처리를 더 깨끗하게 수행합니다.
-정교한 영상 변환에 유용합니다.</td>
+<tr>
+  <td><code>zimg</code></td>
+  <td>zimg / 고품질 스케일링</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libzimg</code></td>
+  <td><code>&lt;profile&gt;-zimg</code></td>
+  <td>이미지 리사이즈, 픽셀 형식 변환, 색 처리를 더 깨끗하게 수행합니다. 정교한 영상 변환에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>libplacebo</code></td>
-<td>libplacebo / GPU 비디오 처리</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libplacebo</code>, <code>--enable-vulkan</code></td>
-<td><code>&lt;profile&gt;-libplacebo</code>,
-<code>&lt;profile&gt;-vulkan-loader</code>,
-<code>&lt;profile&gt;-vulkan-headers</code></td>
-<td>스케일링, 색 변환, 톤 매핑, 렌더링 경로에 고품질 GPU 영상 처리를
-제공합니다.</td>
+<tr>
+  <td><code>libplacebo</code></td>
+  <td>libplacebo / GPU 비디오 처리</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libplacebo</code>, <code>--enable-vulkan</code></td>
+  <td><code>&lt;profile&gt;-libplacebo</code>, <code>&lt;profile&gt;-vulkan-loader</code>, <code>&lt;profile&gt;-vulkan-headers</code></td>
+  <td>스케일링, 색 변환, 톤 매핑, 렌더링 경로에 고품질 GPU 영상 처리를 제공합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>vmaf</code></td>
-<td>vmaf / 비디오 품질 측정</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libvmaf</code></td>
-<td><code>&lt;profile&gt;-vmaf</code></td>
-<td>인코딩 결과를 기준 영상과 비교해 지각 품질을 측정합니다. 압축 설정을
-평가할 때 유용합니다.</td>
+<tr>
+  <td><code>vmaf</code></td>
+  <td>vmaf / 비디오 품질 측정</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvmaf</code></td>
+  <td><code>&lt;profile&gt;-vmaf</code></td>
+  <td>인코딩 결과를 기준 영상과 비교해 지각 품질을 측정합니다. 압축 설정을 평가할 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>vidstab</code></td>
-<td>vidstab / 비디오 흔들림 보정</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libvidstab</code></td>
-<td><code>&lt;profile&gt;-vid.stab</code></td>
-<td>카메라 흔들림을 줄여 손떨림이 있는 영상을 더 안정적으로 보이게
-합니다.</td>
+<tr>
+  <td><code>vidstab</code></td>
+  <td>vidstab / 비디오 흔들림 보정</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvidstab</code></td>
+  <td><code>&lt;profile&gt;-vid.stab</code></td>
+  <td>카메라 흔들림을 줄여 손떨림이 있는 영상을 더 안정적으로 보이게 합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>opencolorio</code></td>
-<td>opencolorio / 전문 색상 관리</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libopencolorio</code></td>
-<td><code>&lt;profile&gt;-opencolorio</code></td>
-<td>영화, 애니메이션, 후반작업에 맞는 전문 색상 관리를 적용합니다.</td>
+<tr>
+  <td><code>opencolorio</code></td>
+  <td>opencolorio / 전문 색상 관리</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopencolorio</code></td>
+  <td><code>&lt;profile&gt;-opencolorio</code></td>
+  <td>영화, 애니메이션, 후반작업에 맞는 전문 색상 관리를 적용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>cairo</code></td>
-<td>cairo / 2D 그래픽 렌더링</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-cairo</code></td>
-<td><code>&lt;profile&gt;-cairo</code></td>
-<td>생성 그래픽, 오버레이, 필터 시각 요소에 쓸 2D 벡터 드로잉을
-제공합니다. 도형이나 그래픽 요소를 영상에 그릴 때 유용합니다.</td>
+<tr>
+  <td><code>cairo</code></td>
+  <td>cairo / 2D 그래픽 렌더링</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-cairo</code></td>
+  <td><code>&lt;profile&gt;-cairo</code></td>
+  <td>생성 그래픽, 오버레이, 필터 시각 요소에 쓸 2D 벡터 드로잉을 제공합니다. 도형이나 그래픽 요소를 영상에 그릴 때 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>opencl</code></td>
-<td>opencl / OpenCL 처리</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-opencl</code></td>
-<td><code>&lt;profile&gt;-opencl-icd</code>,
-<code>&lt;profile&gt;-opencl-headers</code></td>
-<td>OpenCL을 지원하는 GPU나 가속기에서 일부 compute 필터를 실행합니다.
-무거운 이미지 처리를 분산할 때 유용합니다.</td>
+<tr>
+  <td><code>opencl</code></td>
+  <td>opencl / OpenCL 처리</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-opencl</code></td>
+  <td><code>&lt;profile&gt;-opencl-icd</code>, <code>&lt;profile&gt;-opencl-headers</code></td>
+  <td>OpenCL을 지원하는 GPU나 가속기에서 일부 compute 필터를 실행합니다. 무거운 이미지 처리를 분산할 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>shaderc</code></td>
-<td>shaderc / Vulkan 셰이더 컴파일러</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libshaderc</code></td>
-<td><code>&lt;profile&gt;-shaderc</code></td>
-<td>GPU 기반 영상 필터에 쓰이는 셰이더 프로그램을 컴파일합니다. 고급
-렌더링과 GPU 처리 경로에 유용합니다.</td>
+<tr>
+  <td><code>shaderc</code></td>
+  <td>shaderc / Vulkan 셰이더 컴파일러</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>FFmpeg 9.0.1에서 패키지/도구로 선택 가능</td>
+  <td>LGPL</td>
+  <td>FFmpeg 9.0.1에서는 없음</td>
+  <td><code>&lt;profile&gt;-shaderc</code></td>
+  <td>FFmpeg 9에서 <code>--enable-libshaderc</code>가 제거되었습니다. 패키지는 Vulkan 셰이더 빌드 도구로 설치할 수 있으며, 이전 FFmpeg 버전에서는 configure 스위치를 사용할 수 있습니다.</td>
 </tr>
-<tr class="odd">
-<td><code>glslang</code></td>
-<td>glslang / GLSL 셰이더 컴파일러</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libglslang</code></td>
-<td><code>&lt;profile&gt;-glslang</code></td>
-<td>GPU 기반 영상 처리에 쓰이는 GLSL 셰이더 코드를 컴파일합니다. 고급
-그래픽 및 컴퓨트형 필터 경로에 유용합니다.</td>
+<tr>
+  <td><code>glslang</code></td>
+  <td>glslang / GLSL 셰이더 컴파일러</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>FFmpeg 9.0.1에서 패키지/도구로 선택 가능</td>
+  <td>LGPL</td>
+  <td>FFmpeg 9.0.1에서는 없음</td>
+  <td><code>&lt;profile&gt;-glslang</code></td>
+  <td>FFmpeg 9에서 <code>--enable-libglslang</code>가 제거되었습니다. 패키지는 Vulkan 셰이더 빌드 도구로 설치할 수 있으며, 이전 FFmpeg 버전에서는 configure 스위치를 사용할 수 있습니다.</td>
 </tr>
-<tr class="even">
-<td><code>frei0r</code></td>
-<td>frei0r / 추가 비디오 효과</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>GPL</td>
-<td><code>--enable-frei0r</code></td>
-<td><code>&lt;profile&gt;-frei0r-plugins</code></td>
-<td>기본 필터 외의 창의적인 영상 효과와 플러그인을 제공합니다.
-스타일화된 영상 처리에 유용합니다.</td>
+<tr>
+  <td><code>frei0r</code></td>
+  <td>frei0r / 추가 비디오 효과</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>GPL</td>
+  <td><code>--enable-frei0r</code></td>
+  <td><code>&lt;profile&gt;-frei0r-plugins</code></td>
+  <td>기본 필터 외의 창의적인 영상 효과와 플러그인을 제공합니다. 스타일화된 영상 처리에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>opencv</code></td>
-<td>opencv / 컴퓨터 비전 필터</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libopencv</code></td>
-<td><code>&lt;profile&gt;-opencv</code></td>
-<td>이미지 분석과 실험적 시각 필터를 위한 컴퓨터 비전 처리를
-제공합니다.</td>
+<tr>
+  <td><code>opencv</code></td>
+  <td>opencv / 컴퓨터 비전 필터</td>
+  <td>내부 소스 준비 경로</td>
+  <td>선택 가능: 고정 버전 소스 빌드</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopencv</code></td>
+  <td>OpenCV 4.11.0 소스 (<code>core</code> + <code>imgproc</code>)</td>
+  <td>FFmpeg가 요구하는 레거시 OpenCV C API를 제공합니다. 현재 MSYS2 OpenCV 5에서는 해당 API와 호환 경로가 제거되어 4.11.0을 소스에서 준비합니다.</td>
 </tr>
-<tr class="even">
-<td><code>ladspa</code></td>
-<td>ladspa / LADSPA 오디오 플러그인</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-ladspa</code></td>
-<td><code>&lt;profile&gt;-ladspa-sdk</code>,
-<code>&lt;profile&gt;-dlfcn</code></td>
-<td>LADSPA 오디오 효과 플러그인을 불러와 추가 오디오 처리를 수행합니다.
-기존 플러그인 체인을 미디어 변환에 활용할 때 유용합니다.</td>
+<tr>
+  <td><code>ladspa</code></td>
+  <td>ladspa / LADSPA 오디오 플러그인</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-ladspa</code></td>
+  <td><code>&lt;profile&gt;-ladspa-sdk</code>, <code>&lt;profile&gt;-dlfcn</code></td>
+  <td>LADSPA 오디오 효과 플러그인을 불러와 추가 오디오 처리를 수행합니다. 기존 플러그인 체인을 미디어 변환에 활용할 때 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>lv2</code></td>
-<td>lv2 / LV2 오디오 플러그인</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-lv2</code></td>
-<td><code>&lt;profile&gt;-lilv</code></td>
-<td>LV2 오디오 플러그인을 불러와 더 고급 오디오 효과와 처리 체인을
-사용할 수 있게 합니다.</td>
+<tr>
+  <td><code>lv2</code></td>
+  <td>lv2 / LV2 오디오 플러그인</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-lv2</code></td>
+  <td><code>&lt;profile&gt;-lilv</code></td>
+  <td>LV2 오디오 플러그인을 불러와 더 고급 오디오 효과와 처리 체인을 사용할 수 있게 합니다.</td>
 </tr>
-<tr class="even">
-<td><code>qrencode</code></td>
-<td>qrencode / QR 코드 생성</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libqrencode</code></td>
-<td><code>&lt;profile&gt;-qrencode</code></td>
-<td>이미지나 영상 프레임에 넣을 수 있는 QR 코드를 생성합니다.</td>
+<tr>
+  <td><code>qrencode</code></td>
+  <td>qrencode / QR 코드 생성</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libqrencode</code></td>
+  <td><code>&lt;profile&gt;-qrencode</code></td>
+  <td>이미지나 영상 프레임에 넣을 수 있는 QR 코드를 생성합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>cuda-nvcc</code></td>
-<td>cuda-nvcc / NVIDIA CUDA 필터 컴파일</td>
-<td>외부 SDK/가져오기 경로</td>
-<td>차단: 일반 준비 절차 없음</td>
-<td>LGPL</td>
-<td><code>--enable-cuda-nvcc</code></td>
-<td>일반 준비 절차 없음</td>
-<td>FFmpeg의 CUDA 가속 필터를 NVIDIA nvcc 컴파일러로 컴파일합니다.
-nvcc는 독점 CUDA Toolkit에만 포함되어 있으며 MSYS2 패키지로 제공되지
-않습니다.</td>
+<tr>
+  <td><code>cuda-nvcc</code></td>
+  <td>cuda-nvcc / NVIDIA CUDA 필터 컴파일</td>
+  <td>외부 SDK/가져오기 경로</td>
+  <td>차단: 일반 준비 절차 없음</td>
+  <td>LGPL</td>
+  <td><code>--enable-cuda-nvcc</code></td>
+  <td>일반 준비 절차 없음</td>
+  <td>FFmpeg의 CUDA 가속 필터를 NVIDIA nvcc 컴파일러로 컴파일합니다. nvcc는 독점 CUDA Toolkit에만 포함되어 있으며 MSYS2 패키지로 제공되지 않습니다.</td>
 </tr>
-<tr class="even">
-<td><code>lensfun</code></td>
-<td>lensfun / 렌즈 보정</td>
-<td>MSYS2 패키지 경로</td>
-<td>버전/프로필 조건에 따라 제외 또는 차단</td>
-<td>LGPL</td>
-<td><code>--enable-liblensfun</code></td>
-<td><code>&lt;profile&gt;-lensfun</code></td>
-<td>렌즈 왜곡, 비네팅, 카메라 렌즈 특유의 결함을 보정합니다. 선택한
-FFmpeg 버전이 요구하는 lensfun API를 패키지가 만족할 때만 사용할 수
-있습니다.</td>
+<tr>
+  <td><code>lensfun</code></td>
+  <td>lensfun / 렌즈 보정</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>현재 FFmpeg 9.0.1 카탈로그에서는 사용 불가</td>
+  <td>LGPL</td>
+  <td><code>--enable-liblensfun</code></td>
+  <td><code>&lt;profile&gt;-lensfun</code></td>
+  <td>FFmpeg 자체에는 스위치가 있지만 현재 패키지/API 조합이 9.0.1 요구 조건을 만족하지 않아 차단합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>vapoursynth</code></td>
-<td>VapourSynth / 스크립트 기반 비디오 처리</td>
-<td>MSYS2 패키지 경로</td>
-<td>UI 비활성화</td>
-<td>LGPL</td>
-<td><code>--enable-vapoursynth</code></td>
-<td><code>&lt;profile&gt;-vapoursynth</code></td>
-<td>VapourSynth 스크립트 기반 영상 처리 체인을 엽니다. 고급 스크립트
-필터링 결과를 미디어 작업에 넣을 때 유용합니다.</td>
+<tr>
+  <td><code>vapoursynth</code></td>
+  <td>VapourSynth / 스크립트 기반 비디오 처리</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>UI 비활성화</td>
+  <td>LGPL</td>
+  <td><code>--enable-vapoursynth</code></td>
+  <td><code>&lt;profile&gt;-vapoursynth</code></td>
+  <td>VapourSynth 스크립트 기반 영상 처리 체인을 엽니다. 고급 스크립트 필터링 결과를 미디어 작업에 넣을 때 유용합니다.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="오디오">오디오</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>opus</code></td>
-<td>opus / Opus 오디오 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libopus</code></td>
-<td><code>&lt;profile&gt;-opus</code></td>
-<td>음성, 음악, 스트리밍, 저지연 통신에 적합한 현대적인 Opus 오디오를
-만듭니다.</td>
+<tr>
+  <td><code>opus</code></td>
+  <td>opus / Opus 오디오 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopus</code></td>
+  <td><code>&lt;profile&gt;-opus</code></td>
+  <td>음성, 음악, 스트리밍, 저지연 통신에 적합한 현대적인 Opus 오디오를 만듭니다.</td>
 </tr>
-<tr class="even">
-<td><code>fdk-aac</code></td>
-<td>fdk-aac / AAC 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>비자유</td>
-<td><code>--enable-libfdk-aac</code>, <code>--enable-nonfree</code></td>
-<td><code>&lt;profile&gt;-fdk-aac</code></td>
-<td>MP4, 모바일 기기, 스트리밍, 웹 재생에 적합한 고품질 AAC 오디오를
-만듭니다. AAC 품질이 중요할 때 많이 쓰입니다.</td>
+<tr>
+  <td><code>fdk-aac</code></td>
+  <td>fdk-aac / AAC 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>비자유</td>
+  <td><code>--enable-libfdk-aac</code>, <code>--enable-nonfree</code></td>
+  <td><code>&lt;profile&gt;-fdk-aac</code></td>
+  <td>MP4, 모바일 기기, 스트리밍, 웹 재생에 적합한 고품질 AAC 오디오를 만듭니다. AAC 품질이 중요할 때 많이 쓰입니다.</td>
 </tr>
-<tr class="odd">
-<td><code>mp3lame</code></td>
-<td>mp3lame / MP3 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libmp3lame</code></td>
-<td><code>&lt;profile&gt;-lame</code></td>
-<td>거의 모든 장치와 플레이어에서 재생되는 MP3 오디오를 만듭니다.
-호환성이 가장 중요할 때 유용합니다.</td>
+<tr>
+  <td><code>mp3lame</code></td>
+  <td>mp3lame / MP3 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libmp3lame</code></td>
+  <td><code>&lt;profile&gt;-lame</code></td>
+  <td>거의 모든 장치와 플레이어에서 재생되는 MP3 오디오를 만듭니다. 호환성이 가장 중요할 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>vorbis</code></td>
-<td>vorbis / Vorbis 오디오 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libvorbis</code></td>
-<td><code>&lt;profile&gt;-libvorbis</code></td>
-<td>Ogg 워크플로에 잘 맞는 Vorbis 오디오를 만듭니다. 음악과 일반
-오디오에 쓰이는 개방형 형식입니다.</td>
+<tr>
+  <td><code>vorbis</code></td>
+  <td>vorbis / Vorbis 오디오 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvorbis</code></td>
+  <td><code>&lt;profile&gt;-libvorbis</code></td>
+  <td>Ogg 워크플로에 잘 맞는 Vorbis 오디오를 만듭니다. 음악과 일반 오디오에 쓰이는 개방형 형식입니다.</td>
 </tr>
-<tr class="odd">
-<td><code>soxr</code></td>
-<td>soxr / 고품질 오디오 리샘플링</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libsoxr</code></td>
-<td><code>&lt;profile&gt;-libsoxr</code></td>
-<td>고품질 오디오 샘플레이트 변환을 제공합니다. 오디오 rate를 바꾸면서
-선명도를 유지할 때 유용합니다.</td>
+<tr>
+  <td><code>soxr</code></td>
+  <td>soxr / 고품질 오디오 리샘플링</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libsoxr</code></td>
+  <td><code>&lt;profile&gt;-libsoxr</code></td>
+  <td>고품질 오디오 샘플레이트 변환을 제공합니다. 오디오 rate를 바꾸면서 선명도를 유지할 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>rubberband</code></td>
-<td>rubberband / 템포 및 피치 변경</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>GPL</td>
-<td><code>--enable-librubberband</code></td>
-<td><code>&lt;profile&gt;-rubberband</code></td>
-<td>오디오 속도와 피치를 더 좋은 품질로 바꿉니다. 음악, 대사 타이밍,
-음정 조정에 유용합니다.</td>
+<tr>
+  <td><code>rubberband</code></td>
+  <td>rubberband / 템포 및 피치 변경</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>GPL</td>
+  <td><code>--enable-librubberband</code></td>
+  <td><code>&lt;profile&gt;-rubberband</code></td>
+  <td>오디오 속도와 피치를 더 좋은 품질로 바꿉니다. 음악, 대사 타이밍, 음정 조정에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>chromaprint</code></td>
-<td>chromaprint / 오디오 지문</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-chromaprint</code></td>
-<td><code>&lt;profile&gt;-chromaprint</code></td>
-<td>트랙 식별과 매칭에 쓰이는 작은 오디오 지문을 만듭니다. 파일명이나
-메타데이터가 없어도 오디오를 알아볼 때 유용합니다.</td>
+<tr>
+  <td><code>chromaprint</code></td>
+  <td>chromaprint / 오디오 지문</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-chromaprint</code></td>
+  <td><code>&lt;profile&gt;-chromaprint</code></td>
+  <td>트랙 식별과 매칭에 쓰이는 작은 오디오 지문을 만듭니다. 파일명이나 메타데이터가 없어도 오디오를 알아볼 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>twolame</code></td>
-<td>twolame / MP2 오디오 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libtwolame</code></td>
-<td><code>&lt;profile&gt;-twolame</code></td>
-<td>방송, DVD, 오래된 미디어 작업에 쓰이는 MP2 오디오를 만듭니다.</td>
+<tr>
+  <td><code>twolame</code></td>
+  <td>twolame / MP2 오디오 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libtwolame</code></td>
+  <td><code>&lt;profile&gt;-twolame</code></td>
+  <td>방송, DVD, 오래된 미디어 작업에 쓰이는 MP2 오디오를 만듭니다.</td>
 </tr>
-<tr class="odd">
-<td><code>speex</code></td>
-<td>speex / Speex 음성 오디오</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libspeex</code></td>
-<td><code>&lt;profile&gt;-speex</code></td>
-<td>오래된 Speex 음성 오디오를 처리합니다. 레거시 음성 녹음과 통신
-자료에 유용합니다.</td>
+<tr>
+  <td><code>speex</code></td>
+  <td>speex / Speex 음성 오디오</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libspeex</code></td>
+  <td><code>&lt;profile&gt;-speex</code></td>
+  <td>오래된 Speex 음성 오디오를 처리합니다. 레거시 음성 녹음과 통신 자료에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>opencore-amr</code></td>
-<td>opencore-amr / AMR 오디오 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libopencore-amrnb</code>,
-<code>--enable-libopencore-amrwb</code></td>
-<td><code>&lt;profile&gt;-opencore-amr</code></td>
-<td>오래된 모바일 및 음성 시스템에서 쓰인 AMR 음성 오디오를 읽고
-씁니다.</td>
+<tr>
+  <td><code>opencore-amr</code></td>
+  <td>opencore-amr / AMR 오디오 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopencore-amrnb</code>, <code>--enable-libopencore-amrwb</code></td>
+  <td><code>&lt;profile&gt;-opencore-amr</code></td>
+  <td>오래된 모바일 및 음성 시스템에서 쓰인 AMR 음성 오디오를 읽고 씁니다.</td>
 </tr>
-<tr class="odd">
-<td><code>vo-amrwbenc</code></td>
-<td>vo-amrwbenc / AMR-WB 음성 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libvo-amrwbenc</code></td>
-<td><code>&lt;profile&gt;-vo-amrwbenc</code></td>
-<td>모바일식 음성 호환성을 위한 AMR-WB 광대역 음성 오디오를
-만듭니다.</td>
+<tr>
+  <td><code>vo-amrwbenc</code></td>
+  <td>vo-amrwbenc / AMR-WB 음성 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libvo-amrwbenc</code></td>
+  <td><code>&lt;profile&gt;-vo-amrwbenc</code></td>
+  <td>모바일식 음성 호환성을 위한 AMR-WB 광대역 음성 오디오를 만듭니다.</td>
 </tr>
-<tr class="even">
-<td><code>gsm</code></td>
-<td>gsm / GSM 오디오 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libgsm</code></td>
-<td><code>&lt;profile&gt;-gsm</code></td>
-<td>오래된 GSM 음성 오디오를 처리합니다. 과거 통화 녹음, 전화 음성 자료,
-호환성 작업에 유용합니다.</td>
+<tr>
+  <td><code>gsm</code></td>
+  <td>gsm / GSM 오디오 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libgsm</code></td>
+  <td><code>&lt;profile&gt;-gsm</code></td>
+  <td>오래된 GSM 음성 오디오를 처리합니다. 과거 통화 녹음, 전화 음성 자료, 호환성 작업에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>lc3</code></td>
-<td>lc3 / LC3 오디오 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-liblc3</code></td>
-<td><code>&lt;profile&gt;-liblc3</code></td>
-<td>현대적인 저복잡도 통신 오디오에 쓰이는 LC3를 처리합니다. 블루투스 및
-음성 중심 호환성 작업에 유용합니다.</td>
+<tr>
+  <td><code>lc3</code></td>
+  <td>lc3 / LC3 오디오 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-liblc3</code></td>
+  <td><code>&lt;profile&gt;-liblc3</code></td>
+  <td>현대적인 저복잡도 통신 오디오에 쓰이는 LC3를 처리합니다. 블루투스 및 음성 중심 호환성 작업에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>ilbc</code></td>
-<td>ilbc / iLBC 음성 오디오</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libilbc</code></td>
-<td><code>&lt;profile&gt;-libilbc</code></td>
-<td>오래된 인터넷 음성 통신에서 쓰인 iLBC 음성 오디오를 지원합니다. 음성
-통화 녹음과 호환성 작업에 유용합니다.</td>
+<tr>
+  <td><code>ilbc</code></td>
+  <td>ilbc / iLBC 음성 오디오</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libilbc</code></td>
+  <td><code>&lt;profile&gt;-libilbc</code></td>
+  <td>오래된 인터넷 음성 통신에서 쓰인 iLBC 음성 오디오를 지원합니다. 음성 통화 녹음과 호환성 작업에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>whisper</code></td>
-<td>whisper / 음성 인식</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-whisper</code></td>
-<td><code>&lt;profile&gt;-whisper.cpp</code>,
-<code>&lt;profile&gt;-ggml</code></td>
-<td>whisper.cpp 음성 인식으로 말소리를 텍스트로 변환합니다. 전사와 자막
-생성에 유용합니다.</td>
+<tr>
+  <td><code>whisper</code></td>
+  <td>whisper / 음성 인식</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-whisper</code></td>
+  <td><code>&lt;profile&gt;-whisper.cpp</code>, <code>&lt;profile&gt;-ggml</code></td>
+  <td>whisper.cpp 음성 인식으로 말소리를 텍스트로 변환합니다. 전사와 자막 생성에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>mysofa</code></td>
-<td>mysofa / 공간 음향 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libmysofa</code></td>
-<td><code>&lt;profile&gt;-libmysofa</code></td>
-<td>헤드폰 기반 3D 오디오 렌더링에 필요한 공간 오디오 필터 데이터를
-제공합니다.</td>
+<tr>
+  <td><code>mysofa</code></td>
+  <td>mysofa / 공간 음향 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libmysofa</code></td>
+  <td><code>&lt;profile&gt;-libmysofa</code></td>
+  <td>헤드폰 기반 3D 오디오 렌더링에 필요한 공간 오디오 필터 데이터를 제공합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>bs2b</code></td>
-<td>bs2b / 헤드폰 크로스피드</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libbs2b</code></td>
-<td><code>&lt;profile&gt;-libbs2b</code></td>
-<td>헤드폰용 크로스피드를 적용해 좌우가 과하게 분리된 스테레오를 더
-스피커처럼 들리게 만듭니다. 헤드폰 청취용 오디오 처리에 유용합니다.</td>
+<tr>
+  <td><code>bs2b</code></td>
+  <td>bs2b / 헤드폰 크로스피드</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libbs2b</code></td>
+  <td><code>&lt;profile&gt;-libbs2b</code></td>
+  <td>헤드폰용 크로스피드를 적용해 좌우가 과하게 분리된 스테레오를 더 스피커처럼 들리게 만듭니다. 헤드폰 청취용 오디오 처리에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>gme</code></td>
-<td>gme / 게임 음악 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libgme</code></td>
-<td><code>&lt;profile&gt;-libgme</code></td>
-<td>고전 콘솔과 시스템의 게임 음악 형식을 읽습니다. 칩튠 계열 소스의
-재생이나 변환에 유용합니다.</td>
+<tr>
+  <td><code>gme</code></td>
+  <td>gme / 게임 음악 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libgme</code></td>
+  <td><code>&lt;profile&gt;-libgme</code></td>
+  <td>고전 콘솔과 시스템의 게임 음악 형식을 읽습니다. 칩튠 계열 소스의 재생이나 변환에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>shine</code></td>
-<td>shine / 고정소수점 MP3 인코딩</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libshine</code></td>
-<td><code>&lt;profile&gt;-shine</code></td>
-<td>간단한 fixed-point MP3 인코더로 MP3 오디오를 만듭니다. 제약이 있거나
-예측 가능한 동작이 필요한 경우에 가깝습니다.</td>
+<tr>
+  <td><code>shine</code></td>
+  <td>shine / 고정소수점 MP3 인코딩</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libshine</code></td>
+  <td><code>&lt;profile&gt;-shine</code></td>
+  <td>간단한 fixed-point MP3 인코더로 MP3 오디오를 만듭니다. 제약이 있거나 예측 가능한 동작이 필요한 경우에 가깝습니다.</td>
 </tr>
-<tr class="even">
-<td><code>codec2</code></td>
-<td>codec2 / 저비트레이트 음성 오디오</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libcodec2</code></td>
-<td><code>&lt;profile&gt;-codec2</code></td>
-<td>무전, 음성 통신, 실험용 작업에 맞는 초저비트레이트 음성 코딩을
-지원합니다. 아주 작은 용량으로 말소리를 전달할 때 유용합니다.</td>
+<tr>
+  <td><code>codec2</code></td>
+  <td>codec2 / 저비트레이트 음성 오디오</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libcodec2</code></td>
+  <td><code>&lt;profile&gt;-codec2</code></td>
+  <td>무전, 음성 통신, 실험용 작업에 맞는 초저비트레이트 음성 코딩을 지원합니다. 아주 작은 용량으로 말소리를 전달할 때 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>mpeghdec</code></td>
-<td>libmpeghdec / MPEG-H 오디오 디코딩</td>
-<td>내부 소스 준비 경로</td>
-<td>선택 가능: 소스 준비/가져오기</td>
-<td>비자유</td>
-<td><code>--enable-libmpeghdec</code>,
-<code>--enable-nonfree</code></td>
-<td>고정된 소스/가져오기 절차로 준비</td>
-<td>몰입형 및 객체 기반 오디오 콘텐츠를 위한 MPEG-H 3D Audio를
-디코딩합니다.</td>
+<tr>
+  <td><code>mpeghdec</code></td>
+  <td>libmpeghdec / MPEG-H 오디오 디코딩</td>
+  <td>내부 소스 준비 경로</td>
+  <td>선택 가능: 소스 준비/가져오기</td>
+  <td>비자유</td>
+  <td><code>--enable-libmpeghdec</code>, <code>--enable-nonfree</code></td>
+  <td>고정된 소스/가져오기 절차로 준비</td>
+  <td>몰입형 및 객체 기반 오디오 콘텐츠를 위한 MPEG-H 3D Audio를 디코딩합니다.</td>
 </tr>
-<tr class="even">
-<td><code>pocketsphinx</code></td>
-<td>pocketsphinx / 음성 인식</td>
-<td>내부 소스 준비 경로</td>
-<td>차단: 일반 준비 절차 없음</td>
-<td>LGPL</td>
-<td><code>--enable-pocketsphinx</code></td>
-<td>일반 준비 절차 없음</td>
-<td>CMU PocketSphinx를 사용하는 asr 음성 인식 오디오 필터를 추가합니다.
-현재는 빌드할 수 없습니다. FFmpeg의 asr 필터가 최신 PocketSphinx
-릴리스와 호환되지 않으므로, 선택하면 빌드가 차단됩니다.</td>
+<tr>
+  <td><code>pocketsphinx</code></td>
+  <td>pocketsphinx / 음성 인식</td>
+  <td>내부 소스 준비 경로</td>
+  <td>차단: 일반 준비 절차 없음</td>
+  <td>LGPL</td>
+  <td><code>--enable-pocketsphinx</code></td>
+  <td>일반 준비 절차 없음</td>
+  <td>CMU PocketSphinx를 사용하는 asr 음성 인식 오디오 필터를 추가합니다. 현재는 빌드할 수 없습니다. FFmpeg의 asr 필터가 최신 PocketSphinx 릴리스와 호환되지 않으므로, 선택하면 빌드가 차단됩니다.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="자막과-텍스트">자막과 텍스트</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>ass</code></td>
-<td>ass / 스타일 자막 렌더링</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libass</code></td>
-<td><code>&lt;profile&gt;-libass</code></td>
-<td>글꼴, 색상, 위치, 외곽선, 애니메이션식 효과가 들어간 ASS/SSA 자막을
-렌더링합니다. 복잡한 자막 표현에 자주 쓰입니다.</td>
+<tr>
+  <td><code>ass</code></td>
+  <td>ass / 스타일 자막 렌더링</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libass</code></td>
+  <td><code>&lt;profile&gt;-libass</code></td>
+  <td>글꼴, 색상, 위치, 외곽선, 애니메이션식 효과가 들어간 ASS/SSA 자막을 렌더링합니다. 복잡한 자막 표현에 자주 쓰입니다.</td>
 </tr>
-<tr class="even">
-<td><code>freetype</code></td>
-<td>freetype / 글꼴 렌더링</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libfreetype</code></td>
-<td><code>&lt;profile&gt;-freetype</code></td>
-<td>자막, 오버레이, 텍스트 필터에 사용할 글꼴 글리프를 렌더링합니다.
-글자를 실제 그래픽으로 그려야 할 때 중요합니다.</td>
+<tr>
+  <td><code>freetype</code></td>
+  <td>freetype / 글꼴 렌더링</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libfreetype</code></td>
+  <td><code>&lt;profile&gt;-freetype</code></td>
+  <td>자막, 오버레이, 텍스트 필터에 사용할 글꼴 글리프를 렌더링합니다. 글자를 실제 그래픽으로 그려야 할 때 중요합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>fontconfig</code></td>
-<td>fontconfig / 글꼴 검색</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libfontconfig</code></td>
-<td><code>&lt;profile&gt;-fontconfig</code></td>
-<td>설치된 글꼴을 찾아 자막과 텍스트 렌더링이 알맞은 서체를 쓰도록
-합니다. 글자 모양의 안정성이 필요할 때 유용합니다.</td>
+<tr>
+  <td><code>fontconfig</code></td>
+  <td>fontconfig / 글꼴 검색</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libfontconfig</code></td>
+  <td><code>&lt;profile&gt;-fontconfig</code></td>
+  <td>설치된 글꼴을 찾아 자막과 텍스트 렌더링이 알맞은 서체를 쓰도록 합니다. 글자 모양의 안정성이 필요할 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>harfbuzz</code></td>
-<td>harfbuzz / 복잡한 텍스트 셰이핑</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libharfbuzz</code></td>
-<td><code>&lt;profile&gt;-harfbuzz</code></td>
-<td>복잡한 문자가 올바르게 결합, 재배치, 위치 조정되도록 글자를
-shaping합니다. 여러 비라틴 문자 자막에 중요합니다.</td>
+<tr>
+  <td><code>harfbuzz</code></td>
+  <td>harfbuzz / 복잡한 텍스트 셰이핑</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libharfbuzz</code></td>
+  <td><code>&lt;profile&gt;-harfbuzz</code></td>
+  <td>복잡한 문자가 올바르게 결합, 재배치, 위치 조정되도록 글자를 shaping합니다. 여러 비라틴 문자 자막에 중요합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>fribidi</code></td>
-<td>fribidi / 오른쪽에서 왼쪽 텍스트 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libfribidi</code></td>
-<td><code>&lt;profile&gt;-fribidi</code></td>
-<td>아랍어, 히브리어처럼 오른쪽에서 왼쪽으로 쓰는 문자의 방향 처리를
-지원합니다. 양방향 텍스트가 있는 자막이나 오버레이에 유용합니다.</td>
+<tr>
+  <td><code>fribidi</code></td>
+  <td>fribidi / 오른쪽에서 왼쪽 텍스트 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libfribidi</code></td>
+  <td><code>&lt;profile&gt;-fribidi</code></td>
+  <td>아랍어, 히브리어처럼 오른쪽에서 왼쪽으로 쓰는 문자의 방향 처리를 지원합니다. 양방향 텍스트가 있는 자막이나 오버레이에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>aribcaption</code></td>
-<td>aribcaption / ARIB 캡션 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libaribcaption</code></td>
-<td><code>&lt;profile&gt;-libaribcaption</code></td>
-<td>일본 방송 캡션을 현대적인 ARIB 처리 방식으로 읽습니다. TV 녹화
-파일이나 방송용 전송 스트림에 유용합니다.</td>
+<tr>
+  <td><code>aribcaption</code></td>
+  <td>aribcaption / ARIB 캡션 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libaribcaption</code></td>
+  <td><code>&lt;profile&gt;-libaribcaption</code></td>
+  <td>일본 방송 캡션을 현대적인 ARIB 처리 방식으로 읽습니다. TV 녹화 파일이나 방송용 전송 스트림에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>aribb24</code></td>
-<td>aribb24 / ARIB B24 캡션 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libaribb24</code></td>
-<td><code>&lt;profile&gt;-aribb24</code></td>
-<td>일본 방송 자료에 쓰이는 ARIB B24 캡션을 처리합니다. 오래된 방송 자막
-데이터를 보존하거나 변환할 때 유용합니다.</td>
+<tr>
+  <td><code>aribb24</code></td>
+  <td>aribb24 / ARIB B24 캡션 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libaribb24</code></td>
+  <td><code>&lt;profile&gt;-aribb24</code></td>
+  <td>일본 방송 자료에 쓰이는 ARIB B24 캡션을 처리합니다. 오래된 방송 자막 데이터를 보존하거나 변환할 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>zvbi</code></td>
-<td>zvbi / 텔레텍스트 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>GPL</td>
-<td><code>--enable-libzvbi</code></td>
-<td><code>&lt;profile&gt;-zvbi</code></td>
-<td>오래된 방송 소스에서 teletext와 VBI 데이터를 추출합니다. 숨은 자막,
-페이지, 방송 문자 정보에 유용합니다.</td>
+<tr>
+  <td><code>zvbi</code></td>
+  <td>zvbi / 텔레텍스트 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>GPL</td>
+  <td><code>--enable-libzvbi</code></td>
+  <td><code>&lt;profile&gt;-zvbi</code></td>
+  <td>오래된 방송 소스에서 teletext와 VBI 데이터를 추출합니다. 숨은 자막, 페이지, 방송 문자 정보에 유용합니다.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="디스크-및-장치-입력">디스크 및 장치 입력</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>bluray</code></td>
-<td>bluray / Blu-ray 입력</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libbluray</code></td>
-<td><code>&lt;profile&gt;-libbluray</code></td>
-<td>Blu-ray 디스크 구조를 읽어 검사, 변환, 추출 작업에 사용합니다. 단일
-파일이 아니라 Blu-ray 폴더 구조가 소스일 때 유용합니다.</td>
+<tr>
+  <td><code>bluray</code></td>
+  <td>bluray / Blu-ray 입력</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libbluray</code></td>
+  <td><code>&lt;profile&gt;-libbluray</code></td>
+  <td>Blu-ray 디스크 구조를 읽어 검사, 변환, 추출 작업에 사용합니다. 단일 파일이 아니라 Blu-ray 폴더 구조가 소스일 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>dvdread</code></td>
-<td>dvdread / DVD 입력</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>GPL</td>
-<td><code>--enable-libdvdread</code></td>
-<td><code>&lt;profile&gt;-libdvdread</code></td>
-<td>DVD 미디어 구조를 읽어 추출, 검사, 변환 작업에 사용합니다. DVD
-폴더나 디스크 레이아웃이 소스일 때 유용합니다.</td>
+<tr>
+  <td><code>dvdread</code></td>
+  <td>dvdread / DVD 입력</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>GPL</td>
+  <td><code>--enable-libdvdread</code></td>
+  <td><code>&lt;profile&gt;-libdvdread</code></td>
+  <td>DVD 미디어 구조를 읽어 추출, 검사, 변환 작업에 사용합니다. DVD 폴더나 디스크 레이아웃이 소스일 때 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>dvdnav</code></td>
-<td>libdvdnav / DVD 내비게이션</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>GPL</td>
-<td><code>--enable-libdvdnav</code></td>
-<td><code>&lt;profile&gt;-libdvdnav</code>,
-<code>&lt;profile&gt;-libdvdread</code></td>
-<td>DVD-Video의 메뉴, 타이틀, 챕터, 프로그램 체인 같은 내비게이션 구조를
-읽습니다. 디스크 방식의 DVD 작업에 유용합니다.</td>
+<tr>
+  <td><code>dvdnav</code></td>
+  <td>libdvdnav / DVD 내비게이션</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>GPL</td>
+  <td><code>--enable-libdvdnav</code></td>
+  <td><code>&lt;profile&gt;-libdvdnav</code>, <code>&lt;profile&gt;-libdvdread</code></td>
+  <td>DVD-Video의 메뉴, 타이틀, 챕터, 프로그램 체인 같은 내비게이션 구조를 읽습니다. 디스크 방식의 DVD 작업에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>openmpt</code></td>
-<td>openmpt / 모듈 음악 입력</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libopenmpt</code></td>
-<td><code>&lt;profile&gt;-libopenmpt</code></td>
-<td>tracker module 음악을 비교적 정확한 재생 동작으로 읽습니다. 오래된
-게임, 데모신, 트래커 음악 형식에 유용합니다.</td>
+<tr>
+  <td><code>openmpt</code></td>
+  <td>openmpt / 모듈 음악 입력</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopenmpt</code></td>
+  <td><code>&lt;profile&gt;-libopenmpt</code></td>
+  <td>tracker module 음악을 비교적 정확한 재생 동작으로 읽습니다. 오래된 게임, 데모신, 트래커 음악 형식에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>sdl2</code></td>
-<td>sdl2 / SDL2 출력 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-sdl2</code></td>
-<td><code>&lt;profile&gt;-SDL2</code></td>
-<td>SDL2를 통해 간단한 미디어 출력과 미리보기 기능을 제공합니다. 재생식
-테스트와 표시 작업에 유용합니다.</td>
+<tr>
+  <td><code>sdl2</code></td>
+  <td>sdl2 / SDL2 출력 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-sdl2</code></td>
+  <td><code>&lt;profile&gt;-SDL2</code></td>
+  <td>SDL2를 통해 간단한 미디어 출력과 미리보기 기능을 제공합니다. 재생식 테스트와 표시 작업에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>openal</code></td>
-<td>openal / 오디오 장치 입력</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-openal</code></td>
-<td><code>&lt;profile&gt;-openal</code></td>
-<td>라이브 오디오 장치를 다루기 위한 추가 입력 및 출력 경로를
-제공합니다.</td>
+<tr>
+  <td><code>openal</code></td>
+  <td>openal / 오디오 장치 입력</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-openal</code></td>
+  <td><code>&lt;profile&gt;-openal</code></td>
+  <td>라이브 오디오 장치를 다루기 위한 추가 입력 및 출력 경로를 제공합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>cdio</code></td>
-<td>cdio / CD 입력</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>GPL</td>
-<td><code>--enable-libcdio</code></td>
-<td><code>&lt;profile&gt;-libcdio</code>,
-<code>&lt;profile&gt;-libcdio-paranoia</code></td>
-<td>CD 입력을 읽어 오디오 추출이나 미디어 검사 작업에 사용합니다. 복사된
-파일이 아니라 실제 CD가 소스일 때 유용합니다.</td>
+<tr>
+  <td><code>cdio</code></td>
+  <td>cdio / CD 입력</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>GPL</td>
+  <td><code>--enable-libcdio</code></td>
+  <td><code>&lt;profile&gt;-libcdio</code>, <code>&lt;profile&gt;-libcdio-paranoia</code></td>
+  <td>CD 입력을 읽어 오디오 추출이나 미디어 검사 작업에 사용합니다. 복사된 파일이 아니라 실제 CD가 소스일 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>modplug</code></td>
-<td>modplug / 모듈 음악 입력</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libmodplug</code></td>
-<td><code>&lt;profile&gt;-libmodplug</code></td>
-<td>오래된 tracker module 음악 형식을 읽습니다. 레거시 장면 음악이나
-게임풍 음악 파일 변환에 유용합니다.</td>
+<tr>
+  <td><code>modplug</code></td>
+  <td>modplug / 모듈 음악 입력</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libmodplug</code></td>
+  <td><code>&lt;profile&gt;-libmodplug</code></td>
+  <td>오래된 tracker module 음악 형식을 읽습니다. 레거시 장면 음악이나 게임풍 음악 파일 변환에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>jack</code></td>
-<td>jack / JACK 오디오 입력</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libjack</code></td>
-<td><code>&lt;profile&gt;-jack2</code></td>
-<td>스튜디오식 오디오 라우팅을 위해 JACK 오디오에 연결합니다. 전문 Linux
-오디오 환경에서 캡처와 재생에 유용합니다.</td>
+<tr>
+  <td><code>jack</code></td>
+  <td>jack / JACK 오디오 입력</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libjack</code></td>
+  <td><code>&lt;profile&gt;-jack2</code></td>
+  <td>스튜디오식 오디오 라우팅을 위해 JACK 오디오에 연결합니다. 전문 Linux 오디오 환경에서 캡처와 재생에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>pulse</code></td>
-<td>pulse / PulseAudio 입력</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libpulse</code></td>
-<td><code>&lt;profile&gt;-pulseaudio</code></td>
-<td>Linux 데스크톱 오디오 캡처나 재생을 위해 PulseAudio에
-연결합니다.</td>
+<tr>
+  <td><code>pulse</code></td>
+  <td>pulse / PulseAudio 입력</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libpulse</code></td>
+  <td><code>&lt;profile&gt;-pulseaudio</code></td>
+  <td>Linux 데스크톱 오디오 캡처나 재생을 위해 PulseAudio에 연결합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>caca</code></td>
-<td>caca / 텍스트 모드 비디오 출력</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libcaca</code></td>
-<td><code>&lt;profile&gt;-libcaca</code></td>
-<td>영상을 색이 있는 텍스트 화면처럼 변환합니다. 실험, 터미널 표시,
-특수한 미리보기 효과에 가깝습니다.</td>
+<tr>
+  <td><code>caca</code></td>
+  <td>caca / 텍스트 모드 비디오 출력</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libcaca</code></td>
+  <td><code>&lt;profile&gt;-libcaca</code></td>
+  <td>영상을 색이 있는 텍스트 화면처럼 변환합니다. 실험, 터미널 표시, 특수한 미리보기 효과에 가깝습니다.</td>
 </tr>
-<tr class="even">
-<td><code>opengl</code></td>
-<td>opengl / OpenGL 출력 장치</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-opengl</code></td>
-<td><code>&lt;profile&gt;-mesa</code></td>
-<td>OpenGL을 통한 하드웨어 가속 비디오 표시를 위한 OpenGL 출력 장치를
-추가합니다. Mesa 패키지가 제공합니다.</td>
+<tr>
+  <td><code>opengl</code></td>
+  <td>opengl / OpenGL 출력 장치</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-opengl</code></td>
+  <td><code>&lt;profile&gt;-mesa</code></td>
+  <td>OpenGL을 통한 하드웨어 가속 비디오 표시를 위한 OpenGL 출력 장치를 추가합니다. Mesa 패키지가 제공합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>dc1394</code></td>
-<td>dc1394 / IEEE 1394 카메라 캡처</td>
-<td>내부 소스 준비 경로</td>
-<td>차단: 일반 준비 절차 없음</td>
-<td>LGPL</td>
-<td><code>--enable-libdc1394</code></td>
-<td>일반 준비 절차 없음</td>
-<td>IEEE 1394(FireWire) 카메라에서 비디오를 캡처합니다. Windows에서는
-차단됩니다: MSYS2 패키지가 없으며, 유일한 Windows 빌드 방법은 독점
-FireWire 커널 드라이버와 FireWire 하드웨어를 필요로 하므로 결과물이 이식
-가능하지 않습니다.</td>
+<tr>
+  <td><code>dc1394</code></td>
+  <td>dc1394 / IEEE 1394 카메라 캡처</td>
+  <td>내부 소스 준비 경로</td>
+  <td>차단: 일반 준비 절차 없음</td>
+  <td>LGPL</td>
+  <td><code>--enable-libdc1394</code></td>
+  <td>일반 준비 절차 없음</td>
+  <td>IEEE 1394(FireWire) 카메라에서 비디오를 캡처합니다. Windows에서는 차단됩니다: MSYS2 패키지가 없으며, 유일한 Windows 빌드 방법은 독점 FireWire 커널 드라이버와 FireWire 하드웨어를 필요로 하므로 결과물이 이식 가능하지 않습니다.</td>
 </tr>
-<tr class="even">
-<td><code>decklink</code></td>
-<td>decklink / Blackmagic 캡처 및 재생</td>
-<td>외부 SDK/가져오기 경로</td>
-<td>차단: 일반 준비 절차 없음</td>
-<td>LGPL</td>
-<td><code>--enable-decklink</code></td>
-<td>일반 준비 절차 없음</td>
-<td>Blackmagic DeckLink 캡처 및 재생 지원을 추가합니다. 독점 DeckLink
-SDK 헤더를 대상으로 빌드되며, 이 헤더는 MSYS2 패키지로 재배포할 수
-없습니다.</td>
+<tr>
+  <td><code>decklink</code></td>
+  <td>decklink / Blackmagic 캡처 및 재생</td>
+  <td>외부 SDK/가져오기 경로</td>
+  <td>차단: 일반 준비 절차 없음</td>
+  <td>LGPL</td>
+  <td><code>--enable-decklink</code></td>
+  <td>일반 준비 절차 없음</td>
+  <td>Blackmagic DeckLink 캡처 및 재생 지원을 추가합니다. 독점 DeckLink SDK 헤더를 대상으로 빌드되며, 이 헤더는 MSYS2 패키지로 재배포할 수 없습니다.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="네트워크">네트워크</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>srt</code></td>
-<td>srt / 안정적인 라이브 스트리밍</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libsrt</code></td>
-<td><code>&lt;profile&gt;-srt</code></td>
-<td>불안정한 네트워크에서도 라이브 전송을 안정적으로 유지하는 SRT
-스트리밍을 제공합니다.</td>
+<tr>
+  <td><code>srt</code></td>
+  <td>srt / 안정적인 라이브 스트리밍</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libsrt</code></td>
+  <td><code>&lt;profile&gt;-srt</code></td>
+  <td>불안정한 네트워크에서도 라이브 전송을 안정적으로 유지하는 SRT 스트리밍을 제공합니다.</td>
 </tr>
-<tr class="even">
-<td><code>rtmp</code></td>
-<td>rtmp / RTMP 스트리밍</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-librtmp</code></td>
-<td><code>&lt;profile&gt;-rtmpdump</code></td>
-<td>오래된 라이브 스트리밍 서버와 워크플로에 필요한 RTMP 호환성을
-제공합니다.</td>
+<tr>
+  <td><code>rtmp</code></td>
+  <td>rtmp / RTMP 스트리밍</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-librtmp</code></td>
+  <td><code>&lt;profile&gt;-rtmpdump</code></td>
+  <td>오래된 라이브 스트리밍 서버와 워크플로에 필요한 RTMP 호환성을 제공합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>rist</code></td>
-<td>rist / 안정적인 스트림 전송</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-librist</code></td>
-<td><code>&lt;profile&gt;-librist</code></td>
-<td>불안정한 네트워크에서 전문 라이브 스트리밍을 안정화하는 RIST 전송을
-제공합니다.</td>
+<tr>
+  <td><code>rist</code></td>
+  <td>rist / 안정적인 스트림 전송</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-librist</code></td>
+  <td><code>&lt;profile&gt;-librist</code></td>
+  <td>불안정한 네트워크에서 전문 라이브 스트리밍을 안정화하는 RIST 전송을 제공합니다.</td>
 </tr>
-<tr class="even">
-<td><code>ssh</code></td>
-<td>ssh / SSH 파일 접근</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libssh</code></td>
-<td><code>&lt;profile&gt;-libssh</code></td>
-<td>SSH와 SFTP 계열 원격 접근으로 미디어를 읽고 씁니다.</td>
+<tr>
+  <td><code>ssh</code></td>
+  <td>ssh / SSH 파일 접근</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libssh</code></td>
+  <td><code>&lt;profile&gt;-libssh</code></td>
+  <td>SSH와 SFTP 계열 원격 접근으로 미디어를 읽고 씁니다.</td>
 </tr>
-<tr class="odd">
-<td><code>zmq</code></td>
-<td>zmq / ZeroMQ 제어</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libzmq</code></td>
-<td><code>&lt;profile&gt;-zeromq</code></td>
-<td>지원되는 처리 흐름에서 메시지 기반 런타임 제어를 가능하게 합니다.
-자동화와 상호작용식 제어에 유용합니다.</td>
+<tr>
+  <td><code>zmq</code></td>
+  <td>zmq / ZeroMQ 제어</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libzmq</code></td>
+  <td><code>&lt;profile&gt;-zeromq</code></td>
+  <td>지원되는 처리 흐름에서 메시지 기반 런타임 제어를 가능하게 합니다. 자동화와 상호작용식 제어에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>rabbitmq</code></td>
-<td>rabbitmq / RabbitMQ 메시징</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-librabbitmq</code></td>
-<td><code>&lt;profile&gt;-rabbitmq-c</code></td>
-<td>RabbitMQ 메시지 큐와 미디어 처리 흐름을 연결합니다. 자동화된 처리
-시스템에 유용합니다.</td>
+<tr>
+  <td><code>rabbitmq</code></td>
+  <td>rabbitmq / RabbitMQ 메시징</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-librabbitmq</code></td>
+  <td><code>&lt;profile&gt;-rabbitmq-c</code></td>
+  <td>RabbitMQ 메시지 큐와 미디어 처리 흐름을 연결합니다. 자동화된 처리 시스템에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>smbclient</code></td>
-<td>libsmbclient / SMB 네트워크 파일 접근</td>
-<td>외부 SDK/가져오기 경로</td>
-<td>차단: 일반 준비 절차 없음</td>
-<td>GPL</td>
-<td><code>--enable-libsmbclient</code></td>
-<td>일반 준비 절차 없음</td>
-<td>SMB/CIFS 네트워크 공유에서 미디어를 읽고 쓸 수 있게 합니다.
-Windows식 네트워크 폴더에 저장된 미디어에 유용합니다. 아직 Windows에서
-빌드할 수 없어 이 섹션 맨 아래에 표시되며, Windows용 libsmbclient가 나올
-때까지 사용할 수 없습니다.</td>
+<tr>
+  <td><code>smbclient</code></td>
+  <td>libsmbclient / SMB 네트워크 파일 접근</td>
+  <td>외부 SDK/가져오기 경로</td>
+  <td>차단: 일반 준비 절차 없음</td>
+  <td>GPL</td>
+  <td><code>--enable-libsmbclient</code></td>
+  <td>일반 준비 절차 없음</td>
+  <td>SMB/CIFS 네트워크 공유에서 미디어를 읽고 쓸 수 있게 합니다. Windows식 네트워크 폴더에 저장된 미디어에 유용합니다. 아직 Windows에서 빌드할 수 없어 이 섹션 맨 아래에 표시되며, Windows용 libsmbclient가 나올 때까지 사용할 수 없습니다.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="보안-네트워크tls">보안 네트워크(TLS)</h3>
+<h3 id="보안-네트워크-tls">보안 네트워크(TLS)</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>openssl</code></td>
-<td>openssl / 보안 네트워크 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>비자유</td>
-<td><code>--enable-openssl</code></td>
-<td><code>&lt;profile&gt;-openssl</code></td>
-<td>HTTPS와 다른 보안 미디어 프로토콜에 필요한 암호화 네트워크 연결을
-제공합니다.</td>
+<tr>
+  <td><code>openssl</code></td>
+  <td>openssl / 보안 네트워크 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>비자유</td>
+  <td><code>--enable-openssl</code></td>
+  <td><code>&lt;profile&gt;-openssl</code></td>
+  <td>HTTPS와 다른 보안 미디어 프로토콜에 필요한 암호화 네트워크 연결을 제공합니다.</td>
 </tr>
-<tr class="even">
-<td><code>gnutls</code></td>
-<td>gnutls / 보안 네트워크 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-gnutls</code></td>
-<td><code>&lt;profile&gt;-gnutls</code></td>
-<td>HTTPS와 TLS 기반 미디어 접근에 필요한 암호화 네트워크 연결을
-제공합니다. 안전한 스트리밍과 원격 소스에 유용합니다.</td>
+<tr>
+  <td><code>gnutls</code></td>
+  <td>gnutls / 보안 네트워크 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-gnutls</code></td>
+  <td><code>&lt;profile&gt;-gnutls</code></td>
+  <td>HTTPS와 TLS 기반 미디어 접근에 필요한 암호화 네트워크 연결을 제공합니다. 안전한 스트리밍과 원격 소스에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>mbedtls</code></td>
-<td>mbedTLS / 보안 네트워크 접근</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-mbedtls</code></td>
-<td><code>&lt;profile&gt;-mbedtls</code></td>
-<td>가벼운 TLS 기능으로 암호화된 네트워크 미디어 접근을 제공합니다. 작은
-보안 백엔드가 필요할 때 유용합니다.</td>
+<tr>
+  <td><code>mbedtls</code></td>
+  <td>mbedTLS / 보안 네트워크 접근</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-mbedtls</code></td>
+  <td><code>&lt;profile&gt;-mbedtls</code></td>
+  <td>가벼운 TLS 기능으로 암호화된 네트워크 미디어 접근을 제공합니다. 작은 보안 백엔드가 필요할 때 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>libtls</code></td>
-<td>libtls / 보안 네트워크 접근</td>
-<td>내부 소스 준비 경로</td>
-<td>선택 가능: 소스 준비/가져오기</td>
-<td>LGPL</td>
-<td><code>--enable-libtls</code></td>
-<td>고정된 소스/가져오기 절차로 준비</td>
-<td>간결한 TLS 인터페이스로 암호화된 네트워크 통신을 제공합니다. 보안이
-필요한 네트워크 미디어 접근에 유용합니다.</td>
+<tr>
+  <td><code>libtls</code></td>
+  <td>libtls / 보안 네트워크 접근</td>
+  <td>내부 소스 준비 경로</td>
+  <td>선택 가능: 소스 준비/가져오기</td>
+  <td>LGPL</td>
+  <td><code>--enable-libtls</code></td>
+  <td>고정된 소스/가져오기 절차로 준비</td>
+  <td>간결한 TLS 인터페이스로 암호화된 네트워크 통신을 제공합니다. 보안이 필요한 네트워크 미디어 접근에 유용합니다.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="ocr">OCR</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>tesseract</code></td>
-<td>tesseract / OCR 텍스트 인식</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libtesseract</code></td>
-<td><code>&lt;profile&gt;-tesseract-ocr</code></td>
-<td>이미지나 영상 프레임에 보이는 글자를 읽습니다. 화면에 박힌 제목,
-표지판, 자막, 문서 글자 추출에 유용합니다.</td>
+<tr>
+  <td><code>tesseract</code></td>
+  <td>tesseract / OCR 텍스트 인식</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libtesseract</code></td>
+  <td><code>&lt;profile&gt;-tesseract-ocr</code></td>
+  <td>이미지나 영상 프레임에 보이는 글자를 읽습니다. 화면에 박힌 제목, 표지판, 자막, 문서 글자 추출에 유용합니다.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="ai-지원">AI 지원</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>onnxruntime</code></td>
-<td>ONNX Runtime / AI 모델 추론</td>
-<td>MSYS2 패키지 경로</td>
-<td>버전/프로필 조건상 선택 대상 아님</td>
-<td>LGPL</td>
-<td><code>--enable-libonnxruntime</code></td>
-<td><code>&lt;profile&gt;-onnxruntime</code></td>
-<td>ONNX Runtime으로 지원되는 딥러닝 필터를 실행합니다. 현재 적용한 공식
-FFmpeg 릴리스 범위와 MSYS2 프로필 조건에서는 선택 항목으로 다루지
-않습니다.</td>
+<tr>
+  <td><code>onnxruntime</code></td>
+  <td>ONNX Runtime / AI 모델 추론</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>FFmpeg 9.0.1의 <code>ucrt64</code>/<code>clang64</code>에서 선택 가능, <code>mingw64</code>에서는 사용 불가</td>
+  <td>LGPL</td>
+  <td><code>--enable-libonnxruntime</code></td>
+  <td><code>&lt;profile&gt;-onnxruntime</code> (<code>ucrt64</code>/<code>clang64</code>)</td>
+  <td>FFmpeg 9의 ONNX Runtime 연동을 제공합니다. 활성화하면 MSYS2가 사용하는 <code>include/onnxruntime</code> 경로를 configure의 추가 헤더 검색 경로에 넣습니다.</td>
 </tr>
-<tr class="even">
-<td><code>openvino</code></td>
-<td>OpenVINO / AI 모델 추론</td>
-<td>외부 SDK/가져오기 경로</td>
-<td>차단: 일반 준비 절차 없음</td>
-<td>LGPL</td>
-<td><code>--enable-libopenvino</code></td>
-<td>일반 준비 절차 없음</td>
-<td>Intel 계열 가속에 맞춘 AI 추론 필터를 실행합니다. 모델 기반 영상
-또는 이미지 처리에 유용합니다.</td>
+<tr>
+  <td><code>openvino</code></td>
+  <td>OpenVINO / AI 모델 추론</td>
+  <td>외부 SDK/가져오기 경로</td>
+  <td>차단: 일반 준비 절차 없음</td>
+  <td>LGPL</td>
+  <td><code>--enable-libopenvino</code></td>
+  <td>일반 준비 절차 없음</td>
+  <td>Intel 계열 가속에 맞춘 AI 추론 필터를 실행합니다. 모델 기반 영상 또는 이미지 처리에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>torch</code></td>
-<td>Torch / libtorch</td>
-<td>외부 SDK/가져오기 경로</td>
-<td>차단: 일반 준비 절차 없음</td>
-<td>LGPL</td>
-<td><code>--enable-libtorch</code></td>
-<td>일반 준비 절차 없음</td>
-<td>Torch 기반 모델 실행으로 지원되는 딥러닝 필터를 돌립니다. PyTorch
-계열 추론 작업에 유용합니다.</td>
+<tr>
+  <td><code>torch</code></td>
+  <td>Torch / libtorch</td>
+  <td>외부 SDK/가져오기 경로</td>
+  <td>차단: 일반 준비 절차 없음</td>
+  <td>LGPL</td>
+  <td><code>--enable-libtorch</code></td>
+  <td>일반 준비 절차 없음</td>
+  <td>Torch 기반 모델 실행으로 지원되는 딥러닝 필터를 돌립니다. PyTorch 계열 추론 작업에 유용합니다.</td>
 </tr>
-<tr class="even">
-<td><code>tensorflow</code></td>
-<td>TensorFlow / AI 모델 추론</td>
-<td>외부 SDK/가져오기 경로</td>
-<td>UI 비활성화</td>
-<td>LGPL</td>
-<td><code>--enable-libtensorflow</code></td>
-<td>고정된 소스/가져오기 절차로 준비</td>
-<td>TensorFlow C API로 지원되는 딥러닝 필터를 실행합니다. 모델 기반
-이미지나 영상 분석에 유용합니다.</td>
+<tr>
+  <td><code>tensorflow</code></td>
+  <td>TensorFlow / AI 모델 추론</td>
+  <td>외부 SDK/가져오기 경로</td>
+  <td>UI 비활성화</td>
+  <td>LGPL</td>
+  <td><code>--enable-libtensorflow</code></td>
+  <td>고정된 소스/가져오기 절차로 준비</td>
+  <td>TensorFlow C API로 지원되는 딥러닝 필터를 실행합니다. 모델 기반 이미지나 영상 분석에 유용합니다.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="지원-라이브러리">지원 라이브러리</h3>
 <table>
 <thead>
-<tr class="header">
-<th>ID</th>
-<th>표시 이름</th>
-<th>경로</th>
-<th>상태</th>
-<th>라이선스</th>
-<th>configure 플래그</th>
-<th>패키지 / 준비</th>
-<th>용도</th>
+<tr>
+  <th>ID</th>
+  <th>표시 이름</th>
+  <th>경로</th>
+  <th>상태</th>
+  <th>라이선스</th>
+  <th>configure 플래그</th>
+  <th>패키지 / 준비</th>
+  <th>용도</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><code>xml2</code></td>
-<td>xml2 / XML 지원</td>
-<td>MSYS2 패키지 경로</td>
-<td>선택 가능: MSYS2 패키지</td>
-<td>LGPL</td>
-<td><code>--enable-libxml2</code></td>
-<td><code>&lt;profile&gt;-libxml2</code></td>
-<td>일부 미디어 형식, 자막, manifest, 메타데이터 작업에 쓰이는 XML 구조
-데이터를 읽습니다.</td>
+<tr>
+  <td><code>xml2</code></td>
+  <td>xml2 / XML 지원</td>
+  <td>MSYS2 패키지 경로</td>
+  <td>선택 가능: MSYS2 패키지</td>
+  <td>LGPL</td>
+  <td><code>--enable-libxml2</code></td>
+  <td><code>&lt;profile&gt;-libxml2</code></td>
+  <td>일부 미디어 형식, 자막, release-support manifest, 메타데이터 작업에 쓰이는 XML 구조 데이터를 읽습니다.</td>
 </tr>
-<tr class="even">
-<td><code>quirc</code></td>
-<td>libquirc / QR 코드 디코딩</td>
-<td>내부 소스 준비 경로</td>
-<td>선택 가능: 소스 준비/가져오기</td>
-<td>LGPL</td>
-<td><code>--enable-libquirc</code></td>
-<td>고정된 소스/가져오기 절차로 준비</td>
-<td>영상 프레임이나 이미지에서 QR 코드를 읽습니다. 자동화, 스캔, 시각
-메타데이터 작업에 유용합니다.</td>
+<tr>
+  <td><code>quirc</code></td>
+  <td>libquirc / QR 코드 디코딩</td>
+  <td>내부 소스 준비 경로</td>
+  <td>선택 가능: 소스 준비/가져오기</td>
+  <td>LGPL</td>
+  <td><code>--enable-libquirc</code></td>
+  <td>고정된 소스/가져오기 절차로 준비</td>
+  <td>영상 프레임이나 이미지에서 QR 코드를 읽습니다. 자동화, 스캔, 시각 메타데이터 작업에 유용합니다.</td>
 </tr>
-<tr class="odd">
-<td><code>klvanc</code></td>
-<td>libklvanc / 방송 메타데이터</td>
-<td>내부 소스 준비 경로</td>
-<td>선택 가능: 소스 준비/가져오기</td>
-<td>LGPL</td>
-<td><code>--enable-libklvanc</code></td>
-<td>고정된 소스/가져오기 절차로 준비</td>
-<td>방송 영상의 수직 보조 데이터(VANC)를 처리합니다. 영상 라인에 함께
-실리는 메타데이터 작업에 유용합니다.</td>
+<tr>
+  <td><code>klvanc</code></td>
+  <td>libklvanc / 방송 메타데이터</td>
+  <td>내부 소스 준비 경로</td>
+  <td>선택 가능: 소스 준비/가져오기</td>
+  <td>LGPL</td>
+  <td><code>--enable-libklvanc</code></td>
+  <td>고정된 소스/가져오기 절차로 준비</td>
+  <td>방송 영상의 수직 보조 데이터(VANC)를 처리합니다. 영상 라인에 함께 실리는 메타데이터 작업에 유용합니다.</td>
 </tr>
 </tbody>
 </table>
 <h2 id="라이선스">라이선스</h2>
-<p>이 프로그램은 사용자가 <code>--enable-gpl</code>,
-<code>--enable-nonfree</code>, <code>--enable-version3</code>와 같은
-라이선스 플래그를 입력하지 않더라도 최종 결과물의 라이선스를 선택된
-라이브러리와 최종 configure 플래그를 기준으로 계산합니다. GPL 항목이
-들어가면 GPL로, 비자유 로컬 항목이 들어가면 비자유 로컬 항목이
-됩니다.</p>
+<p>이 프로그램은 사용자가 <code>--enable-gpl</code>, <code>--enable-nonfree</code>, <code>--enable-version3</code>와 같은 라이선스 플래그를 입력하지 않더라도 최종 결과물의 라이선스를 선택된 라이브러리와 최종 configure 플래그를 기준으로 계산합니다. GPL 항목이 들어가면 GPL로, 비자유 로컬 항목이 들어가면 비자유 로컬 항목이 됩니다.</p>
 <table>
 <thead>
-<tr class="header">
-<th>라이선스 영향</th>
-<th style="text-align: right;">항목 수</th>
-<th>대표 항목</th>
+<tr>
+  <th>라이선스 영향</th>
+  <th style="text-align:right">항목 수</th>
+  <th>대표 항목</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td>기본 포함</td>
-<td style="text-align: right;">10</td>
-<td><code>ffmpeg-program</code>, <code>ffprobe-program</code>,
-<code>libavutil</code>, <code>libavcodec</code>,
-<code>libavformat</code>, <code>libavfilter</code>,
-<code>libswscale</code>, <code>libswresample</code>,
-<code>native-codecs</code>, <code>native-formats</code></td>
+<tr>
+  <td>기본 포함</td>
+  <td style="text-align:right">10</td>
+  <td><code>ffmpeg-program</code>, <code>ffprobe-program</code>, <code>libavutil</code>, <code>libavcodec</code>, <code>libavformat</code>, <code>libavfilter</code>, <code>libswscale</code>, <code>libswresample</code>, <code>native-codecs</code>, <code>native-formats</code></td>
 </tr>
-<tr class="even">
-<td>LGPL</td>
-<td style="text-align: right;">98</td>
-<td><code>svt-av1</code>, <code>libvpx</code>, <code>aom</code>,
-<code>openh264</code>, <code>rav1e</code>, <code>theora</code>,
-<code>kvazaar</code>, <code>xeve</code>, <code>xeveb</code>,
-<code>oapv</code>, <code>vvenc</code>, <code>nvenc</code></td>
+<tr>
+  <td>LGPL</td>
+  <td style="text-align:right">98</td>
+  <td><code>svt-av1</code>, <code>libvpx</code>, <code>aom</code>, <code>openh264</code>, <code>rav1e</code>, <code>theora</code>, <code>kvazaar</code>, <code>xeve</code>, <code>xeveb</code>, <code>oapv</code>, <code>vvenc</code>, <code>nvenc</code></td>
 </tr>
-<tr class="odd">
-<td>GPL</td>
-<td style="text-align: right;">14</td>
-<td><code>x264</code>, <code>x265</code>, <code>xvid</code>,
-<code>xavs</code>, <code>xavs2</code>, <code>davs2</code>,
-<code>avisynthplus</code>, <code>frei0r</code>, <code>rubberband</code>,
-<code>zvbi</code>, <code>dvdread</code>, <code>dvdnav</code></td>
+<tr>
+  <td>GPL</td>
+  <td style="text-align:right">14</td>
+  <td><code>x264</code>, <code>x265</code>, <code>xvid</code>, <code>xavs</code>, <code>xavs2</code>, <code>davs2</code>, <code>avisynthplus</code>, <code>frei0r</code>, <code>rubberband</code>, <code>zvbi</code>, <code>dvdread</code>, <code>dvdnav</code></td>
 </tr>
-<tr class="even">
-<td>nonfree</td>
-<td style="text-align: right;">3</td>
-<td><code>fdk-aac</code>, <code>mpeghdec</code>,
-<code>openssl</code></td>
+<tr>
+  <td>nonfree</td>
+  <td style="text-align:right">3</td>
+  <td><code>fdk-aac</code>, <code>mpeghdec</code>, <code>openssl</code></td>
 </tr>
 </tbody>
 </table>

@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Library choices and build options (EN) · Promptful Custom FFmpeg Builder Docs</title>
+<title>Library selection and build options (EN) · Promptful Custom FFmpeg Builder Docs</title>
 <link href="style.css" rel="stylesheet"/>
 </head>
 <body>
 <div class="shell">
 <main class="main">
 <section class="hero">
-<h1>Library choices and build options <span class="lang-pill">EN</span></h1>
-<p class="hero-desc">How library entries, presets, options, conflicts, and license profiles are handled.</p>
+<h1>Library selection and build options <span class="lang-pill">EN</span></h1>
+<p class="hero-desc">How library tracks, presets, compatibility rules, options, and license effects are resolved.</p>
 </section>
 <section aria-label="Document section highlights" class="section-cards">
 <a class="section-card" href="#library-entry-types"><span class="card-icon">1</span><span><strong>Library entry types</strong></span></a>
@@ -78,7 +78,7 @@
 <h2 id="native-package-entries">Native package entries</h2>
 <p>Most optional libraries use the native MSYS2 package path. For these entries, the program adds the required MSYS2 package names and the matching FFmpeg configure flags.</p>
 <p>Examples include <code>x264</code>, <code>x265</code>, <code>libvpx</code>, <code>aom</code>, <code>dav1d</code>, <code>opus</code>, <code>mp3lame</code>, <code>ass</code>, <code>freetype</code>, <code>zimg</code>, <code>vmaf</code>, <code>srt</code>, and <code>openssl</code>.</p>
-<p>A native package entry can still be unavailable for a particular FFmpeg release or MSYS2 shell profile. The program filters the catalog before planning so an unavailable package/profile combination is not treated as selectable.</p>
+<p>A native package entry can still be unavailable for a particular FFmpeg release or MSYS2 shell profile. The program filters the library catalog before planning so an unavailable package/profile combination is not treated as selectable.</p>
 <h2 id="internal-source-prepared-entries">Internal source-prepared entries</h2>
 <p>Some libraries need source preparation rather than an package-based selection. When the program supports one of these entries, it prepares the source or import files inside the private build environment before FFmpeg configure runs.</p>
 <p>Current implemented internal source-prepared entries include:</p>
@@ -94,10 +94,11 @@
 <li><code>klvanc</code></li>
 <li><code>libtls</code></li>
 <li><code>libmfx</code></li>
+<li><code>opencv</code></li>
 </ul>
-<p><code>libmfx</code> is part of this implemented group. It is the legacy Intel Media SDK path used when the selected FFmpeg release/profile calls for that backend. It is mutually exclusive with <code>libvpl</code>, the newer oneVPL path. Other internal-track entries, such as <code>dc1394</code> or <code>pocketsphinx</code>, can still be blocked when the program has no supported preparation path for the selected environment.</p>
+<p><code>libmfx</code> is part of this implemented group. It is the legacy Intel Media SDK path used when the selected FFmpeg release/profile calls for that backend. It is mutually exclusive with <code>libvpl</code>, the newer oneVPL path. <code>opencv</code> is also internally prepared: the builder pins OpenCV 4.11.0 because current MSYS2 OpenCV 5 removed the legacy C API that FFmpeg <code>--enable-libopencv</code> still requires. Other internal-track entries, such as <code>dc1394</code> or <code>pocketsphinx</code>, can still be blocked when the program has no supported preparation path for the selected environment.</p>
 <h2 id="external-or-blocked-entries">External or blocked entries</h2>
-<p>Some FFmpeg integrations need an external SDK, special import library, or build path that the program does not currently prepare safely. These entries may be registered in the catalog, but the plan blocks them instead of presenting them as reliably enableable.</p>
+<p>Some FFmpeg integrations need an external SDK, special import library, or build path that the program does not currently prepare safely. These entries may be registered in the library catalog, but the plan blocks them instead of presenting them as reliably enableable.</p>
 <p>Current blocked entries without a supported build/import path are:</p>
 <ul>
 <li><code>smbclient</code></li>
@@ -121,11 +122,12 @@
 <li><code>libvpl</code> is the preferred Intel oneVPL path on newer FFmpeg release lines.</li>
 <li><code>libmfx</code> is the legacy Intel Media SDK path and must not be enabled together with <code>libvpl</code>.</li>
 <li><code>lensfun</code> can be blocked when the available package does not satisfy the FFmpeg release requirement.</li>
-<li><code>onnxruntime</code> is not available for the official FFmpeg release lines covered by the current manifest and is also unavailable for <code>mingw64</code>.</li>
-<li><code>svtjpegxs</code> is gated by FFmpeg release requirements and pkg-config results.</li>
+<li><code>onnxruntime</code> is supported by FFmpeg 9.0.1 on <code>ucrt64</code> and <code>clang64</code>, where the builder emits <code>--enable-libonnxruntime</code>; it remains unavailable on <code>mingw64</code> and is unsupported on the older cataloged FFmpeg lines.</li>
+<li><code>svtjpegxs</code> is supported on current newer FFmpeg lines, including 9.0.1, and remains version-dependent on older releases.</li>
+<li>On FFmpeg 9.0.1, <code>shaderc</code> and <code>glslang</code> remain selectable MSYS2 shader-tool packages, but FFmpeg 9 removed <code>--enable-libshaderc</code> and <code>--enable-libglslang</code>, so those flags are not emitted.</li>
 </ul>
 <h2 id="public-library-presets">Public library presets</h2>
-<p>Library presets are starting points for selection. They do not replace the catalog, and they do not guarantee that every selected item will remain valid for every FFmpeg release/profile combination.</p>
+<p>Library presets are starting points for selection. They do not replace the library catalog, and they do not guarantee that every selected item will remain valid for every FFmpeg release/profile combination.</p>
 <p>The public presets are:</p>
 <table>
 <thead>
@@ -169,7 +171,7 @@
 <tr>
   <td><code>custom</code></td>
   <td>Shown when the current selection no longer exactly matches a preset</td>
-  <td>Not a programlied preset template</td>
+  <td>Not an applied preset template</td>
 </tr>
 </tbody>
 </table>
@@ -230,7 +232,7 @@
 </tr>
 <tr>
   <td><code>full</code></td>
-  <td><code>vvenc</code>, <code>lcevc-dec</code>, <code>davs2</code>, <code>uavs3d</code>, <code>xavs2</code>, <code>avisynthplus</code>, <code>mpeghdec</code>, <code>quirc</code>, <code>klvanc</code></td>
+  <td><code>vvenc</code>, <code>lcevc-dec</code>, <code>davs2</code>, <code>uavs3d</code>, <code>xavs2</code>, <code>avisynthplus</code>, <code>mpeghdec</code>, <code>quirc</code>, <code>klvanc</code>, plus <code>svtjpegxs</code> on 8.1.2/9.0.1 and <code>onnxruntime</code> on 9.0.1</td>
 </tr>
 </tbody>
 </table>
@@ -270,9 +272,9 @@
 </table>
 <p>The UI removes conflicting selections as the user toggles entries. The planner also validates the final configure flag list and blocks mutually exclusive flags if they still reach the plan.</p>
 <h2 id="manual-configure-flags">Manual configure flags</h2>
-<p>The advanced configure-flags box is intended for explicit user-supplied FFmpeg configure flags. It does not bypass catalog validation.</p>
+<p>The advanced configure-flags box is intended for explicit user-supplied FFmpeg configure flags. It does not bypass library catalog validation.</p>
 <p>If a manual flag exactly matches a flag from a known library entry, the planner treats that entry as effectively selected. This lets the planner add the matching packages, license information, and preparation gates.</p>
-<p>This recovery works only for catalog entries that have configure flags. Entries that only add packages cannot be recovered from a manual <code>--enable-lib...</code> flag unless such a flag exists in the entry.</p>
+<p>This recovery works only for library catalog entries that have configure flags. Entries that only add packages cannot be recovered from a manual <code>--enable-lib...</code> flag unless such a flag exists in the entry.</p>
 <h2 id="configure-options">Configure options</h2>
 <p>The Options page covers FFmpeg build switches that are not library entries.</p>
 <p>Locked defaults are:</p>
@@ -356,7 +358,7 @@
 <p>A library should be described as fully supported only when the program can approve the required package, source-preparation, or import path for the selected FFmpeg release and shell profile.</p>
 <p>These are different claims:</p>
 <ul>
-<li>listed in the catalog;</li>
+<li>listed in the library catalog;</li>
 <li>visible in the UI;</li>
 <li>selectable in standard use;</li>
 <li>selected by a public preset;</li>

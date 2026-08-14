@@ -11,7 +11,7 @@
 <main class="main">
 <section class="hero">
 <h1>Pre-execution approval and confirmation procedure <span class="lang-pill">EN</span></h1>
-<p class="hero-desc">How build approval is checked before local operations run.</p>
+<p class="hero-desc">How plans, native confirmation, consent values, and retry boundaries authorize execution.</p>
 </section>
 <section aria-label="Document section highlights" class="section-cards">
 <a class="section-card" href="#summary"><span class="card-icon">1</span><span><strong>Summary</strong></span></a>
@@ -26,14 +26,14 @@
 <p>Promptful Custom FFmpeg Builder creates an execution plan before running a task, displays the information that requires user review, checks that the plan is still valid, and then asks for final approval through a Windows native confirmation dialog. Pressing a button in the UI alone does not start downloads, archive extraction, package installation, or build command execution.</p>
 <p>This document explains that approval procedure.</p>
 <h2 id="summary">Summary</h2>
-<p>Before toolchain preparation or an FFmpeg build begins, the program checks the following four conditions:</p>
+<p>Before an <strong>initial</strong> toolchain preparation or FFmpeg build begins, the program checks the following four conditions:</p>
 <ol>
 <li>the operation the user intends to approve matches the operation in the approval request;</li>
 <li>the plan hash shown on the review screen matches the plan stored by the backend;</li>
 <li>the approval wording reviewed by the user matches the approval wording in the approval request;</li>
 <li>the user selected <code>Yes</code> in the Windows native confirmation dialog opened by the backend.</li>
 </ol>
-<p>Only when all four conditions are satisfied does the program create the operation-specific approval token that permits the approved operation to proceed.</p>
+<p>Only when all four conditions are satisfied does the program create the operation-specific approval token that permits the initially approved operation to proceed. A retry after a transient FFmpeg network stall is handled separately as continuation of that same approved operation, as described below.</p>
 <h2 id="what-the-user-reviews">What the user reviews</h2>
 <p>The review screen may show the selected source archives, packages to be installed, configure flags, generated scripts, warnings, license effects, and expected file operations. The UI displays this information, but it does not independently execute the build.</p>
 <p>The backend stores a separate review session in memory and compares the approval request received from the UI against that session. This prevents errors such as a stale UI state, a modified WebView call, a reused approval request, or a local RPC call being applied to a different build.</p>
@@ -43,7 +43,7 @@
 <li>the backend creates an executable plan;</li>
 <li>the backend stores the plan in an in-memory review session;</li>
 <li>the UI displays the plan, warnings, final configure flags, package list, license effects, and approval wording;</li>
-<li>the UI sends a approval request containing the review session ID, operation name, plan hash, and approval wording;</li>
+<li>the UI sends an approval request containing the review session ID, operation name, plan hash, and approval wording;</li>
 <li>the backend checks that the session exists, has not expired, has not already been used, and matches the request;</li>
 <li>the backend recalculates the plan hash from the stored plan;</li>
 <li>the backend checks that the stored plan is executable;</li>
@@ -76,18 +76,24 @@
 <p>During private MSYS2 tool preparation, the approval procedure also covers downloads of the MSYS2 signature file and signing key. During an FFmpeg build, the same approval procedure applies to the FFmpeg source download, FFmpeg signature file, signing key, and required library source downloads.</p>
 <h2 id="execution-time-safeguards">Execution-time safeguards</h2>
 <p>Approval is only one of several safeguards. Operations that may affect the build environment are checked again during execution.</p>
-<h3>Downloads</h3>
+<h3 id="downloads">Downloads</h3>
 <p>Approved downloads are still checked for HTTPS use, valid destination paths inside the workspace, temporary-file placement, unexpected file size, reuse rules, and SHA-256 validation when a hash is required. The program may also warn when a download is attempted from a host that is not on the expected download-host list, but the download is not judged by the host name alone.</p>
-<h3>Archive extraction</h3>
+<p>For MSYS2 package transfers, generated package-install scripts configure an ordered mirror set and a bounded transfer command so a stalled mirror can fail over instead of hanging indefinitely. Exhausting transient-network retries is classified separately from a build/configuration failure.</p>
+<h3 id="archive-extraction">Archive extraction</h3>
 <p>Archive extraction checks that the archive and extraction destination are inside the selected workspace. It also limits the number of extracted files and the total extracted size. Attempts to extract to invalid paths or to create unsafe symbolic links are blocked before completion. As a result, the actual locations and contents written during extraction are controlled by extraction-time validation.</p>
-<h3>Package installation and build commands</h3>
-<p>Package installation and build execution are performed through separate plans. During execution, the program checks the executable path, working directory, MSYS2 root, log-file location, executable name, shell metacharacters in executable paths, and null bytes in command arguments. These checks prevent a approved build step from running a build command outside the selected workspace.</p>
-<h3>Scripts</h3>
+<h3 id="package-installation-and-build-commands">Package installation and build commands</h3>
+<p>Package installation and build execution are performed through separate plans. During execution, the program checks the executable path, working directory, MSYS2 root, log-file location, executable name, shell metacharacters in executable paths, and null bytes in command arguments. These checks prevent an approved build step from running a build command outside the selected workspace.</p>
+<h3 id="scripts">Scripts</h3>
 <p>When FFmpeg builds require shell scripts for package installation, configure, make, or selected library preparation work, the program records the script path and SHA-256 hash when the script is created. Immediately before execution, the script is checked again. If its content no longer matches the approved hash, execution is stopped.</p>
+<h2 id="cleanup-and-auxiliary-actions">Cleanup and auxiliary actions</h2>
+<h2 id="retry-after-a-transient-ffmpeg-network-stall">Retry after a transient FFmpeg network stall</h2>
+<p>A network stall during an already approved FFmpeg build does not create a new plan. After the initial review session has passed backend validation and the native Windows confirmation, the GUI retains the exact backend plan and approval request for that running build. If transient package/download failures exhaust the retry budget, the run ends in a <code>stalled</code> state instead of <code>failed</code>, and the UI can show the mirror addresses that were tried.</p>
+<p>Choosing <strong>Retry the build</strong> launches the same stored FFmpeg plan again with the same previously approved request. It does <strong>not</strong> create a second review session or display a second native approval dialog. The backend recreates the operation-specific consent values from that same approval request and executes the same plan hash. Cached and already prepared files may therefore be reused by the normal build logic.</p>
+<p>This retry path is intentionally narrower than ordinary approval: it exists only for the same in-memory FFmpeg plan that successfully passed the original approval flow. Changing libraries, configure flags, source information, workspace settings, or other plan inputs requires generating and approving a new plan. A program restart also discards the frontend's in-memory retry reference.</p>
 <h2 id="cleanup-and-auxiliary-actions">Cleanup and auxiliary actions</h2>
 <p>Some auxiliary actions are not treated as build-plan operations and therefore do not use the same approval token. Examples include opening the result folder, opening a report, opening the log folder, reading package state, inspecting the generated FFmpeg binary, and cleaning up private MSYS2 tools.</p>
 <p>Cleanup or removal operations are still limited to the selected workspace. Cleaning failed preparation work, cleaning failed builds, removing invalid artifacts, replacing a tool with a new one, and explicitly removing private tools must remain inside the selected workspace. These operations also use path validation, drive-root refusal, symbolic-link checks, and program-constructed target paths.</p>
-<h2 id="summary-2">Summary</h2>
+<h2 id="summary">Summary</h2>
 <p>The program separates “displaying a plan and requesting approval” from “authorizing execution.” The UI can display the plan and request approval, but the backend stores the plan, verifies the plan hash, calls the Windows native confirmation dialog, creates the approval token, and performs the final execution checks.</p>
 
 </article>

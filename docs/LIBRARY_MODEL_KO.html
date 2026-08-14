@@ -11,9 +11,9 @@
 <main class="main">
 <section class="hero">
 <h1>라이브러리 선택과 빌드 옵션 <span class="lang-pill">KO</span></h1>
-<p class="hero-desc">라이브러리 항목, 프리셋, configure 옵션, 충돌 항목, 라이선스 영향을 처리하는 기준을 설명합니다.</p>
+<p class="hero-desc">라이브러리 트랙, 프리셋, 호환성 규칙, 옵션과 라이선스 영향을 설명합니다.</p>
 </section>
-<section aria-label="문서 주요 섹션" class="section-cards">
+<section aria-label="Document section highlights" class="section-cards">
 <a class="section-card" href="#라이브러리-항목의-종류"><span class="card-icon">1</span><span><strong>라이브러리 항목의 종류</strong></span></a>
 <a class="section-card" href="#ffmpeg-기본-포함-항목"><span class="card-icon">2</span><span><strong>FFmpeg 기본 포함 항목</strong></span></a>
 <a class="section-card" href="#msys2-패키지-항목"><span class="card-icon">3</span><span><strong>MSYS2 패키지 항목</strong></span></a>
@@ -94,8 +94,9 @@
 <li><code>klvanc</code></li>
 <li><code>libtls</code></li>
 <li><code>libmfx</code></li>
+<li><code>opencv</code></li>
 </ul>
-<p><code>libmfx</code>도 이 구현된 그룹에 속합니다. <code>libmfx</code>는 선택한 FFmpeg 버전과 프로필에서 레거시 Intel Media SDK 경로가 필요할 때 쓰는 백엔드입니다. 최신 oneVPL 경로인 <code>libvpl</code>과 동시에 쓰지 않습니다. <code>dc1394</code>나 <code>pocketsphinx</code>처럼 내부 트랙에 속하더라도 안전한 일반 준비 절차가 없으면 여전히 차단될 수 있습니다.</p>
+<p><code>libmfx</code>도 이 구현된 그룹에 속합니다. <code>libmfx</code>는 선택한 FFmpeg 버전과 프로필에서 레거시 Intel Media SDK 경로가 필요할 때 쓰는 백엔드이며 최신 oneVPL 경로인 <code>libvpl</code>과 동시에 쓰지 않습니다. <code>opencv</code>도 내부에서 준비합니다. 현재 MSYS2 OpenCV 5에서는 FFmpeg의 <code>--enable-libopencv</code>가 요구하는 레거시 C API가 제거되어 이 프로그램은 OpenCV 4.11.0을 고정해 소스에서 빌드합니다. <code>dc1394</code>나 <code>pocketsphinx</code>처럼 내부 트랙에 속하더라도 안전한 일반 준비 절차가 없으면 여전히 차단될 수 있습니다.</p>
 <h2 id="외부-또는-차단-항목">외부 또는 차단 항목</h2>
 <p>일부 FFmpeg 연동은 외부 SDK, 특수 import 라이브러리, 별도 빌드 경로가 필요합니다. 이 프로그램이 그 경로를 안전하게 준비하지 못하는 경우에는 카탈로그에 이름이 있더라도 일반 계획에 넣지 않습니다.</p>
 <p>현재 일반 빌드/가져오기 절차가 없어 차단되는 항목은 다음과 같습니다.</p>
@@ -121,8 +122,9 @@
 <li><code>libvpl</code>은 최신 FFmpeg 계열에서 쓰는 Intel oneVPL 경로입니다.</li>
 <li><code>libmfx</code>는 레거시 Intel Media SDK 경로이며 <code>libvpl</code>과 함께 켤 수 없습니다.</li>
 <li><code>lensfun</code>은 사용 가능한 패키지가 선택한 FFmpeg 버전의 요구 API를 만족하지 못하면 차단됩니다.</li>
-<li><code>onnxruntime</code>은 현재 적용한 공식 FFmpeg 릴리스 범위에서 일반 지원 항목으로 다루지 않으며, <code>mingw64</code>에서도 사용할 수 없습니다.</li>
-<li><code>svtjpegxs</code>는 FFmpeg 버전 요구 사항과 pkg-config 결과에 따라 달라집니다.</li>
+<li><code>onnxruntime</code>은 FFmpeg 9.0.1의 <code>ucrt64</code>와 <code>clang64</code>에서 지원되며 <code>--enable-libonnxruntime</code>을 사용합니다. <code>mingw64</code>에서는 사용할 수 없고, 현재 카탈로그의 이전 FFmpeg 릴리스에서는 지원되지 않습니다.</li>
+<li><code>svtjpegxs</code>는 9.0.1을 포함한 최신 지원 FFmpeg 계열에서 사용할 수 있으며 이전 릴리스에서는 버전 조건이 적용됩니다.</li>
+<li>FFmpeg 9.0.1에서는 <code>shaderc</code>와 <code>glslang</code> 패키지를 셰이더 도구로 선택할 수 있지만 FFmpeg 9에서 <code>--enable-libshaderc</code>, <code>--enable-libglslang</code> 스위치가 제거되어 해당 플래그를 생성하지 않습니다.</li>
 </ul>
 <h2 id="공개-라이브러리-프리셋">공개 라이브러리 프리셋</h2>
 <p>라이브러리 프리셋은 선택을 시작하기 위한 기준입니다. 프리셋이 카탈로그를 대신하지 않으며, 선택한 FFmpeg 버전과 프로필에서 모든 항목이 그대로 유지된다고 보장하지도 않습니다.</p>
@@ -230,7 +232,7 @@
 </tr>
 <tr>
   <td><code>full</code></td>
-  <td><code>vvenc</code>, <code>lcevc-dec</code>, <code>davs2</code>, <code>uavs3d</code>, <code>xavs2</code>, <code>avisynthplus</code>, <code>mpeghdec</code>, <code>quirc</code>, <code>klvanc</code></td>
+  <td><code>vvenc</code>, <code>lcevc-dec</code>, <code>davs2</code>, <code>uavs3d</code>, <code>xavs2</code>, <code>avisynthplus</code>, <code>mpeghdec</code>, <code>quirc</code>, <code>klvanc</code>에 더해 8.1.2/9.0.1에서는 <code>svtjpegxs</code>, 9.0.1에서는 <code>onnxruntime</code>이 추가됩니다.</td>
 </tr>
 </tbody>
 </table>

@@ -8,22 +8,22 @@ A library catalog entry is not necessarily a selectable option. Some entries are
 
 - Total library catalog entries: **125**.
 - Official FFmpeg-source entries: **10**.
-- Native MSYS2 package entries: **96**.
-- Internal source-prepared entries: **13**.
+- Native MSYS2 package entries: **95** (excluding the 10 entries built directly from FFmpeg source).
+- Internal-track entries: **14**; **12** currently have implemented source-preparation recipes.
 - External SDK/import entries: **6**.
 - Globally UI-disabled entries: **2** — `tensorflow`, `vapoursynth`.
 - Blocked entries without a supported build/import path: **7** — `smbclient`, `openvino`, `torch`, `pocketsphinx`, `dc1394`, `decklink`, `cuda-nvcc`.
 
-Selection availability depends on the selected FFmpeg release and MSYS2 shell profile. The program checks the selected entries before configure so unsupported release/profile combinations are not included in the final build plan.
+Selection availability depends on the selected FFmpeg release and MSYS2 shell profile. The program checks the selected entries before configure so unsupported release/profile combinations are not included in the final build plan. The counts above use the current **FFmpeg 9.0.1** catalog classification; older supported releases may classify individual entries differently.
 
-Version/profile-restricted entries are not counted as globally disabled. For example, `lensfun` depends on whether the available package satisfies the API required by the selected FFmpeg release; `onnxruntime` is not available for the covered official FFmpeg release lines and is also unavailable for `mingw64`; `svtjpegxs` depends on FFmpeg release requirements and pkg-config results.
+Version/profile-restricted entries are not counted as globally disabled. In the FFmpeg 9.0.1 catalog, `lensfun` is unavailable because the current package/API combination does not satisfy this release, while `onnxruntime` is selectable on `ucrt64` and `clang64` but unavailable on `mingw64`. `svtjpegxs` is selectable on FFmpeg 9.0.1 and remains release-dependent on older lines.
 
 ## How to read this report
 
 | Term | Meaning |
 |---|---|
 | Included in FFmpeg source | Built from the official FFmpeg source tree and always included |
-| Native MSYS2 package | Uses an MSYS2 package and a standard FFmpeg configure flag |
+| Native MSYS2 package | Uses an MSYS2 package; it adds an FFmpeg configure flag when that FFmpeg release exposes one |
 | Internal source-prepared | The program prepares source or import files inside the private build environment |
 | External SDK/import | Needs an outside SDK, import library, or preparation path that is not package-based selection |
 | UI-disabled | Registered in the library catalog, but not selectable in the standard UI |
@@ -74,7 +74,7 @@ The Extended toggle adds selected source-prepared entries to the broader public 
 | Maximum Efficiency | `vvenc`, `lcevc-dec` |
 | Maximum Compatibility | `davs2`, `uavs3d`, `xavs2`, `avisynthplus`, `klvanc` |
 | Audio/Video Editor | `avisynthplus`, `lcevc-dec`, `quirc` |
-| Full | `vvenc`, `lcevc-dec`, `davs2`, `uavs3d`, `xavs2`, `avisynthplus`, `mpeghdec`, `quirc`, `klvanc` |
+| Full | `vvenc`, `lcevc-dec`, `davs2`, `uavs3d`, `xavs2`, `avisynthplus`, `mpeghdec`, `quirc`, `klvanc`, plus `svtjpegxs` on FFmpeg 8.1.2/9.0.1 and `onnxruntime` on FFmpeg 9.0.1 |
 
 Extended entries may change the derived license profile. For example, `xavs2`, `davs2`, and `avisynthplus` add GPL license effects, while `mpeghdec` adds a nonfree license effect.
 
@@ -107,6 +107,7 @@ These entries need more than MSYS2 package selection. For supported source-prepa
 | `klvanc` | libklvanc / Broadcast metadata | internal source-prepared | vid.obe.1.6.0 | internal source build | configure + make | Selectable when supported by the selected release/profile |
 | `libtls` | libtls / Secure network access | internal source-prepared | 4.3.2 | internal source build | CMake | Selectable when supported by the selected release/profile |
 | `libmfx` | libmfx / Legacy Intel Media SDK | internal source-prepared | 1.35.1 | internal source build | CMake | Selectable when supported by the selected release/profile; mutually exclusive with `libvpl` |
+| `opencv` | OpenCV | internal source-prepared | 4.11.0 | internal source build | CMake (`core` + `imgproc`) | Selectable; pinned to OpenCV 4.11.0 because current MSYS2 OpenCV 5 no longer provides the legacy C API required by FFmpeg `--enable-libopencv` |
 | `tensorflow` | TensorFlow / AI model inference | external SDK/import | 2.16.1 | external import | archive import | UI-disabled |
 
 ## Disabled, blocked, and restricted entries
@@ -117,7 +118,7 @@ The program keeps these states separate:
 |---|---|---|
 | Globally UI-disabled | `tensorflow`, `vapoursynth` | registered but not selectable in the standard UI |
 | Blocked without preparation path | `smbclient`, `openvino`, `torch`, `pocketsphinx`, `dc1394`, `decklink`, `cuda-nvcc` | no supported build/import path is implemented |
-| Version/profile-restricted | examples include `lensfun`, `onnxruntime`, `svtjpegxs`, `libvpl`, `libmfx` | availability depends on FFmpeg release, MSYS2 shell profile, package/API requirement, or pkg-config result |
+| Version/profile-restricted | examples include `lensfun`, `onnxruntime`, `svtjpegxs`, `libvpl`, `libmfx` | availability depends on FFmpeg release, MSYS2 shell profile, package/API requirement, or pkg-config result; on 9.0.1, `onnxruntime` works on `ucrt64`/`clang64` while `lensfun` is unavailable |
 
 `libmfx` is not a blocked entry. It is an implemented internal source-prepared legacy Intel backend and is normalized against `libvpl`.
 
@@ -193,7 +194,7 @@ The following table lists the complete library library catalog before profile-sp
 | `rsvg` | librsvg | native MSYS2 package | Selectable: MSYS2 package | LGPL | `--enable-librsvg` | `<profile>-librsvg` | Renders SVG vector graphics into normal image frames. Useful for scalable logos, overlays, and graphic assets. |
 | `snappy` | Snappy | native MSYS2 package | Selectable: MSYS2 package | LGPL | `--enable-libsnappy` | `<profile>-snappy` | Provides fast Snappy data compression for formats that use it internally. |
 | `lcms2` | Little CMS 2 | native MSYS2 package | Selectable: MSYS2 package | LGPL | `--enable-lcms2` | `<profile>-lcms2` | Applies color profile management for more accurate color conversion. Useful when preserving color appearance matters. |
-| `svtjpegxs` | SVT JPEG XS | native MSYS2 package | Version/profile-restricted | LGPL | `--enable-libsvtjpegxs` | `<profile>-svt-jpeg-xs`, `git`, `<profile>-cmake`, `<profile>-ninja`, `<profile>-yasm` | Produces JPEG XS video for low-latency professional media workflows. |
+| `svtjpegxs` | SVT JPEG XS | native MSYS2 package | Selectable on FFmpeg 9.0.1; release-dependent on older lines | LGPL | `--enable-libsvtjpegxs` | `<profile>-svt-jpeg-xs`, `git`, `<profile>-cmake`, `<profile>-ninja`, `<profile>-yasm` | Produces JPEG XS video for low-latency professional media workflows. |
 
 ### Filters and processing
 
@@ -206,15 +207,15 @@ The following table lists the complete library library catalog before profile-sp
 | `opencolorio` | OpenColorIO | native MSYS2 package | Selectable: MSYS2 package | LGPL | `--enable-libopencolorio` | `<profile>-opencolorio` | Applies studio-grade color management for film, animation, and post-production workflows. |
 | `cairo` | Cairo | native MSYS2 package | Selectable: MSYS2 package | LGPL | `--enable-cairo` | `<profile>-cairo` | Provides 2D vector drawing support for generated graphics, overlays, and filter visuals. Useful when media processing needs drawn shapes or rendered graphic elements. |
 | `opencl` | OpenCL | native MSYS2 package | Selectable: MSYS2 package | LGPL | `--enable-opencl` | `<profile>-opencl-icd`, `<profile>-opencl-headers` | Runs supported compute filters on OpenCL-capable GPUs or accelerators. Useful for offloading heavy image processing. |
-| `shaderc` | libshaderc | native MSYS2 package | Selectable: MSYS2 package | LGPL | `--enable-libshaderc` | `<profile>-shaderc` | Compiles shader programs used by GPU-based video filters. Useful for advanced rendering and GPU processing paths. |
-| `glslang` | glslang | native MSYS2 package | Selectable: MSYS2 package | LGPL | `--enable-libglslang` | `<profile>-glslang` | Compiles GLSL shader code for GPU-based video processing. Useful for advanced graphics and compute-style filter paths. |
+| `shaderc` | libshaderc | native MSYS2 package | Selectable package/tool on FFmpeg 9.0.1 | LGPL | none on FFmpeg 9.0.1 | `<profile>-shaderc` | FFmpeg 9 removed `--enable-libshaderc`; the package can still be installed as a Vulkan shader build tool. Older FFmpeg releases may still use the configure switch. |
+| `glslang` | glslang | native MSYS2 package | Selectable package/tool on FFmpeg 9.0.1 | LGPL | none on FFmpeg 9.0.1 | `<profile>-glslang` | FFmpeg 9 removed `--enable-libglslang`; the package can still be installed as a Vulkan shader build tool. Older FFmpeg releases may still use the configure switch. |
 | `frei0r` | frei0r | native MSYS2 package | Selectable: MSYS2 package | GPL | `--enable-frei0r` | `<profile>-frei0r-plugins` | Provides extra creative video effects and filter plugins. Useful for stylized processing beyond the standard filter set. |
-| `opencv` | OpenCV | native MSYS2 package | Selectable: MSYS2 package | LGPL | `--enable-libopencv` | `<profile>-opencv` | Provides computer-vision processing for image analysis and experimental visual filters. |
+| `opencv` | OpenCV | internal source-prepared | Selectable: pinned source build | LGPL | `--enable-libopencv` | OpenCV 4.11.0 source (`core` + `imgproc`) | Provides the legacy OpenCV C API required by FFmpeg. The builder uses pinned OpenCV 4.11.0 because current MSYS2 OpenCV 5 removed the required legacy headers/API and `opencv4.pc` compatibility path. |
 | `ladspa` | LADSPA | native MSYS2 package | Selectable: MSYS2 package | LGPL | `--enable-ladspa` | `<profile>-ladspa-sdk`, `<profile>-dlfcn` | Loads LADSPA audio effect plugins for extra audio processing. Useful when existing plugin chains need to be used in media conversion. |
 | `lv2` | LV2 | native MSYS2 package | Selectable: MSYS2 package | LGPL | `--enable-lv2` | `<profile>-lilv` | Loads LV2 audio plugins for more advanced audio effects and processing chains. |
 | `qrencode` | libqrencode | native MSYS2 package | Selectable: MSYS2 package | LGPL | `--enable-libqrencode` | `<profile>-qrencode` | Generates QR codes that can be placed into images or video frames. |
 | `cuda-nvcc` | CUDA NVCC (NVIDIA GPU filters) | external SDK/import | Blocked: no preparation path | LGPL | `--enable-cuda-nvcc` | no supported preparation path | Compiles FFmpeg's CUDA-accelerated filters with NVIDIA's nvcc compiler. nvcc ships only in the proprietary CUDA Toolkit, which is not available as an MSYS2 package. |
-| `lensfun` | lensfun | native MSYS2 package | Version/profile-restricted | LGPL | `--enable-liblensfun` | `<profile>-lensfun` | Corrects lens distortion, vignetting, and other camera-lens artifacts. Useful for cleanup of footage from known lenses. |
+| `lensfun` | lensfun | native MSYS2 package | Unavailable in the current FFmpeg 9.0.1 catalog | LGPL | `--enable-liblensfun` | `<profile>-lensfun` | Corrects lens distortion and vignetting. FFmpeg exposes the switch, but the current package/API combination is intentionally blocked for 9.0.1. |
 | `vapoursynth` | VapourSynth / Scripted video processing | native MSYS2 package | UI-disabled | LGPL | `--enable-vapoursynth` | `<profile>-vapoursynth` | Opens VapourSynth script-based video processing chains. Useful when advanced scripted filtering must feed frames into a media workflow. |
 
 ### Audio
@@ -307,7 +308,7 @@ The following table lists the complete library library catalog before profile-sp
 
 | ID | Display name | Track | Status | License | Configure flags | Packages / preparation | Purpose |
 |---|---|---|---|---|---|---|---|
-| `onnxruntime` | ONNX Runtime / AI model inference | native MSYS2 package | UI-disabled; profile-limited: not in mingw64 | LGPL | `--enable-libonnxruntime` | `<profile>-onnxruntime` | Runs supported deep-learning filters through ONNX Runtime. Useful for model-based analysis or enhancement workflows. |
+| `onnxruntime` | ONNX Runtime / AI model inference | native MSYS2 package | Selectable on FFmpeg 9.0.1 for `ucrt64`/`clang64`; unavailable on `mingw64` | LGPL | `--enable-libonnxruntime` | `<profile>-onnxruntime` (`ucrt64`/`clang64`) | Runs FFmpeg 9 ONNX Runtime integrations. The configure script adds MSYS2's nested `include/onnxruntime` directory when this library is enabled. |
 | `openvino` | OpenVINO / AI model inference | external SDK/import | Blocked: no preparation path | LGPL | `--enable-libopenvino` | no supported preparation path | Runs supported AI inference filters with Intel-oriented acceleration. Useful for model-based video or image processing. |
 | `torch` | Torch / libtorch | external SDK/import | Blocked: no preparation path | LGPL | `--enable-libtorch` | no supported preparation path | Runs supported deep-learning filters through Torch-based model execution. Useful for PyTorch-style inference workflows. |
 | `tensorflow` | TensorFlow / AI model inference | external SDK/import | UI-disabled | LGPL | `--enable-libtensorflow` | prepared from pinned source/import procedure | Runs supported deep-learning filters through the TensorFlow C API. Useful for model-based image or video analysis. |

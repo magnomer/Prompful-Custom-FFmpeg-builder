@@ -11,7 +11,7 @@
 <main class="main">
 <section class="hero">
 <h1>Library coverage report <span class="lang-pill">EN</span></h1>
-<p class="hero-desc">Which registered library entries are selectable, restricted, or conditionally available.</p>
+<p class="hero-desc">Current catalog coverage, FFmpeg 9.0.1 compatibility, presets, and restricted entries.</p>
 </section>
 <section aria-label="Document section highlights" class="section-cards">
 <a class="section-card" href="#summary"><span class="card-icon">1</span><span><strong>Summary</strong></span></a>
@@ -24,19 +24,19 @@
 <article class="doc-content">
 <h1 id="library-coverage-report">Library coverage report</h1>
 <p>This report describes which FFmpeg library entries are registered in this version of Promptful Custom FFmpeg Builder, which entries can be selected, and which entries are restricted by FFmpeg version, MSYS2 shell profile, package availability, or missing preparation support.</p>
-<p>A catalog entry is not necessarily a selectable option. Some entries are registered for tracking, comparison, warning, or future preparation support, and some selectable entries may still be excluded from the final build plan for a particular FFmpeg release or MSYS2 profile.</p>
+<p>A library catalog entry is not necessarily a selectable option. Some entries are registered for tracking, comparison, warning, or future preparation support, and some selectable entries may still be excluded from the final build plan for a particular FFmpeg release or MSYS2 profile.</p>
 <h2 id="summary">Summary</h2>
 <ul>
-<li>Total catalog entries: <strong>125</strong>.</li>
+<li>Total library catalog entries: <strong>125</strong>.</li>
 <li>Official FFmpeg-source entries: <strong>10</strong>.</li>
-<li>Native MSYS2 package entries: <strong>96</strong>.</li>
-<li>Internal source-prepared entries: <strong>13</strong>.</li>
+<li>Native MSYS2 package entries: <strong>95</strong> (excluding the 10 entries built directly from FFmpeg source).</li>
+<li>Internal-track entries: <strong>14</strong>; <strong>12</strong> currently have implemented source-preparation recipes.</li>
 <li>External SDK/import entries: <strong>6</strong>.</li>
 <li>Globally UI-disabled entries: <strong>2</strong> — <code>tensorflow</code>, <code>vapoursynth</code>.</li>
 <li>Blocked entries without a supported build/import path: <strong>7</strong> — <code>smbclient</code>, <code>openvino</code>, <code>torch</code>, <code>pocketsphinx</code>, <code>dc1394</code>, <code>decklink</code>, <code>cuda-nvcc</code>.</li>
 </ul>
-<p>Selection availability depends on the selected FFmpeg release and MSYS2 shell profile. The program checks the selected entries before configure so unsupported release/profile combinations are not included in the final build plan.</p>
-<p>Version/profile-restricted entries are not counted as globally disabled. For example, <code>lensfun</code> depends on whether the available package satisfies the API required by the selected FFmpeg release; <code>onnxruntime</code> is not available for the covered official FFmpeg release lines and is also unavailable for <code>mingw64</code>; <code>svtjpegxs</code> depends on FFmpeg release requirements and pkg-config results.</p>
+<p>Selection availability depends on the selected FFmpeg release and MSYS2 shell profile. The program checks the selected entries before configure so unsupported release/profile combinations are not included in the final build plan. The counts above use the current <strong>FFmpeg 9.0.1</strong> catalog classification; older supported releases may classify individual entries differently.</p>
+<p>Version/profile-restricted entries are not counted as globally disabled. In the FFmpeg 9.0.1 catalog, <code>lensfun</code> is unavailable because the current package/API combination does not satisfy this release, while <code>onnxruntime</code> is selectable on <code>ucrt64</code> and <code>clang64</code> but unavailable on <code>mingw64</code>. <code>svtjpegxs</code> is selectable on FFmpeg 9.0.1 and remains release-dependent on older lines.</p>
 <h2 id="how-to-read-this-report">How to read this report</h2>
 <table>
 <thead>
@@ -52,7 +52,7 @@
 </tr>
 <tr>
   <td>Native MSYS2 package</td>
-  <td>Uses an MSYS2 package and a standard FFmpeg configure flag</td>
+  <td>Uses an MSYS2 package; it adds an FFmpeg configure flag when that FFmpeg release exposes one</td>
 </tr>
 <tr>
   <td>Internal source-prepared</td>
@@ -64,11 +64,11 @@
 </tr>
 <tr>
   <td>UI-disabled</td>
-  <td>Registered in the catalog, but not selectable in the standard UI</td>
+  <td>Registered in the library catalog, but not selectable in the standard UI</td>
 </tr>
 <tr>
   <td>Blocked</td>
-  <td>Registered in the catalog, but no supported build/import path exists yet</td>
+  <td>Registered in the library catalog, but no supported build/import path exists yet</td>
 </tr>
 <tr>
   <td>Version/profile-restricted</td>
@@ -213,7 +213,7 @@
 </tr>
 <tr>
   <td>Full</td>
-  <td><code>vvenc</code>, <code>lcevc-dec</code>, <code>davs2</code>, <code>uavs3d</code>, <code>xavs2</code>, <code>avisynthplus</code>, <code>mpeghdec</code>, <code>quirc</code>, <code>klvanc</code></td>
+  <td><code>vvenc</code>, <code>lcevc-dec</code>, <code>davs2</code>, <code>uavs3d</code>, <code>xavs2</code>, <code>avisynthplus</code>, <code>mpeghdec</code>, <code>quirc</code>, <code>klvanc</code>, plus <code>svtjpegxs</code> on FFmpeg 8.1.2/9.0.1 and <code>onnxruntime</code> on FFmpeg 9.0.1</td>
 </tr>
 </tbody>
 </table>
@@ -371,6 +371,15 @@
   <td>Selectable when supported by the selected release/profile; mutually exclusive with <code>libvpl</code></td>
 </tr>
 <tr>
+  <td><code>opencv</code></td>
+  <td>OpenCV</td>
+  <td>internal source-prepared</td>
+  <td>4.11.0</td>
+  <td>internal source build</td>
+  <td>CMake (<code>core</code> + <code>imgproc</code>)</td>
+  <td>Selectable; pinned to OpenCV 4.11.0 because current MSYS2 OpenCV 5 no longer provides the legacy C API required by FFmpeg <code>--enable-libopencv</code></td>
+</tr>
+<tr>
   <td><code>tensorflow</code></td>
   <td>TensorFlow / AI model inference</td>
   <td>external SDK/import</td>
@@ -405,14 +414,14 @@
 <tr>
   <td>Version/profile-restricted</td>
   <td>examples include <code>lensfun</code>, <code>onnxruntime</code>, <code>svtjpegxs</code>, <code>libvpl</code>, <code>libmfx</code></td>
-  <td>availability depends on FFmpeg release, MSYS2 shell profile, package/API requirement, or pkg-config result</td>
+  <td>availability depends on FFmpeg release, MSYS2 shell profile, package/API requirement, or pkg-config result; on 9.0.1, <code>onnxruntime</code> works on <code>ucrt64</code>/<code>clang64</code> while <code>lensfun</code> is unavailable</td>
 </tr>
 </tbody>
 </table>
 <p><code>libmfx</code> is not a blocked entry. It is an implemented internal source-prepared legacy Intel backend and is normalized against <code>libvpl</code>.</p>
-<h2 id="full-library-catalog">Full library catalog</h2>
-<p>The following table lists the complete library catalog before profile-specific runtime filtering. Package names use <code>&lt;profile&gt;</code> to mean the active MSYS2 shell profile prefix, for example <code>mingw-w64-ucrt-x86_64</code>, <code>mingw-w64-x86_64</code>, or <code>mingw-w64-clang-x86_64</code>.</p>
-<h3>Included by default (official FFmpeg source)</h3>
+<h2 id="full-library-library-catalog">Full library library catalog</h2>
+<p>The following table lists the complete library library catalog before profile-specific runtime filtering. Package names use <code>&lt;profile&gt;</code> to mean the active MSYS2 shell profile prefix, for example <code>mingw-w64-ucrt-x86_64</code>, <code>mingw-w64-x86_64</code>, or <code>mingw-w64-clang-x86_64</code>.</p>
+<h3 id="included-by-default-official-ffmpeg-source">Included by default (official FFmpeg source)</h3>
 <table>
 <thead>
 <tr>
@@ -529,7 +538,7 @@
 </tr>
 </tbody>
 </table>
-<h3>Video encoders</h3>
+<h3 id="video-encoders">Video encoders</h3>
 <table>
 <thead>
 <tr>
@@ -706,7 +715,7 @@
 </tr>
 </tbody>
 </table>
-<h3>Hardware encoders</h3>
+<h3 id="hardware-encoders">Hardware encoders</h3>
 <table>
 <thead>
 <tr>
@@ -763,7 +772,7 @@
 </tr>
 </tbody>
 </table>
-<h3>Video decoders</h3>
+<h3 id="video-decoders">Video decoders</h3>
 <table>
 <thead>
 <tr>
@@ -850,7 +859,7 @@
 </tr>
 </tbody>
 </table>
-<h3>Image codecs</h3>
+<h3 id="image-codecs">Image codecs</h3>
 <table>
 <thead>
 <tr>
@@ -939,7 +948,7 @@
   <td><code>svtjpegxs</code></td>
   <td>SVT JPEG XS</td>
   <td>native MSYS2 package</td>
-  <td>Version/profile-restricted</td>
+  <td>Selectable on FFmpeg 9.0.1; release-dependent on older lines</td>
   <td>LGPL</td>
   <td><code>--enable-libsvtjpegxs</code></td>
   <td><code>&lt;profile&gt;-svt-jpeg-xs</code>, <code>git</code>, <code>&lt;profile&gt;-cmake</code>, <code>&lt;profile&gt;-ninja</code>, <code>&lt;profile&gt;-yasm</code></td>
@@ -947,7 +956,7 @@
 </tr>
 </tbody>
 </table>
-<h3>Filters and processing</h3>
+<h3 id="filters-and-processing">Filters and processing</h3>
 <table>
 <thead>
 <tr>
@@ -1036,21 +1045,21 @@
   <td><code>shaderc</code></td>
   <td>libshaderc</td>
   <td>native MSYS2 package</td>
-  <td>Selectable: MSYS2 package</td>
+  <td>Selectable package/tool on FFmpeg 9.0.1</td>
   <td>LGPL</td>
-  <td><code>--enable-libshaderc</code></td>
+  <td>none on FFmpeg 9.0.1</td>
   <td><code>&lt;profile&gt;-shaderc</code></td>
-  <td>Compiles shader programs used by GPU-based video filters. Useful for advanced rendering and GPU processing paths.</td>
+  <td>FFmpeg 9 removed <code>--enable-libshaderc</code>; the package can still be installed as a Vulkan shader build tool. Older FFmpeg releases may still use the configure switch.</td>
 </tr>
 <tr>
   <td><code>glslang</code></td>
   <td>glslang</td>
   <td>native MSYS2 package</td>
-  <td>Selectable: MSYS2 package</td>
+  <td>Selectable package/tool on FFmpeg 9.0.1</td>
   <td>LGPL</td>
-  <td><code>--enable-libglslang</code></td>
+  <td>none on FFmpeg 9.0.1</td>
   <td><code>&lt;profile&gt;-glslang</code></td>
-  <td>Compiles GLSL shader code for GPU-based video processing. Useful for advanced graphics and compute-style filter paths.</td>
+  <td>FFmpeg 9 removed <code>--enable-libglslang</code>; the package can still be installed as a Vulkan shader build tool. Older FFmpeg releases may still use the configure switch.</td>
 </tr>
 <tr>
   <td><code>frei0r</code></td>
@@ -1065,12 +1074,12 @@
 <tr>
   <td><code>opencv</code></td>
   <td>OpenCV</td>
-  <td>native MSYS2 package</td>
-  <td>Selectable: MSYS2 package</td>
+  <td>internal source-prepared</td>
+  <td>Selectable: pinned source build</td>
   <td>LGPL</td>
   <td><code>--enable-libopencv</code></td>
-  <td><code>&lt;profile&gt;-opencv</code></td>
-  <td>Provides computer-vision processing for image analysis and experimental visual filters.</td>
+  <td>OpenCV 4.11.0 source (<code>core</code> + <code>imgproc</code>)</td>
+  <td>Provides the legacy OpenCV C API required by FFmpeg. The builder uses pinned OpenCV 4.11.0 because current MSYS2 OpenCV 5 removed the required legacy headers/API and <code>opencv4.pc</code> compatibility path.</td>
 </tr>
 <tr>
   <td><code>ladspa</code></td>
@@ -1116,11 +1125,11 @@
   <td><code>lensfun</code></td>
   <td>lensfun</td>
   <td>native MSYS2 package</td>
-  <td>Version/profile-restricted</td>
+  <td>Unavailable in the current FFmpeg 9.0.1 catalog</td>
   <td>LGPL</td>
   <td><code>--enable-liblensfun</code></td>
   <td><code>&lt;profile&gt;-lensfun</code></td>
-  <td>Corrects lens distortion, vignetting, and other camera-lens artifacts. Useful for cleanup of footage from known lenses.</td>
+  <td>Corrects lens distortion and vignetting. FFmpeg exposes the switch, but the current package/API combination is intentionally blocked for 9.0.1.</td>
 </tr>
 <tr>
   <td><code>vapoursynth</code></td>
@@ -1134,7 +1143,7 @@
 </tr>
 </tbody>
 </table>
-<h3>Audio</h3>
+<h3 id="audio">Audio</h3>
 <table>
 <thead>
 <tr>
@@ -1371,7 +1380,7 @@
 </tr>
 </tbody>
 </table>
-<h3>Subtitles and text</h3>
+<h3 id="subtitles-and-text">Subtitles and text</h3>
 <table>
 <thead>
 <tr>
@@ -1468,7 +1477,7 @@
 </tr>
 </tbody>
 </table>
-<h3>Disc and device input</h3>
+<h3 id="disc-and-device-input">Disc and device input</h3>
 <table>
 <thead>
 <tr>
@@ -1625,7 +1634,7 @@
 </tr>
 </tbody>
 </table>
-<h3>Network</h3>
+<h3 id="network">Network</h3>
 <table>
 <thead>
 <tr>
@@ -1712,7 +1721,7 @@
 </tr>
 </tbody>
 </table>
-<h3>Secure network (TLS)</h3>
+<h3 id="secure-network-tls">Secure network (TLS)</h3>
 <table>
 <thead>
 <tr>
@@ -1769,7 +1778,7 @@
 </tr>
 </tbody>
 </table>
-<h3>OCR</h3>
+<h3 id="ocr">OCR</h3>
 <table>
 <thead>
 <tr>
@@ -1796,7 +1805,7 @@
 </tr>
 </tbody>
 </table>
-<h3>AI support</h3>
+<h3 id="ai-support">AI support</h3>
 <table>
 <thead>
 <tr>
@@ -1815,11 +1824,11 @@
   <td><code>onnxruntime</code></td>
   <td>ONNX Runtime / AI model inference</td>
   <td>native MSYS2 package</td>
-  <td>UI-disabled; profile-limited: not in mingw64</td>
+  <td>Selectable on FFmpeg 9.0.1 for <code>ucrt64</code>/<code>clang64</code>; unavailable on <code>mingw64</code></td>
   <td>LGPL</td>
   <td><code>--enable-libonnxruntime</code></td>
-  <td><code>&lt;profile&gt;-onnxruntime</code></td>
-  <td>Runs supported deep-learning filters through ONNX Runtime. Useful for model-based analysis or enhancement workflows.</td>
+  <td><code>&lt;profile&gt;-onnxruntime</code> (<code>ucrt64</code>/<code>clang64</code>)</td>
+  <td>Runs FFmpeg 9 ONNX Runtime integrations. The configure script adds MSYS2's nested <code>include/onnxruntime</code> directory when this library is enabled.</td>
 </tr>
 <tr>
   <td><code>openvino</code></td>
@@ -1853,7 +1862,7 @@
 </tr>
 </tbody>
 </table>
-<h3>Support libraries</h3>
+<h3 id="support-libraries">Support libraries</h3>
 <table>
 <thead>
 <tr>
@@ -1935,7 +1944,7 @@
 </table>
 <h2 id="practical-interpretation">Practical interpretation</h2>
 <p>For ordinary Windows users, the meaningful supported surface is the set that the program can select, prepare, review, and pass to FFmpeg for the chosen release/profile. That includes official FFmpeg-source entries, native MSYS2-package entries, and implemented internal source-prepared entries.</p>
-<p>The catalog deliberately avoids claiming that every upstream FFmpeg library can be enabled just because a configure flag exists. Entries such as <code>cuda-nvcc</code>, DeckLink, OpenVINO, Torch, TensorFlow, VapourSynth, SVT JPEG XS, ONNX Runtime, PocketSphinx, lensfun, and SMB are treated conservatively because they are blocked, disabled, version/profile-restricted, or dependent on external SDK/runtime assumptions.</p>
+<p>The library catalog deliberately avoids claiming that every upstream FFmpeg library can be enabled just because a configure flag exists. Entries such as <code>cuda-nvcc</code>, DeckLink, OpenVINO, Torch, TensorFlow, VapourSynth, SVT JPEG XS, ONNX Runtime, PocketSphinx, lensfun, and SMB are treated conservatively because they are blocked, disabled, version/profile-restricted, or dependent on external SDK/runtime assumptions.</p>
 <p><code>libmfx</code> is different from that blocked group. It is an implemented legacy Intel backend and is normalized against <code>libvpl</code>.</p>
 
 </article>

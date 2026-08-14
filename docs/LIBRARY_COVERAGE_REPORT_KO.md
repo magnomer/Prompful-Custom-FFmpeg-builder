@@ -8,11 +8,13 @@
 
 - 전체 카탈로그 항목: **125**.
 - 공식 FFmpeg 소스에 기본 포함된 항목: **10**.
-- MSYS2 패키지가 사용 가능한 항목: **96**.
-- 프로그램 내부에서 소스를 준비하는 항목: **13**.
+- FFmpeg 소스 기본 포함 항목 10개를 제외한 MSYS2 패키지 경로 항목: **95**.
+- 내부 준비 트랙 항목: **14**이며, 이 가운데 **12개**는 현재 소스 준비 절차가 구현되어 있습니다.
 - 외부 SDK 또는 별도 가져오기 경로로 분류된 항목: **6**.
 - 일반 UI에서 전역으로 비활성화된 항목: **2 — `tensorflow`, `vapoursynth`**.
 - 빌드가 구현되지 않아 제한된 항목: **7 — `smbclient`, `openvino`, `torch`, `pocketsphinx`, `dc1394`, `decklink`, `cuda-nvcc`**.
+
+위 트랙 수치는 현재 **FFmpeg 9.0.1** 카탈로그 분류를 기준으로 합니다. 이전 지원 FFmpeg 버전에서는 일부 항목의 지원 상태나 준비 방식이 달라질 수 있습니다. FFmpeg 9.0.1에서 `onnxruntime`은 `ucrt64`와 `clang64`에서 선택할 수 있지만 `mingw64`에서는 사용할 수 없고, `lensfun`은 현재 패키지/API 조건 때문에 사용할 수 없습니다. `svtjpegxs`는 FFmpeg 9.0.1에서 선택할 수 있습니다.
 
 선택 가능 여부는 선택한 FFmpeg 버전과 MSYS2 셸 프로필에 따라 달라질 수 있습니다. 이 프로그램은 configure 전에 선택한 항목을 다시 확인하여 FFmpeg가 지원하지 않는 버전 혹은 프로필 조합이 빌드되지 않도록 처리합니다.
 
@@ -21,7 +23,7 @@
 | 구분 | 설명 |
 |---|---|
 | FFmpeg 기본 포함 | 공식 FFmpeg 소스 트리에서 함께 빌드되는 항목이며 항상 켜져 있습니다. |
-| MSYS2 패키지 | MSYS2 패키지와 일반 FFmpeg configure 플래그로 준비되는 항목입니다. |
+| MSYS2 패키지 | MSYS2 패키지를 사용하며, 선택한 FFmpeg 버전이 해당 스위치를 제공하는 경우 configure 플래그를 추가합니다. |
 | 내부 소스 준비 | 프로그램이 개인용 빌드 환경 안에서 소스나 import 파일을 준비하는 항목입니다. |
 | 외부 SDK/가져오기 | 외부 SDK, import 라이브러리, 또는 일반 패키지 선택이 아닌 별도 준비 경로가 필요한 항목입니다. |
 | UI 비활성화 | 프로그램이 알고 있지만 일반 UI에서는 선택할 수 없게 막은 항목입니다. |
@@ -72,7 +74,7 @@
 | 최대 효율 | `vvenc`, `lcevc-dec` |
 | 최대 호환성 | `davs2`, `uavs3d`, `xavs2`, `avisynthplus`, `klvanc` |
 | 오디오/비디오 편집 | `avisynthplus`, `lcevc-dec`, `quirc` |
-| 전체 | `vvenc`, `lcevc-dec`, `davs2`, `uavs3d`, `xavs2`, `avisynthplus`, `mpeghdec`, `quirc`, `klvanc` |
+| 전체 | `vvenc`, `lcevc-dec`, `davs2`, `uavs3d`, `xavs2`, `avisynthplus`, `mpeghdec`, `quirc`, `klvanc`에 더해 FFmpeg 8.1.2/9.0.1에서는 `svtjpegxs`, FFmpeg 9.0.1에서는 `onnxruntime`이 추가됩니다. |
 
 이러한 확장 프리셋들은 다른 라이선스를 가질 수 있습니다. 예를 들어 `xavs2`, `davs2`, `avisynthplus`가 추가될 경우 라이선스는 GPL이 되며, `mpeghdec`가 추가될 경우 라이선스는 비자유 로컬이 됩니다.
 
@@ -105,6 +107,7 @@
 | `klvanc` | libklvanc / 방송 메타데이터 | 내부 소스 준비 | vid.obe.1.6.0 | 내부 소스 빌드 | configure + make | 선택한 버전/프로필에서 지원될 때 선택 가능 |
 | `libtls` | libtls / 보안 네트워크 접근 | 내부 소스 준비 | 4.3.2 | 내부 소스 빌드 | CMake | 선택한 버전/프로필에서 지원될 때 선택 가능 |
 | `libmfx` | libmfx / 레거시 Intel Media SDK | 내부 소스 준비 | 1.35.1 | 내부 소스 빌드 | CMake | 선택한 버전/프로필에서 지원될 때 선택 가능. `libvpl`과 함께 켜지지 않음 |
+| `opencv` | OpenCV | 내부 소스 준비 경로 | 4.11.0 | 내부 소스 빌드 | CMake (`core` + `imgproc`) | 선택 가능. 현재 MSYS2 OpenCV 5에서 FFmpeg가 요구하는 레거시 C API가 제거되어 OpenCV 4.11.0을 고정해 소스에서 준비합니다. |
 | `tensorflow` | TensorFlow / AI 모델 추론 | 외부 SDK/가져오기 | 2.16.1 | 외부 가져오기 | 아카이브 가져오기 | UI 비활성화 |
 
 ## 비활성화, 차단, 조건부 항목
@@ -115,7 +118,7 @@
 |---|---|---|
 | 전역 UI 비활성화 | `tensorflow`, `vapoursynth` | UI에서 선택할 수 없게 차단된 항목입니다. |
 | 일반 준비 절차 없음 | `smbclient`, `openvino`, `torch`, `pocketsphinx`, `dc1394`, `decklink`, `cuda-nvcc` | 안전한 일반 빌드/가져오기 경로가 아직 구현되지 않은 경우입니다. |
-| 버전/프로필 제한 | 예: `lensfun`, `onnxruntime`, `svtjpegxs`, `libvpl`, `libmfx` | FFmpeg 버전, MSYS2 셸 프로필, 패키지/API 요구 사항, pkg-config 결과에 따라 달라집니다. |
+| 버전/프로필 제한 | 예: `lensfun`, `onnxruntime`, `svtjpegxs`, `libvpl`, `libmfx` | FFmpeg 버전, MSYS2 셸 프로필, 패키지/API 요구 사항, pkg-config 결과에 따라 달라집니다. 9.0.1에서는 `onnxruntime`이 `ucrt64`/`clang64`에서 가능하고 `lensfun`은 사용할 수 없습니다. |
 
 ## 전체 라이브러리 카탈로그
 
@@ -189,7 +192,7 @@
 | `rsvg` | rsvg / SVG 렌더링 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-librsvg` | `<profile>-librsvg` | SVG 벡터 그래픽을 일반 이미지 프레임으로 렌더링합니다. 로고, 오버레이, 그래픽 자산에 유용합니다. |
 | `snappy` | snappy / Snappy 압축 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-libsnappy` | `<profile>-snappy` | 일부 포맷 내부에서 쓰이는 빠른 Snappy 데이터 압축을 제공합니다. |
 | `lcms2` | lcms2 / 색상 관리 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-lcms2` | `<profile>-lcms2` | 색상 프로파일 관리를 적용해 더 정확한 색 변환을 수행합니다. 색 표현을 보존해야 할 때 유용합니다. |
-| `svtjpegxs` | svtjpegxs / JPEG XS 인코딩 | MSYS2 패키지 경로 | 버전/프로필 조건에 따라 제외 또는 경고 처리 | LGPL | `--enable-libsvtjpegxs` | `<profile>-svt-jpeg-xs`, `git`, `<profile>-cmake`, `<profile>-ninja`, `<profile>-yasm` | 저지연 전문 미디어 작업을 위한 JPEG XS 영상을 만듭니다. 선택한 FFmpeg 소스와 설치된 패키지가 요구 API를 맞출 때만 사용할 수 있는 항목입니다. |
+| `svtjpegxs` | svtjpegxs / JPEG XS 인코딩 | MSYS2 패키지 경로 | FFmpeg 9.0.1에서 선택 가능, 이전 버전은 버전 조건 적용 | LGPL | `--enable-libsvtjpegxs` | `<profile>-svt-jpeg-xs`, `git`, `<profile>-cmake`, `<profile>-ninja`, `<profile>-yasm` | 저지연 전문 미디어 작업을 위한 JPEG XS 영상을 만듭니다. |
 
 ### 필터와 처리
 
@@ -202,15 +205,15 @@
 | `opencolorio` | opencolorio / 전문 색상 관리 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-libopencolorio` | `<profile>-opencolorio` | 영화, 애니메이션, 후반작업에 맞는 전문 색상 관리를 적용합니다. |
 | `cairo` | cairo / 2D 그래픽 렌더링 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-cairo` | `<profile>-cairo` | 생성 그래픽, 오버레이, 필터 시각 요소에 쓸 2D 벡터 드로잉을 제공합니다. 도형이나 그래픽 요소를 영상에 그릴 때 유용합니다. |
 | `opencl` | opencl / OpenCL 처리 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-opencl` | `<profile>-opencl-icd`, `<profile>-opencl-headers` | OpenCL을 지원하는 GPU나 가속기에서 일부 compute 필터를 실행합니다. 무거운 이미지 처리를 분산할 때 유용합니다. |
-| `shaderc` | shaderc / Vulkan 셰이더 컴파일러 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-libshaderc` | `<profile>-shaderc` | GPU 기반 영상 필터에 쓰이는 셰이더 프로그램을 컴파일합니다. 고급 렌더링과 GPU 처리 경로에 유용합니다. |
-| `glslang` | glslang / GLSL 셰이더 컴파일러 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-libglslang` | `<profile>-glslang` | GPU 기반 영상 처리에 쓰이는 GLSL 셰이더 코드를 컴파일합니다. 고급 그래픽 및 컴퓨트형 필터 경로에 유용합니다. |
+| `shaderc` | shaderc / Vulkan 셰이더 컴파일러 | MSYS2 패키지 경로 | FFmpeg 9.0.1에서 패키지/도구로 선택 가능 | LGPL | FFmpeg 9.0.1에서는 없음 | `<profile>-shaderc` | FFmpeg 9에서 `--enable-libshaderc`가 제거되었습니다. 패키지는 Vulkan 셰이더 빌드 도구로 설치할 수 있으며, 이전 FFmpeg 버전에서는 configure 스위치를 사용할 수 있습니다. |
+| `glslang` | glslang / GLSL 셰이더 컴파일러 | MSYS2 패키지 경로 | FFmpeg 9.0.1에서 패키지/도구로 선택 가능 | LGPL | FFmpeg 9.0.1에서는 없음 | `<profile>-glslang` | FFmpeg 9에서 `--enable-libglslang`가 제거되었습니다. 패키지는 Vulkan 셰이더 빌드 도구로 설치할 수 있으며, 이전 FFmpeg 버전에서는 configure 스위치를 사용할 수 있습니다. |
 | `frei0r` | frei0r / 추가 비디오 효과 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | GPL | `--enable-frei0r` | `<profile>-frei0r-plugins` | 기본 필터 외의 창의적인 영상 효과와 플러그인을 제공합니다. 스타일화된 영상 처리에 유용합니다. |
-| `opencv` | opencv / 컴퓨터 비전 필터 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-libopencv` | `<profile>-opencv` | 이미지 분석과 실험적 시각 필터를 위한 컴퓨터 비전 처리를 제공합니다. |
+| `opencv` | opencv / 컴퓨터 비전 필터 | 내부 소스 준비 경로 | 선택 가능: 고정 버전 소스 빌드 | LGPL | `--enable-libopencv` | OpenCV 4.11.0 소스 (`core` + `imgproc`) | FFmpeg가 요구하는 레거시 OpenCV C API를 제공합니다. 현재 MSYS2 OpenCV 5에서는 해당 API와 호환 경로가 제거되어 4.11.0을 소스에서 준비합니다. |
 | `ladspa` | ladspa / LADSPA 오디오 플러그인 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-ladspa` | `<profile>-ladspa-sdk`, `<profile>-dlfcn` | LADSPA 오디오 효과 플러그인을 불러와 추가 오디오 처리를 수행합니다. 기존 플러그인 체인을 미디어 변환에 활용할 때 유용합니다. |
 | `lv2` | lv2 / LV2 오디오 플러그인 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-lv2` | `<profile>-lilv` | LV2 오디오 플러그인을 불러와 더 고급 오디오 효과와 처리 체인을 사용할 수 있게 합니다. |
 | `qrencode` | qrencode / QR 코드 생성 | MSYS2 패키지 경로 | 선택 가능: MSYS2 패키지 | LGPL | `--enable-libqrencode` | `<profile>-qrencode` | 이미지나 영상 프레임에 넣을 수 있는 QR 코드를 생성합니다. |
 | `cuda-nvcc` | cuda-nvcc / NVIDIA CUDA 필터 컴파일 | 외부 SDK/가져오기 경로 | 차단: 일반 준비 절차 없음 | LGPL | `--enable-cuda-nvcc` | 일반 준비 절차 없음 | FFmpeg의 CUDA 가속 필터를 NVIDIA nvcc 컴파일러로 컴파일합니다. nvcc는 독점 CUDA Toolkit에만 포함되어 있으며 MSYS2 패키지로 제공되지 않습니다. |
-| `lensfun` | lensfun / 렌즈 보정 | MSYS2 패키지 경로 | 버전/프로필 조건에 따라 제외 또는 차단 | LGPL | `--enable-liblensfun` | `<profile>-lensfun` | 렌즈 왜곡, 비네팅, 카메라 렌즈 특유의 결함을 보정합니다. 선택한 FFmpeg 버전이 요구하는 lensfun API를 패키지가 만족할 때만 사용할 수 있습니다. |
+| `lensfun` | lensfun / 렌즈 보정 | MSYS2 패키지 경로 | 현재 FFmpeg 9.0.1 카탈로그에서는 사용 불가 | LGPL | `--enable-liblensfun` | `<profile>-lensfun` | FFmpeg 자체에는 스위치가 있지만 현재 패키지/API 조합이 9.0.1 요구 조건을 만족하지 않아 차단합니다. |
 | `vapoursynth` | VapourSynth / 스크립트 기반 비디오 처리 | MSYS2 패키지 경로 | UI 비활성화 | LGPL | `--enable-vapoursynth` | `<profile>-vapoursynth` | VapourSynth 스크립트 기반 영상 처리 체인을 엽니다. 고급 스크립트 필터링 결과를 미디어 작업에 넣을 때 유용합니다. |
 
 ### 오디오
@@ -303,7 +306,7 @@
 
 | ID | 표시 이름 | 경로 | 상태 | 라이선스 | configure 플래그 | 패키지 / 준비 | 용도 |
 |---|---|---|---|---|---|---|---|
-| `onnxruntime` | ONNX Runtime / AI 모델 추론 | MSYS2 패키지 경로 | 버전/프로필 조건상 선택 대상 아님 | LGPL | `--enable-libonnxruntime` | `<profile>-onnxruntime` | ONNX Runtime으로 지원되는 딥러닝 필터를 실행합니다. 현재 적용한 공식 FFmpeg 릴리스 범위와 MSYS2 프로필 조건에서는 선택 항목으로 다루지 않습니다. |
+| `onnxruntime` | ONNX Runtime / AI 모델 추론 | MSYS2 패키지 경로 | FFmpeg 9.0.1의 `ucrt64`/`clang64`에서 선택 가능, `mingw64`에서는 사용 불가 | LGPL | `--enable-libonnxruntime` | `<profile>-onnxruntime` (`ucrt64`/`clang64`) | FFmpeg 9의 ONNX Runtime 연동을 제공합니다. 활성화하면 MSYS2가 사용하는 `include/onnxruntime` 경로를 configure의 추가 헤더 검색 경로에 넣습니다. |
 | `openvino` | OpenVINO / AI 모델 추론 | 외부 SDK/가져오기 경로 | 차단: 일반 준비 절차 없음 | LGPL | `--enable-libopenvino` | 일반 준비 절차 없음 | Intel 계열 가속에 맞춘 AI 추론 필터를 실행합니다. 모델 기반 영상 또는 이미지 처리에 유용합니다. |
 | `torch` | Torch / libtorch | 외부 SDK/가져오기 경로 | 차단: 일반 준비 절차 없음 | LGPL | `--enable-libtorch` | 일반 준비 절차 없음 | Torch 기반 모델 실행으로 지원되는 딥러닝 필터를 돌립니다. PyTorch 계열 추론 작업에 유용합니다. |
 | `tensorflow` | TensorFlow / AI 모델 추론 | 외부 SDK/가져오기 경로 | UI 비활성화 | LGPL | `--enable-libtensorflow` | 고정된 소스/가져오기 절차로 준비 | TensorFlow C API로 지원되는 딥러닝 필터를 실행합니다. 모델 기반 이미지나 영상 분석에 유용합니다. |

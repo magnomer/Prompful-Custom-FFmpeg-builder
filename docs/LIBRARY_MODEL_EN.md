@@ -54,8 +54,9 @@ Current implemented internal source-prepared entries include:
 - `klvanc`
 - `libtls`
 - `libmfx`
+- `opencv`
 
-`libmfx` is part of this implemented group. It is the legacy Intel Media SDK path used when the selected FFmpeg release/profile calls for that backend. It is mutually exclusive with `libvpl`, the newer oneVPL path. Other internal-track entries, such as `dc1394` or `pocketsphinx`, can still be blocked when the program has no supported preparation path for the selected environment.
+`libmfx` is part of this implemented group. It is the legacy Intel Media SDK path used when the selected FFmpeg release/profile calls for that backend. It is mutually exclusive with `libvpl`, the newer oneVPL path. `opencv` is also internally prepared: the builder pins OpenCV 4.11.0 because current MSYS2 OpenCV 5 removed the legacy C API that FFmpeg `--enable-libopencv` still requires. Other internal-track entries, such as `dc1394` or `pocketsphinx`, can still be blocked when the program has no supported preparation path for the selected environment.
 
 ## External or blocked entries
 
@@ -87,8 +88,9 @@ Examples:
 - `libvpl` is the preferred Intel oneVPL path on newer FFmpeg release lines.
 - `libmfx` is the legacy Intel Media SDK path and must not be enabled together with `libvpl`.
 - `lensfun` can be blocked when the available package does not satisfy the FFmpeg release requirement.
-- `onnxruntime` is not available for the official FFmpeg release lines covered by the current release-support manifest and is also unavailable for `mingw64`.
-- `svtjpegxs` is gated by FFmpeg release requirements and pkg-config results.
+- `onnxruntime` is supported by FFmpeg 9.0.1 on `ucrt64` and `clang64`, where the builder emits `--enable-libonnxruntime`; it remains unavailable on `mingw64` and is unsupported on the older cataloged FFmpeg lines.
+- `svtjpegxs` is supported on current newer FFmpeg lines, including 9.0.1, and remains version-dependent on older releases.
+- On FFmpeg 9.0.1, `shaderc` and `glslang` remain selectable MSYS2 shader-tool packages, but FFmpeg 9 removed `--enable-libshaderc` and `--enable-libglslang`, so those flags are not emitted.
 
 ## Public library presets
 
@@ -104,7 +106,7 @@ The public presets are:
 | `compatibility` | Broader codec, subtitle, caption, image, speech, and protocol coverage | `default` + compatibility additions only |
 | `editor` | Editing, filtering, color, audio-analysis, subtitle, transcription, and image-workflow additions | `default` + editor additions only |
 | `full` | The broadest public preset after mutually exclusive choices are normalized | `default` + efficiency + compatibility + editor + full-only additions |
-| `custom` | Shown when the current selection no longer exactly matches a preset | Not a programlied preset template |
+| `custom` | Shown when the current selection no longer exactly matches a preset | Not an applied preset template |
 
 `efficiency`, `compatibility`, and `editor` are not cumulative steps. Each one starts from `default` and adds its own purpose-specific entries. `full` is the broad public union.
 
@@ -129,7 +131,7 @@ The Extended toggle is not a separate preset. It adds selected source-prepared e
 | `efficiency` | `vvenc`, `lcevc-dec` |
 | `compatibility` | `davs2`, `uavs3d`, `xavs2`, `avisynthplus`, `klvanc` |
 | `editor` | `avisynthplus`, `lcevc-dec`, `quirc` |
-| `full` | `vvenc`, `lcevc-dec`, `davs2`, `uavs3d`, `xavs2`, `avisynthplus`, `mpeghdec`, `quirc`, `klvanc` |
+| `full` | `vvenc`, `lcevc-dec`, `davs2`, `uavs3d`, `xavs2`, `avisynthplus`, `mpeghdec`, `quirc`, `klvanc`, plus `svtjpegxs` on 8.1.2/9.0.1 and `onnxruntime` on 9.0.1 |
 
 Extended selections can change the derived license profile. For example, `xavs2`, `davs2`, and `avisynthplus` have GPL effects, while `mpeghdec` has a nonfree effect.
 

@@ -73,6 +73,7 @@ Every build starts with a plan, so you can check what will happen before anythin
 - Approve the plan.
 - Confirm once more in a native Windows dialog.
 - Watch the live build log.
+- If transient package-network failures exhaust their retries, the build enters a retryable stalled state instead of immediately becoming a hard failure; the same approved FFmpeg plan can be retried and cached work can be reused.
 
 ### Build environment
 
@@ -129,7 +130,7 @@ These commands start the development version.
 
 ### Documentation
 
-- [LConsent boundary](docs/CONSENT_BOUNDARY_EN.md)
+- [Consent boundary](docs/CONSENT_BOUNDARY_EN.md)
 - [Transparency model](docs/TRANSPARENCY_EN.md)
 
 ---
@@ -173,6 +174,7 @@ Promptful Custom FFmpeg Builder는 윈도우에서 FFmpeg를 소스부터 직접
 - 빌드 계획을 승인
 - 윈도우 네이티브 확인 창으로 최종 승인
 - 실시간 빌드 로그를 제공
+- 패키지 네트워크의 일시적인 문제가 재시도 횟수를 모두 소진하면 즉시 일반 실패로 처리하지 않고 재시도 가능한 중단 상태로 전환하며, 같은 승인된 FFmpeg 계획을 다시 실행해 캐시된 작업을 재사용할 수 있습니다.
 
 ### 빌드 환경
 

@@ -35,7 +35,7 @@ Approval does not remove path validation. Approval means that the user approved 
 
 ## Downloads and source verification
 
-Download steps are shown in the reviewed plan. The program records the URL, destination, and available verification information. During download, it checks HTTPS use, workspace-contained destinations, file-size limits, redirect limits, optional SHA-256 verification, and signature/key downloads where the plan includes them.
+Download steps are shown in the reviewed plan. The program records the URL, destination, and available verification information. During download, it checks HTTPS use, workspace-contained destinations, file-size limits, redirect limits, optional SHA-256 verification, and signature/key downloads where the plan includes them. MSYS2 package-install scripts also configure an ordered set of package mirrors and a bounded `curl` transfer command so a stalled mirror can fail over instead of leaving the build hanging indefinitely.
 
 A previously downloaded file may be reused only when reuse is allowed by the plan and, when an expected hash exists, the existing file matches that hash.
 
@@ -45,11 +45,13 @@ FFmpeg builds require shell scripts for package installation, configure, make, a
 
 Before a generated script is executed, the execution layer verifies that the file still matches the approved hash. This keeps generated scripts within the reviewed build plan instead of treating them as untracked execution details.
 
-Some compatibility handling happens inside generated configure scripts. For example, selected flags such as `--enable-libsvtjpegxs`, `--enable-liblensfun`, and `--enable-vapoursynth` may be probed and removed with a warning if the installed package does not expose the API expected by the selected FFmpeg source. This is a specific compatibility fallback, not a general promise that every unavailable library can be repaired automatically.
+Some compatibility handling happens inside generated configure scripts. For example, selected flags such as `--enable-libsvtjpegxs`, `--enable-liblensfun`, and `--enable-vapoursynth` may be probed and removed with a warning if the installed package does not expose the API expected by the selected FFmpeg source. FFmpeg 9 handling also adds the nested MSYS2 ONNX Runtime include directory when `--enable-libonnxruntime` is selected, rejects AMF headers older than 1.5.2.0, and rejects ffnvcodec/NVENC headers older than NVENC SDK 11.1 before configure. This is specific compatibility handling, not a general promise that every unavailable library can be repaired automatically.
 
 ## Execution plans
 
 Package installation and build operations are run through managed execution plans. The program constrains executable paths, working directories, MSYS2 roots, log directories, executable names, and generated-script hashes.
+
+Transient network exhaustion has its own terminal state. When the execution layer identifies only retryable network failures after exhausting its command retry budget, it emits a `stalled` event with the mirror/host addresses that were tried. The run is no longer treated as active, but it is also not recorded as an ordinary build failure. For an FFmpeg build, the UI can relaunch the same previously approved plan so cache-resumable work can continue.
 
 Auxiliary actions are limited and fixed-purpose. Opening folders, opening reports, opening saved logs, checking installed packages, probing a produced FFmpeg binary, or stopping private MSYS2 helper processes are not treated as arbitrary shell execution.
 
@@ -60,7 +62,7 @@ The program leaves several kinds of local records:
 | Record | Purpose |
 |---|---|
 | Live process logs | Show stdout/stderr while a task is running |
-| Saved local log records | Keep previous local logs available for later review |
+| Saved local log records | Keep previous local logs available for later review, including the distinct `stalled` terminal state |
 | Build report JSON | Records selected libraries, flags, license profile, output files, sizes, and SHA-256 hashes |
 | Approval record JSONL | Records local approval and major operation events |
 
