@@ -370,6 +370,43 @@ func LOnnxRuntimeScriptCreate() []string {
 	}
 }
 
+// LAmfScriptCreate guards --enable-amf against a stale MSYS2 amf-headers package on FFmpeg 9.
+// AMF ships headers only (no pkg-config module), so the version floor cannot flow through the
+// pkg-config preflight; it must inspect AMF/core/Version.h directly. FFmpeg 9's configure aborts
+// deep in its own AMF probe with an opaque check_cpp_condition failure when the header is too old.
+// The floor mirrors FFmpeg 9.0 configure exactly: it requires
+//
+//	(AMF_VERSION_MAJOR << 48 | AMF_VERSION_MINOR << 32 | AMF_VERSION_RELEASE << 16 | AMF_VERSION_BUILD_NUM)
+//	>= 0x0001000500020000, i.e. AMF >= 1.5.2.0 (FFmpeg 8.1 required only 1.4.36.0). Caller gates this
+//
+// to FFmpeg 9+, so 8.x builds keep their lower floor and are unaffected. A missing or unparseable
+// header is left to FFmpeg configure rather than blocked here.
+func LAmfScriptCreate() []string {
+	return []string{
+		`amf_version_header="${profile_prefix}/include/AMF/core/Version.h"`,
+		`if [ -f "${amf_version_header}" ]; then`,
+		`  amf_field_read() { grep -E "^#define[[:space:]]+$1([[:space:]]|\$)" "${amf_version_header}" | grep -oE "[0-9]+" | tail -n1 || true; }`,
+		`  amf_major="$(amf_field_read AMF_VERSION_MAJOR)"`,
+		`  amf_minor="$(amf_field_read AMF_VERSION_MINOR)"`,
+		`  amf_release="$(amf_field_read AMF_VERSION_RELEASE)"`,
+		`  amf_build="$(amf_field_read AMF_VERSION_BUILD_NUM)"`,
+		`  if [ -n "${amf_major}" ] && [ -n "${amf_minor}" ] && [ -n "${amf_release}" ] && [ -n "${amf_build}" ]; then`,
+		`    amf_installed=$(( (amf_major << 48) | (amf_minor << 32) | (amf_release << 16) | amf_build ))`,
+		`    amf_required=$(( (1 << 48) | (5 << 32) | (2 << 16) | 0 ))`,
+		`    echo "AMD AMF header version: ${amf_major}.${amf_minor}.${amf_release}.${amf_build} (FFmpeg 9 requires >= 1.5.2.0)"`,
+		`    if [ "${amf_installed}" -lt "${amf_required}" ]; then`,
+		`      echo "ERROR: Installed AMD AMF headers are ${amf_major}.${amf_minor}.${amf_release}.${amf_build}, but FFmpeg 9 requires AMF >= 1.5.2.0 for --enable-amf."`,
+		`      echo "ERROR: Update the amf-headers package for this shell profile (e.g. pacman -S --needed <profile>-amf-headers) and rebuild."`,
+		`      exit 1`,
+		`    fi`,
+		`    echo "AMD AMF header version satisfies the FFmpeg 9 minimum. Keeping --enable-amf."`,
+		`  else`,
+		`    echo "WARNING: Could not parse the AMD AMF header version from ${amf_version_header}. Leaving the AMF version check to FFmpeg configure."`,
+		`  fi`,
+		`fi`,
+	}
+}
+
 // LConfigureScriptCreate builds the FFmpeg configure script. privatePkgConfigDirs are the
 // pkgconfig directories of any privately-installed libraries (e.g. libtls); they are
 // prepended to the script's exported PKG_CONFIG_PATH/PKG_CONFIG_LIBDIR so pkg-config finds
@@ -652,6 +689,14 @@ int main(void){return 0;}
 	}
 	if LFlagConfigureCheck(configureFlags, "--enable-libonnxruntime") {
 		scriptLines = append(scriptLines, LOnnxRuntimeScriptCreate()...)
+	}
+	// The --enable-amf flag is version-agnostic, but only FFmpeg 9+ raises the AMF header floor to
+	// 1.5.2.0. Scope the header preflight to FFmpeg 9+ so 8.x builds keep their lower floor. An
+	// unknown/snapshot version resolves no line and is left to FFmpeg configure.
+	if LFlagConfigureCheck(configureFlags, "--enable-amf") {
+		if ffmpegMajor, _, ok := catalogfacts.LReleaseLineSplit(catalogfacts.LReleaseKeyGet(ffmpegVersion)); ok && ffmpegMajor >= 9 {
+			scriptLines = append(scriptLines, LAmfScriptCreate()...)
+		}
 	}
 	if len(LModulePkgconfigs) > 0 {
 		scriptLines = append(scriptLines, "echo 'Diagnosing selected pkg-config libraries before FFmpeg configure.'")
