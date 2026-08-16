@@ -1363,7 +1363,9 @@ export namespace program {
 	    okCount: number;
 	    totalCount: number;
 	    overall: string;
-	    message: string;
+	    message?: string;
+	    messageKey: string;
+	    messageValues?: Record<string, string>;
 	    verifiedAt: string;
 	
 	    static createFrom(source: any = {}) {
@@ -1380,6 +1382,8 @@ export namespace program {
 	        this.totalCount = source["totalCount"];
 	        this.overall = source["overall"];
 	        this.message = source["message"];
+	        this.messageKey = source["messageKey"];
+	        this.messageValues = source["messageValues"];
 	        this.verifiedAt = source["verifiedAt"];
 	    }
 	
@@ -1405,7 +1409,9 @@ export namespace program {
 	    verified: boolean;
 	    checkedPackageCount: number;
 	    missingPackageNames: string[];
-	    message: string;
+	    message?: string;
+	    messageKey: string;
+	    messageValues?: Record<string, string>;
 	
 	    static createFrom(source: any = {}) {
 	        return new LVerificationToolchain(source);
@@ -1417,6 +1423,8 @@ export namespace program {
 	        this.checkedPackageCount = source["checkedPackageCount"];
 	        this.missingPackageNames = source["missingPackageNames"];
 	        this.message = source["message"];
+	        this.messageKey = source["messageKey"];
+	        this.messageValues = source["messageValues"];
 	    }
 	}
 

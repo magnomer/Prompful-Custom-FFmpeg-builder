@@ -1,10 +1,11 @@
-import { LLocaleTextGet } from "../i18n";
+import { LLocaleTextForGet, LLocaleTextGet } from "../i18n";
 import { LLibraryTextGet } from "../catalogText";
 import { LUnlockBasicCheck } from "../devUnlock";
 
-// A category-filter selection value is the category name string, kept as a distinct
-// alias so the section-filter code reads intent rather than a bare string.
+// A category-filter selection value is a stable raw catalog category identifier,
+// kept distinct from its locale-dependent display label.
 export type LSectionState = string;
+export type LSectionOption = { id: LSectionState; label: string };
 
 // Library availability is now driven by the backend resolved catalog. The frontend
 // must not carry hardcoded unimplemented-library or profile-unavailable lists: those
@@ -77,36 +78,59 @@ export function LLibraryCategoryGet(library: LLibraryChoice): string {
   return LLibraryTextGet(library, "categoryName") || LLocaleTextGet("common.other");
 }
 
+export function LLibraryCategoryIdGet(library: LLibraryChoice): LSectionState {
+  return library.categoryName || "__other__";
+}
+
 export function LLibraryCategoryCheck(categoryName: string): boolean {
   const normalizedCategoryName = categoryName.toLocaleLowerCase();
   return normalizedCategoryName.includes("included by default") || normalizedCategoryName.includes("기본 포함");
 }
 
-export function LSectionLabelGet(categoryName: LSectionState): string {
-  if (LLibraryCategoryCheck(categoryName)) return LLocaleTextGet("libraries.categoryFilter.default");
-  return categoryName;
+export function LSectionLabelGet(sectionId: LSectionState, sectionOptions: LSectionOption[]): string {
+  return sectionOptions.find((option) => option.id === sectionId)?.label ?? sectionId;
 }
 
-export function LSectionSummaryGet(selectedSections: LSectionState[]): string {
+export function LSectionSummaryGet(selectedSections: LSectionState[], sectionOptions: LSectionOption[]): string {
   if (selectedSections.length === 0) return LLocaleTextGet("libraries.categoryFilter.all");
-  if (selectedSections.length === 1) return LSectionLabelGet(selectedSections[0]);
+  if (selectedSections.length === 1) return LSectionLabelGet(selectedSections[0], sectionOptions);
   return LLocaleTextGet("libraries.categoryFilter.selectedCount").replace("{count}", String(selectedSections.length));
 }
 
-export function LSectionOptionsGet(LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName: string): string[] {
-  const categoryNames: string[] = [];
+export function LSectionOptionsGet(LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName: string): LSectionOption[] {
+  const categories = new Map<string, string>();
   for (const library of LLibraryVisibleFilter(LCatalogLibrarySource, windowsShellProfileName)) {
-    const categoryName = LLibraryCategoryGet(library);
-    if (!categoryNames.includes(categoryName)) categoryNames.push(categoryName);
+    const id = LLibraryCategoryIdGet(library);
+    if (!categories.has(id)) {
+      const categoryName = LLibraryCategoryGet(library);
+      categories.set(id, LLibraryCategoryCheck(categoryName) ? LLocaleTextGet("libraries.categoryFilter.default") : categoryName);
+    }
   }
-  return categoryNames;
+  return Array.from(categories, ([id, label]) => ({ id, label }));
+}
+
+// Converts filters persisted by older releases (which stored translated labels)
+// to the stable raw catalog category identifiers used now.
+export function LSectionStateNormalize(values: string[], catalog: LLibraryChoice[]): LSectionState[] {
+  const aliases = new Map<string, string>();
+  for (const library of catalog) {
+    const id = LLibraryCategoryIdGet(library);
+    aliases.set(id, id);
+    aliases.set(library.categoryName, id);
+    for (const locale of ["en", "ko"] as const) {
+      aliases.set(LLocaleTextForGet(locale, `catalog.libraries.${library.libraryId}.categoryName`), id);
+    }
+  }
+  aliases.set(LLocaleTextForGet("en", "common.other"), "__other__");
+  aliases.set(LLocaleTextForGet("ko", "common.other"), "__other__");
+  return Array.from(new Set(values.map((value) => aliases.get(value)).filter((value): value is string => Boolean(value))));
 }
 
 export function LLibraryFilter(LCatalogLibrarySource: LLibraryChoice[], windowsShellProfileName: string, searchQuery: string, sectionFilters: LSectionState[]): LLibraryChoice[] {
   const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
   return LLibraryVisibleFilter(LCatalogLibrarySource, windowsShellProfileName).filter((library) => {
     const categoryName = LLibraryCategoryGet(library);
-    if (sectionFilters.length > 0 && !sectionFilters.includes(categoryName)) return false;
+    if (sectionFilters.length > 0 && !sectionFilters.includes(LLibraryCategoryIdGet(library))) return false;
     if (!normalizedQuery) return true;
     const searchableText = [
       library.libraryId,

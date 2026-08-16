@@ -179,7 +179,7 @@ func LResultReportValidate(workspaceDirectory string, reportPath string) error {
 }
 
 func (program *LProgram) LWorkspaceSelect() (string, error) {
-	selection, err := wailsRuntime.OpenDirectoryDialog(program.LContext, wailsRuntime.OpenDialogOptions{Title: LLocaleTextGetInternal("native.selectWorkspace.title", nil)})
+	selection, err := wailsRuntime.OpenDirectoryDialog(program.LContext, wailsRuntime.OpenDialogOptions{Title: LLocaleTextForGet(program.lLocaleCurrentGet(), "native.selectWorkspace.title", nil)})
 	if err != nil {
 		return "", err
 	}

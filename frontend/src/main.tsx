@@ -13,7 +13,7 @@ import { PLogRender } from "./tabs/logs";
 import { PAboutRender } from "./tabs/about";
 import { LStateBuilderUse } from "./useBuilderState";
 import type { LTabIdentifier } from "./programstate";
-import { LLocaleGet, LLocaleSet, LLocaleTextGet, LLocaleStatusGet, type LLocaleCode } from "./i18n";
+import { LLocaleGet, LLocaleSet, LLocaleSynchronize, LLocaleTextGet, LLocaleStatusGet, type LLocaleCode } from "./i18n";
 import sourceIcon from "./assets/tab-icons/Source.svg";
 import buildConfigurationIcon from "./assets/tab-icons/BuildConfiguration.svg";
 import prepIcon from "./assets/tab-icons/Prep.svg";
@@ -43,7 +43,7 @@ class PErrorBoundary extends React.Component<React.PropsWithChildren, LErrorBoun
 
   render() {
     if (!this.state.errorText) return this.props.children;
-    return <PFatalErrorRender title="Render failed" text={this.state.errorText} />;
+    return <PFatalErrorRender title={LLocaleTextGet("fatal.renderFailed")} text={this.state.errorText} />;
   }
 }
 
@@ -60,6 +60,37 @@ function PFatalErrorRender(props: { title: string; text: string }) {
         <pre>{props.text}</pre>
       </section>
     </main>
+  );
+}
+
+function PApprovalConfirmationRender(props: { request: { actionName: string; planHash: string }; onResolve: (approved: boolean) => Promise<void> }) {
+  const rejectButtonRef = React.useRef<HTMLButtonElement>(null);
+  const [isResolving, setIsResolving] = React.useState(false);
+  const resolve = React.useCallback(async (approved: boolean) => {
+    if (isResolving) return;
+    setIsResolving(true);
+    await props.onResolve(approved);
+  }, [isResolving, props]);
+  React.useEffect(() => {
+    rejectButtonRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") void resolve(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [resolve]);
+  const action = LLocaleTextGet(`approval.action.${props.request.actionName}`);
+  return (
+    <div className="approval-confirmation-backdrop">
+      <section className="approval-confirmation" role="alertdialog" aria-modal="true" aria-labelledby="approval-confirmation-title" aria-describedby="approval-confirmation-message">
+        <h2 id="approval-confirmation-title">{LLocaleTextGet("native.approval.title")}</h2>
+        <p id="approval-confirmation-message">{LLocaleTextGet("native.approval.message", { action, planHash: props.request.planHash })}</p>
+        <div className="approval-confirmation__actions">
+          <button ref={rejectButtonRef} className="button" type="button" disabled={isResolving} onClick={() => void resolve(false)}>{LLocaleTextGet("native.approval.no")}</button>
+          <button className="button button--primary" type="button" disabled={isResolving} onClick={() => void resolve(true)}>{LLocaleTextGet("native.approval.yes")}</button>
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -141,9 +172,9 @@ function PProgramRender() {
                     type="button"
                     role="option"
                     aria-selected={locale === localeItem.id}
-                    onClick={() => {
-                      LLocaleSet(localeItem.id);
+                    onClick={async () => {
                       setIsLocaleMenuOpen(false);
+                      await LLocaleSet(localeItem.id);
                     }}
                   >
                     <span>{localeItem.label}</span>
@@ -330,13 +361,16 @@ function PProgramRender() {
           </div>
         )}
       </div>
+      {s.approvalConfirmationRequest && (
+        <PApprovalConfirmationRender request={s.approvalConfirmationRequest} onResolve={s.resolveApprovalConfirmation} />
+      )}
     </main>
   );
 }
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
-function LProgramMount() {
+async function LProgramMount() {
   const rootElement = document.getElementById("root");
   if (!rootElement) return;
   const root = createRoot(rootElement);
@@ -344,8 +378,15 @@ function LProgramMount() {
     root.render(<PFatalErrorRender title={title} text={LErrorTextFormat(error)} />);
   };
 
-  window.addEventListener("error", (event) => PErrorFatalRender("Runtime failed", event.error ?? event.message));
-  window.addEventListener("unhandledrejection", (event) => PErrorFatalRender("Async runtime failed", event.reason));
+  window.addEventListener("error", (event) => PErrorFatalRender(LLocaleTextGet("fatal.runtimeFailed"), event.error ?? event.message));
+  window.addEventListener("unhandledrejection", (event) => PErrorFatalRender(LLocaleTextGet("fatal.asyncRuntimeFailed"), event.reason));
+
+  try {
+    await LLocaleSynchronize();
+  } catch (error) {
+    PErrorFatalRender(LLocaleTextGet("fatal.runtimeFailed"), error);
+    return;
+  }
 
   root.render(
     <React.StrictMode>
@@ -356,4 +397,4 @@ function LProgramMount() {
   );
 }
 
-LProgramMount();
+void LProgramMount();

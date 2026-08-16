@@ -1,5 +1,6 @@
 import en from "../../localization/en.json";
 import ko from "../../localization/ko.json";
+import { LLocaleSet as LLocaleBackendSet } from "../wailsjs/go/program/LProgram";
 
 type LDictionary = Record<string, string>;
 export type LLocaleCode = "en" | "ko";
@@ -19,10 +20,19 @@ export function LLocaleGet(): LLocaleCode {
   return LLocaleCurrent;
 }
 
-export function LLocaleSet(locale: LLocaleCode): void {
-  LLocaleCurrent = LLocaleNormalize(locale);
+export async function LLocaleSet(locale: LLocaleCode): Promise<void> {
+  const normalizedLocale = LLocaleNormalize(locale);
+  // Commit the visible locale only after the backend has accepted the same
+  // value. Locale-aware dialogs and verification calls can therefore never
+  // observe an older locale than the UI that launched them.
+  await LLocaleBackendSet(normalizedLocale);
+  LLocaleCurrent = normalizedLocale;
   globalThis.localStorage?.setItem(LLocaleStorageKey, LLocaleCurrent);
   globalThis.dispatchEvent(new CustomEvent("customffmpeg-locale-change", { detail: LLocaleCurrent }));
+}
+
+export function LLocaleSynchronize(): Promise<void> {
+  return LLocaleBackendSet(LLocaleCurrent);
 }
 
 export function LLocaleTranslationCheck(id: string): boolean {
@@ -34,9 +44,26 @@ export function LLocaleTextGet(id: string, values: Record<string, string | numbe
   return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
 }
 
+export function LLocaleTextForGet(locale: LLocaleCode, id: string, values: Record<string, string | number> = {}): string {
+  const template = LLocaleDictionaryMap[locale][id] ?? LLocaleEnglishDictionary[id] ?? id;
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
+}
+
 export function LLocaleFallbackGet(id: string, fallback: string, values: Record<string, string | number> = {}): string {
   if (!LLocaleTranslationCheck(id)) return fallback;
   return LLocaleTextGet(id, values);
+}
+
+export type LLocalizedMessage = {
+  messageKey?: string;
+  messageValues?: Record<string, string | number>;
+  message?: string;
+};
+
+export function LLocaleMessageGet(message: LLocalizedMessage | null | undefined): string {
+  if (!message) return "";
+  if (message.messageKey) return LLocaleFallbackGet(message.messageKey, message.message ?? message.messageKey, message.messageValues ?? {});
+  return message.message ?? "";
 }
 
 export function LLocaleStatusGet(status: string): string {

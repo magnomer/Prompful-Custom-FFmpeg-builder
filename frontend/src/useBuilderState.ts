@@ -12,8 +12,8 @@ import {
   LPlanFfmpegRequest,
   LPlanToolchainRequest,
   LWorkspaceSelect,
-  LLocaleSet,
   LLinkExternalOpen,
+  LApprovalConfirmationResolve,
 } from "../wailsjs/go/program/LProgram";
 import { EventsOn } from "../wailsjs/runtime/runtime";
 import { planning } from "../wailsjs/go/models";
@@ -25,6 +25,7 @@ import {
   LLicenseBoundaryGet, LLibraryExclusiveRemove,
   LLibraryTestGet,
 } from "./tabs/libraries";
+import { LSectionStateNormalize } from "./tabs/librarycatalog";
 import { LPresetOptionId, LPresetOptionCatalog } from "./tabs/options";
 import {
   LTabIdentifier, LStateUiSaved,
@@ -33,13 +34,14 @@ import {
   LRequestApprovalCreate, LStateUiParse,
   LPackagePrefixUpdate, LSettingsBuildNormalize, LSettingsFfmpegNormalize, LStateInitialNormalize,
 } from "./programstate";
-import { LLocaleGet } from "./i18n";
 import { LStateWindowRestore, LStateWindowUse } from "./builderwindowstate";
 import { LStateResultUse } from "./builderresultstate";
 import { LStateLogUse } from "./builderlogstate";
 import { LStateToolchainStatusUse } from "./buildertoolchainstate";
+import { LLocaleGet } from "./i18n";
 
 export function LStateBuilderUse() {
+  const locale = LLocaleGet();
   const [activeTabId, setActiveTabId] = useState<LTabIdentifier>("source");
   const hasLoadedSavedState = useRef(false);
   const tabPanelRef = useRef<HTMLElement>(null);
@@ -66,6 +68,7 @@ export function LStateBuilderUse() {
   const [ffmpegBuildPlanReview, setFfmpegBuildPlanReview] = useState<LReviewFfmpeg | null>(null);
   const [approvedActionStatus, setApprovedActionStatus] = useState("idle");
   const [approvedActionPhase, setApprovedActionPhase] = useState<"toolchain" | "ffmpeg" | null>(null);
+  const [approvalConfirmationRequest, setApprovalConfirmationRequest] = useState<{ requestId: string; actionName: string; planHash: string } | null>(null);
   // Mirror addresses tried before a transient-network stall halted the run,
   // delivered by the "approved-action-stalled" event for the stalled banner.
   const [ffmpegStalledAddresses, setFfmpegStalledAddresses] = useState<string[]>([]);
@@ -103,20 +106,14 @@ export function LStateBuilderUse() {
   const canCancelApprovedAction = useMemo(() => approvedActionStatus !== "idle" && approvedActionStatus !== "completed" && approvedActionStatus !== "failed" && approvedActionStatus !== "stalled", [approvedActionStatus]);
   const canCancelToolchain = canCancelApprovedAction && approvedActionPhase === "toolchain";
   const canCancelFfmpeg = canCancelApprovedAction && approvedActionPhase === "ffmpeg";
-  const toolchainProgress = useMemo<LProgressLive>(() => LProgressGet(toolchainLogEntries, approvedActionStatus, "toolchain"), [toolchainLogEntries, approvedActionStatus]);
-  const ffmpegProgress = useMemo<LProgressLive>(() => LProgressGet(ffmpegLogEntries, approvedActionStatus, "ffmpeg"), [ffmpegLogEntries, approvedActionStatus]);
+  const toolchainProgress = useMemo<LProgressLive>(() => LProgressGet(toolchainLogEntries, approvedActionStatus, "toolchain"), [toolchainLogEntries, approvedActionStatus, locale]);
+  const ffmpegProgress = useMemo<LProgressLive>(() => LProgressGet(ffmpegLogEntries, approvedActionStatus, "ffmpeg"), [ffmpegLogEntries, approvedActionStatus, locale]);
   const securityLogEntries = useMemo(() => [...toolchainLogEntries, ...ffmpegLogEntries], [toolchainLogEntries, ffmpegLogEntries]);
   // Current Build configuration package list (live textarea), used by Prep to flag
   // drift between what is configured now and what the prepared toolchain installed.
   const configuredMsys2PackageNames = useMemo(() => LTextLineSplit(msys2PackageText), [msys2PackageText]);
 
   useEffect(() => {
-    // Keep the backend in sync with the UI language so the native confirmation
-    // dialog is shown in the same language. Logs stay English by design.
-    void LLocaleSet(LLocaleGet());
-    const onLocaleChange = () => { void LLocaleSet(LLocaleGet()); };
-    window.addEventListener("customffmpeg-locale-change", onLocaleChange);
-
     LStateInitialGet().then(async (rawNextState: LStateInitial) => {
       const nextState = LStateInitialNormalize(rawNextState);
       const saved = LStateUiParse(await LStateUiLoad());
@@ -145,7 +142,10 @@ export function LStateBuilderUse() {
       if (typeof saved.optionsDetailedView === "boolean") setOptionsDetailedView(saved.optionsDetailedView);
       if (typeof saved.libraryTechnicalDetails === "boolean") setLibraryTechnicalDetails(saved.libraryTechnicalDetails);
       if (typeof saved.optionsTechnicalDetails === "boolean") setOptionsTechnicalDetails(saved.optionsTechnicalDetails);
-      if (Array.isArray(saved.librarySectionFilters)) setLLibrarySectionFilters(saved.librarySectionFilters.filter((value): value is string => typeof value === "string"));
+      if (Array.isArray(saved.librarySectionFilters)) {
+        const savedFilters = saved.librarySectionFilters.filter((value): value is string => typeof value === "string");
+        setLLibrarySectionFilters(LSectionStateNormalize(savedFilters, nextState.defaultLibraryCatalog));
+      }
       if (LTabIdValidate(saved.activeTabId)) setActiveTabId(saved.activeTabId);
       hasLoadedSavedState.current = true;
       LStateWindowRestore();
@@ -177,7 +177,15 @@ export function LStateBuilderUse() {
     const removeStalledListener = EventsOn("approved-action-stalled", (payload: LStalledActionPayload) => {
       setFfmpegStalledAddresses(Array.isArray(payload.addresses) ? payload.addresses : []);
     });
-    return () => { removeLogListener(); removeStatusListener(); removeStalledListener(); window.removeEventListener("customffmpeg-locale-change", onLocaleChange); };
+    const removeConfirmationListener = EventsOn("approval-confirmation-request", (payload: { requestId?: string; actionName?: string; planHash?: string }) => {
+      if (payload?.requestId && payload.actionName && payload.planHash) {
+        setApprovalConfirmationRequest({ requestId: payload.requestId, actionName: payload.actionName, planHash: payload.planHash });
+      }
+    });
+    const removeConfirmationClosedListener = EventsOn("approval-confirmation-closed", (payload: { requestId?: string }) => {
+      setApprovalConfirmationRequest((request) => request?.requestId === payload?.requestId ? null : request);
+    });
+    return () => { removeLogListener(); removeStatusListener(); removeStalledListener(); removeConfirmationListener(); removeConfirmationClosedListener(); };
   }, []);
 
   useEffect(() => {
@@ -456,6 +464,12 @@ export function LStateBuilderUse() {
 
   function LMSYSPackageUpdate(text: string) { setMsys2PackageText(text); setToolchainPreparationPlanReview(null); }
   function LFlagExtraUpdate(text: string) { setExtraConfigureFlagText(text); setFfmpegBuildPlanReview(null); }
+  async function resolveApprovalConfirmation(approved: boolean) {
+    const request = approvalConfirmationRequest;
+    if (!request) return;
+    setApprovalConfirmationRequest(null);
+    await LApprovalConfirmationResolve(request.requestId, approved);
+  }
   return {
     tabPanelRef,
     activeTabId, setActiveTabId,
@@ -477,6 +491,7 @@ export function LStateBuilderUse() {
     ffmpegBuildPlanReview,
     approvedActionStatus,
     approvedActionPhase,
+    approvalConfirmationRequest, resolveApprovalConfirmation,
     ffmpegStalledAddresses,
     toolchainLogEntries,
     ffmpegLogEntries,

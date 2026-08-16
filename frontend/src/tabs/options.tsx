@@ -1,5 +1,5 @@
 import React from "react";
-import { LLocaleTextGet } from "../i18n";
+import { LLocaleGet, LLocaleTextGet } from "../i18n";
 import { PHeaderPageRender } from "./shared";
 import technicalDetailsIcon from "../assets/button-icons/TechnicalDetails.svg";
 import resetIcon from "../assets/button-icons/Reset.svg";
@@ -56,17 +56,18 @@ export function POptionRender({
   setShowTechnicalDetails,
 }: LOptionProperties) {
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [selectedCategoryName, setSelectedCategoryName] = React.useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = React.useState("");
   const [categoryDropdownOpen, setCategoryDropdownOpen] = React.useState(false);
   const selectedPresetId = LPresetOptionMatch(
     ffmpegBuildSettings.selectedConfigureOptionIds,
   );
-  const LOptionCategoryNames = React.useMemo(
+  const locale = LLocaleGet();
+  const optionCategories = React.useMemo(
     () =>
       LOptionCategoryList(
         initialProgramState.defaultConfigureOptionCatalog,
       ),
-    [initialProgramState.defaultConfigureOptionCatalog],
+    [initialProgramState.defaultConfigureOptionCatalog, locale],
   );
 
   return (
@@ -97,14 +98,14 @@ export function POptionRender({
             onToggleOption={LOptionToggle}
             searchQuery={searchQuery}
             onSearchQueryChange={setSearchQuery}
-            selectedCategoryName={selectedCategoryName}
-            onSelectCategory={(categoryName) => {
-              setSelectedCategoryName(categoryName);
+            selectedCategoryId={selectedCategoryId}
+            onSelectCategory={(categoryId) => {
+              setSelectedCategoryId(categoryId);
               setCategoryDropdownOpen(false);
             }}
             categoryDropdownOpen={categoryDropdownOpen}
             onToggleCategoryDropdown={() => setCategoryDropdownOpen((value) => !value)}
-            LOptionCategoryNames={LOptionCategoryNames}
+            optionCategories={optionCategories}
           />
         </div>
       )}
@@ -146,12 +147,12 @@ export function POptionRender({
               />
             </label>
             <PDropdownCategoryRender
-              categories={LOptionCategoryNames}
-              selectedCategoryName={selectedCategoryName}
+              categories={optionCategories}
+              selectedCategoryId={selectedCategoryId}
               open={categoryDropdownOpen}
               onToggleOpen={() => setCategoryDropdownOpen((value) => !value)}
-              onSelectCategory={(categoryName) => {
-                setSelectedCategoryName(categoryName);
+              onSelectCategory={(categoryId) => {
+                setSelectedCategoryId(categoryId);
                 setCategoryDropdownOpen(false);
               }}
             />
@@ -160,7 +161,7 @@ export function POptionRender({
               type="button"
               onClick={() => {
                 setSearchQuery("");
-                setSelectedCategoryName("");
+                setSelectedCategoryId("");
                 setCategoryDropdownOpen(false);
               }}
             >
@@ -177,7 +178,7 @@ export function POptionRender({
             onToggleOption={LOptionToggle}
             showTechnicalDetails={showTechnicalDetails}
             searchQuery={searchQuery}
-            selectedCategoryName={selectedCategoryName}
+            selectedCategoryId={selectedCategoryId}
           />
 
           <PSectionFlagRender

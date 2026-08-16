@@ -5,7 +5,7 @@ import {
   LDirectoryResultOpen,
   LReportResultOpen,
 } from "../wailsjs/go/program/LProgram";
-import { LLocaleTextGet } from "./i18n";
+import { LLocaleTextGet, type LLocalizedMessage } from "./i18n";
 
 // Owns the Result tab state: the loaded build result, its deep-verify result,
 // and the actions that read, verify, and open the build artifacts. All actions
@@ -15,7 +15,7 @@ export function LStateResultUse(dir: string) {
   const [buildResultError, setBuildResultError] = useState("");
   const [isLoadingBuildResult, setIsLoadingBuildResult] = useState(false);
   const [buildVerification, setBuildVerification] = useState<LVerificationState | null>(null);
-  const [buildVerificationError, setBuildVerificationError] = useState("");
+  const [buildVerificationError, setBuildVerificationError] = useState<LLocalizedMessage | null>(null);
   const [isVerifyingBuild, setIsVerifyingBuild] = useState(false);
 
   function LResultClear() {
@@ -24,7 +24,7 @@ export function LStateResultUse(dir: string) {
 
   async function refreshBuildResult() {
     if (!dir) { setBuildResult(null); setBuildResultError(LLocaleTextGet("result.error.chooseWorkspaceFirst")); return; }
-    setBuildVerification(null); setBuildVerificationError("");
+    setBuildVerification(null); setBuildVerificationError(null);
     setIsLoadingBuildResult(true);
     try { const r = await LResultBuildGet(dir); setBuildResult(r); setBuildResultError(""); }
     catch (err) { setBuildResult(null); setBuildResultError(err instanceof Error ? err.message : String(err)); }
@@ -32,11 +32,11 @@ export function LStateResultUse(dir: string) {
   }
 
   async function verifyBuildResult() {
-    if (!dir) { setBuildVerificationError(LLocaleTextGet("result.error.chooseWorkspaceFirst")); return; }
+    if (!dir) { setBuildVerificationError({ messageKey: "result.error.chooseWorkspaceFirst" }); return; }
     setIsVerifyingBuild(true);
-    setBuildVerificationError("");
+    setBuildVerificationError(null);
     try { setBuildVerification(await LVerificationBuildRun(dir)); }
-    catch (err) { setBuildVerification(null); setBuildVerificationError(err instanceof Error ? err.message : String(err)); }
+    catch (err) { setBuildVerification(null); setBuildVerificationError({ messageKey: "verify.build.requestFailed", messageValues: { error: err instanceof Error ? err.message : String(err) } }); }
     finally { setIsVerifyingBuild(false); }
   }
 

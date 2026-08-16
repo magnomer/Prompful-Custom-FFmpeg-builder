@@ -15,6 +15,7 @@ import technicalDetailsIcon from "../assets/button-icons/TechnicalDetails.svg";
 import resetIcon from "../assets/button-icons/Reset.svg";
 import {
   LSectionState,
+  LSectionOption,
   LLibraryFilter,
   LLibraryFilterCreate,
   LLibraryUnavailableCheck,
@@ -115,7 +116,7 @@ export function PCardLibraryRender(props: {
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   sectionFilters: LSectionState[];
-  sectionOptions: string[];
+  sectionOptions: LSectionOption[];
   onSectionFiltersChange: (value: LSectionState[]) => void;
   onOpenOfficialWebpage: (url: string) => void;
 }) {
@@ -360,7 +361,7 @@ export function PListLibraryRender(props: { LCatalogLibrarySource: LLibraryChoic
   );
 }
 
-function PDropdownSectionRender(props: { selectedSections: LSectionState[]; sectionOptions: string[]; onChangeSections: (value: LSectionState[]) => void }) {
+function PDropdownSectionRender(props: { selectedSections: LSectionState[]; sectionOptions: LSectionOption[]; onChangeSections: (value: LSectionState[]) => void }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
@@ -391,7 +392,7 @@ function PDropdownSectionRender(props: { selectedSections: LSectionState[]; sect
         aria-expanded={isOpen}
         onClick={() => setIsOpen((value) => !value)}
       >
-        <strong className="libraries-section-dropdown__value">{LSectionSummaryGet(props.selectedSections)}</strong>
+        <strong className="libraries-section-dropdown__value">{LSectionSummaryGet(props.selectedSections, props.sectionOptions)}</strong>
         <span className="libraries-section-dropdown__chevron" aria-hidden="true" />
       </button>
       {isOpen && (
@@ -409,18 +410,18 @@ function PDropdownSectionRender(props: { selectedSections: LSectionState[]; sect
               : <span className="libraries-section-dropdown__check-placeholder" aria-hidden="true" />
             }
           </button>
-          {props.sectionOptions.map((sectionName) => {
-            const isSelected = props.selectedSections.includes(sectionName);
+          {props.sectionOptions.map((section) => {
+            const isSelected = props.selectedSections.includes(section.id);
             return (
               <button
                 className={`libraries-section-dropdown__option ${isSelected ? "libraries-section-dropdown__option--active" : ""}`}
                 type="button"
                 role="option"
                 aria-selected={isSelected}
-                key={sectionName}
-                onClick={() => LSectionToggle(sectionName)}
+                key={section.id}
+                onClick={() => LSectionToggle(section.id)}
               >
-                <span>{LSectionLabelGet(sectionName)}</span>
+                <span>{LSectionLabelGet(section.id, props.sectionOptions)}</span>
                 {isSelected
                   ? <span className="libraries-section-dropdown__check" aria-hidden="true">✓</span>
                   : <span className="libraries-section-dropdown__check-placeholder" aria-hidden="true" />
@@ -440,7 +441,7 @@ export function PToolbarLibraryRender(props: {
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   sectionFilters: LSectionState[];
-  sectionOptions: string[];
+  sectionOptions: LSectionOption[];
   onSectionFiltersChange: (value: LSectionState[]) => void;
   onResetFilters: () => void;
 }) {

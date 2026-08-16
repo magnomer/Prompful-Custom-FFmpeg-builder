@@ -1,7 +1,10 @@
 package program
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
+	"time"
 
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -31,8 +34,10 @@ func (reporter LReporterWails) LReporterStalledEmit(addresses []string) {
 	}
 }
 
-// LConfirmerWails is the GUI reporting.LConfirmer implementation. It presents
-// the backend-owned approval as a localized native question dialog.
+// LConfirmerWails is the GUI reporting.LConfirmer implementation. The backend
+// owns a one-time request and waits for the application-localized modal to
+// resolve it. This avoids Windows MessageBox buttons following the OS language
+// instead of the application's selected language.
 type LConfirmerWails struct {
 	program *LProgram
 }
@@ -40,25 +45,75 @@ type LConfirmerWails struct {
 func (confirmer LConfirmerWails) LConfirmerApprovalGet(actionName string, planHash string) (bool, error) {
 	program := confirmer.program
 	if program.LContext == nil {
-		return false, errors.New("program context is not ready for native approval dialog")
+		return false, errors.New("program context is not ready for approval confirmation")
 	}
-	locale := program.lLocaleCurrentGet()
-	message := LLocaleTextForGet(locale, "native.approval.message", map[string]string{"action": LLocaleTextForGet(locale, "approval.action."+actionName, nil), "planHash": planHash})
-	noButtonLabel := LLocaleTextForGet(locale, "native.approval.no", nil)
-	yesButtonLabel := LLocaleTextForGet(locale, "native.approval.yes", nil)
-	choice, err := wailsRuntime.MessageDialog(program.LContext, wailsRuntime.MessageDialogOptions{
-		Type:          wailsRuntime.QuestionDialog,
-		Title:         LLocaleTextForGet(locale, "native.approval.title", nil),
-		Message:       message,
-		Buttons:       []string{noButtonLabel, yesButtonLabel},
-		DefaultButton: noButtonLabel,
-		CancelButton:  noButtonLabel,
-	})
-	if err != nil {
+	requestBytes := make([]byte, 16)
+	if _, err := rand.Read(requestBytes); err != nil {
 		return false, err
 	}
-	// On Windows, Wails' QuestionDialog ignores custom button labels and returns
-	// the native "Yes"/"No" strings, so a localized yes label would never match.
-	// Accept the localized label or the native English "Yes".
-	return choice == yesButtonLabel || choice == "Yes", nil
+	requestId := hex.EncodeToString(requestBytes)
+	response := make(chan bool, 1)
+	program.LMutexConfirmation.Lock()
+	if program.LConfirmationRequestId != "" {
+		program.LMutexConfirmation.Unlock()
+		return false, errors.New("another approval confirmation is already pending")
+	}
+	program.LConfirmationRequestId = requestId
+	program.LConfirmationResponse = response
+	program.LMutexConfirmation.Unlock()
+
+	defer program.lApprovalConfirmationClear(requestId)
+	wailsRuntime.EventsEmit(program.LContext, "approval-confirmation-request", map[string]string{
+		"requestId":  requestId,
+		"actionName": actionName,
+		"planHash":   planHash,
+	})
+
+	select {
+	case approved := <-response:
+		return approved, nil
+	case <-program.LContext.Done():
+		return false, program.LContext.Err()
+	case <-time.After(5 * time.Minute):
+		return false, errors.New("approval confirmation timed out")
+	}
+}
+
+func (program *LProgram) LApprovalConfirmationResolve(requestId string, approved bool) error {
+	program.LMutexConfirmation.Lock()
+	if requestId == "" || requestId != program.LConfirmationRequestId || program.LConfirmationResponse == nil {
+		program.LMutexConfirmation.Unlock()
+		return errors.New("approval confirmation request is not pending")
+	}
+	response := program.LConfirmationResponse
+	program.LConfirmationRequestId = ""
+	program.LConfirmationResponse = nil
+	program.LMutexConfirmation.Unlock()
+	response <- approved
+	return nil
+}
+
+func (program *LProgram) lApprovalConfirmationClear(requestId string) {
+	program.LMutexConfirmation.Lock()
+	defer program.LMutexConfirmation.Unlock()
+	if program.LConfirmationRequestId == requestId {
+		program.LConfirmationRequestId = ""
+		program.LConfirmationResponse = nil
+	}
+	if program.LContext != nil {
+		wailsRuntime.EventsEmit(program.LContext, "approval-confirmation-closed", map[string]string{"requestId": requestId})
+	}
+}
+
+func (program *LProgram) lApprovalConfirmationCancel() {
+	program.LMutexConfirmation.Lock()
+	if program.LConfirmationResponse == nil {
+		program.LMutexConfirmation.Unlock()
+		return
+	}
+	response := program.LConfirmationResponse
+	program.LConfirmationRequestId = ""
+	program.LConfirmationResponse = nil
+	program.LMutexConfirmation.Unlock()
+	response <- false
 }

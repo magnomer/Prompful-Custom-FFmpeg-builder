@@ -1261,5 +1261,14 @@
   "logs.local.empty.raw": "이 로컬 기록에는 원시 로그 텍스트가 기록되지 않았습니다.",
   "logs.local.meta.errors": "오류 {count}개",
   "logs.local.meta.warnings": "경고 {count}개",
-  "libraries.row.unavailable.preparationUnimplemented": "일시적으로 사용 불가: 이 라이브러리는 소스 빌드/가져오기 준비가 필요하지만, 선택한 FFmpeg 릴리스에 대한 준비 구현이 아직 없습니다."
+  "libraries.row.unavailable.preparationUnimplemented": "일시적으로 사용 불가: 이 라이브러리는 소스 빌드/가져오기 준비가 필요하지만, 선택한 FFmpeg 릴리스에 대한 준비 구현이 아직 없습니다.",
+  "fatal.renderFailed": "렌더링 실패",
+  "fatal.runtimeFailed": "런타임 실패",
+  "fatal.asyncRuntimeFailed": "비동기 런타임 실패",
+  "verify.toolchain.requestFailed": "빌드 환경을 검증할 수 없습니다: {error}",
+  "verify.build.ffmpegNotFound": "빌드 결과에서 ffmpeg.exe를 찾을 수 없습니다.",
+  "verify.build.runFailed": "ffmpeg.exe를 실행하여 빌드 구성을 읽을 수 없습니다: {error}",
+  "verify.build.configurationMissing": "ffmpeg.exe가 검증할 구성 줄을 보고하지 않았습니다.",
+  "verify.build.reportMissing": "비교할 빌드 보고서를 찾을 수 없습니다.",
+  "verify.build.requestFailed": "FFmpeg 빌드를 검증할 수 없습니다: {error}"
 }

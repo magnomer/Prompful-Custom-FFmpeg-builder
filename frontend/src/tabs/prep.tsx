@@ -1,7 +1,7 @@
 import React from "react";
 import { PHeaderPageRender, PApprovalPanelRender, PProgressLiveRender, PListReviewRender, PTextDescriptionRender } from "./shared";
 import { LPipelineToolchainGet } from "./logutils";
-import { LLocaleTextGet } from "../i18n";
+import { LLocaleGet, LLocaleMessageGet, LLocaleTextGet } from "../i18n";
 import notPreparedIcon from "../assets/prep-card-icons/NotPrepared.svg";
 import planToImplementIcon from "../assets/prep-card-icons/PlanToImplement.svg";
 import planReadyIcon from "../assets/prep-card-icons/PlanReady.svg";
@@ -114,7 +114,7 @@ function PCardRecoveryRender(props: {
   onReinstall: () => void;
 }) {
   const { status, verification, isVerifying, configuredPackageNames, onVerify, onReuse, onReinstall } = props;
-  const installedDate = status.createdAt ? new Date(status.createdAt).toLocaleString() : "";
+  const installedDate = status.createdAt ? new Date(status.createdAt).toLocaleString(LLocaleGet() === "ko" ? "ko-KR" : "en-US") : "";
   const hasManifest = status.packageCount > 0;
   // Drift is only meaningful when the prepared profile recorded its package list.
   const drift = hasManifest ? LPackageDriftGet(configuredPackageNames, status.packageNames) : { added: [], removed: [] };
@@ -142,10 +142,10 @@ function PCardRecoveryRender(props: {
 
       {verification && (
         verification.verified ? (
-          <p className="empty-text empty-text--ok">{verification.message}</p>
+          <p className="empty-text empty-text--ok">{LLocaleMessageGet(verification)}</p>
         ) : (
           <div className="prep-recovery__verify-result">
-            <p className="empty-text empty-text--warn">{verification.message}</p>
+            <p className="empty-text empty-text--warn">{LLocaleMessageGet(verification)}</p>
             {verification.missingPackageNames.length > 0 && (
               <PListReviewRender title={LLocaleTextGet("prep.recovery.missingPackages")} items={verification.missingPackageNames} />
             )}

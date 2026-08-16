@@ -18,6 +18,10 @@ export function LActionFailureEmit(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['program']['LProgram']['LActionFailureEmit'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function LApprovalConfirmationResolve(arg1, arg2) {
+  return window['go']['program']['LProgram']['LApprovalConfirmationResolve'](arg1, arg2);
+}
+
 export function LAuditProgressCreate(arg1, arg2, arg3) {
   return window['go']['program']['LProgram']['LAuditProgressCreate'](arg1, arg2, arg3);
 }

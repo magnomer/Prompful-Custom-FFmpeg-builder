@@ -4,6 +4,10 @@ export function LLibraryTextGet(library: LLibraryChoice, field: "displayName" | 
   return LLocaleFallbackGet(`catalog.libraries.${library.libraryId}.${field}`, library[field] ?? "");
 }
 
+export function LLibraryNameGet(libraryId: string, fallback: string): string {
+  return LLocaleFallbackGet(`catalog.libraries.${libraryId}.displayName`, fallback);
+}
+
 export function LLicenseLabelGet(licenseEffectName: string): string {
   return LLocaleFallbackGet(`libraries.row.license.${licenseEffectName}`, licenseEffectName);
 }

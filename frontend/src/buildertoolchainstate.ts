@@ -43,7 +43,7 @@ export function LStateToolchainStatusUse(dir: string, windowsShellProfileName: s
     setIsVerifyingToolchain(true);
     setToolchainVerification(null);
     try { setToolchainVerification(await LToolchainInstallVerify(dir, windowsShellProfileName)); }
-    catch (err) { setToolchainVerification({ verified: false, checkedPackageCount: 0, missingPackageNames: [], message: err instanceof Error ? err.message : String(err) }); }
+    catch (err) { setToolchainVerification({ verified: false, checkedPackageCount: 0, missingPackageNames: [], message: "", messageKey: "verify.toolchain.requestFailed", messageValues: { error: err instanceof Error ? err.message : String(err) } }); }
     finally { setIsVerifyingToolchain(false); }
   }
 

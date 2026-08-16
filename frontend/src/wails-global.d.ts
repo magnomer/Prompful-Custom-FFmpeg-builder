@@ -257,7 +257,9 @@ type LVerificationState = {
   okCount: number;
   totalCount: number;
   overall: string;
-  message: string;
+  message?: string;
+  messageKey?: string;
+  messageValues?: Record<string, string>;
   verifiedAt: string;
 };
 
@@ -300,5 +302,7 @@ type LVerificationToolchain = {
   verified: boolean;
   checkedPackageCount: number;
   missingPackageNames: string[];
-  message: string;
+  message?: string;
+  messageKey?: string;
+  messageValues?: Record<string, string>;
 };

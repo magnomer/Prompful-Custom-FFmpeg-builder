@@ -1,8 +1,8 @@
 import React from "react";
 import { PHeaderPageRender, PProgressLiveRender, PTextDescriptionRender } from "./shared";
 import { LPipelineFfmpegGet } from "./logutils";
-import { LLocaleTextGet } from "../i18n";
-import { LOptionTextGet, LLicenseLabelGet, LLibraryTextGet } from "../catalogText";
+import { LLocaleGet, LLocaleTextGet } from "../i18n";
+import { LOptionTextGet, LLicenseLabelGet, LLibraryNameGet, LLibraryTextGet } from "../catalogText";
 import type { LProgressLive } from "./logs";
 import emptyStateBlueIcon from "../assets/empty-card-icons/EmptyStateBlue.svg";
 
@@ -61,7 +61,8 @@ function LLibraryLabelGet(library: LLibraryChoice): string {
 }
 
 function LPreparationLabelGet(preparation: LLibraryPreparation): string {
-  const name = preparation.version ? `${preparation.displayName} ${preparation.version}` : preparation.displayName;
+  const localizedName = LLibraryNameGet(preparation.libraryId, preparation.displayName);
+  const name = preparation.version ? `${localizedName} ${preparation.version}` : localizedName;
   const buildDependencyPackages = LListEmptyNormalize(preparation.buildDependencyPackages);
   const dependencyText = buildDependencyPackages.length > 0
     ? ` · ${LLocaleTextGet("approval.preparation.buildDependencies")}: ${buildDependencyPackages.join(" ")}`
@@ -134,6 +135,7 @@ function PPanelConfirmationRender(props: { planHash: string; expectedLConsentTex
 }
 
 function PCardBuildRender(props: { review: LReviewFfmpeg }) {
+  const locale = LLocaleGet();
   const [activeTabId, setActiveTabId] = React.useState<LBuildPlanIdentifier>("libraries");
   const plan = props.review.plan;
   const selectedLibraries = LListEmptyNormalize(plan.selectedLibraries);
@@ -145,17 +147,17 @@ function PCardBuildRender(props: { review: LReviewFfmpeg }) {
   const configureFlags = LListEmptyNormalize(plan.configureFlags);
   const operationsRaw = LListEmptyNormalize(plan.operations);
   const warnings = LListEmptyNormalize(plan.warnings);
-  const libraries = React.useMemo(() => selectedLibraries.map(LLibraryLabelGet), [selectedLibraries]);
+  const libraries = React.useMemo(() => selectedLibraries.map(LLibraryLabelGet), [selectedLibraries, locale]);
   const packages = React.useMemo(() => [
     ...requiredMsys2PackageNames,
     ...libraryPreparations.map(LPreparationLabelGet),
-  ], [requiredMsys2PackageNames, libraryPreparations]);
+  ], [requiredMsys2PackageNames, libraryPreparations, locale]);
   const options = React.useMemo(() => [
     ...selectedConfigureOptions.map(LOptionLabelGet),
     ...generatedOptionFlags,
     ...extraConfigureFlags,
-  ], [selectedConfigureOptions, generatedOptionFlags, extraConfigureFlags]);
-  const operations = React.useMemo(() => operationsRaw.map(LOperationTextGet), [operationsRaw]);
+  ], [selectedConfigureOptions, generatedOptionFlags, extraConfigureFlags, locale]);
+  const operations = React.useMemo(() => operationsRaw.map(LOperationTextGet), [operationsRaw, locale]);
   const tabs: { id: LBuildPlanIdentifier; label: string; count: number; code?: boolean }[] = [
     { id: "libraries", label: LLocaleTextGet("ffmpegBuild.plan.tabs.libraries"), count: libraries.length },
     { id: "packages", label: LLocaleTextGet("ffmpegBuild.plan.tabs.packages"), count: packages.length },

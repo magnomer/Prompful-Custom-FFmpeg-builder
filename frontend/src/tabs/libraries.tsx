@@ -1,6 +1,6 @@
 import React from "react";
 import { PHeaderPageRender } from "./shared";
-import { LLocaleTextGet } from "../i18n";
+import { LLocaleGet, LLocaleTextGet } from "../i18n";
 import { LSectionState, LSectionOptionsGet } from "./librarycatalog";
 import { LPresetLibraryId, LPresetLibrary } from "./librarypresets";
 import {
@@ -59,11 +59,13 @@ export function PLibraryRender({ initialProgramState, libraryCatalog, ffmpegBuil
   const safeSelectedLibraryIds = LArrayEnsure(ffmpegBuildSettings?.selectedLibraryIds);
   const safeSectionFilters = LArrayEnsure(sectionFilters);
   const safeShellProfileName = ffmpegBuildSettings?.windowsShellProfileName ?? "ucrt64";
+  const locale = LLocaleGet();
   const LCatalogLibrarySource = safeLibraryCatalog.length > 0 ? safeLibraryCatalog : safeInitialLibraryCatalog;
-  const sectionOptions = LSectionOptionsGet(LCatalogLibrarySource, safeShellProfileName);
+  const sectionOptions = React.useMemo(() => LSectionOptionsGet(LCatalogLibrarySource, safeShellProfileName), [LCatalogLibrarySource, safeShellProfileName, locale]);
 
   React.useEffect(() => {
-    const prunedSections = safeSectionFilters.filter((sectionName) => sectionOptions.includes(sectionName));
+    const validSectionIds = new Set(sectionOptions.map((section) => section.id));
+    const prunedSections = safeSectionFilters.filter((sectionId) => validSectionIds.has(sectionId));
     if (prunedSections.length !== safeSectionFilters.length) setSectionFilters(prunedSections);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionOptions]);

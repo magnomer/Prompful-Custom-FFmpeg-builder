@@ -79,26 +79,31 @@ function LOptionSearchMatch(
   ].some((value) => value.toLowerCase().includes(normalizedQuery));
 }
 
+export type LOptionCategory = { id: string; label: string };
+
+function LOptionCategoryIdGet(option: LOptionChoice): string {
+  return option.categoryName || "__other__";
+}
+
 export function LOptionCategoryList(
   LCatalogLibrarySource: LOptionChoice[],
-): string[] {
-  return Array.from(
-    new Set(
-      LCatalogLibrarySource.map(
-        (option) =>
-          LOptionTextGet(option, "categoryName") || LLocaleTextGet("common.other"),
-      ),
-    ),
-  );
+): LOptionCategory[] {
+  const categories = new Map<string, string>();
+  for (const option of LCatalogLibrarySource) {
+    const id = LOptionCategoryIdGet(option);
+    if (!categories.has(id)) categories.set(id, LOptionTextGet(option, "categoryName") || LLocaleTextGet("common.other"));
+  }
+  return Array.from(categories, ([id, label]) => ({ id, label }));
 }
 
 export function PDropdownCategoryRender(props: {
-  categories: string[];
-  selectedCategoryName: string;
+  categories: LOptionCategory[];
+  selectedCategoryId: string;
   open: boolean;
   onToggleOpen: () => void;
-  onSelectCategory: (categoryName: string) => void;
+  onSelectCategory: (categoryId: string) => void;
 }) {
+  const selectedCategoryLabel = props.categories.find((category) => category.id === props.selectedCategoryId)?.label;
   const buttonClass = `options-category-dropdown__button ${props.open ? "options-category-dropdown__button--open" : ""}`;
   return (
     <div className="options-category-dropdown">
@@ -110,7 +115,7 @@ export function PDropdownCategoryRender(props: {
         onClick={props.onToggleOpen}
       >
         <span className="options-category-dropdown__value">
-          {props.selectedCategoryName || LLocaleTextGet("options.category.all")}
+          {selectedCategoryLabel || LLocaleTextGet("options.category.all")}
         </span>
         <span
           className="options-category-dropdown__chevron"
@@ -120,14 +125,14 @@ export function PDropdownCategoryRender(props: {
       {props.open && (
         <div className="options-category-dropdown__menu" role="listbox">
           <button
-            className={`options-category-dropdown__option ${!props.selectedCategoryName ? "options-category-dropdown__option--active" : ""}`}
+            className={`options-category-dropdown__option ${!props.selectedCategoryId ? "options-category-dropdown__option--active" : ""}`}
             type="button"
             role="option"
-            aria-selected={!props.selectedCategoryName}
+            aria-selected={!props.selectedCategoryId}
             onClick={() => props.onSelectCategory("")}
           >
             <span>{LLocaleTextGet("options.category.all")}</span>
-            {!props.selectedCategoryName && (
+            {!props.selectedCategoryId && (
               <span
                 className="options-category-dropdown__check"
                 aria-hidden="true"
@@ -136,18 +141,18 @@ export function PDropdownCategoryRender(props: {
               </span>
             )}
           </button>
-          {props.categories.map((categoryName) => {
-            const active = props.selectedCategoryName === categoryName;
+          {props.categories.map((category) => {
+            const active = props.selectedCategoryId === category.id;
             return (
               <button
                 className={`options-category-dropdown__option ${active ? "options-category-dropdown__option--active" : ""}`}
                 type="button"
                 role="option"
                 aria-selected={active}
-                key={categoryName}
-                onClick={() => props.onSelectCategory(categoryName)}
+                key={category.id}
+                onClick={() => props.onSelectCategory(category.id)}
               >
-                <span>{categoryName}</span>
+                <span>{category.label}</span>
                 {active && (
                   <span
                     className="options-category-dropdown__check"
@@ -171,13 +176,11 @@ export function PListOptionRender(props: {
   onToggleOption: (optionId: string) => void;
   showTechnicalDetails: boolean;
   searchQuery: string;
-  selectedCategoryName: string;
+  selectedCategoryId: string;
 }) {
   const filteredOptions = props.LCatalogLibrarySource.filter(
     (option) =>
-      (!props.selectedCategoryName ||
-        (LOptionTextGet(option, "categoryName") || LLocaleTextGet("common.other")) ===
-          props.selectedCategoryName) &&
+      (!props.selectedCategoryId || LOptionCategoryIdGet(option) === props.selectedCategoryId) &&
       LOptionSearchMatch(option, props.searchQuery),
   );
   const groupedOptions = LOptionGroupCreate(filteredOptions);
@@ -242,11 +245,11 @@ export function PCardOptionRender(props: {
   onToggleOption: (optionId: string) => void;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
-  selectedCategoryName: string;
-  onSelectCategory: (categoryName: string) => void;
+  selectedCategoryId: string;
+  onSelectCategory: (categoryId: string) => void;
   categoryDropdownOpen: boolean;
   onToggleCategoryDropdown: () => void;
-  LOptionCategoryNames: string[];
+  optionCategories: LOptionCategory[];
 }) {
   return (
     <section className="card card--teal options-simple-card options-simple-options-card">
@@ -266,8 +269,8 @@ export function PCardOptionRender(props: {
             />
           </label>
           <PDropdownCategoryRender
-            categories={props.LOptionCategoryNames}
-            selectedCategoryName={props.selectedCategoryName}
+            categories={props.optionCategories}
+            selectedCategoryId={props.selectedCategoryId}
             open={props.categoryDropdownOpen}
             onToggleOpen={props.onToggleCategoryDropdown}
             onSelectCategory={props.onSelectCategory}
@@ -280,7 +283,7 @@ export function PCardOptionRender(props: {
             onToggleOption={props.onToggleOption}
             showTechnicalDetails={false}
             searchQuery={props.searchQuery}
-            selectedCategoryName={props.selectedCategoryName}
+            selectedCategoryId={props.selectedCategoryId}
           />
         </div>
       </div>

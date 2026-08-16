@@ -52,10 +52,12 @@ type LStatusToolchain struct {
 // MSYS2 package database and reports which recorded packages are actually
 // installed versus missing.
 type LVerificationToolchain struct {
-	Verified            bool     `json:"verified"`
-	CheckedPackageCount int      `json:"checkedPackageCount"`
-	MissingPackageNames []string `json:"missingPackageNames"`
-	Message             string   `json:"message"`
+	Verified            bool              `json:"verified"`
+	CheckedPackageCount int               `json:"checkedPackageCount"`
+	MissingPackageNames []string          `json:"missingPackageNames"`
+	Message             string            `json:"message,omitempty"`
+	MessageKey          string            `json:"messageKey"`
+	MessageValues       map[string]string `json:"messageValues,omitempty"`
 }
 
 func LMsysRootResolve(workspaceDirectory string, windowsShellProfileName string) string {
@@ -221,14 +223,13 @@ func (program *LProgram) LToolchainInstallVerify(workspaceDirectory string, wind
 	if err := workspace.LPathRealCheck(workspaceDirectory, msys2RootDirectory); err != nil {
 		return verification, err
 	}
-	locale := program.lLocaleCurrentGet()
 	if !LFileExistCheck(LBashPathResolve(msys2RootDirectory)) {
-		verification.Message = LLocaleTextForGet(locale, "verify.toolchain.notInstalled", nil)
+		verification.MessageKey = "verify.toolchain.notInstalled"
 		return verification, nil
 	}
 	manifest, err := LManifestToolchainRead(msys2RootDirectory)
 	if err != nil || len(manifest.Msys2PackageNames) == 0 {
-		verification.Message = LLocaleTextForGet(locale, "verify.toolchain.noManifest", nil)
+		verification.MessageKey = "verify.toolchain.noManifest"
 		return verification, nil
 	}
 	installedNames, err := LPackageInstallQuery(msys2RootDirectory, manifest.WindowsShellProfileName)
@@ -250,9 +251,11 @@ func (program *LProgram) LToolchainInstallVerify(workspaceDirectory string, wind
 	verification.MissingPackageNames = missingPackageNames
 	verification.Verified = len(missingPackageNames) == 0
 	if verification.Verified {
-		verification.Message = LLocaleTextForGet(locale, "verify.toolchain.allPresent", map[string]string{"count": strconv.Itoa(verification.CheckedPackageCount)})
+		verification.MessageKey = "verify.toolchain.allPresent"
+		verification.MessageValues = map[string]string{"count": strconv.Itoa(verification.CheckedPackageCount)}
 	} else {
-		verification.Message = LLocaleTextForGet(locale, "verify.toolchain.missing", map[string]string{"count": strconv.Itoa(len(missingPackageNames))})
+		verification.MessageKey = "verify.toolchain.missing"
+		verification.MessageValues = map[string]string{"count": strconv.Itoa(len(missingPackageNames))}
 	}
 	return verification, nil
 }

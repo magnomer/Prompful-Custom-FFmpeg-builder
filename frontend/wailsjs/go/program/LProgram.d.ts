@@ -15,6 +15,8 @@ export function LActionApprovedStart():Promise<string>;
 
 export function LActionFailureEmit(arg1:audit.LAuditWriter,arg2:planning.LPlanFfmpeg,arg3:string,arg4:string,arg5:Error):Promise<boolean>;
 
+export function LApprovalConfirmationResolve(arg1:string,arg2:boolean):Promise<void>;
+
 export function LAuditProgressCreate(arg1:audit.LAuditWriter,arg2:string,arg3:string):Promise<any>;
 
 export function LCatalogSourceGet(arg1:string,arg2:string):Promise<Array<planning.LLibraryChoice>>;

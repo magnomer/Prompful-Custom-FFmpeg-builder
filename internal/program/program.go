@@ -20,6 +20,9 @@ type LProgram struct {
 	LStateWindowStartup     LStateWindow
 	LLocaleUi               string
 	LMutexLocaleUi          sync.RWMutex
+	LMutexConfirmation      sync.Mutex
+	LConfirmationRequestId  string
+	LConfirmationResponse   chan bool
 	LReporter               reporting.LReporter
 	LConfirmer              reporting.LConfirmer
 }
@@ -61,12 +64,13 @@ func (program *LProgram) LWindowCloseCheck(LContext context.Context) bool {
 }
 
 func (program *LProgram) LProgramStop(LContext context.Context) {
+	program.lApprovalConfirmationCancel()
 	program.LActionApprovedCancel()
 }
 
-// LLocaleSet records the UI language so the backend-rendered native confirmation
-// dialog can follow it. Only the dialog is localized; log and error messages stay
-// English. Unknown locales fall back to English.
+// LLocaleSet records the UI language for backend-owned native surfaces such as
+// the workspace picker. Logs and technical error details stay English. Unknown
+// locales fall back to English.
 func (program *LProgram) LLocaleSet(locale string) {
 	normalizedLocale := "en"
 	if locale == "ko" {

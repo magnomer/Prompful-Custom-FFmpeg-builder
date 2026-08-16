@@ -45,7 +45,9 @@ type LVerificationState struct {
 	OkCount               int                    `json:"okCount"`
 	TotalCount            int                    `json:"totalCount"`
 	Overall               string                 `json:"overall"` // "ok" | "issues" | "unverifiable"
-	Message               string                 `json:"message"`
+	Message               string                 `json:"message,omitempty"`
+	MessageKey            string                 `json:"messageKey"`
+	MessageValues         map[string]string      `json:"messageValues,omitempty"`
 	VerifiedAt            string                 `json:"verifiedAt"`
 }
 
@@ -73,28 +75,29 @@ func (program *LProgram) LVerificationBuildRun(workspaceDirectory string) (LVeri
 
 	if info, err := os.Stat(ffmpegPath); err != nil || info.IsDir() {
 		verification.Overall = "unverifiable"
-		verification.Message = "ffmpeg.exe was not found in the build artifacts."
+		verification.MessageKey = "verify.build.ffmpegNotFound"
 		return verification, nil
 	}
 
 	versionOutput, err := LFfmpegVersionRun(ffmpegPath)
 	if err != nil {
 		verification.Overall = "unverifiable"
-		verification.Message = "Could not run ffmpeg.exe to read its build configuration: " + err.Error()
+		verification.MessageKey = "verify.build.runFailed"
+		verification.MessageValues = map[string]string{"error": err.Error()}
 		return verification, nil
 	}
 	verification.FfmpegVersion = LVersionFfmpegParse(versionOutput)
 	configuredFlags := LFlagConfiguredParse(versionOutput)
 	if len(configuredFlags) == 0 {
 		verification.Overall = "unverifiable"
-		verification.Message = "ffmpeg.exe did not report a configuration line to verify against."
+		verification.MessageKey = "verify.build.configurationMissing"
 		return verification, nil
 	}
 
 	_, report, reportErr := LReportLatestRead(layout)
 	if reportErr != nil {
 		verification.Overall = "unverifiable"
-		verification.Message = "No build report was found to compare against."
+		verification.MessageKey = "verify.build.reportMissing"
 		return verification, nil
 	}
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { LLocaleTextGet } from "../i18n";
+import { LLocaleGet, LLocaleMessageGet, LLocaleTextGet, type LLocalizedMessage } from "../i18n";
 import { LOptionNameGet, LLicenseLabelGet } from "../catalogText";
 import { LLicenseShortGet } from "./options";
 import { ClipboardSetText } from "../../wailsjs/runtime/runtime";
@@ -64,7 +64,7 @@ function LDateTimeFormat(value: string): string {
   if (!value) return LLocaleTextGet("result.summary.latestBuild.unknown");
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
+  return new Intl.DateTimeFormat(LLocaleGet() === "ko" ? "ko-KR" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
 function LBuildTypeGet(_result: LResultState): string {
@@ -208,9 +208,10 @@ function PResultItemsRender(props: { title: string; items: string[]; emptyText: 
   );
 }
 
-function PTabDetailRender(props: { result: LResultState; verification: LVerificationState | null; verificationError: string; isVerifying: boolean }) {
+function PTabDetailRender(props: { result: LResultState; verification: LVerificationState | null; verificationError: LLocalizedMessage | null; isVerifying: boolean }) {
   const [activeTabId, setActiveTabId] = React.useState<LResultDetailIdentifier>("files");
-  const options = React.useMemo(() => props.result.selectedConfigureOptions.map(LOptionResultGet), [props.result.selectedConfigureOptions]);
+  const locale = LLocaleGet();
+  const options = React.useMemo(() => props.result.selectedConfigureOptions.map(LOptionResultGet), [props.result.selectedConfigureOptions, locale]);
 
   // Jump to the Libraries tab when a verification run finishes or starts, so its
   // results surface where the user is looking instead of on a hidden tab.
@@ -299,7 +300,7 @@ function LLibraryPillGet(status: LVerificationLibrary): { variant: string; label
 
 // Libraries detail tab. When a verification has been run, each row gains a
 // Present/Missing pill and a compact caption carries the global findings.
-function PResultLibraryRender(props: { librarySpecs: string[]; verification: LVerificationState | null; verificationError: string; isVerifying: boolean }) {
+function PResultLibraryRender(props: { librarySpecs: string[]; verification: LVerificationState | null; verificationError: LLocalizedMessage | null; isVerifying: boolean }) {
   const verification = props.verification;
   const statusByLibraryId = React.useMemo(() => {
     const map: Record<string, LVerificationLibrary> = {};
@@ -337,8 +338,8 @@ function PResultLibraryRender(props: { librarySpecs: string[]; verification: LVe
         </div>
       )}
       {props.isVerifying && <p className="result-plan-panel__note">{LLocaleTextGet("result.verify.running")}</p>}
-      {props.verificationError && <p className="result-plan-panel__note result-plan-panel__note--warn">{props.verificationError}</p>}
-      {verification && verification.overall === "unverifiable" && <p className="result-plan-panel__note">{verification.message}</p>}
+      {props.verificationError && <p className="result-plan-panel__note result-plan-panel__note--warn">{LLocaleMessageGet(props.verificationError)}</p>}
+      {verification && verification.overall === "unverifiable" && <p className="result-plan-panel__note">{LLocaleMessageGet(verification)}</p>}
       {verification && verification.ffmpegVersion && <p className="result-plan-panel__note">{LLocaleTextGet("result.verify.ffmpegVersion", { version: verification.ffmpegVersion })}</p>}
       {verification && verification.unexpectedEnableFlags.length > 0 && (
         <p className="result-plan-panel__note result-plan-panel__note--warn">{LLocaleTextGet("result.verify.unexpected", { flags: verification.unexpectedEnableFlags.join(" ") })}</p>
@@ -347,7 +348,7 @@ function PResultLibraryRender(props: { librarySpecs: string[]; verification: LVe
   );
 }
 
-function PPanelResultRender(props: { result: LResultState | null; errorText: string; isLoading: boolean; verification: LVerificationState | null; verificationError: string; isVerifying: boolean; hasWorkspace: boolean; onOpenFolder: () => Promise<void>; onOpenReport: () => Promise<void>; onGoToSource: () => void; onGoToBuild: () => void }) {
+function PPanelResultRender(props: { result: LResultState | null; errorText: string; isLoading: boolean; verification: LVerificationState | null; verificationError: LLocalizedMessage | null; isVerifying: boolean; hasWorkspace: boolean; onOpenFolder: () => Promise<void>; onOpenReport: () => Promise<void>; onGoToSource: () => void; onGoToBuild: () => void }) {
   const result = props.result;
   const isMissingWorkspace = !props.hasWorkspace;
   const isLoadingFirstResult = props.isLoading && !result && !props.errorText && props.hasWorkspace;
@@ -391,7 +392,7 @@ export type LResultProperties = {
   buildResultError: string;
   isLoadingBuildResult: boolean;
   buildVerification: LVerificationState | null;
-  buildVerificationError: string;
+  buildVerificationError: LLocalizedMessage | null;
   isVerifyingBuild: boolean;
   verifyBuildResult: () => Promise<void>;
   hasWorkspace: boolean;

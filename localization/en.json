@@ -1261,5 +1261,14 @@
   "logs.local.empty.raw": "No raw log text was recorded for this local record.",
   "logs.local.meta.errors": "{count} errors",
   "logs.local.meta.warnings": "{count} warnings",
-  "libraries.row.unavailable.preparationUnimplemented": "Temporarily unavailable: this library needs source/import preparation, but no implemented preparation hook exists for the selected FFmpeg release yet."
+  "libraries.row.unavailable.preparationUnimplemented": "Temporarily unavailable: this library needs source/import preparation, but no implemented preparation hook exists for the selected FFmpeg release yet.",
+  "fatal.renderFailed": "Render failed",
+  "fatal.runtimeFailed": "Runtime failed",
+  "fatal.asyncRuntimeFailed": "Async runtime failed",
+  "verify.toolchain.requestFailed": "Could not verify the build environment: {error}",
+  "verify.build.ffmpegNotFound": "ffmpeg.exe was not found in the build artifacts.",
+  "verify.build.runFailed": "Could not run ffmpeg.exe to read its build configuration: {error}",
+  "verify.build.configurationMissing": "ffmpeg.exe did not report a configuration line to verify against.",
+  "verify.build.reportMissing": "No build report was found to compare against.",
+  "verify.build.requestFailed": "Could not verify the FFmpeg build: {error}"
 }
