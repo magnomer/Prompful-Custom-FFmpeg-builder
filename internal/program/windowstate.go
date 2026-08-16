@@ -60,14 +60,11 @@ func LStateWindowSave(state LStateWindow) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
-		return err
-	}
 	fileData, err := json.MarshalIndent(state, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filePath, fileData, 0o644)
+	return LStateFileAtomicWrite(filePath, fileData, 0o644)
 }
 
 // LWindowGeometryRestore applies the saved size, position, and maximised state
@@ -77,14 +74,19 @@ func (program *LProgram) LWindowGeometryRestore() {
 		return
 	}
 	state := program.LStateWindowStartup
+	hasPrimaryScreen := false
 	if screens, err := wailsRuntime.ScreenGetAll(program.LContext); err == nil {
 		for _, screen := range screens {
 			if !screen.IsPrimary {
 				continue
 			}
 			state = LWindowGeometryNormalize(state, screen.Size.Width, screen.Size.Height)
+			hasPrimaryScreen = true
 			break
 		}
+	}
+	if !hasPrimaryScreen {
+		state = LWindowGeometryNormalize(state, 0, 0)
 	}
 	wailsRuntime.WindowSetSize(program.LContext, state.Width, state.Height)
 	if state.HasGeometry {
@@ -100,9 +102,9 @@ func (program *LProgram) LWindowGeometryRestore() {
 // LWindowGeometrySave records the current window geometry so it can be
 // restored on the next launch. Wails cannot report normal bounds while the
 // window is maximised, so that case stores safe defaults instead of stale data.
-func (program *LProgram) LWindowGeometrySave(LContext context.Context) {
+func (program *LProgram) LWindowGeometrySave(LContext context.Context) error {
 	if LContext == nil {
-		return
+		return nil
 	}
 	isMaximised := wailsRuntime.WindowIsMaximised(LContext)
 	state := LStateWindow{Maximised: isMaximised, HasGeometry: true}
@@ -120,7 +122,7 @@ func (program *LProgram) LWindowGeometrySave(LContext context.Context) {
 		state.X = x
 		state.Y = y
 	}
-	_ = LStateWindowSave(state)
+	return LStateWindowSave(state)
 }
 
 // LWindowGeometryNormalize keeps restored dimensions usable on the primary
@@ -133,6 +135,9 @@ func LWindowGeometryNormalize(state LStateWindow, screenWidth int, screenHeight 
 		state.HasGeometry = false
 	}
 	if screenWidth <= 0 || screenHeight <= 0 {
+		state.Width = LWindowWidthDefault
+		state.Height = LWindowHeightDefault
+		state.HasGeometry = false
 		return state
 	}
 	if state.Width > screenWidth {

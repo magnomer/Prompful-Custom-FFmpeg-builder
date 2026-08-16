@@ -10,6 +10,8 @@ import (
 	"promptfulcustomffmpegbuilder/internal/planning"
 	"promptfulcustomffmpegbuilder/internal/reporting"
 	"promptfulcustomffmpegbuilder/internal/reviewsession"
+
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type LProgram struct {
@@ -62,7 +64,13 @@ func (program *LProgram) LProgramStart(LContext context.Context) {
 // LWindowCloseCheck runs while the window still exists, so it is the safe place to
 // read window geometry. Returning false allows the close to proceed.
 func (program *LProgram) LWindowCloseCheck(LContext context.Context) bool {
-	program.LWindowGeometrySave(LContext)
+	if err := program.LWindowGeometrySave(LContext); err != nil {
+		_, _ = wailsRuntime.MessageDialog(LContext, wailsRuntime.MessageDialogOptions{
+			Type:    wailsRuntime.ErrorDialog,
+			Title:   LLocaleTextForGet(program.lLocaleCurrentGet(), "persistence.windowSaveFailed.title", nil),
+			Message: LLocaleTextForGet(program.lLocaleCurrentGet(), "persistence.windowSaveFailed.message", map[string]string{"message": err.Error()}),
+		})
+	}
 	return false
 }
 
@@ -115,7 +123,7 @@ func (program *LProgram) LLocaleSet(locale string) error {
 	if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filePath, []byte(normalizedLocale+"\n"), 0o644); err != nil {
+	if err := LStateFileAtomicWrite(filePath, []byte(normalizedLocale+"\n"), 0o644); err != nil {
 		return err
 	}
 	program.lLocaleCommit(normalizedLocale)

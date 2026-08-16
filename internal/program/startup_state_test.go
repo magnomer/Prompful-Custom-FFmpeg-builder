@@ -1,6 +1,10 @@
 package program
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestWindowGeometryNormalizeRejectsUnusableState(t *testing.T) {
 	tests := []struct {
@@ -29,6 +33,43 @@ func TestWindowGeometryNormalizeKeepsVisibleState(t *testing.T) {
 	normalized := LWindowGeometryNormalize(state, 1920, 1080)
 	if normalized != state {
 		t.Fatalf("visible geometry changed: got %+v want %+v", normalized, state)
+	}
+}
+
+func TestWindowGeometryNormalizeCentersWhenScreenIsUnavailable(t *testing.T) {
+	state := LStateWindow{Width: 9000, Height: 7000, X: 8000, Y: 6000, HasGeometry: true}
+	normalized := LWindowGeometryNormalize(state, 0, 0)
+	if normalized.HasGeometry {
+		t.Fatalf("expected unknown-screen geometry to be centered: %+v", normalized)
+	}
+	if normalized.Width != LWindowWidthDefault || normalized.Height != LWindowHeightDefault {
+		t.Fatalf("got dimensions %dx%d, want defaults %dx%d", normalized.Width, normalized.Height, LWindowWidthDefault, LWindowHeightDefault)
+	}
+}
+
+func TestStateFileAtomicWriteReplacesCompleteFile(t *testing.T) {
+	directory := t.TempDir()
+	filePath := filepath.Join(directory, "ui-state.json")
+	if err := os.WriteFile(filePath, []byte(`{"old":true}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	want := []byte(`{"new":true}`)
+	if err := LStateFileAtomicWrite(filePath, want, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(filePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != string(want) {
+		t.Fatalf("got %q, want %q", got, want)
+	}
+	temporaryFiles, err := filepath.Glob(filepath.Join(directory, ".ui-state.json.tmp-*"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(temporaryFiles) != 0 {
+		t.Fatalf("temporary files remain after commit: %v", temporaryFiles)
 	}
 }
 

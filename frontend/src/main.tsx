@@ -194,6 +194,12 @@ function PProgramRender() {
       </aside>
 
       <div className="tab-right-column">
+        {s.uiStatePersistenceError && (
+          <div className="persistence-warning" role="alert">
+            <span>{LLocaleTextGet(`persistence.uiState.${s.uiStatePersistenceError.operation}Failed`, { message: s.uiStatePersistenceError.detail })}</span>
+            <button type="button" onClick={s.clearUiStatePersistenceError}>{LLocaleTextGet("persistence.dismiss")}</button>
+          </div>
+        )}
         <section className={`tab-panel ${s.activeTabId === "result" ? "tab-panel--result" : ""}`} ref={s.tabPanelRef}>
           {s.activeTabId === "source" && (
             <PSourceRender

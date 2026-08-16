@@ -164,6 +164,16 @@ export function LSettingsFfmpegNormalize(value: unknown, fallback: LSettingsFfmp
   };
 }
 
+export function LConfigureOptionSelectionNormalize(selectedOptionIds: string[], catalog: LOptionChoice[]): string[] {
+  const validOptionIds = new Set(catalog.map((option) => option.optionId));
+  const seenOptionIds = new Set<string>();
+  return selectedOptionIds.filter((optionId) => {
+    if (!validOptionIds.has(optionId) || seenOptionIds.has(optionId)) return false;
+    seenOptionIds.add(optionId);
+    return true;
+  });
+}
+
 export function LStateInitialNormalize(value: unknown, fallback: LStateInitial = LStateInitialDefault): LStateInitial {
   const source = value && typeof value === "object" ? value as Partial<LStateInitial> : {};
   return {

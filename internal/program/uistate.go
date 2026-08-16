@@ -40,8 +40,5 @@ func (program *LProgram) LStateUiSave(stateJson string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(filePath, []byte(stateJson), 0o644)
+	return LStateFileAtomicWrite(filePath, []byte(stateJson), 0o644)
 }

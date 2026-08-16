@@ -32,7 +32,7 @@ import {
   LSettingsBuildEmpty, LSettingsFfmpegEmpty, LStateInitialDefault,
   LTextLineSplit, LLogLevelNormalize, LTabIdValidate,
   LRequestApprovalCreate, LStateUiParse,
-  LPackagePrefixUpdate, LSettingsBuildNormalize, LSettingsFfmpegNormalize, LStateInitialNormalize,
+  LPackagePrefixUpdate, LSettingsBuildNormalize, LSettingsFfmpegNormalize, LConfigureOptionSelectionNormalize, LStateInitialNormalize,
 } from "./programstate";
 import { LStateResultUse } from "./builderresultstate";
 import { LStateLogUse } from "./builderlogstate";
@@ -44,6 +44,7 @@ export function LStateBuilderUse() {
   const [activeTabId, setActiveTabId] = useState<LTabIdentifier>("source");
   const hasLoadedSavedState = useRef(false);
   const [startupState, setStartupState] = useState<{ status: "loading" | "ready" | "error"; error: string }>({ status: "loading", error: "" });
+  const [uiStatePersistenceError, setUiStatePersistenceError] = useState<{ operation: "load" | "save"; detail: string } | null>(null);
   const tabPanelRef = useRef<HTMLElement>(null);
   // Tabs whose scroll position is remembered when leaving and restored when
   // returning (within the session). Every other tab still scrolls back to top.
@@ -134,11 +135,15 @@ export function LStateBuilderUse() {
         try {
           saved = LStateUiParse(await LStateUiLoad());
         } catch (error) {
-          if (isHydrationCurrent) setLocalLogRecordsError(`Unable to restore saved UI state; defaults were loaded. ${error instanceof Error ? error.message : String(error)}`);
+          if (isHydrationCurrent) setUiStatePersistenceError({ operation: "load", detail: error instanceof Error ? error.message : String(error) });
         }
         if (!isHydrationCurrent) return;
         const savedBts = LSettingsBuildNormalize(saved.buildConfigSettings, nextState.defaultBuildConfigSettings);
         let resolvedFbs = LSettingsFfmpegNormalize(saved.ffmpegBuildSettings, nextState.defaultFfmpegBuildSettings);
+        resolvedFbs = {
+          ...resolvedFbs,
+          selectedConfigureOptionIds: LConfigureOptionSelectionNormalize(resolvedFbs.selectedConfigureOptionIds, nextState.defaultConfigureOptionCatalog),
+        };
         // The profile selector is the single authority. Normal UI changes update
         // both settings objects, and hydration must preserve that invariant too.
         resolvedFbs = { ...resolvedFbs, windowsShellProfileName: savedBts.windowsShellProfileName };
@@ -263,8 +268,14 @@ export function LStateBuilderUse() {
       msys2PackageText, extraConfigureFlagText, libraryPresetId, extendedLibraries, libraryDetailedView, optionsDetailedView, libraryTechnicalDetails, optionsTechnicalDetails, librarySectionFilters,
     } satisfies LStateUiSaved);
     uiStateSaveQueueRef.current = uiStateSaveQueueRef.current
-      .then(() => LStateUiSave(serializedState))
-      .catch((error) => { console.error("Failed to save UI state", error); });
+      .then(async () => {
+        await LStateUiSave(serializedState);
+        setUiStatePersistenceError(null);
+      })
+      .catch((error) => {
+        console.error("Failed to save UI state", error);
+        setUiStatePersistenceError({ operation: "save", detail: error instanceof Error ? error.message : String(error) });
+      });
   }, [activeTabId, buildConfigSettings, ffmpegBuildSettings, msys2PackageText, extraConfigureFlagText, libraryPresetId, extendedLibraries, libraryDetailedView, optionsDetailedView, libraryTechnicalDetails, optionsTechnicalDetails, librarySectionFilters]);
 
   useEffect(() => {
@@ -538,6 +549,7 @@ export function LStateBuilderUse() {
   }
   return {
     startupState,
+    uiStatePersistenceError, clearUiStatePersistenceError: () => setUiStatePersistenceError(null),
     tabPanelRef,
     activeTabId, setActiveTabId,
     initialProgramState,

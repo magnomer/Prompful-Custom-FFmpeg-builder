@@ -24,29 +24,37 @@ const LUnlockClickTarget = 12;
 
 let LUnlockVersionCount = 0;
 let LUnlockIndicatorCount = 0;
+let LUnlockStateInitialized = false;
+let LUnlockBasicMemory = false;
+let LUnlockSudoMemory = false;
+
+function LUnlockStateInitialize(): void {
+  if (LUnlockStateInitialized) return;
+  LUnlockStateInitialized = true;
+  try {
+    LUnlockBasicMemory = localStorage.getItem(LUnlockKeyBasic) === "1";
+    LUnlockSudoMemory = LUnlockBasicMemory && localStorage.getItem(LUnlockKeySudo) === "1";
+  } catch {
+    // Storage is optional. The module-level values remain the authority for this run.
+  }
+}
 
 export function LUnlockBasicCheck(): boolean {
-  try {
-    return localStorage.getItem(LUnlockKeyBasic) === "1";
-  } catch {
-    return false;
-  }
+  LUnlockStateInitialize();
+  return LUnlockBasicMemory;
 }
 
 // LUnlockSudoCheck reports the sudo tier. It requires basic dev to be on, so a
 // lingering sudo flag never takes effect once basic is locked again.
 export function LUnlockSudoCheck(): boolean {
-  if (!LUnlockBasicCheck()) {
-    return false;
-  }
-  try {
-    return localStorage.getItem(LUnlockKeySudo) === "1";
-  } catch {
-    return false;
-  }
+  LUnlockStateInitialize();
+  return LUnlockBasicMemory && LUnlockSudoMemory;
 }
 
 function LUnlockBasicSet(enabled: boolean): boolean {
+  LUnlockStateInitialize();
+  LUnlockBasicMemory = enabled;
+  if (!enabled) LUnlockSudoMemory = false;
   try {
     if (enabled) {
       localStorage.setItem(LUnlockKeyBasic, "1");
@@ -56,15 +64,16 @@ function LUnlockBasicSet(enabled: boolean): boolean {
       localStorage.removeItem(LUnlockKeySudo);
     }
   } catch {
-    // localStorage unavailable: the in-memory UI state can still update for this
-    // run, but the state simply does not persist. Not fatal.
+    // The shared in-memory authority still applies for this run.
   }
-  return enabled;
+  return LUnlockBasicMemory;
 }
 
 function LUnlockSudoSet(enabled: boolean): boolean {
+  LUnlockStateInitialize();
+  LUnlockSudoMemory = enabled && LUnlockBasicMemory;
   try {
-    if (enabled) {
+    if (LUnlockSudoMemory) {
       localStorage.setItem(LUnlockKeySudo, "1");
     } else {
       localStorage.removeItem(LUnlockKeySudo);
@@ -72,7 +81,7 @@ function LUnlockSudoSet(enabled: boolean): boolean {
   } catch {
     // localStorage unavailable: not fatal (see LUnlockBasicSet).
   }
-  return enabled && LUnlockBasicCheck();
+  return LUnlockSudoMemory;
 }
 
 // LUnlockVersionAdd records one click on the version number and returns the
