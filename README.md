@@ -116,11 +116,18 @@ Users only need to prepare a normal Windows environment, internet access, and en
 
 ### Build from source
 
-These commands start the development version.
+Source builds require:
 
-- `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+- Go 1.25.0 or later.
+- Node.js 20.19.0 or later in the Node 20 line, or Node.js 22.12.0 or later.
+- The npm version bundled with a supported Node.js release.
+
+These commands install the matching Wails CLI, restore the exact frontend
+dependency versions from the lockfile, and start the development version.
+
+- `go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0`
 - `cd frontend`
-- `npm install`
+- `npm ci`
 - `cd ..`
 - `wails dev`
 
@@ -216,11 +223,18 @@ FFmpeg 빌드 옵션은 빌드 계획의 일부로 제공되고 관리됩니다.
 
 ### 소스에서 실행하기
 
-다음 명령으로 개발 버전을 실행할 수 있습니다.
+소스 빌드에는 다음 환경이 필요합니다.
 
-- `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+- Go 1.25.0 이상
+- Node.js 20 계열은 20.19.0 이상, 또는 Node.js 22.12.0 이상
+- 지원되는 Node.js 릴리스에 포함된 npm 버전
+
+다음 명령은 런타임과 일치하는 Wails CLI를 설치하고 잠금 파일에 기록된
+프런트엔드 의존성 버전을 그대로 복원한 후 개발 버전을 실행합니다.
+
+- `go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0`
 - `cd frontend`
-- `npm install`
+- `npm ci`
 - `cd ..`
 - `wails dev`
 

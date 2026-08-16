@@ -3,9 +3,8 @@ import react from "@vitejs/plugin-react";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
-// version.json at the repo root is the single source of truth for the app
-// version (UI, exe metadata, and the CLI all derive from it). Edit that file
-// only; build.ps1 mirrors it into wails.json for the Wails/NSIS metadata.
+// The UI reads its release version from the repository's version manifest.
+// A Go test verifies that the compiled and installer versions remain equal.
 const versionConfig = JSON.parse(
   readFileSync(resolve(__dirname, "../version.json"), "utf-8")
 );
