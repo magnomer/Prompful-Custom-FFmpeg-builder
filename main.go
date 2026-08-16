@@ -18,14 +18,17 @@ func main() {
 	width, height := backendprogram.LWindowInitialRead(program)
 
 	err := wails.Run(&options.App{
-		Title:  backendprogram.LLocaleTextGet("app.brand", nil),
-		Width:  width,
-		Height: height,
+		Title:     backendprogram.LLocaleTextGet("app.brand", nil),
+		Width:     width,
+		Height:    height,
+		MinWidth:  backendprogram.LWindowMinimumWidth,
+		MinHeight: backendprogram.LWindowMinimumHeight,
 		AssetServer: &assetserver.Options{
 			Assets: frontendAssets,
 		},
 		BackgroundColour: &options.RGBA{R: 18, G: 23, B: 34, A: 1},
 		OnStartup:        program.LProgramStart,
+		OnDomReady:       program.LProgramReady,
 		OnBeforeClose:    program.LWindowCloseCheck,
 		OnShutdown:       program.LProgramStop,
 		Bind: []interface{}{

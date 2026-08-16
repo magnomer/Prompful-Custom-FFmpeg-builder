@@ -3,6 +3,7 @@ package program
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -56,6 +57,9 @@ func LStateWindowLoad() LStateWindow {
 }
 
 func LStateWindowSave(state LStateWindow) error {
+	if state.Width < LWindowMinimumWidth || state.Height < LWindowMinimumHeight {
+		return fmt.Errorf("window dimensions %dx%d are below the minimum %dx%d", state.Width, state.Height, LWindowMinimumWidth, LWindowMinimumHeight)
+	}
 	filePath, err := LPathWindowResolve()
 	if err != nil {
 		return err

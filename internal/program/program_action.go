@@ -23,22 +23,58 @@ func (program *LProgram) LActionApprovedCancel() bool {
 func (program *LProgram) LActionApprovedStart() (string, context.Context, error) {
 	program.LMutexAction.Lock()
 	defer program.LMutexAction.Unlock()
-	if program.LActionCancelFunction != nil {
+	if program.lProgramStopping {
+		return "", nil, errors.New("program is shutting down")
+	}
+	if program.LActionCancelFunction != nil || program.lActionDone != nil {
 		return "", nil, errors.New("an approved action is already running")
 	}
 	LContextAction, LActionCancelFunction := context.WithCancel(context.Background())
 	program.LContextAction = LContextAction
 	program.LActionCancelFunction = LActionCancelFunction
+	program.lActionDone = make(chan struct{})
 	LRunId := time.Now().UTC().Format("20060102T150405Z")
 	return LRunId, LContextAction, nil
 }
 
 func (program *LProgram) LActionApprovedFinish(status string) {
 	program.LMutexAction.Lock()
+	if program.LActionCancelFunction == nil || program.lActionDone == nil {
+		program.LMutexAction.Unlock()
+		return
+	}
+	done := program.lActionDone
 	program.LActionCancelFunction = nil
 	program.LContextAction = nil
 	program.LMutexAction.Unlock()
 	program.LStatusEmit(status)
+	if done != nil {
+		close(done)
+		program.LMutexAction.Lock()
+		if program.lActionDone == done {
+			program.lActionDone = nil
+		}
+		program.LMutexAction.Unlock()
+	}
+}
+
+// lActionApprovedStop prevents new work, cancels the active action, and waits
+// until its deferred cleanup, audit writes, and final status notification end.
+func (program *LProgram) lActionApprovedStop() {
+	program.LMutexAction.Lock()
+	program.lProgramStopping = true
+	cancel := program.LActionCancelFunction
+	done := program.lActionDone
+	if cancel != nil {
+		cancel()
+	}
+	program.LMutexAction.Unlock()
+	if cancel != nil {
+		program.LLogEmit("warn", LLocaleTextGetInternal("logs.system.cancellationRequested", nil))
+	}
+	if done != nil {
+		<-done
+	}
 }
 
 func (program *LProgram) LAuditProgressCreate(auditWriter *audit.LAuditWriter, actionName string, planHash string) func(string, string) {

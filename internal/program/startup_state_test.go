@@ -1,9 +1,11 @@
 package program
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestWindowGeometryNormalizeRejectsUnusableState(t *testing.T) {
@@ -44,6 +46,54 @@ func TestWindowGeometryNormalizeCentersWhenScreenIsUnavailable(t *testing.T) {
 	}
 	if normalized.Width != LWindowWidthDefault || normalized.Height != LWindowHeightDefault {
 		t.Fatalf("got dimensions %dx%d, want defaults %dx%d", normalized.Width, normalized.Height, LWindowWidthDefault, LWindowHeightDefault)
+	}
+}
+
+func TestWindowStateSaveRejectsDimensionsBelowMinimum(t *testing.T) {
+	err := LStateWindowSave(LStateWindow{Width: LWindowMinimumWidth - 1, Height: LWindowMinimumHeight})
+	if err == nil {
+		t.Fatal("expected dimensions below the live window minimum to be rejected")
+	}
+}
+
+func TestActionShutdownWaitsForWorkerCleanup(t *testing.T) {
+	program := LProgramCreate()
+	_, actionContext, err := program.LActionApprovedStart()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanupStarted := make(chan struct{})
+	allowCleanup := make(chan struct{})
+	go func() {
+		<-actionContext.Done()
+		close(cleanupStarted)
+		<-allowCleanup
+		program.LActionApprovedFinish("failed")
+	}()
+
+	shutdownDone := make(chan struct{})
+	go func() {
+		program.LProgramStop(context.Background())
+		close(shutdownDone)
+	}()
+	select {
+	case <-cleanupStarted:
+	case <-time.After(time.Second):
+		t.Fatal("worker did not receive shutdown cancellation")
+	}
+	select {
+	case <-shutdownDone:
+		t.Fatal("shutdown returned before worker cleanup finished")
+	default:
+	}
+	close(allowCleanup)
+	select {
+	case <-shutdownDone:
+	case <-time.After(time.Second):
+		t.Fatal("shutdown did not return after worker cleanup finished")
+	}
+	if _, _, err := program.LActionApprovedStart(); err == nil {
+		t.Fatal("expected new actions to be rejected after shutdown started")
 	}
 }
 

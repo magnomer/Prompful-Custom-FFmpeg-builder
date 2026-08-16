@@ -18,6 +18,8 @@ type LProgram struct {
 	LContext                context.Context
 	LContextAction          context.Context
 	LActionCancelFunction   context.CancelFunc
+	lActionDone             chan struct{}
+	lProgramStopping        bool
 	LMutexAction            sync.Mutex
 	LMutexReviewSession     sync.Mutex
 	LToolchainReviewStorage map[string]LReviewToolchainStored
@@ -58,6 +60,12 @@ func (program *LProgram) LProgramStart(LContext context.Context) {
 	program.LContext = LContext
 	program.LReporter = LReporterWails{program: program}
 	program.LConfirmer = LConfirmerWails{program: program}
+}
+
+// LProgramReady runs after the native window and WebView runtime are ready.
+// Wails does not guarantee that window runtime calls work during OnStartup.
+func (program *LProgram) LProgramReady(LContext context.Context) {
+	program.LContext = LContext
 	program.LWindowGeometryRestore()
 }
 
@@ -76,7 +84,7 @@ func (program *LProgram) LWindowCloseCheck(LContext context.Context) bool {
 
 func (program *LProgram) LProgramStop(LContext context.Context) {
 	program.lApprovalConfirmationCancel()
-	program.LActionApprovedCancel()
+	program.lActionApprovedStop()
 }
 
 // LLocaleSet records the UI language for backend-owned native surfaces such as
