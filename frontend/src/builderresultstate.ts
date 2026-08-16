@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LResultBuildGet,
   LVerificationBuildRun,
@@ -17,27 +17,68 @@ export function LStateResultUse(dir: string) {
   const [buildVerification, setBuildVerification] = useState<LVerificationState | null>(null);
   const [buildVerificationError, setBuildVerificationError] = useState<LLocalizedMessage | null>(null);
   const [isVerifyingBuild, setIsVerifyingBuild] = useState(false);
+  const currentDirectoryRef = useRef(dir);
+  const refreshRequestRef = useRef(0);
+  const verificationRequestRef = useRef(0);
+  currentDirectoryRef.current = dir;
+
+  useEffect(() => {
+    refreshRequestRef.current += 1;
+    verificationRequestRef.current += 1;
+    setBuildResult(null);
+    setBuildResultError("");
+    setBuildVerification(null);
+    setBuildVerificationError(null);
+    setIsLoadingBuildResult(false);
+    setIsVerifyingBuild(false);
+  }, [dir]);
 
   function LResultClear() {
+    refreshRequestRef.current += 1;
+    verificationRequestRef.current += 1;
     setBuildResult(null); setBuildResultError("");
+    setBuildVerification(null); setBuildVerificationError(null);
+    setIsLoadingBuildResult(false); setIsVerifyingBuild(false);
   }
 
   async function refreshBuildResult() {
-    if (!dir) { setBuildResult(null); setBuildResultError(LLocaleTextGet("result.error.chooseWorkspaceFirst")); return; }
+    const requestDirectory = dir;
+    const requestId = ++refreshRequestRef.current;
+    if (!requestDirectory) { setBuildResult(null); setBuildResultError(LLocaleTextGet("result.error.chooseWorkspaceFirst")); return; }
     setBuildVerification(null); setBuildVerificationError(null);
     setIsLoadingBuildResult(true);
-    try { const r = await LResultBuildGet(dir); setBuildResult(r); setBuildResultError(""); }
-    catch (err) { setBuildResult(null); setBuildResultError(err instanceof Error ? err.message : String(err)); }
-    finally { setIsLoadingBuildResult(false); }
+    try {
+      const r = await LResultBuildGet(requestDirectory);
+      if (requestId !== refreshRequestRef.current || currentDirectoryRef.current !== requestDirectory) return;
+      setBuildResult(r); setBuildResultError("");
+    }
+    catch (err) {
+      if (requestId !== refreshRequestRef.current || currentDirectoryRef.current !== requestDirectory) return;
+      setBuildResult(null); setBuildResultError(err instanceof Error ? err.message : String(err));
+    }
+    finally {
+      if (requestId === refreshRequestRef.current && currentDirectoryRef.current === requestDirectory) setIsLoadingBuildResult(false);
+    }
   }
 
   async function verifyBuildResult() {
-    if (!dir) { setBuildVerificationError({ messageKey: "result.error.chooseWorkspaceFirst" }); return; }
+    const requestDirectory = dir;
+    const requestId = ++verificationRequestRef.current;
+    if (!requestDirectory) { setBuildVerificationError({ messageKey: "result.error.chooseWorkspaceFirst" }); return; }
     setIsVerifyingBuild(true);
     setBuildVerificationError(null);
-    try { setBuildVerification(await LVerificationBuildRun(dir)); }
-    catch (err) { setBuildVerification(null); setBuildVerificationError({ messageKey: "verify.build.requestFailed", messageValues: { error: err instanceof Error ? err.message : String(err) } }); }
-    finally { setIsVerifyingBuild(false); }
+    try {
+      const verification = await LVerificationBuildRun(requestDirectory);
+      if (requestId !== verificationRequestRef.current || currentDirectoryRef.current !== requestDirectory) return;
+      setBuildVerification(verification);
+    }
+    catch (err) {
+      if (requestId !== verificationRequestRef.current || currentDirectoryRef.current !== requestDirectory) return;
+      setBuildVerification(null); setBuildVerificationError({ messageKey: "verify.build.requestFailed", messageValues: { error: err instanceof Error ? err.message : String(err) } });
+    }
+    finally {
+      if (requestId === verificationRequestRef.current && currentDirectoryRef.current === requestDirectory) setIsVerifyingBuild(false);
+    }
   }
 
   async function openResultFolder() {

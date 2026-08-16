@@ -6,6 +6,7 @@ import {
   LPhaseToolchainOrder, LPhaseFfmpegOrder,
   LLogEntryParse, LPhaseGroupBuild, LLogRuntimeBuild,
 } from "./logutils";
+import { LTabKeyDown } from "./tabkeyboard";
 
 export type { LLogSecurityEntry, LPhaseLogGroup };
 export type { LLogSecurityPayload, LStatusActionPayload, LProgressLive, LPhaseLogId, LLogParsedEntry } from "./logutils";
@@ -369,13 +370,17 @@ function PLogDetailsRender(props: { record: LRecordLog; onOpenRecordFile: (runId
   return (
     <section className="result-details-card log-details-card">
       <div className="result-details-tabs" role="tablist" aria-label={LLocaleTextGet("logs.local.tabs.ariaLabel")}>
-        {tabs.map((tab) => (
+        {tabs.map((tab, index) => (
           <button
             className={`result-details-tab ${effectiveActiveTabId === tab.id ? "result-details-tab--active" : ""}`}
             type="button"
             role="tab"
             aria-selected={effectiveActiveTabId === tab.id}
+            aria-controls="log-detail-tabpanel"
+            id={`log-detail-tab-${tab.id}`}
+            tabIndex={effectiveActiveTabId === tab.id ? 0 : -1}
             onClick={() => setActiveTabId(tab.id)}
+            onKeyDown={(event) => LTabKeyDown(event, index, tabs.length, (nextIndex) => setActiveTabId(tabs[nextIndex].id))}
             key={tab.id}
           >
             <span>{tab.label}</span>
@@ -383,7 +388,7 @@ function PLogDetailsRender(props: { record: LRecordLog; onOpenRecordFile: (runId
           </button>
         ))}
       </div>
-      <div className="result-details-body log-details-body">
+      <div className="result-details-body log-details-body" role="tabpanel" id="log-detail-tabpanel" aria-labelledby={`log-detail-tab-${effectiveActiveTabId}`}>
         <div className="log-record-meta">
           <span>{props.record.displayTime}</span>
           <span>{LLogKindGet(props.record.kind)}</span>
@@ -448,8 +453,9 @@ export function PLogRender({ toolchainLogEntries, ffmpegLogEntries, localLogReco
     if (!selectedRecord || selectedRecord.runId.startsWith("live-")) return;
     if (selectedRecord.entries.length > 0 || selectedRecord.rawText.trim()) return;
     if (requestedDetailRunIds.current.has(selectedRecord.runId)) return;
-    requestedDetailRunIds.current.add(selectedRecord.runId);
-    void loadLocalLogRecord(selectedRecord.runId);
+    const runId = selectedRecord.runId;
+    requestedDetailRunIds.current.add(runId);
+    void loadLocalLogRecord(runId).finally(() => requestedDetailRunIds.current.delete(runId));
   }, [selectedRecord?.runId, selectedRecord?.entries.length, selectedRecord?.rawText]);
 
   return (

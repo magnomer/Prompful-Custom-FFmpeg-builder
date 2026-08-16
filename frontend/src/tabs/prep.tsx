@@ -19,6 +19,7 @@ export type LPreparationProperties = {
   toolchainVerification: LVerificationToolchain | null;
   isVerifyingToolchain: boolean;
   isApprovedActionRunning: boolean;
+  isPlanningToolchain: boolean;
   currentShellProfileName: string;
   configuredMsys2PackageNames: string[];
   approveToolchainPreparationPlan: () => Promise<void>;
@@ -112,8 +113,9 @@ function PCardRecoveryRender(props: {
   onVerify: () => void;
   onReuse: () => void;
   onReinstall: () => void;
+  isPlanning: boolean;
 }) {
-  const { status, verification, isVerifying, configuredPackageNames, onVerify, onReuse, onReinstall } = props;
+  const { status, verification, isVerifying, configuredPackageNames, onVerify, onReuse, onReinstall, isPlanning } = props;
   const installedDate = status.createdAt ? new Date(status.createdAt).toLocaleString(LLocaleGet() === "ko" ? "ko-KR" : "en-US") : "";
   const hasManifest = status.packageCount > 0;
   // Drift is only meaningful when the prepared profile recorded its package list.
@@ -155,7 +157,7 @@ function PCardRecoveryRender(props: {
 
       <div className="card__control">
         <button className="button button--primary" type="button" onClick={onReuse}>{LLocaleTextGet("prep.recovery.reuse")}</button>
-        <button className="button" type="button" onClick={onReinstall}>{LLocaleTextGet("prep.recovery.reinstall")}</button>
+        <button className="button" type="button" disabled={isPlanning} onClick={onReinstall}>{LLocaleTextGet("prep.recovery.reinstall")}</button>
         <button className="button" type="button" disabled={isVerifying} onClick={onVerify}>
           {isVerifying ? LLocaleTextGet("prep.recovery.verifying") : LLocaleTextGet("prep.recovery.verify")}
         </button>
@@ -164,7 +166,7 @@ function PCardRecoveryRender(props: {
   );
 }
 
-export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntries, approvedActionPhase, approvedActionStatus, toolchainProgress, canCancelToolchain, toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain, isApprovedActionRunning, currentShellProfileName, configuredMsys2PackageNames, approveToolchainPreparationPlan, LPlanToolchainCancel, cancelApprovedAction, LActionApprovedClear, onVerifyToolchain, onReuseToolchain, onReinstallToolchain, onGoToBuildConfig, onClearBuildEnvironments }: LPreparationProperties) {
+export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntries, approvedActionPhase, approvedActionStatus, toolchainProgress, canCancelToolchain, toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain, isApprovedActionRunning, isPlanningToolchain, currentShellProfileName, configuredMsys2PackageNames, approveToolchainPreparationPlan, LPlanToolchainCancel, cancelApprovedAction, LActionApprovedClear, onVerifyToolchain, onReuseToolchain, onReinstallToolchain, onGoToBuildConfig, onClearBuildEnvironments }: LPreparationProperties) {
   // A running toolchain action takes priority: show its live progress and hide
   // the approval panel, so a refused/duplicate confirm can never strand the UI on
   // the plan while the install is actually progressing.
@@ -208,6 +210,7 @@ export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntrie
           onVerify={onVerifyToolchain}
           onReuse={onReuseToolchain}
           onReinstall={onReinstallToolchain}
+          isPlanning={isPlanningToolchain}
         />
       )}
       {isIdle && !showRecovery && (

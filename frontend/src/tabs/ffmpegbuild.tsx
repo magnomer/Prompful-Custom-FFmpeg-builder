@@ -5,6 +5,7 @@ import { LLocaleGet, LLocaleTextGet } from "../i18n";
 import { LOptionTextGet, LLicenseLabelGet, LLibraryNameGet, LLibraryTextGet } from "../catalogText";
 import type { LProgressLive } from "./logs";
 import emptyStateBlueIcon from "../assets/empty-card-icons/EmptyStateBlue.svg";
+import { LTabKeyDown } from "./tabkeyboard";
 
 export type LBuildProperties = {
   ffmpegBuildPlanReview: LReviewFfmpeg | null;
@@ -173,21 +174,25 @@ function PCardBuildRender(props: { review: LReviewFfmpeg }) {
 
       <section className="result-details-card build-plan-details-card">
         <div className="result-details-tabs" role="tablist" aria-label={LLocaleTextGet("ffmpegBuild.plan.tabs.ariaLabel")}>
-          {tabs.map((tab) => (
+          {tabs.map((tab, index) => (
             <button
               className={`result-details-tab ${activeTabId === tab.id ? "result-details-tab--active" : ""}`}
               type="button"
               role="tab"
               aria-selected={activeTabId === tab.id}
+              aria-controls="ffmpeg-plan-tabpanel"
+              id={`ffmpeg-plan-tab-${tab.id}`}
+              tabIndex={activeTabId === tab.id ? 0 : -1}
               key={tab.id}
               onClick={() => setActiveTabId(tab.id)}
+              onKeyDown={(event) => LTabKeyDown(event, index, tabs.length, (nextIndex) => setActiveTabId(tabs[nextIndex].id))}
             >
               <span>{tab.label}</span>
               <span className="result-details-tab__count">{tab.count}</span>
             </button>
           ))}
         </div>
-        <div className="result-details-body">
+        <div className="result-details-body" role="tabpanel" id="ffmpeg-plan-tabpanel" aria-labelledby={`ffmpeg-plan-tab-${activeTabId}`}>
           {activeTabId === "libraries" && <PListPlanRender title={LLocaleTextGet("approval.review.selectedLibraries")} items={libraries} emptyText={LLocaleTextGet("result.details.empty.libraries")} />}
           {activeTabId === "packages" && <PListPlanRender title={LLocaleTextGet("approval.review.requiredLibraryPackages")} items={packages} emptyText={LLocaleTextGet("result.details.empty.packages")} code />}
           {activeTabId === "options" && <PListPlanRender title={LLocaleTextGet("approval.review.selectedBuiltInOptions")} items={options} emptyText={LLocaleTextGet("result.details.empty.options")} />}

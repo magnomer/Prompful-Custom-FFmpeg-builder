@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LToolchainEnvironmentClear,
   LStatusToolchainGet,
@@ -15,18 +15,40 @@ export function LStateToolchainStatusUse(dir: string, windowsShellProfileName: s
   const [installedToolchainProfiles, setInstalledToolchainProfiles] = useState<LStatusToolchain[]>([]);
   const [toolchainVerification, setToolchainVerification] = useState<LVerificationToolchain | null>(null);
   const [isVerifyingToolchain, setIsVerifyingToolchain] = useState(false);
+  const identity = `${dir}\u0000${windowsShellProfileName}`;
+  const currentIdentityRef = useRef(identity);
+  const refreshRequestRef = useRef(0);
+  const verificationRequestRef = useRef(0);
+  currentIdentityRef.current = identity;
 
   // A changed workspace or shell profile invalidates any prior deep-verify result.
   useEffect(() => {
+    refreshRequestRef.current += 1;
+    verificationRequestRef.current += 1;
+    setToolchainStatus(null);
     setToolchainVerification(null);
+    setIsVerifyingToolchain(false);
   }, [dir, windowsShellProfileName]);
 
+  useEffect(() => {
+    setInstalledToolchainProfiles([]);
+  }, [dir]);
+
   async function refreshToolchainStatus() {
-    if (!dir) { setToolchainStatus(null); setInstalledToolchainProfiles([]); return; }
-    try { setToolchainStatus(await LStatusToolchainGet(dir, windowsShellProfileName)); }
-    catch { setToolchainStatus(null); }
-    try { setInstalledToolchainProfiles(await LToolchainProfileList(dir)); }
-    catch { setInstalledToolchainProfiles([]); }
+    const requestDirectory = dir;
+    const requestProfile = windowsShellProfileName;
+    const requestIdentity = `${requestDirectory}\u0000${requestProfile}`;
+    const requestId = ++refreshRequestRef.current;
+    if (!requestDirectory) { setToolchainStatus(null); setInstalledToolchainProfiles([]); return; }
+    let status: LStatusToolchain | null = null;
+    let profiles: LStatusToolchain[] = [];
+    try { status = await LStatusToolchainGet(requestDirectory, requestProfile); }
+    catch { status = null; }
+    try { profiles = await LToolchainProfileList(requestDirectory); }
+    catch { profiles = []; }
+    if (requestId !== refreshRequestRef.current || currentIdentityRef.current !== requestIdentity) return;
+    setToolchainStatus(status);
+    setInstalledToolchainProfiles(profiles);
   }
 
   async function clearBuildEnvironments() {
@@ -39,12 +61,25 @@ export function LStateToolchainStatusUse(dir: string, windowsShellProfileName: s
   }
 
   async function verifyToolchain() {
-    if (!dir) return;
+    const requestDirectory = dir;
+    const requestProfile = windowsShellProfileName;
+    const requestIdentity = `${requestDirectory}\u0000${requestProfile}`;
+    const requestId = ++verificationRequestRef.current;
+    if (!requestDirectory) return;
     setIsVerifyingToolchain(true);
     setToolchainVerification(null);
-    try { setToolchainVerification(await LToolchainInstallVerify(dir, windowsShellProfileName)); }
-    catch (err) { setToolchainVerification({ verified: false, checkedPackageCount: 0, missingPackageNames: [], message: "", messageKey: "verify.toolchain.requestFailed", messageValues: { error: err instanceof Error ? err.message : String(err) } }); }
-    finally { setIsVerifyingToolchain(false); }
+    try {
+      const verification = await LToolchainInstallVerify(requestDirectory, requestProfile);
+      if (requestId !== verificationRequestRef.current || currentIdentityRef.current !== requestIdentity) return;
+      setToolchainVerification(verification);
+    }
+    catch (err) {
+      if (requestId !== verificationRequestRef.current || currentIdentityRef.current !== requestIdentity) return;
+      setToolchainVerification({ verified: false, checkedPackageCount: 0, missingPackageNames: [], message: "", messageKey: "verify.toolchain.requestFailed", messageValues: { error: err instanceof Error ? err.message : String(err) } });
+    }
+    finally {
+      if (requestId === verificationRequestRef.current && currentIdentityRef.current === requestIdentity) setIsVerifyingToolchain(false);
+    }
   }
 
   return {

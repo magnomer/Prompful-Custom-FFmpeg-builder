@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LRecordLogGet,
   LLogRecordList,
@@ -14,11 +14,25 @@ import { LLogLevelNormalize } from "./programstate";
 export function LStateLogUse(dir: string) {
   const [localLogRecords, setLocalLogRecords] = useState<LRecordLog[]>([]);
   const [localLogRecordsError, setLocalLogRecordsError] = useState("");
+  const currentDirectoryRef = useRef(dir);
+  const refreshRequestRef = useRef(0);
+  const detailRequestRef = useRef(new Map<string, number>());
+  currentDirectoryRef.current = dir;
+
+  useEffect(() => {
+    refreshRequestRef.current += 1;
+    detailRequestRef.current.clear();
+    setLocalLogRecords([]);
+    setLocalLogRecordsError("");
+  }, [dir]);
 
   async function refreshLocalLogRecords() {
-    if (!dir) { setLocalLogRecords([]); setLocalLogRecordsError(""); return; }
+    const requestDirectory = dir;
+    const requestId = ++refreshRequestRef.current;
+    if (!requestDirectory) { setLocalLogRecords([]); setLocalLogRecordsError(""); return; }
     try {
-      const records = await LLogRecordList(dir);
+      const records = await LLogRecordList(requestDirectory);
+      if (requestId !== refreshRequestRef.current || currentDirectoryRef.current !== requestDirectory) return;
       setLocalLogRecords((previousRecords) => {
         const previousByRunId = new Map(previousRecords.map((record) => [record.runId, record]));
         return records.map((record) => {
@@ -35,15 +49,23 @@ export function LStateLogUse(dir: string) {
       });
       setLocalLogRecordsError("");
     }
-    catch (err) { setLocalLogRecords([]); setLocalLogRecordsError(err instanceof Error ? err.message : String(err)); }
+    catch (err) {
+      if (requestId !== refreshRequestRef.current || currentDirectoryRef.current !== requestDirectory) return;
+      setLocalLogRecords([]); setLocalLogRecordsError(err instanceof Error ? err.message : String(err));
+    }
   }
 
   async function loadLocalLogRecord(runId: string) {
-    if (!dir || !runId || runId.startsWith("live-")) return;
+    const requestDirectory = dir;
+    if (!requestDirectory || !runId || runId.startsWith("live-")) return;
     const existing = localLogRecords.find((record) => record.runId === runId);
     if (existing && ((existing.entries?.length ?? 0) > 0 || (existing.rawText ?? "").trim())) return;
+    const requestKey = `${requestDirectory}\u0000${runId}`;
+    const requestId = (detailRequestRef.current.get(requestKey) ?? 0) + 1;
+    detailRequestRef.current.set(requestKey, requestId);
     try {
-      const record = await LRecordLogGet(dir, runId);
+      const record = await LRecordLogGet(requestDirectory, runId);
+      if (currentDirectoryRef.current !== requestDirectory || detailRequestRef.current.get(requestKey) !== requestId) return;
       const normalizedRecord = {
         ...record,
         entries: (record.entries ?? []).map((entry) => ({ ...entry, level: LLogLevelNormalize(entry.level) })),
@@ -51,7 +73,10 @@ export function LStateLogUse(dir: string) {
       setLocalLogRecords((records) => records.map((item) => item.runId === runId ? normalizedRecord : item));
       setLocalLogRecordsError("");
     }
-    catch (err) { setLocalLogRecordsError(err instanceof Error ? err.message : String(err)); }
+    catch (err) {
+      if (currentDirectoryRef.current !== requestDirectory || detailRequestRef.current.get(requestKey) !== requestId) return;
+      setLocalLogRecordsError(err instanceof Error ? err.message : String(err));
+    }
   }
 
   async function openLocalLogsFolder() {

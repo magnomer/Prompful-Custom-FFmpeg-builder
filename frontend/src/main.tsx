@@ -222,6 +222,7 @@ function PProgramRender() {
               toolchainVerification={s.toolchainVerification}
               isVerifyingToolchain={s.isVerifyingToolchain}
               isApprovedActionRunning={s.isApprovedActionRunning}
+              isPlanningToolchain={s.isPlanningToolchain}
               currentShellProfileName={s.buildConfigSettings.windowsShellProfileName}
               configuredMsys2PackageNames={s.configuredMsys2PackageNames}
               approveToolchainPreparationPlan={s.approveToolchainPreparationPlan}
@@ -338,11 +339,11 @@ function PProgramRender() {
               )}
               {s.activeTabId === "buildConfig" && (
                 <>
-                  <button className="button button--primary" type="button" onClick={s.addBuildConfigPlanAndContinueToPrep}>{LLocaleTextGet("actions.addBuildPlanAndContinue")}<span className="button__chevron" aria-hidden="true">›</span></button>
+                  <button className="button button--primary" type="button" disabled={s.isPlanningToolchain} onClick={s.addBuildConfigPlanAndContinueToPrep}>{LLocaleTextGet("actions.addBuildPlanAndContinue")}<span className="button__chevron" aria-hidden="true">›</span></button>
                   <button className="button" type="button" onClick={s.LPackageToolchainRestore}>{LLocaleTextGet("actions.restoreRecommendedList")}</button>
                 </>
               )}
-              {s.activeTabId === "prep" && s.installedToolchainProfiles.length > 0 && s.approvedActionPhase !== "toolchain" && (
+              {s.activeTabId === "prep" && s.toolchainStatus?.installed && s.approvedActionPhase !== "toolchain" && (
                 <button className="button button--primary" type="button" onClick={() => s.setActiveTabId("library")}>{LLocaleTextGet("actions.chooseFfmpegLibraries")}<span className="button__chevron" aria-hidden="true">›</span></button>
               )}
               {s.activeTabId === "library" && (
@@ -350,7 +351,7 @@ function PProgramRender() {
               )}
               {s.activeTabId === "options" && (
                 <>
-                  <button className="button button--primary" type="button" onClick={s.reviewFfmpegPlans}>{LLocaleTextGet("actions.reviewPlan")}<span className="button__chevron" aria-hidden="true">›</span></button>
+                  <button className="button button--primary" type="button" disabled={s.isPlanningFfmpeg} onClick={s.reviewFfmpegPlans}>{LLocaleTextGet("actions.reviewPlan")}<span className="button__chevron" aria-hidden="true">›</span></button>
                   <button className="button" type="button" onClick={s.LFlagExtraRestore}>{LLocaleTextGet("actions.restoreRecommendedOptions")}</button>
                 </>
               )}

@@ -1,6 +1,6 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "version": "7.0.1290",
+  "version": "7.0.1310",
   "name": "Promptful Custom FFmpeg Builder",
   "outputfilename": "PromptfulCustomFFmpegBuilder",
   "frontend:install": "npm ci --prefer-offline --no-audit --no-fund",

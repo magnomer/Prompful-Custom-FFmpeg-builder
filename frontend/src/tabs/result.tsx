@@ -6,6 +6,7 @@ import { ClipboardSetText } from "../../wailsjs/runtime/runtime";
 import emptyStateBlueIcon from "../assets/empty-card-icons/EmptyStateBlue.svg";
 import emptyStatePurpleIcon from "../assets/empty-card-icons/EmptyStatePurple.svg";
 import copyIcon from "../assets/button-icons/Copy.svg";
+import { LTabKeyDown } from "./tabkeyboard";
 
 function PButtonFileRender(props: { hash: string }) {
   const [copied, setCopied] = React.useState(false);
@@ -229,21 +230,25 @@ function PTabDetailRender(props: { result: LResultState; verification: LVerifica
   return (
     <section className="result-details-card">
       <div className="result-details-tabs" role="tablist" aria-label={LLocaleTextGet("result.details.tabs.ariaLabel")}>
-        {tabs.map((tab) => (
+        {tabs.map((tab, index) => (
           <button
             className={`result-details-tab ${activeTabId === tab.id ? "result-details-tab--active" : ""}`}
             type="button"
             role="tab"
             aria-selected={activeTabId === tab.id}
+            aria-controls="result-detail-tabpanel"
+            id={`result-detail-tab-${tab.id}`}
+            tabIndex={activeTabId === tab.id ? 0 : -1}
             key={tab.id}
             onClick={() => setActiveTabId(tab.id)}
+            onKeyDown={(event) => LTabKeyDown(event, index, tabs.length, (nextIndex) => setActiveTabId(tabs[nextIndex].id))}
           >
             <span>{tab.label}</span>
             <span className="result-details-tab__count">{tab.count}</span>
           </button>
         ))}
       </div>
-      <div className="result-details-body">
+      <div className="result-details-body" role="tabpanel" id="result-detail-tabpanel" aria-labelledby={`result-detail-tab-${activeTabId}`}>
         {activeTabId === "files" && <PListFileRender files={props.result.files} />}
         {activeTabId === "libraries" && <PResultLibraryRender librarySpecs={props.result.selectedLibraries} verification={props.verification} verificationError={props.verificationError} isVerifying={props.isVerifying} />}
         {activeTabId === "packages" && <PResultItemsRender title={LLocaleTextGet("result.review.packages")} items={props.result.requiredMsys2PackageNames} emptyText={LLocaleTextGet("result.details.empty.packages")} code />}

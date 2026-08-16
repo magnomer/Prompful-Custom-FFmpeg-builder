@@ -50,6 +50,13 @@ export function LStateBuilderUse() {
   const scrollRememberedTabIds = useRef(new Set<LTabIdentifier>(["options", "buildFfmpeg"]));
   const tabScrollPositions = useRef<Partial<Record<LTabIdentifier, number>>>({});
   const activeTabIdRef = useRef<LTabIdentifier>("source");
+  const buildConfigSettingsRef = useRef<LSettingsToolchain>(LSettingsBuildEmpty);
+  const ffmpegBuildSettingsRef = useRef<LSettingsFfmpeg>(LSettingsFfmpegEmpty);
+  const msys2PackageTextRef = useRef("");
+  const extraConfigureFlagTextRef = useRef("");
+  const uiStateSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const toolchainPlanPendingRef = useRef(false);
+  const ffmpegPlanPendingRef = useRef(false);
   const [initialProgramState, setInitialProgramState] = useState<LStateInitial>(LStateInitialDefault);
   const [libraryCatalog, setLibraryCatalog] = useState<LLibraryChoice[]>([]);
   const [libraryPresetCatalog, setLibraryPresetCatalog] = useState<LPresetLibrary[]>([]);
@@ -79,6 +86,8 @@ export function LStateBuilderUse() {
   const pFfmpegRunLast = useRef<{ plan: planning.LPlanFfmpeg; approval: LRequestApproval } | null>(null);
   const [toolchainLogEntries, setToolchainLogEntries] = useState<LLogSecurityEntry[]>([]);
   const [ffmpegLogEntries, setFfmpegLogEntries] = useState<LLogSecurityEntry[]>([]);
+  const [isPlanningToolchain, setIsPlanningToolchain] = useState(false);
+  const [isPlanningFfmpeg, setIsPlanningFfmpeg] = useState(false);
 
   // Workspace directory shared by result, log, and toolchain state.
   const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
@@ -102,6 +111,10 @@ export function LStateBuilderUse() {
   approvedActionPhaseRef.current = approvedActionPhase;
   libraryPresetIdRef.current = libraryPresetId;
   activeTabIdRef.current = activeTabId;
+  buildConfigSettingsRef.current = buildConfigSettings;
+  ffmpegBuildSettingsRef.current = ffmpegBuildSettings;
+  msys2PackageTextRef.current = msys2PackageText;
+  extraConfigureFlagTextRef.current = extraConfigureFlagText;
 
   const canCancelApprovedAction = useMemo(() => approvedActionStatus !== "idle" && approvedActionStatus !== "completed" && approvedActionStatus !== "failed" && approvedActionStatus !== "stalled", [approvedActionStatus]);
   const canCancelToolchain = canCancelApprovedAction && approvedActionPhase === "toolchain";
@@ -225,12 +238,15 @@ export function LStateBuilderUse() {
 
   useEffect(() => {
     if (!hasLoadedSavedState.current) return;
-    void LStateUiSave(JSON.stringify({
+    const serializedState = JSON.stringify({
       activeTabId,
       buildConfigSettings: { ...buildConfigSettings, msys2PackageNames: LTextLineSplit(msys2PackageText) },
       ffmpegBuildSettings: { ...ffmpegBuildSettings, extraConfigureFlags: LTextLineSplit(extraConfigureFlagText), configureFlags: LTextLineSplit(extraConfigureFlagText) },
       msys2PackageText, extraConfigureFlagText, libraryPresetId, extendedLibraries, libraryDetailedView, optionsDetailedView, libraryTechnicalDetails, optionsTechnicalDetails, librarySectionFilters,
-    } satisfies LStateUiSaved));
+    } satisfies LStateUiSaved);
+    uiStateSaveQueueRef.current = uiStateSaveQueueRef.current
+      .then(() => LStateUiSave(serializedState))
+      .catch((error) => { console.error("Failed to save UI state", error); });
   }, [activeTabId, buildConfigSettings, ffmpegBuildSettings, msys2PackageText, extraConfigureFlagText, libraryPresetId, extendedLibraries, libraryDetailedView, optionsDetailedView, libraryTechnicalDetails, optionsTechnicalDetails, librarySectionFilters]);
 
   useEffect(() => {
@@ -318,9 +334,22 @@ export function LStateBuilderUse() {
   }
 
   async function addBuildConfigPlanAndContinueToPrep() {
-    const review = await LPlanToolchainRequest({ ...buildConfigSettings, msys2PackageNames: LTextLineSplit(msys2PackageText) });
-    setToolchainPreparationPlanReview(review);
-    setActiveTabId("prep");
+    if (toolchainPlanPendingRef.current) return;
+    toolchainPlanPendingRef.current = true;
+    setIsPlanningToolchain(true);
+    const originTabId = activeTabIdRef.current;
+    const requestedSettings = { ...buildConfigSettings, msys2PackageNames: LTextLineSplit(msys2PackageText) };
+    const requestSignature = JSON.stringify(requestedSettings);
+    try {
+      const review = await LPlanToolchainRequest(requestedSettings);
+      const currentSignature = JSON.stringify({ ...buildConfigSettingsRef.current, msys2PackageNames: LTextLineSplit(msys2PackageTextRef.current) });
+      if (requestSignature !== currentSignature) return;
+      setToolchainPreparationPlanReview(review);
+      if (activeTabIdRef.current === originTabId) setActiveTabId("prep");
+    } finally {
+      toolchainPlanPendingRef.current = false;
+      setIsPlanningToolchain(false);
+    }
   }
 
   function LPlanToolchainCancel() {
@@ -328,19 +357,35 @@ export function LStateBuilderUse() {
   }
 
   async function reviewFfmpegPlans() {
+    if (ffmpegPlanPendingRef.current) return;
+    ffmpegPlanPendingRef.current = true;
+    setIsPlanningFfmpeg(true);
+    const originTabId = activeTabIdRef.current;
     const flags = LTextLineSplit(extraConfigureFlagText);
-    const review = await LPlanFfmpegRequest({ ...ffmpegBuildSettings, extraConfigureFlags: flags, configureFlags: flags });
-    setFfmpegBuildPlanReview(review);
-    setActiveTabId("buildFfmpeg");
+    const requestedSettings = { ...ffmpegBuildSettings, extraConfigureFlags: flags, configureFlags: flags };
+    const requestSignature = JSON.stringify(requestedSettings);
+    try {
+      const review = await LPlanFfmpegRequest(requestedSettings);
+      const currentFlags = LTextLineSplit(extraConfigureFlagTextRef.current);
+      const currentSignature = JSON.stringify({ ...ffmpegBuildSettingsRef.current, extraConfigureFlags: currentFlags, configureFlags: currentFlags });
+      if (requestSignature !== currentSignature) return;
+      setFfmpegBuildPlanReview(review);
+      if (activeTabIdRef.current === originTabId) setActiveTabId("buildFfmpeg");
+    } finally {
+      ffmpegPlanPendingRef.current = false;
+      setIsPlanningFfmpeg(false);
+    }
   }
 
   async function approveToolchainPreparationPlan() {
     if (!toolchainPreparationPlanReview) return;
+    const originTabId = activeTabIdRef.current;
     const r = toolchainPreparationPlanReview;
     setToolchainLogEntries([]); setApprovedActionPhase("toolchain"); setApprovedActionStatus("starting");
     try {
       await LPlanToolchainApprove(r.reviewSessionId, LRequestApprovalCreate(r.plan.actionName, r.plan.planHash, r.expectedLConsentText));
-      setToolchainPreparationPlanReview(null); setActiveTabId("prep");
+      setToolchainPreparationPlanReview(null);
+      if (activeTabIdRef.current === originTabId) setActiveTabId("prep");
     } catch (err) {
       setApprovedActionStatus("failed");
       setToolchainLogEntries((prev) => [...prev, { level: "error", message: err instanceof Error ? err.message : String(err), timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
@@ -349,6 +394,7 @@ export function LStateBuilderUse() {
 
   async function approveFfmpegBuildPlan() {
     if (!ffmpegBuildPlanReview) return;
+    const originTabId = activeTabIdRef.current;
     const r = ffmpegBuildPlanReview;
     const approval = LRequestApprovalCreate(r.plan.actionName, r.plan.planHash, r.expectedLConsentText);
     setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setApprovedActionStatus("starting");
@@ -359,7 +405,8 @@ export function LStateBuilderUse() {
       // generated fields, so narrow it to the binding's plan type for reuse.
       pFfmpegRunLast.current = { plan: r.plan as unknown as planning.LPlanFfmpeg, approval };
       setApprovedActionPhase("ffmpeg");
-      setFfmpegBuildPlanReview(null); setActiveTabId("buildFfmpeg");
+      setFfmpegBuildPlanReview(null);
+      if (activeTabIdRef.current === originTabId) setActiveTabId("buildFfmpeg");
     } catch (err) {
       setApprovedActionStatus("failed");
       setFfmpegLogEntries((prev) => [...prev, { level: "error", message: err instanceof Error ? err.message : String(err), timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
@@ -372,11 +419,12 @@ export function LStateBuilderUse() {
   async function retryFfmpegBuildPlan() {
     const last = pFfmpegRunLast.current;
     if (!last) return;
+    const originTabId = activeTabIdRef.current;
     setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setApprovedActionStatus("starting");
     try {
       await LFfmpegCompilationLaunch(last.plan, last.approval, false);
       setApprovedActionPhase("ffmpeg");
-      setActiveTabId("buildFfmpeg");
+      if (activeTabIdRef.current === originTabId) setActiveTabId("buildFfmpeg");
     } catch (err) {
       setApprovedActionStatus("failed");
       setFfmpegLogEntries((prev) => [...prev, { level: "error", message: err instanceof Error ? err.message : String(err), timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
@@ -499,6 +547,7 @@ export function LStateBuilderUse() {
     buildResult, buildResultError, isLoadingBuildResult,
     buildVerification, buildVerificationError, isVerifyingBuild, verifyBuildResult,
     toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain,
+    isPlanningToolchain, isPlanningFfmpeg,
     configuredMsys2PackageNames,
     canCancelToolchain, canCancelFfmpeg,
     isApprovedActionRunning: canCancelApprovedAction,
