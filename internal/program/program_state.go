@@ -1,8 +1,8 @@
 package program
 
 import (
+	"errors"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -110,45 +110,71 @@ func (program *LProgram) LResultBuildGet(workspaceDirectory string) (LResultStat
 	return result, nil
 }
 
-func (program *LProgram) LDirectoryResultOpen(workspaceDirectory string) error {
-	workspaceLayout := LArtifactLayoutFind(workspaceDirectory)
-	if err := os.MkdirAll(workspaceLayout.ArtifactsDirectory, 0o755); err != nil {
+func (program *LProgram) LDirectoryResultOpen(workspaceDirectory string, artifactsDirectory string) error {
+	if err := LResultDirectoryValidate(workspaceDirectory, artifactsDirectory); err != nil {
 		return err
 	}
-	if err := workspace.LPathRealCheck(workspaceLayout.WorkspaceDirectory, workspaceLayout.ArtifactsDirectory); err != nil {
-		return err
-	}
-	switch runtime.GOOS {
-	case "windows":
-		return exec.Command("explorer.exe", workspaceLayout.ArtifactsDirectory).Start()
-	case "darwin":
-		return exec.Command("open", workspaceLayout.ArtifactsDirectory).Start()
-	default:
-		return exec.Command("xdg-open", workspaceLayout.ArtifactsDirectory).Start()
-	}
+	return LDirectoryOpen(artifactsDirectory)
 }
 
-func (program *LProgram) LReportResultOpen(workspaceDirectory string) error {
-	workspaceLayout := LArtifactLayoutFind(workspaceDirectory)
-	reportPath, _, err := LReportLatestRead(workspaceLayout)
-	if err != nil {
+func (program *LProgram) LReportResultOpen(workspaceDirectory string, reportPath string) error {
+	if err := LResultReportValidate(workspaceDirectory, reportPath); err != nil {
 		return err
 	}
-	if err := workspace.LPathRealCheck(workspaceLayout.WorkspaceDirectory, reportPath); err != nil {
-		return err
-	}
-	switch runtime.GOOS {
-	case "windows":
-		return exec.Command("rundll32.exe", "url.dll,FileProtocolHandler", reportPath).Start()
-	case "darwin":
-		return exec.Command("open", reportPath).Start()
-	default:
-		return exec.Command("xdg-open", reportPath).Start()
-	}
+	return LPathOpen(reportPath)
 }
 
 func (program *LProgram) LLinkExternalOpen(urlToOpen string) error {
+	if err := planning.LExternalWebURLValidate(urlToOpen); err != nil {
+		return err
+	}
 	wailsRuntime.BrowserOpenURL(program.LContext, urlToOpen)
+	return nil
+}
+
+func LResultDirectoryValidate(workspaceDirectory string, artifactsDirectory string) error {
+	if workspaceDirectory == "" || artifactsDirectory == "" {
+		return errors.New("workspace and artifact directories are required")
+	}
+	layout := workspace.LWorkspaceLayoutResolve(workspaceDirectory)
+	if err := workspace.LPathRealCheck(layout.WorkspaceDirectory, layout.ArtifactsBaseDirectory); err != nil {
+		return err
+	}
+	if err := workspace.LPathRealCheck(layout.ArtifactsBaseDirectory, artifactsDirectory); err != nil {
+		return errors.New("artifact directory is outside the workspace artifact folder")
+	}
+	info, err := os.Stat(artifactsDirectory)
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return errors.New("artifact path is not a directory")
+	}
+	return nil
+}
+
+func LResultReportValidate(workspaceDirectory string, reportPath string) error {
+	if workspaceDirectory == "" || reportPath == "" {
+		return errors.New("workspace directory and report path are required")
+	}
+	layout := workspace.LWorkspaceLayoutResolve(workspaceDirectory)
+	if err := workspace.LPathRealCheck(layout.WorkspaceDirectory, layout.ArtifactsBaseDirectory); err != nil {
+		return err
+	}
+	if err := workspace.LPathRealCheck(layout.ArtifactsBaseDirectory, reportPath); err != nil {
+		return errors.New("report is outside the workspace artifact folder")
+	}
+	reportName := filepath.Base(reportPath)
+	if !strings.HasPrefix(reportName, "build-report-") || !strings.HasSuffix(reportName, ".json") {
+		return errors.New("invalid build report path")
+	}
+	info, err := os.Stat(reportPath)
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return errors.New("build report path is a directory")
+	}
 	return nil
 }
 

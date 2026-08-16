@@ -21,7 +21,7 @@ export function LCatalogSourceGet(arg1:string,arg2:string):Promise<Array<plannin
 
 export function LDependencyInstall(arg1:context.Context,arg2:planning.LPlanFfmpeg,arg3:planning.LLibraryPreparation,arg4:consent.LConsentPacman,arg5:audit.LAuditWriter,arg6:any):Promise<void>;
 
-export function LDirectoryResultOpen(arg1:string):Promise<void>;
+export function LDirectoryResultOpen(arg1:string,arg2:string):Promise<void>;
 
 export function LErrorLocalizedEmit(arg1:string,arg2:string,arg3:Error):Promise<void>;
 
@@ -85,7 +85,7 @@ export function LPresetSourceGet(arg1:string,arg2:string):Promise<Array<planning
 
 export function LRecordLogGet(arg1:string,arg2:string):Promise<program.LRecordLog>;
 
-export function LReportResultOpen(arg1:string):Promise<void>;
+export function LReportResultOpen(arg1:string,arg2:string):Promise<void>;
 
 export function LResultBuildGet(arg1:string):Promise<program.LResultState>;
 

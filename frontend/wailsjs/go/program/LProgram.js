@@ -30,8 +30,8 @@ export function LDependencyInstall(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['program']['LProgram']['LDependencyInstall'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
-export function LDirectoryResultOpen(arg1) {
-  return window['go']['program']['LProgram']['LDirectoryResultOpen'](arg1);
+export function LDirectoryResultOpen(arg1, arg2) {
+  return window['go']['program']['LProgram']['LDirectoryResultOpen'](arg1, arg2);
 }
 
 export function LErrorLocalizedEmit(arg1, arg2, arg3) {
@@ -158,8 +158,8 @@ export function LRecordLogGet(arg1, arg2) {
   return window['go']['program']['LProgram']['LRecordLogGet'](arg1, arg2);
 }
 
-export function LReportResultOpen(arg1) {
-  return window['go']['program']['LProgram']['LReportResultOpen'](arg1);
+export function LReportResultOpen(arg1, arg2) {
+  return window['go']['program']['LProgram']['LReportResultOpen'](arg1, arg2);
 }
 
 export function LResultBuildGet(arg1) {

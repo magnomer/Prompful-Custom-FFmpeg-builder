@@ -3,6 +3,7 @@ package planning
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -165,7 +166,32 @@ func LVersionRecordCheck(report *LCatalogValidationReport, file LCatalogEmbedded
 		if actualVersion != "" && actualVersion != versionId {
 			report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("ffmpegVersions key %q does not match embedded ffmpegVersion %q", versionId, actualVersion)))
 		}
+		if officialWebpageURL := LCatalogFieldGet(versionObject, "officialWebpageUrl"); officialWebpageURL != "" {
+			if err := LExternalWebURLValidate(officialWebpageURL); err != nil {
+				report.Issues = append(report.Issues, LValidationIssueCreate(LValidationIssueError, file, fmt.Sprintf("ffmpegVersions.%s officialWebpageUrl is invalid: %v", versionId, err)))
+			}
+		}
 	}
+}
+
+// LExternalWebURLValidate restricts links opened by the application to ordinary
+// web pages. In particular, custom application handlers must never be launched
+// from catalog data.
+func LExternalWebURLValidate(rawURL string) error {
+	if rawURL == "" || strings.TrimSpace(rawURL) != rawURL || strings.Contains(rawURL, "\x00") {
+		return fmt.Errorf("URL must be non-empty and contain no surrounding whitespace or NUL bytes")
+	}
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return fmt.Errorf("malformed URL: %w", err)
+	}
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return fmt.Errorf("scheme %q is not allowed", parsedURL.Scheme)
+	}
+	if parsedURL.Host == "" {
+		return fmt.Errorf("URL host is required")
+	}
+	return nil
 }
 
 func LCrossReferenceCheck(report *LCatalogValidationReport, catalog LCatalogEmbedded, libraryIds map[string]string, versionIds map[string]string, presetIds map[string]string) {

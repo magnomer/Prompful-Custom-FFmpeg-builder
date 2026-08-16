@@ -13,8 +13,9 @@ import {
   LPlanToolchainRequest,
   LWorkspaceSelect,
   LLocaleSet,
+  LLinkExternalOpen,
 } from "../wailsjs/go/program/LProgram";
-import { BrowserOpenURL, EventsOn } from "../wailsjs/runtime/runtime";
+import { EventsOn } from "../wailsjs/runtime/runtime";
 import { planning } from "../wailsjs/go/models";
 
 import { LLogSecurityEntry, LLogSecurityPayload, LStatusActionPayload, LStalledActionPayload, LProgressLive, LProgressGet } from "./tabs/logutils";
@@ -383,7 +384,10 @@ export function LStateBuilderUse() {
     LResultClear();
     setApprovedActionPhase(null); setApprovedActionStatus("idle");
   }
-  async function openInUserBrowser(url: string) { BrowserOpenURL(url); }
+  async function openInUserBrowser(url: string) {
+    try { await LLinkExternalOpen(url); }
+    catch (err) { console.error("Unable to open external link", err); }
+  }
 
   function LLibraryToggle(libraryId: string) {
     const library = libraryCatalog.find((l) => l.libraryId === libraryId);

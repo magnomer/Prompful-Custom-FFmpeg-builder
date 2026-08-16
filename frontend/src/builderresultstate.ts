@@ -42,12 +42,16 @@ export function LStateResultUse(dir: string) {
 
   async function openResultFolder() {
     if (!dir) { setBuildResultError(LLocaleTextGet("result.error.chooseWorkspaceFirst")); return; }
-    await LDirectoryResultOpen(dir);
+    if (!buildResult?.artifactsDirectory) return;
+    try { await LDirectoryResultOpen(dir, buildResult.artifactsDirectory); setBuildResultError(""); }
+    catch (err) { setBuildResultError(err instanceof Error ? err.message : String(err)); }
   }
 
   async function openResultReport() {
     if (!dir) { setBuildResultError(LLocaleTextGet("result.error.chooseWorkspaceFirst")); return; }
-    await LReportResultOpen(dir);
+    if (!buildResult?.reportPath) return;
+    try { await LReportResultOpen(dir, buildResult.reportPath); setBuildResultError(""); }
+    catch (err) { setBuildResultError(err instanceof Error ? err.message : String(err)); }
   }
 
   return {

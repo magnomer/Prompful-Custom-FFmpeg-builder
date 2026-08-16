@@ -56,17 +56,20 @@ export function LStateLogUse(dir: string) {
 
   async function openLocalLogsFolder() {
     if (!dir) return;
-    await LFolderLogOpen(dir);
+    try { await LFolderLogOpen(dir); setLocalLogRecordsError(""); }
+    catch (err) { setLocalLogRecordsError(err instanceof Error ? err.message : String(err)); }
   }
 
   async function openLocalLogRecordFolder(runId: string) {
     if (!dir || !runId || runId.startsWith("live-")) return;
-    await LFolderRecordOpen(dir, runId);
+    try { await LFolderRecordOpen(dir, runId); setLocalLogRecordsError(""); }
+    catch (err) { setLocalLogRecordsError(err instanceof Error ? err.message : String(err)); }
   }
 
   async function openLocalLogRecordFile(runId: string, fileName: string) {
     if (!dir || !runId || runId.startsWith("live-")) return;
-    await LFileRecordOpen(dir, runId, fileName);
+    try { await LFileRecordOpen(dir, runId, fileName); setLocalLogRecordsError(""); }
+    catch (err) { setLocalLogRecordsError(err instanceof Error ? err.message : String(err)); }
   }
 
   return {

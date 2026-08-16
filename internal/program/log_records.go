@@ -78,11 +78,11 @@ func (program *LProgram) LLogRecordList(workspaceDirectory string) ([]LRecordLog
 			continue
 		}
 		LRunId := entry.Name()
-		if strings.Contains(LRunId, string(os.PathSeparator)) || strings.Contains(LRunId, "\x00") {
+		if LLogRunIdValidate(LRunId) != nil {
 			continue
 		}
 		recordDirectory := filepath.Join(layout.LogsDirectory, LRunId)
-		if err := workspace.LPathRealCheck(layout.WorkspaceDirectory, recordDirectory); err != nil {
+		if err := LLogPathRealCheck(layout, recordDirectory); err != nil {
 			continue
 		}
 		record, ok := LRecordLocalRead(recordDirectory, LRunId, false)
@@ -100,12 +100,12 @@ func (program *LProgram) LRecordLogGet(workspaceDirectory string, LRunId string)
 	if workspaceDirectory == "" || LRunId == "" {
 		return LRecordLog{}, errors.New("workspace directory and log record id are required")
 	}
-	if strings.Contains(LRunId, string(os.PathSeparator)) || strings.Contains(LRunId, "/") || strings.Contains(LRunId, "\\") || strings.Contains(LRunId, "\x00") {
-		return LRecordLog{}, errors.New("invalid log record id")
+	if err := LLogRunIdValidate(LRunId); err != nil {
+		return LRecordLog{}, err
 	}
 	layout := workspace.LWorkspaceLayoutResolve(workspaceDirectory)
 	recordDirectory := filepath.Join(layout.LogsDirectory, LRunId)
-	if err := workspace.LPathRealCheck(layout.WorkspaceDirectory, recordDirectory); err != nil {
+	if err := LLogPathRealCheck(layout, recordDirectory); err != nil {
 		return LRecordLog{}, err
 	}
 	record, ok := LRecordLocalRead(recordDirectory, LRunId, true)
@@ -135,12 +135,12 @@ func (program *LProgram) LFolderRecordOpen(workspaceDirectory string, LRunId str
 	if workspaceDirectory == "" || LRunId == "" {
 		return errors.New("workspace directory and log record id are required")
 	}
-	if strings.Contains(LRunId, string(os.PathSeparator)) || strings.Contains(LRunId, "/") || strings.Contains(LRunId, "\\") || strings.Contains(LRunId, "\x00") {
-		return errors.New("invalid log record id")
+	if err := LLogRunIdValidate(LRunId); err != nil {
+		return err
 	}
 	layout := workspace.LWorkspaceLayoutResolve(workspaceDirectory)
 	recordDirectory := filepath.Join(layout.LogsDirectory, LRunId)
-	if err := workspace.LPathRealCheck(layout.WorkspaceDirectory, recordDirectory); err != nil {
+	if err := LLogPathRealCheck(layout, recordDirectory); err != nil {
 		return err
 	}
 	if info, err := os.Stat(recordDirectory); err != nil {
@@ -155,15 +155,15 @@ func (program *LProgram) LFileRecordOpen(workspaceDirectory string, LRunId strin
 	if workspaceDirectory == "" || LRunId == "" {
 		return errors.New("workspace directory and log record id are required")
 	}
-	if strings.Contains(LRunId, string(os.PathSeparator)) || strings.Contains(LRunId, "/") || strings.Contains(LRunId, "\\") || strings.Contains(LRunId, "\x00") {
-		return errors.New("invalid log record id")
+	if err := LLogRunIdValidate(LRunId); err != nil {
+		return err
 	}
 	if !LLogRawNames[fileName] {
 		return errors.New("invalid log file")
 	}
 	layout := workspace.LWorkspaceLayoutResolve(workspaceDirectory)
 	filePath := filepath.Join(layout.LogsDirectory, LRunId, fileName)
-	if err := workspace.LPathRealCheck(layout.WorkspaceDirectory, filePath); err != nil {
+	if err := LLogPathRealCheck(layout, filePath); err != nil {
 		return err
 	}
 	if info, err := os.Stat(filePath); err != nil {
@@ -196,6 +196,20 @@ func LPathOpen(path string) error {
 	}
 }
 
+func LLogRunIdValidate(LRunId string) error {
+	if LRunId == "" || LRunId == "." || LRunId == ".." || strings.Contains(LRunId, string(os.PathSeparator)) || strings.Contains(LRunId, "/") || strings.Contains(LRunId, "\\") || strings.Contains(LRunId, "\x00") {
+		return errors.New("invalid log record id")
+	}
+	return nil
+}
+
+func LLogPathRealCheck(layout workspace.LWorkspaceLayout, candidatePath string) error {
+	if err := workspace.LPathRealCheck(layout.WorkspaceDirectory, layout.LogsDirectory); err != nil {
+		return err
+	}
+	return workspace.LPathRealCheck(layout.LogsDirectory, candidatePath)
+}
+
 func LRecordLocalRead(recordDirectory string, LRunId string, includeDetails bool) (LRecordLog, bool) {
 	events := LAuditLocalRead(filepath.Join(recordDirectory, "security-events.jsonl"))
 	hasLAuditEvents := LTextReadableCheck(filepath.Join(recordDirectory, "security-events.jsonl"))
@@ -221,9 +235,6 @@ func LRecordLocalRead(recordDirectory string, LRunId string, includeDetails bool
 	}
 
 	for _, event := range events {
-		if event.RunId != "" {
-			record.RunId = event.RunId
-		}
 		if event.CreatedAt != "" {
 			record.CreatedAt = LTextFirstGet(record.CreatedAt, event.CreatedAt)
 		}
