@@ -22,17 +22,9 @@ export type LStateUiSaved = {
   librarySectionFilters?: string[];
 };
 
-export type LStateWindowSaved = {
-  width?: number;
-  height?: number;
-  x?: number;
-  y?: number;
-};
-
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 export const LStateUiKey = "customffmpeg.builder.uiState.v1";
-export const LStateWindowKey = "customffmpeg.builder.windowState.v1";
 
 export const LSettingsBuildEmpty: LSettingsToolchain = {
   workspaceDirectory: "",
@@ -119,7 +111,7 @@ export function LStateUiParse(raw: string): LStateUiSaved {
   try {
     if (!raw) return {};
     const parsed = JSON.parse(raw) as LStateUiSaved;
-    return parsed && typeof parsed === "object" ? parsed : {};
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
   } catch { return {}; }
 }
 
@@ -135,6 +127,10 @@ function LStringArrayGet(value: unknown, fallback: string[]): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : fallback;
 }
 
+function LShellProfileNameGet(value: unknown, fallback: string): string {
+  return value === "ucrt64" || value === "mingw64" || value === "clang64" ? value : fallback;
+}
+
 function LArrayValueGet<T>(value: unknown, fallback: T[] = []): T[] {
   return Array.isArray(value) ? value as T[] : fallback;
 }
@@ -147,7 +143,7 @@ export function LSettingsBuildNormalize(value: unknown, fallback: LSettingsToolc
     msys2ArchiveSha256Hash: LStringValueGet(source.msys2ArchiveSha256Hash, fallback.msys2ArchiveSha256Hash),
     msys2ArchiveSignatureUrl: LStringValueGet(source.msys2ArchiveSignatureUrl, fallback.msys2ArchiveSignatureUrl),
     msys2PackageNames: LStringArrayGet(source.msys2PackageNames, fallback.msys2PackageNames),
-    windowsShellProfileName: LStringValueGet(source.windowsShellProfileName, fallback.windowsShellProfileName),
+    windowsShellProfileName: LShellProfileNameGet(source.windowsShellProfileName, fallback.windowsShellProfileName),
   };
 }
 
@@ -163,7 +159,7 @@ export function LSettingsFfmpegNormalize(value: unknown, fallback: LSettingsFfmp
     extraConfigureFlags: LStringArrayGet(source.extraConfigureFlags, fallback.extraConfigureFlags),
     configureFlags: LStringArrayGet(source.configureFlags, fallback.configureFlags),
     parallelJobCount: LNumberValueGet(source.parallelJobCount, fallback.parallelJobCount),
-    windowsShellProfileName: LStringValueGet(source.windowsShellProfileName, fallback.windowsShellProfileName),
+    windowsShellProfileName: LShellProfileNameGet(source.windowsShellProfileName, fallback.windowsShellProfileName),
     licenseProfileName: LStringValueGet(source.licenseProfileName, fallback.licenseProfileName),
   };
 }
@@ -182,13 +178,4 @@ export function LStateInitialNormalize(value: unknown, fallback: LStateInitial =
     defaultConfigureOptionCatalog: LArrayValueGet<LOptionChoice>(source.defaultConfigureOptionCatalog, fallback.defaultConfigureOptionCatalog),
     supportedFfmpegReleases: LArrayValueGet<LReleaseChoice>(source.supportedFfmpegReleases, fallback.supportedFfmpegReleases),
   };
-}
-
-export function LStateWindowRead(): LStateWindowSaved {
-  try {
-    const raw = window.localStorage.getItem(LStateWindowKey);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as LStateWindowSaved;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch { return {}; }
 }

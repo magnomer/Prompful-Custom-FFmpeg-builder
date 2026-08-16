@@ -2,6 +2,9 @@ package program
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"promptfulcustomffmpegbuilder/internal/planning"
@@ -71,11 +74,55 @@ func (program *LProgram) LProgramStop(LContext context.Context) {
 // LLocaleSet records the UI language for backend-owned native surfaces such as
 // the workspace picker. Logs and technical error details stay English. Unknown
 // locales fall back to English.
-func (program *LProgram) LLocaleSet(locale string) {
+func LLocaleNormalize(locale string) string {
 	normalizedLocale := "en"
-	if locale == "ko" {
+	if strings.TrimSpace(locale) == "ko" {
 		normalizedLocale = "ko"
 	}
+	return normalizedLocale
+}
+
+func LPathLocaleResolve() (string, error) {
+	configDirectory, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(configDirectory, "PromptfulCustomFfmpegBuilder", "locale-state.txt"), nil
+}
+
+// LLocaleLoad restores the UI locale from backend-owned storage before React
+// mounts, so startup does not depend on WebView localStorage retention.
+func (program *LProgram) LLocaleLoad() (string, error) {
+	filePath, err := LPathLocaleResolve()
+	if err != nil {
+		return "", err
+	}
+	fileData, err := os.ReadFile(filePath)
+	if err != nil && !os.IsNotExist(err) {
+		return "", err
+	}
+	normalizedLocale := LLocaleNormalize(string(fileData))
+	program.lLocaleCommit(normalizedLocale)
+	return normalizedLocale, nil
+}
+
+func (program *LProgram) LLocaleSet(locale string) error {
+	normalizedLocale := LLocaleNormalize(locale)
+	filePath, err := LPathLocaleResolve()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(filePath, []byte(normalizedLocale+"\n"), 0o644); err != nil {
+		return err
+	}
+	program.lLocaleCommit(normalizedLocale)
+	return nil
+}
+
+func (program *LProgram) lLocaleCommit(normalizedLocale string) {
 	program.LMutexLocaleUi.Lock()
 	program.LLocaleUi = normalizedLocale
 	program.LMutexLocaleUi.Unlock()

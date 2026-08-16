@@ -77,16 +77,29 @@ func (program *LProgram) LWindowGeometryRestore() {
 		return
 	}
 	state := program.LStateWindowStartup
+	if screens, err := wailsRuntime.ScreenGetAll(program.LContext); err == nil {
+		for _, screen := range screens {
+			if !screen.IsPrimary {
+				continue
+			}
+			state = LWindowGeometryNormalize(state, screen.Size.Width, screen.Size.Height)
+			break
+		}
+	}
 	wailsRuntime.WindowSetSize(program.LContext, state.Width, state.Height)
-	wailsRuntime.WindowSetPosition(program.LContext, state.X, state.Y)
+	if state.HasGeometry {
+		wailsRuntime.WindowSetPosition(program.LContext, state.X, state.Y)
+	} else {
+		wailsRuntime.WindowCenter(program.LContext)
+	}
 	if state.Maximised {
 		wailsRuntime.WindowMaximise(program.LContext)
 	}
 }
 
 // LWindowGeometrySave records the current window geometry so it can be
-// restored on the next launch. When maximised, the last known normal bounds
-// are kept so a later unmaximise restores a sane size.
+// restored on the next launch. Wails cannot report normal bounds while the
+// window is maximised, so that case stores safe defaults instead of stale data.
 func (program *LProgram) LWindowGeometrySave(LContext context.Context) {
 	if LContext == nil {
 		return
@@ -94,14 +107,11 @@ func (program *LProgram) LWindowGeometrySave(LContext context.Context) {
 	isMaximised := wailsRuntime.WindowIsMaximised(LContext)
 	state := LStateWindow{Maximised: isMaximised, HasGeometry: true}
 	if isMaximised {
-		state.Width = program.LStateWindowStartup.Width
-		state.Height = program.LStateWindowStartup.Height
-		state.X = program.LStateWindowStartup.X
-		state.Y = program.LStateWindowStartup.Y
-		if state.Width < LWindowMinimumWidth || state.Height < LWindowMinimumHeight {
-			state.Width = LWindowWidthDefault
-			state.Height = LWindowHeightDefault
-		}
+		// Wails exposes the maximised rectangle here, not the latest normal
+		// rectangle. Persist safe normal bounds instead of falsely reusing the
+		// process-startup bounds, which may be stale after a move or resize.
+		state.Width = LWindowWidthDefault
+		state.Height = LWindowHeightDefault
 	} else {
 		width, height := wailsRuntime.WindowGetSize(LContext)
 		x, y := wailsRuntime.WindowGetPosition(LContext)
@@ -111,4 +121,29 @@ func (program *LProgram) LWindowGeometrySave(LContext context.Context) {
 		state.Y = y
 	}
 	_ = LStateWindowSave(state)
+}
+
+// LWindowGeometryNormalize keeps restored dimensions usable on the primary
+// display. Wails does not expose monitor origins, so coordinates that cannot be
+// proven visible are centered rather than applied.
+func LWindowGeometryNormalize(state LStateWindow, screenWidth int, screenHeight int) LStateWindow {
+	if state.Width < LWindowMinimumWidth || state.Height < LWindowMinimumHeight {
+		state.Width = LWindowWidthDefault
+		state.Height = LWindowHeightDefault
+		state.HasGeometry = false
+	}
+	if screenWidth <= 0 || screenHeight <= 0 {
+		return state
+	}
+	if state.Width > screenWidth {
+		state.Width = screenWidth
+	}
+	if state.Height > screenHeight {
+		state.Height = screenHeight
+	}
+	const visibleEdge = 80
+	if state.X < 0 || state.Y < 0 || state.X+visibleEdge > screenWidth || state.Y+visibleEdge > screenHeight {
+		state.HasGeometry = false
+	}
+	return state
 }

@@ -1,26 +1,42 @@
 package planning
 
+import (
+	"fmt"
+	"strings"
+)
+
 // LCatalogLibraryGet returns the Libraries-tab catalog through the
 // embedded version resolver. A known release line resolves to that line's catalog;
 // an unknown newer release line uses the highest known catalog line. An empty,
 // custom, or unparseable FFmpeg URL still returns no catalog.
 func LCatalogLibraryGet(ffmpegSourceArchiveUrl string, windowsShellProfileName string) []LLibraryChoice {
+	choices, _ := LCatalogLibraryResolve(ffmpegSourceArchiveUrl, windowsShellProfileName)
+	return choices
+}
+
+// LCatalogLibraryResolve preserves resolver failures for interactive callers.
+// An empty source is a legitimate pre-selection state; a non-empty source that
+// cannot resolve is not a successful empty catalog.
+func LCatalogLibraryResolve(ffmpegSourceArchiveUrl string, windowsShellProfileName string) ([]LLibraryChoice, error) {
+	if strings.TrimSpace(ffmpegSourceArchiveUrl) == "" {
+		return []LLibraryChoice{}, nil
+	}
 	ffmpegVersion := LVersionArchiveParse(ffmpegSourceArchiveUrl)
 	if ffmpegVersion == "" {
-		return []LLibraryChoice{}
+		return nil, fmt.Errorf("cannot determine FFmpeg version from source URL")
 	}
 	resolver, _, err := LCatalogResolverLoad()
 	if err != nil {
-		return []LLibraryChoice{}
+		return nil, fmt.Errorf("load library catalog: %w", err)
 	}
 	resolvedPlan, err := resolver.LVersionResolve(LCatalogResolutionSettings{
 		FfmpegVersion:           ffmpegVersion,
 		WindowsShellProfileName: windowsShellProfileName,
 	})
 	if err != nil {
-		return []LLibraryChoice{}
+		return nil, fmt.Errorf("resolve library catalog for FFmpeg %s: %w", ffmpegVersion, err)
 	}
-	return LLibraryChoicesCreate(resolvedPlan.VisibleLibraries)
+	return LLibraryChoicesCreate(resolvedPlan.VisibleLibraries), nil
 }
 
 // LLibraryChoicesCreate converts resolved library rows into the legacy
@@ -190,25 +206,33 @@ type LPresetLibraryChoice struct {
 // V5 preset catalog. Known release lines resolve to their catalog line; unknown
 // newer release lines resolve through the highest known catalog line.
 func LCatalogPresetGet(ffmpegSourceArchiveUrl string, windowsShellProfileName string) []LPresetLibraryChoice {
+	presets, _ := LCatalogPresetResolve(ffmpegSourceArchiveUrl, windowsShellProfileName)
+	return presets
+}
+
+func LCatalogPresetResolve(ffmpegSourceArchiveUrl string, windowsShellProfileName string) ([]LPresetLibraryChoice, error) {
+	if strings.TrimSpace(ffmpegSourceArchiveUrl) == "" {
+		return []LPresetLibraryChoice{}, nil
+	}
 	ffmpegVersion := LVersionArchiveParse(ffmpegSourceArchiveUrl)
 	if ffmpegVersion == "" {
-		return []LPresetLibraryChoice{}
+		return nil, fmt.Errorf("cannot determine FFmpeg version from source URL")
 	}
 	resolver, _, err := LCatalogResolverLoad()
 	if err != nil {
-		return []LPresetLibraryChoice{}
+		return nil, fmt.Errorf("load preset catalog: %w", err)
 	}
 	presets, err := resolver.LPresetChoicesResolve(LCatalogResolutionSettings{
 		FfmpegVersion:           ffmpegVersion,
 		WindowsShellProfileName: windowsShellProfileName,
 	})
 	if err != nil {
-		return []LPresetLibraryChoice{}
+		return nil, fmt.Errorf("resolve preset catalog for FFmpeg %s: %w", ffmpegVersion, err)
 	}
 	if presets == nil {
-		return []LPresetLibraryChoice{}
+		return nil, fmt.Errorf("no preset catalog exists for FFmpeg %s", ffmpegVersion)
 	}
-	return presets
+	return presets, nil
 }
 
 // LPresetChoicesResolve resolves all presets exposed by the version record.

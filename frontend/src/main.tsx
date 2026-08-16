@@ -106,6 +106,12 @@ function PProgramRender() {
   React.useEffect(() => { document.title = LLocaleTextGet("app.brand"); }, [locale]);
   const s = LStateBuilderUse();
   const [isLocaleMenuOpen, setIsLocaleMenuOpen] = React.useState(false);
+  if (s.startupState.status === "error") {
+    return <PFatalErrorRender title={LLocaleTextGet("fatal.runtimeFailed")} text={s.startupState.error} />;
+  }
+  if (s.startupState.status !== "ready") {
+    return <main className="program-fatal"><section className="program-fatal__panel"><h1>{LLocaleTextGet("app.brand")}</h1><p>Loading application state…</p></section></main>;
+  }
   const localeItems: { id: LLocaleCode; label: string }[] = [
     { id: "en", label: LLocaleTextGet("locale.english") },
     { id: "ko", label: LLocaleTextGet("locale.korean") },

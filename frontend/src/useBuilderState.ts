@@ -34,7 +34,6 @@ import {
   LRequestApprovalCreate, LStateUiParse,
   LPackagePrefixUpdate, LSettingsBuildNormalize, LSettingsFfmpegNormalize, LStateInitialNormalize,
 } from "./programstate";
-import { LStateWindowRestore, LStateWindowUse } from "./builderwindowstate";
 import { LStateResultUse } from "./builderresultstate";
 import { LStateLogUse } from "./builderlogstate";
 import { LStateToolchainStatusUse } from "./buildertoolchainstate";
@@ -44,6 +43,7 @@ export function LStateBuilderUse() {
   const locale = LLocaleGet();
   const [activeTabId, setActiveTabId] = useState<LTabIdentifier>("source");
   const hasLoadedSavedState = useRef(false);
+  const [startupState, setStartupState] = useState<{ status: "loading" | "ready" | "error"; error: string }>({ status: "loading", error: "" });
   const tabPanelRef = useRef<HTMLElement>(null);
   // Tabs whose scroll position is remembered when leaving and restored when
   // returning (within the session). Every other tab still scrolls back to top.
@@ -105,7 +105,6 @@ export function LStateBuilderUse() {
     toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain,
     refreshToolchainStatus, verifyToolchain, clearBuildEnvironments,
   } = LStateToolchainStatusUse(dir, buildConfigSettings.windowsShellProfileName);
-  LStateWindowUse();
   const approvedActionPhaseRef = useRef<"toolchain" | "ffmpeg" | null>(null);
   const libraryPresetIdRef = useRef<LPresetLibraryId>("default");
   approvedActionPhaseRef.current = approvedActionPhase;
@@ -127,45 +126,56 @@ export function LStateBuilderUse() {
   const configuredMsys2PackageNames = useMemo(() => LTextLineSplit(msys2PackageText), [msys2PackageText]);
 
   useEffect(() => {
-    LStateInitialGet().then(async (rawNextState: LStateInitial) => {
-      const nextState = LStateInitialNormalize(rawNextState);
-      const saved = LStateUiParse(await LStateUiLoad());
-      const savedBts = LSettingsBuildNormalize(saved.buildConfigSettings, nextState.defaultBuildConfigSettings);
-      let resolvedFbs = LSettingsFfmpegNormalize(saved.ffmpegBuildSettings, nextState.defaultFfmpegBuildSettings);
-      const initialPresetCatalog = LPresetLibraryClean(nextState.defaultLibraryPresetCatalog);
-      const hasSavedPreset = LPresetLibraryValidate(saved.libraryPresetId);
-      const resolvedPresetId: LPresetLibraryId = hasSavedPreset ? saved.libraryPresetId! : "default";
-      if (!hasSavedPreset && !saved.ffmpegBuildSettings) {
-        const defaultPreset = initialPresetCatalog.find((p) => p.presetId === "default");
-        if (defaultPreset) {
-          const nextIds = LLibrarySelectionNormalize(defaultPreset.libraryIds, resolvedFbs.windowsShellProfileName, nextState.defaultLibraryCatalog);
-          resolvedFbs = { ...resolvedFbs, selectedLibraryIds: nextIds, licenseProfileName: LLicenseBoundaryGet(nextIds, nextState.defaultLibraryCatalog, resolvedFbs.windowsShellProfileName) };
+    let isHydrationCurrent = true;
+    void (async () => {
+      try {
+        const nextState = LStateInitialNormalize(await LStateInitialGet());
+        let saved: LStateUiSaved = {};
+        try {
+          saved = LStateUiParse(await LStateUiLoad());
+        } catch (error) {
+          if (isHydrationCurrent) setLocalLogRecordsError(`Unable to restore saved UI state; defaults were loaded. ${error instanceof Error ? error.message : String(error)}`);
         }
+        if (!isHydrationCurrent) return;
+        const savedBts = LSettingsBuildNormalize(saved.buildConfigSettings, nextState.defaultBuildConfigSettings);
+        let resolvedFbs = LSettingsFfmpegNormalize(saved.ffmpegBuildSettings, nextState.defaultFfmpegBuildSettings);
+        // The profile selector is the single authority. Normal UI changes update
+        // both settings objects, and hydration must preserve that invariant too.
+        resolvedFbs = { ...resolvedFbs, windowsShellProfileName: savedBts.windowsShellProfileName };
+        const initialPresetCatalog = LPresetLibraryClean(nextState.defaultLibraryPresetCatalog);
+        const hasSavedPreset = LPresetLibraryValidate(saved.libraryPresetId);
+        const resolvedPresetId: LPresetLibraryId = hasSavedPreset ? saved.libraryPresetId! : "default";
+        if (!hasSavedPreset && !saved.ffmpegBuildSettings) {
+          const defaultPreset = initialPresetCatalog.find((p) => p.presetId === "default");
+          if (defaultPreset) {
+            const nextIds = LLibrarySelectionNormalize(defaultPreset.libraryIds, resolvedFbs.windowsShellProfileName, nextState.defaultLibraryCatalog);
+            resolvedFbs = { ...resolvedFbs, selectedLibraryIds: nextIds, licenseProfileName: LLicenseBoundaryGet(nextIds, nextState.defaultLibraryCatalog, resolvedFbs.windowsShellProfileName) };
+          }
+        }
+        setInitialProgramState(nextState);
+        setLibraryCatalog(nextState.defaultLibraryCatalog);
+        setLibraryPresetCatalog(initialPresetCatalog);
+        setBuildConfigSettings(savedBts);
+        setFfmpegBuildSettings(resolvedFbs);
+        setMsys2PackageText(typeof saved.msys2PackageText === "string" ? saved.msys2PackageText : savedBts.msys2PackageNames.join("\n"));
+        setExtraConfigureFlagText(typeof saved.extraConfigureFlagText === "string" ? saved.extraConfigureFlagText : resolvedFbs.extraConfigureFlags.join("\n"));
+        setLibraryPresetId(resolvedPresetId);
+        if (typeof saved.extendedLibraries === "boolean") setExtendedLibrariesState(saved.extendedLibraries);
+        if (typeof saved.libraryDetailedView === "boolean") setLibraryDetailedView(saved.libraryDetailedView);
+        if (typeof saved.optionsDetailedView === "boolean") setOptionsDetailedView(saved.optionsDetailedView);
+        if (typeof saved.libraryTechnicalDetails === "boolean") setLibraryTechnicalDetails(saved.libraryTechnicalDetails);
+        if (typeof saved.optionsTechnicalDetails === "boolean") setOptionsTechnicalDetails(saved.optionsTechnicalDetails);
+        if (Array.isArray(saved.librarySectionFilters)) {
+          const savedFilters = saved.librarySectionFilters.filter((value): value is string => typeof value === "string");
+          setLLibrarySectionFilters(LSectionStateNormalize(savedFilters, nextState.defaultLibraryCatalog));
+        }
+        if (LTabIdValidate(saved.activeTabId)) setActiveTabId(saved.activeTabId);
+        hasLoadedSavedState.current = true;
+      } catch (error) {
+        if (!isHydrationCurrent) return;
+        setStartupState({ status: "error", error: error instanceof Error ? error.message : String(error) });
       }
-      setInitialProgramState(nextState);
-      setLibraryCatalog(nextState.defaultLibraryCatalog);
-      setLibraryPresetCatalog(initialPresetCatalog);
-      setBuildConfigSettings(savedBts);
-      setFfmpegBuildSettings(resolvedFbs);
-      setMsys2PackageText(saved.msys2PackageText ?? savedBts.msys2PackageNames.join("\n"));
-      setExtraConfigureFlagText(saved.extraConfigureFlagText ?? resolvedFbs.extraConfigureFlags.join("\n"));
-      setLibraryPresetId(resolvedPresetId);
-      if (typeof saved.extendedLibraries === "boolean") setExtendedLibrariesState(saved.extendedLibraries);
-      if (typeof saved.libraryDetailedView === "boolean") setLibraryDetailedView(saved.libraryDetailedView);
-      if (typeof saved.optionsDetailedView === "boolean") setOptionsDetailedView(saved.optionsDetailedView);
-      if (typeof saved.libraryTechnicalDetails === "boolean") setLibraryTechnicalDetails(saved.libraryTechnicalDetails);
-      if (typeof saved.optionsTechnicalDetails === "boolean") setOptionsTechnicalDetails(saved.optionsTechnicalDetails);
-      if (Array.isArray(saved.librarySectionFilters)) {
-        const savedFilters = saved.librarySectionFilters.filter((value): value is string => typeof value === "string");
-        setLLibrarySectionFilters(LSectionStateNormalize(savedFilters, nextState.defaultLibraryCatalog));
-      }
-      if (LTabIdValidate(saved.activeTabId)) setActiveTabId(saved.activeTabId);
-      hasLoadedSavedState.current = true;
-      LStateWindowRestore();
-    }).catch((err) => {
-      setLocalLogRecordsError(err instanceof Error ? err.message : String(err));
-      hasLoadedSavedState.current = true;
-    });
+    })();
 
     const makeEntry = (payload: LLogSecurityPayload): LLogSecurityEntry => ({
       level: LLogLevelNormalize(payload.level),
@@ -198,7 +208,7 @@ export function LStateBuilderUse() {
     const removeConfirmationClosedListener = EventsOn("approval-confirmation-closed", (payload: { requestId?: string }) => {
       setApprovalConfirmationRequest((request) => request?.requestId === payload?.requestId ? null : request);
     });
-    return () => { removeLogListener(); removeStatusListener(); removeStalledListener(); removeConfirmationListener(); removeConfirmationClosedListener(); };
+    return () => { isHydrationCurrent = false; removeLogListener(); removeStatusListener(); removeStalledListener(); removeConfirmationListener(); removeConfirmationClosedListener(); };
   }, []);
 
   useEffect(() => {
@@ -229,9 +239,17 @@ export function LStateBuilderUse() {
           };
         });
         setFfmpegBuildPlanReview(null);
+        setStartupState({ status: "ready", error: "" });
       })
-      .catch(() => {
-        if (isCurrent) { setLibraryCatalog(initialProgramState.defaultLibraryCatalog); setLibraryPresetCatalog(LPresetLibraryClean(initialProgramState.defaultLibraryPresetCatalog)); }
+      .catch((error) => {
+        if (isCurrent) {
+          setLibraryCatalog(initialProgramState.defaultLibraryCatalog);
+          setLibraryPresetCatalog(LPresetLibraryClean(initialProgramState.defaultLibraryPresetCatalog));
+          setLocalLogRecordsError(`Unable to resolve the FFmpeg catalog. ${error instanceof Error ? error.message : String(error)}`);
+          // Resolver failure is non-destructive: retain the restored selection
+          // and allow the UI to open with a visible diagnostic.
+          setStartupState({ status: "ready", error: "" });
+        }
       });
     return () => { isCurrent = false; };
   }, [ffmpegBuildSettings.ffmpegSourceArchiveUrl, ffmpegBuildSettings.windowsShellProfileName, initialProgramState.defaultLibraryCatalog, initialProgramState.defaultLibraryPresetCatalog, extendedLibraries]);
@@ -519,6 +537,7 @@ export function LStateBuilderUse() {
     await LApprovalConfirmationResolve(request.requestId, approved);
   }
   return {
+    startupState,
     tabPanelRef,
     activeTabId, setActiveTabId,
     initialProgramState,

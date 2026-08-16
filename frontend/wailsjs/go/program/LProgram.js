@@ -114,6 +114,10 @@ export function LLocaleSet(arg1) {
   return window['go']['program']['LProgram']['LLocaleSet'](arg1);
 }
 
+export function LLocaleLoad() {
+  return window['go']['program']['LProgram']['LLocaleLoad']();
+}
+
 export function LLogConfigurationSave(arg1, arg2) {
   return window['go']['program']['LProgram']['LLogConfigurationSave'](arg1, arg2);
 }

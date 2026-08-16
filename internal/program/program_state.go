@@ -29,12 +29,12 @@ func (program *LProgram) LStateInitialGet() LStateInitial {
 	}
 }
 
-func (program *LProgram) LCatalogSourceGet(ffmpegSourceArchiveUrl string, windowsShellProfileName string) []planning.LLibraryChoice {
-	return planning.LCatalogLibraryGet(ffmpegSourceArchiveUrl, windowsShellProfileName)
+func (program *LProgram) LCatalogSourceGet(ffmpegSourceArchiveUrl string, windowsShellProfileName string) ([]planning.LLibraryChoice, error) {
+	return planning.LCatalogLibraryResolve(ffmpegSourceArchiveUrl, windowsShellProfileName)
 }
 
-func (program *LProgram) LPresetSourceGet(ffmpegSourceArchiveUrl string, windowsShellProfileName string) []planning.LPresetLibraryChoice {
-	return planning.LCatalogPresetGet(ffmpegSourceArchiveUrl, windowsShellProfileName)
+func (program *LProgram) LPresetSourceGet(ffmpegSourceArchiveUrl string, windowsShellProfileName string) ([]planning.LPresetLibraryChoice, error) {
+	return planning.LCatalogPresetResolve(ffmpegSourceArchiveUrl, windowsShellProfileName)
 }
 
 func (program *LProgram) LResultBuildGet(workspaceDirectory string) (LResultState, error) {

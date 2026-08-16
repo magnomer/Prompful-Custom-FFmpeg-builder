@@ -1,6 +1,6 @@
 import en from "../../localization/en.json";
 import ko from "../../localization/ko.json";
-import { LLocaleSet as LLocaleBackendSet } from "../wailsjs/go/program/LProgram";
+import { LLocaleLoad as LLocaleBackendLoad, LLocaleSet as LLocaleBackendSet } from "../wailsjs/go/program/LProgram";
 
 type LDictionary = Record<string, string>;
 export type LLocaleCode = "en" | "ko";
@@ -8,13 +8,11 @@ export type LLocaleCode = "en" | "ko";
 const LLocaleEnglishDictionary: LDictionary = en as LDictionary;
 const LLocaleKoreanDictionary: LDictionary = ko as LDictionary;
 const LLocaleDictionaryMap: Record<LLocaleCode, LDictionary> = { en: LLocaleEnglishDictionary, ko: LLocaleKoreanDictionary };
-const LLocaleStorageKey = "customffmpeg.locale";
-
 function LLocaleNormalize(locale: string | null): LLocaleCode {
   return locale === "ko" ? "ko" : "en";
 }
 
-let LLocaleCurrent: LLocaleCode = LLocaleNormalize(globalThis.localStorage?.getItem(LLocaleStorageKey) ?? null);
+let LLocaleCurrent: LLocaleCode = "en";
 
 export function LLocaleGet(): LLocaleCode {
   return LLocaleCurrent;
@@ -27,12 +25,11 @@ export async function LLocaleSet(locale: LLocaleCode): Promise<void> {
   // observe an older locale than the UI that launched them.
   await LLocaleBackendSet(normalizedLocale);
   LLocaleCurrent = normalizedLocale;
-  globalThis.localStorage?.setItem(LLocaleStorageKey, LLocaleCurrent);
   globalThis.dispatchEvent(new CustomEvent("customffmpeg-locale-change", { detail: LLocaleCurrent }));
 }
 
-export function LLocaleSynchronize(): Promise<void> {
-  return LLocaleBackendSet(LLocaleCurrent);
+export async function LLocaleSynchronize(): Promise<void> {
+  LLocaleCurrent = LLocaleNormalize(await LLocaleBackendLoad());
 }
 
 export function LLocaleTranslationCheck(id: string): boolean {
