@@ -193,6 +193,7 @@ func LPackageScriptCreate(packageNames []string) ([]string, error) {
 	)
 	scriptLines = append(scriptLines, LRabbitmqScriptClean()...)
 	scriptLines = append(scriptLines, LOapvPackageRepair()...)
+	scriptLines = append(scriptLines, LPkgconfigPathNormalize()...)
 	return scriptLines, nil
 }
 
@@ -239,5 +240,38 @@ func LOapvPackageRepair() []string {
 		`  fi`,
 		`  echo "Patched oapv.pc: $(grep -E '^(Libs|Cflags)' "${oapv_pc}")"`,
 		`fi`,
+	}
+}
+
+// LPkgconfigPathNormalize sweeps every installed MSYS2 pkg-config file and makes it
+// relocatable, so a toolchain copied from another root does not keep the original build
+// machine's absolute paths. A relocated toolchain (for example one seeded from
+// D:/M/msys64/ucrt64) ships .pc files whose prefix and Libs still name that foreign root.
+// With the build's default --pkg-config-flags=--static, FFmpeg's configure link probe
+// resolves "pkg-config --libs --static <module>" and passes gcc archive paths such as
+// "D:/M/msys64/ucrt64/lib/libeverest.a" that no longer exist under the active prefix
+// ("linker input file not found"). configure then reports the module as not found and
+// the build aborts. librist (via mbedcrypto) is the observed case, but any package whose
+// .pc carries a foreign absolute path fails the same way.
+//
+// Only foreign, Windows-drive absolute paths are touched: a drive-letter prefix/libdir/
+// includedir is repointed to resolve from the .pc's own directory, and a drive-letter
+// archive token on a Libs line is repointed at the active ${libdir}. Unix-style
+// (/ucrt64) and already-relocatable entries are left unchanged, so package-specific
+// repairs above (rabbitmq, oapv) keep their custom Libs. Every rewrite is idempotent and
+// guarded by directory/file existence, so re-runs and empty prefixes are no-ops.
+func LPkgconfigPathNormalize() []string {
+	return []string{
+		`echo "Normalizing pkg-config files: repointing any foreign absolute prefixes and archive paths at the active toolchain prefix."`,
+		`for pc_dir in "${MSYSTEM_PREFIX:-/ucrt64}/lib/pkgconfig" "${MSYSTEM_PREFIX:-/ucrt64}/share/pkgconfig"; do`,
+		`  [ -d "${pc_dir}" ] || continue`,
+		`  for pc_file in "${pc_dir}"/*.pc; do`,
+		`    [ -f "${pc_file}" ] || continue`,
+		`    sed -i -E 's|^prefix=[A-Za-z]:.*|prefix=${pcfiledir}/../..|' "${pc_file}"`,
+		`    sed -i -E 's|^libdir=[A-Za-z]:.*|libdir=${prefix}/lib|' "${pc_file}"`,
+		`    sed -i -E 's|^includedir=[A-Za-z]:.*|includedir=${prefix}/include|' "${pc_file}"`,
+		`    sed -i -E '/^Libs/ s#[A-Za-z]:/[^ ]*/lib/(lib[A-Za-z0-9_.+-]+\.a)#${libdir}/\1#g' "${pc_file}"`,
+		`  done`,
+		`done`,
 	}
 }
