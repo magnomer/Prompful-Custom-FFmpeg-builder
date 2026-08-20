@@ -61,9 +61,9 @@ export function LLibraryVersionValidate(arg1:planning.LPlanFfmpeg,arg2:string,ar
 
 export function LLinkExternalOpen(arg1:string):Promise<void>;
 
-export function LLocaleSet(arg1:string):Promise<void>;
-
 export function LLocaleLoad():Promise<string>;
+
+export function LLocaleSet(arg1:string):Promise<void>;
 
 export function LLogConfigurationSave(arg1:string,arg2:string):Promise<void>;
 

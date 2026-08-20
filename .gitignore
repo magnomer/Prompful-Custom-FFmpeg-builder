@@ -54,3 +54,7 @@ $RECYCLE.BIN/
 
 # Build-lifecycle helper scripts
 /*.ps1
+
+# Temporary
+/docs/LogicMaps/
+/docs/MapsLogic.html

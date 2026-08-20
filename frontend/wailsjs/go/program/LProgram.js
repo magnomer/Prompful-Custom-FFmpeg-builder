@@ -110,12 +110,12 @@ export function LLinkExternalOpen(arg1) {
   return window['go']['program']['LProgram']['LLinkExternalOpen'](arg1);
 }
 
-export function LLocaleSet(arg1) {
-  return window['go']['program']['LProgram']['LLocaleSet'](arg1);
-}
-
 export function LLocaleLoad() {
   return window['go']['program']['LProgram']['LLocaleLoad']();
+}
+
+export function LLocaleSet(arg1) {
+  return window['go']['program']['LProgram']['LLocaleSet'](arg1);
 }
 
 export function LLogConfigurationSave(arg1, arg2) {
