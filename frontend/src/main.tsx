@@ -8,6 +8,7 @@ import { PPrepRender } from "./tabs/prep";
 import { PLibraryRender } from "./tabs/libraries";
 import { POptionRender } from "./tabs/options";
 import { PBuildRender } from "./tabs/ffmpegbuild";
+import { LReviewExpiryUse } from "./tabs/shared";
 import { PResultRender } from "./tabs/result";
 import { PLogRender } from "./tabs/logs";
 import { PAboutRender } from "./tabs/about";
@@ -105,6 +106,7 @@ function PProgramRender() {
   }, []);
   React.useEffect(() => { document.title = LLocaleTextGet("app.brand"); }, [locale]);
   const s = LStateBuilderUse();
+  const isFfmpegReviewExpired = LReviewExpiryUse(s.ffmpegBuildPlanReview?.expiresAtUnixTime ?? 0);
   const [isLocaleMenuOpen, setIsLocaleMenuOpen] = React.useState(false);
   if (s.startupState.status === "error") {
     return <PFatalErrorRender title={LLocaleTextGet("fatal.runtimeFailed")} text={s.startupState.error} />;
@@ -292,6 +294,7 @@ function PProgramRender() {
               ffmpegStalledAddresses={s.ffmpegStalledAddresses}
               ffmpegProgress={s.ffmpegProgress}
               canCancelFfmpeg={s.canCancelFfmpeg}
+              isReviewExpired={isFfmpegReviewExpired}
               approveFfmpegBuildPlan={s.approveFfmpegBuildPlan}
               retryFfmpegBuildPlan={s.retryFfmpegBuildPlan}
               cancelApprovedAction={s.cancelApprovedAction}
@@ -368,7 +371,7 @@ function PProgramRender() {
                 </>
               )}
               {s.activeTabId === "buildFfmpeg" && s.ffmpegBuildPlanReview && s.approvedActionPhase !== "ffmpeg" && (
-                <button className="button button--primary" type="button" disabled={!s.ffmpegBuildPlanReview.plan.isExecutable || s.isApprovedActionRunning} onClick={s.approveFfmpegBuildPlan}>{LLocaleTextGet("actions.requestBackendConfirmation")}</button>
+                <button className="button button--primary" type="button" disabled={!s.ffmpegBuildPlanReview.plan.isExecutable || s.isApprovedActionRunning || isFfmpegReviewExpired} onClick={s.approveFfmpegBuildPlan}>{LLocaleTextGet("actions.requestBackendConfirmation")}</button>
               )}
             </div>
           </div>

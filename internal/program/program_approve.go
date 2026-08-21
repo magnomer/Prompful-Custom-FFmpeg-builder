@@ -89,6 +89,14 @@ func (program *LProgram) lToolchainApproveValidate(reviewSessionId string, appro
 		program.lToolchainReviewRestore(reviewSessionId)
 		return planning.LPlanToolchain{}, errors.New("user rejected approval in backend-owned confirmation")
 	}
+	// The confirmation dialog/prompt can block for an unbounded time, during
+	// which the review lifetime may lapse. Re-enforce expiry against the
+	// monotonic deadline before consuming the session, so approval is refused
+	// when the user confirms after the review has expired.
+	if err := reviewsession.LReviewExpiryCheck(storedReviewSession.ReviewSession); err != nil {
+		program.lToolchainReviewRestore(reviewSessionId)
+		return planning.LPlanToolchain{}, err
+	}
 	return plan, nil
 }
 
@@ -185,6 +193,14 @@ func (program *LProgram) lFfmpegApproveValidate(reviewSessionId string, approval
 		program.lFfmpegReviewRestore(reviewSessionId)
 		return planning.LPlanFfmpeg{}, 0, errors.New("user rejected approval in backend-owned confirmation")
 	}
+	// The confirmation dialog/prompt can block for an unbounded time, during
+	// which the review lifetime may lapse. Re-enforce expiry against the
+	// monotonic deadline before consuming the session, so approval is refused
+	// when the user confirms after the review has expired.
+	if err := reviewsession.LReviewExpiryCheck(storedReviewSession.ReviewSession); err != nil {
+		program.lFfmpegReviewRestore(reviewSessionId)
+		return planning.LPlanFfmpeg{}, 0, err
+	}
 	return plan, storedReviewSession.ReviewSession.ExpiresAtUnixTime, nil
 }
 
@@ -201,7 +217,7 @@ func (program *LProgram) LFfmpegRetryRun() (LResultAction, error) {
 	if retained == nil {
 		return LResultAction{}, errors.New("no approved FFmpeg run is available to retry")
 	}
-	if time.Now().UTC().Unix() > retained.ExpiresAtUnixTime {
+	if time.Now().UTC().Unix() >= retained.ExpiresAtUnixTime {
 		return LResultAction{}, errors.New("the approval for this FFmpeg run has expired; review and approve the build again")
 	}
 	if err := LHashFfmpegVerify(retained.Plan); err != nil {
@@ -213,6 +229,11 @@ func (program *LProgram) LFfmpegRetryRun() (LResultAction, error) {
 	}
 	if !confirmed {
 		return LResultAction{}, errors.New("user rejected approval in backend-owned confirmation")
+	}
+	// The confirmation can block past the retained approval window; re-enforce
+	// expiry before re-launching so a stale run cannot start after it lapsed.
+	if time.Now().UTC().Unix() >= retained.ExpiresAtUnixTime {
+		return LResultAction{}, errors.New("the approval for this FFmpeg run has expired; review and approve the build again")
 	}
 	return program.lFfmpegCompilationLaunch(retained.ReviewSessionId, retained.Plan, retained.Approval, retained.ExpiresAtUnixTime, false)
 }

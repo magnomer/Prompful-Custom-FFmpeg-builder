@@ -152,7 +152,24 @@ export type LApprovalProperties = {
   onCancelPlan?: () => void;
   onRequestBackendConfirmation: () => void;
   isConfirmationBusy?: boolean;
+  isExpired?: boolean;
 };
+
+// LReviewExpiryUse reports whether a review's approval window has passed,
+// re-evaluating each second so a panel left open crosses into the expired
+// state on its own. The backend enforces the same 30-minute lifetime and
+// rejects a late approval; this only keeps the UI from offering an action the
+// backend will refuse. Mirrors the backend's inclusive boundary (expired at the
+// exact deadline second). A zero deadline (no active review) reads as expired,
+// which is harmless because the panel is not shown then.
+export function LReviewExpiryUse(expiresAtUnixTime: number): boolean {
+  const [nowMilliseconds, setNowMilliseconds] = React.useState(() => Date.now());
+  React.useEffect(() => {
+    const timerId = window.setInterval(() => setNowMilliseconds(Date.now()), 1000);
+    return () => window.clearInterval(timerId);
+  }, []);
+  return nowMilliseconds >= expiresAtUnixTime * 1000;
+}
 
 function PApprovalBodyRender(props: LApprovalProperties) {
   return (
@@ -193,9 +210,13 @@ function PApprovalActionsRender(props: LApprovalProperties) {
   return (
     <div className="approval-card__actions">
       {props.onCancelPlan && <button className="button" type="button" onClick={props.onCancelPlan}>{LLocaleTextGet("actions.cancel")}</button>}
-      <button className="button button--primary" type="button" disabled={!props.isExecutable || props.isConfirmationBusy} onClick={props.onRequestBackendConfirmation}>{LLocaleTextGet("actions.requestBackendConfirmation")}</button>
+      <button className="button button--primary" type="button" disabled={!props.isExecutable || props.isConfirmationBusy || props.isExpired} onClick={props.onRequestBackendConfirmation}>{LLocaleTextGet("actions.requestBackendConfirmation")}</button>
     </div>
   );
+}
+
+export function PNoticeExpiredRender() {
+  return <p className="approval-expired-notice" role="alert">{LLocaleTextGet("approval.expired.notice")}</p>;
 }
 
 export function PApprovalPanelRender(props: LApprovalProperties) {
@@ -212,6 +233,7 @@ export function PApprovalPanelRender(props: LApprovalProperties) {
         <div className="approval-card__body">
           <PApprovalBodyRender {...props} />
         </div>
+        {props.isExpired && <PNoticeExpiredRender />}
         <PApprovalActionsRender {...props} />
       </section>
     );
@@ -221,6 +243,7 @@ export function PApprovalPanelRender(props: LApprovalProperties) {
       <h2 className="approval-panel__title">{props.title}</h2>
       <p className="approval-panel__summary">{LLocaleTextGet("approval.summary")}</p>
       <PApprovalBodyRender {...props} />
+      {props.isExpired && <PNoticeExpiredRender />}
       <PApprovalActionsRender {...props} />
     </section>
   );

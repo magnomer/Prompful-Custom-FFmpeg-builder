@@ -1,5 +1,5 @@
 import React from "react";
-import { PHeaderPageRender, PApprovalPanelRender, PProgressLiveRender, PListReviewRender, PTextDescriptionRender } from "./shared";
+import { PHeaderPageRender, PApprovalPanelRender, PProgressLiveRender, PListReviewRender, PTextDescriptionRender, LReviewExpiryUse } from "./shared";
 import { LPipelineToolchainGet } from "./logutils";
 import { LLocaleGet, LLocaleMessageGet, LLocaleTextGet } from "../i18n";
 import notPreparedIcon from "../assets/prep-card-icons/NotPrepared.svg";
@@ -171,6 +171,7 @@ export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntrie
   // the approval panel, so a refused/duplicate confirm can never strand the UI on
   // the plan while the install is actually progressing.
   const isToolchainRunning = approvedActionPhase === "toolchain";
+  const isReviewExpired = LReviewExpiryUse(toolchainPreparationPlanReview?.expiresAtUnixTime ?? 0);
   const showProgress = isToolchainRunning || toolchainLogEntries.length > 0;
   const showApproval = !!toolchainPreparationPlanReview && !isToolchainRunning;
   const isIdle = !showApproval && !showProgress;
@@ -199,6 +200,7 @@ export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntrie
           onCancelPlan={LPlanToolchainCancel}
           onRequestBackendConfirmation={approveToolchainPreparationPlan}
           isConfirmationBusy={isApprovedActionRunning}
+          isExpired={isReviewExpired}
         />
       )}
       {showRecovery && (

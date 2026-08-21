@@ -1,5 +1,5 @@
 import React from "react";
-import { PHeaderPageRender, PProgressLiveRender, PTextDescriptionRender } from "./shared";
+import { PHeaderPageRender, PProgressLiveRender, PTextDescriptionRender, PNoticeExpiredRender } from "./shared";
 import { LPipelineFfmpegGet } from "./logutils";
 import { LLocaleGet, LLocaleTextGet } from "../i18n";
 import { LOptionTextGet, LLicenseLabelGet, LLibraryNameGet, LLibraryTextGet } from "../catalogText";
@@ -15,6 +15,7 @@ export type LBuildProperties = {
   ffmpegStalledAddresses: string[];
   ffmpegProgress: LProgressLive;
   canCancelFfmpeg: boolean;
+  isReviewExpired: boolean;
   approveFfmpegBuildPlan: () => Promise<void>;
   retryFfmpegBuildPlan: () => Promise<void>;
   cancelApprovedAction: () => Promise<void>;
@@ -135,7 +136,7 @@ function PPanelConfirmationRender(props: { planHash: string; expectedLConsentTex
   );
 }
 
-function PCardBuildRender(props: { review: LReviewFfmpeg }) {
+function PCardBuildRender(props: { review: LReviewFfmpeg; isReviewExpired: boolean }) {
   const locale = LLocaleGet();
   const [activeTabId, setActiveTabId] = React.useState<LBuildPlanIdentifier>("libraries");
   const plan = props.review.plan;
@@ -170,6 +171,7 @@ function PCardBuildRender(props: { review: LReviewFfmpeg }) {
   return (
     <section className="build-plan-shell">
       <PPanelConfirmationRender planHash={plan.planHash} expectedLConsentText={props.review.expectedLConsentText} />
+      {props.isReviewExpired && <PNoticeExpiredRender />}
       <PListWarningRender warnings={warnings} />
 
       <section className="result-details-card build-plan-details-card">
@@ -231,7 +233,7 @@ function PBuildStalledRender(props: { addresses: string[]; onRetry: () => void }
   );
 }
 
-export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approvedActionPhase, approvedActionStatus, ffmpegStalledAddresses, ffmpegProgress, canCancelFfmpeg, retryFfmpegBuildPlan, cancelApprovedAction, LActionApprovedClear, onGoToOptions }: LBuildProperties) {
+export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approvedActionPhase, approvedActionStatus, ffmpegStalledAddresses, ffmpegProgress, canCancelFfmpeg, isReviewExpired, retryFfmpegBuildPlan, cancelApprovedAction, LActionApprovedClear, onGoToOptions }: LBuildProperties) {
   // A running FFmpeg build takes priority: show live progress, hide the plan.
   const isFfmpegRunning = approvedActionPhase === "ffmpeg";
   const showProgress = isFfmpegRunning || ffmpegLogEntries.length > 0;
@@ -239,7 +241,7 @@ export function PBuildRender({ ffmpegBuildPlanReview, ffmpegLogEntries, approved
   return (
     <section className="tab-page ffmpeg-build-page">
       <PHeaderPageRender title={LLocaleTextGet("ffmpegBuild.title")} text={LLocaleTextGet("ffmpegBuild.intro")} />
-      {showApproval && <PCardBuildRender review={ffmpegBuildPlanReview} />}
+      {showApproval && <PCardBuildRender review={ffmpegBuildPlanReview} isReviewExpired={isReviewExpired} />}
       {!showApproval && !showProgress && (
         <PCardPlanRender onGoToOptions={onGoToOptions} />
       )}
