@@ -51,15 +51,53 @@ func LCommandPlanPrint(plan planning.LPlanFfmpeg) {
 	fmt.Println("FFmpeg build plan")
 	fmt.Println("  version:   ", version)
 	fmt.Println("  source:    ", plan.FfmpegSourceArchiveUrl)
+	if plan.FfmpegSourceSignatureUrl != "" {
+		fmt.Println("  signature: ", plan.FfmpegSourceSignatureUrl)
+	}
+	if plan.FfmpegSourceSha256Hash != "" {
+		fmt.Println("  sha256:    ", plan.FfmpegSourceSha256Hash)
+	}
 	if plan.WorkspaceDirectory != "" {
 		fmt.Println("  workspace: ", plan.WorkspaceDirectory)
 	}
+	if plan.WindowsShellProfileName != "" {
+		fmt.Println("  profile:   ", plan.WindowsShellProfileName)
+	}
+	if plan.LicenseProfileName != "" {
+		fmt.Println("  license:   ", plan.LicenseProfileName)
+	}
 	fmt.Println("  jobs:      ", plan.ParallelJobCount)
 	fmt.Println("  executable:", plan.IsExecutable)
+	// The final confirmation prompt approves this digest; show it here so the
+	// reviewed plan and the confirmed hash can be compared.
+	fmt.Println("  plan hash: ", plan.PlanHash)
 
 	fmt.Printf("\nSelected libraries (%d):\n", len(plan.SelectedLibraries))
 	for _, library := range plan.SelectedLibraries {
 		fmt.Printf("  %-20s %s\n", library.LibraryId, library.DisplayName)
+	}
+
+	if len(plan.SelectedConfigureOptions) > 0 {
+		fmt.Printf("\nSelected options (%d):\n", len(plan.SelectedConfigureOptions))
+		for _, option := range plan.SelectedConfigureOptions {
+			fmt.Printf("  %-20s %s\n", option.OptionId, option.DisplayName)
+		}
+	}
+
+	// Non-native libraries build from their own source archive; each URL/version is
+	// part of what Build fetches and what the plan hash covers.
+	if len(plan.LPreparationCatalog) > 0 {
+		fmt.Printf("\nLibrary preparations (%d):\n", len(plan.LPreparationCatalog))
+		for _, preparation := range plan.LPreparationCatalog {
+			fmt.Printf("  %-20s %-12s %s\n", preparation.LibraryId, preparation.Version, preparation.ArchiveUrl)
+		}
+	}
+
+	if len(plan.RequiredMsys2PackageNames) > 0 {
+		fmt.Printf("\nRequired MSYS2 packages (%d):\n", len(plan.RequiredMsys2PackageNames))
+		for _, packageName := range plan.RequiredMsys2PackageNames {
+			fmt.Println("  -", packageName)
+		}
 	}
 
 	if len(plan.ConfigureFlags) > 0 {
@@ -73,11 +111,43 @@ func LCommandPlanPrint(plan planning.LPlanFfmpeg) {
 		}
 	}
 
+	if len(plan.Operations) > 0 {
+		fmt.Printf("\nOperations (%d):\n", len(plan.Operations))
+		for _, operation := range plan.Operations {
+			fmt.Printf("  - %s: %s\n", operation.OperationName, operation.Summary)
+		}
+	}
+
+	lCommandFidelityPrint(plan)
+
 	if len(plan.Warnings) > 0 {
 		fmt.Printf("\nWarnings (%d):\n", len(plan.Warnings))
 		for _, warning := range plan.Warnings {
 			fmt.Printf("  [%s] %s\n", warning.LRiskLevel, warning.Message)
 		}
+	}
+}
+
+// lCommandFidelityPrint discloses configure flags whose future-compatibility check
+// can drop them at build time, so the printed/hashed command is not always what runs.
+func lCommandFidelityPrint(plan planning.LPlanFfmpeg) {
+	mutableFlags := map[string]string{
+		"--enable-libsvtjpegxs": "may fetch and build upstream https://github.com/OpenVisualCloud/SVT-JPEG-XS.git (not in this plan) if the package is missing/incompatible, else removed",
+		"--enable-liblensfun":   "removed if lensfun fails its compatibility probe",
+		"--enable-vapoursynth":  "removed if VapourSynth fails its compatibility probe",
+	}
+	notes := make([][2]string, 0, len(mutableFlags))
+	for _, flag := range plan.ConfigureFlags {
+		if note, ok := mutableFlags[flag]; ok {
+			notes = append(notes, [2]string{flag, note})
+		}
+	}
+	if len(notes) == 0 {
+		return
+	}
+	fmt.Printf("\nRuntime fidelity notes (%d):\n", len(notes))
+	for _, note := range notes {
+		fmt.Printf("  %s: %s\n", note[0], note[1])
 	}
 }
 

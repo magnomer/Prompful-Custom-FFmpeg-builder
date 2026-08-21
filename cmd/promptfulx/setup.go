@@ -74,6 +74,8 @@ func LCommandToolchainPrint(plan planning.LPlanToolchain) {
 	fmt.Println("  conflict:   ", plan.DownloadConflictPolicyName)
 	fmt.Println("  extraction: ", plan.LPolicyExtraction)
 	fmt.Println("  executable: ", plan.IsExecutable)
+	// Show the digest the final confirmation prompt approves, for review-to-confirm comparison.
+	fmt.Println("  plan hash:  ", plan.PlanHash)
 
 	fmt.Printf("\nPackages (%d):\n", len(plan.Msys2PackageNames))
 	for _, packageName := range plan.Msys2PackageNames {
