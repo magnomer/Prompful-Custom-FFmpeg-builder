@@ -12,6 +12,7 @@ export type LPreparationProperties = {
   toolchainLogEntries: { timestamp: string; level: "info" | "warn" | "error"; message: string }[];
   approvedActionPhase: "toolchain" | "ffmpeg" | null;
   approvedActionStatus: string;
+  toolchainApprovalError: string | null;
   toolchainProgress: LProgressLive;
   canCancelToolchain: boolean;
   toolchainStatus: LStatusToolchain | null;
@@ -166,7 +167,7 @@ function PCardRecoveryRender(props: {
   );
 }
 
-export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntries, approvedActionPhase, approvedActionStatus, toolchainProgress, canCancelToolchain, toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain, isApprovedActionRunning, isPlanningToolchain, currentShellProfileName, configuredMsys2PackageNames, approveToolchainPreparationPlan, LPlanToolchainCancel, cancelApprovedAction, LActionApprovedClear, onVerifyToolchain, onReuseToolchain, onReinstallToolchain, onGoToBuildConfig, onClearBuildEnvironments }: LPreparationProperties) {
+export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntries, approvedActionPhase, approvedActionStatus, toolchainApprovalError, toolchainProgress, canCancelToolchain, toolchainStatus, installedToolchainProfiles, toolchainVerification, isVerifyingToolchain, isApprovedActionRunning, isPlanningToolchain, currentShellProfileName, configuredMsys2PackageNames, approveToolchainPreparationPlan, LPlanToolchainCancel, cancelApprovedAction, LActionApprovedClear, onVerifyToolchain, onReuseToolchain, onReinstallToolchain, onGoToBuildConfig, onClearBuildEnvironments }: LPreparationProperties) {
   // A running toolchain action takes priority: show its live progress and hide
   // the approval panel, so a refused/duplicate confirm can never strand the UI on
   // the plan while the install is actually progressing.
@@ -201,6 +202,7 @@ export function PPrepRender({ toolchainPreparationPlanReview, toolchainLogEntrie
           onRequestBackendConfirmation={approveToolchainPreparationPlan}
           isConfirmationBusy={isApprovedActionRunning}
           isExpired={isReviewExpired}
+          approvalError={toolchainApprovalError}
         />
       )}
       {showRecovery && (

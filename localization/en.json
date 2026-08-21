@@ -381,6 +381,7 @@
   "review.warnings.title": "Warnings",
   "approval.summary": "Pressing the button does not run the plan immediately. It asks the backend to show a system confirmation dialog first.",
   "approval.expired.notice": "This review has expired. Its 30-minute approval window has passed, so the backend will no longer accept it. Cancel and review the plan again to continue.",
+  "approval.rejected.notice": "The last approval attempt did not start: {reason}. This plan is still valid, so you can confirm it again.",
   "approval.metadata.action": "Action",
   "approval.metadata.planHash": "Plan hash",
   "approval.metadata.backendPhrase": "Backend phrase",

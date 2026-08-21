@@ -75,6 +75,11 @@ export function LStateBuilderUse() {
   const [ffmpegBuildPlanReview, setFfmpegBuildPlanReview] = useState<LReviewFfmpeg | null>(null);
   const [approvedActionStatus, setApprovedActionStatus] = useState("idle");
   const [approvedActionPhase, setApprovedActionPhase] = useState<"toolchain" | "ffmpeg" | null>(null);
+  // Set when an approval attempt is refused or fails before any worker starts.
+  // The backend keeps the review retryable, so the frontend keeps the approval
+  // panel visible and shows the reason there instead of a false failed-run card.
+  const [toolchainApprovalError, setToolchainApprovalError] = useState<string | null>(null);
+  const [ffmpegApprovalError, setFfmpegApprovalError] = useState<string | null>(null);
   const [approvalConfirmationRequest, setApprovalConfirmationRequest] = useState<{ requestId: string; actionName: string; planHash: string } | null>(null);
   // Mirror addresses tried before a transient-network stall halted the run,
   // delivered by the "approved-action-stalled" event for the stalled banner.
@@ -194,7 +199,7 @@ export function LStateBuilderUse() {
     });
     const removeStatusListener = EventsOn("approved-action-status", (payload: LStatusActionPayload) => {
       setApprovedActionStatus(payload.status);
-      if (payload.status === "failed") { setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null); LResultClear(); }
+      if (payload.status === "failed") { setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null); setToolchainApprovalError(null); setFfmpegApprovalError(null); LResultClear(); }
       if (payload.status === "completed") { LResultClear(); setApprovedActionPhase(null); }
       // A stall halts the run in a non-active retryable state: drop the "ffmpeg"
       // phase so the live progress stops reading as in-flight and the orange
@@ -372,6 +377,7 @@ export function LStateBuilderUse() {
       const review = await LPlanToolchainRequest(requestedSettings);
       const currentSignature = JSON.stringify({ ...buildConfigSettingsRef.current, msys2PackageNames: LTextLineSplit(msys2PackageTextRef.current) });
       if (requestSignature !== currentSignature) return;
+      setToolchainApprovalError(null);
       setToolchainPreparationPlanReview(review);
       if (activeTabIdRef.current === originTabId) setActiveTabId("prep");
     } finally {
@@ -382,6 +388,7 @@ export function LStateBuilderUse() {
 
   function LPlanToolchainCancel() {
     setToolchainPreparationPlanReview(null);
+    setToolchainApprovalError(null);
   }
 
   async function reviewFfmpegPlans() {
@@ -397,6 +404,7 @@ export function LStateBuilderUse() {
       const currentFlags = LTextLineSplit(extraConfigureFlagTextRef.current);
       const currentSignature = JSON.stringify({ ...ffmpegBuildSettingsRef.current, extraConfigureFlags: currentFlags, configureFlags: currentFlags });
       if (requestSignature !== currentSignature) return;
+      setFfmpegApprovalError(null);
       setFfmpegBuildPlanReview(review);
       if (activeTabIdRef.current === originTabId) setActiveTabId("buildFfmpeg");
     } finally {
@@ -409,14 +417,18 @@ export function LStateBuilderUse() {
     if (!toolchainPreparationPlanReview) return;
     const originTabId = activeTabIdRef.current;
     const r = toolchainPreparationPlanReview;
-    setToolchainLogEntries([]); setApprovedActionPhase("toolchain"); setApprovedActionStatus("starting");
+    setToolchainLogEntries([]); setToolchainApprovalError(null); setApprovedActionPhase("toolchain"); setApprovedActionStatus("starting");
     try {
       await LPlanToolchainApprove(r.reviewSessionId, LRequestApprovalCreate(r.plan.actionName, r.plan.planHash, r.expectedLConsentText));
       setToolchainPreparationPlanReview(null);
       if (activeTabIdRef.current === originTabId) setActiveTabId("prep");
     } catch (err) {
-      setApprovedActionStatus("failed");
-      setToolchainLogEntries((prev) => [...prev, { level: "error", message: err instanceof Error ? err.message : String(err), timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
+      // Rejected or failed before a worker started; the backend left the review
+      // retryable. Return to the approval panel (clear the pre-await phase, go
+      // back to idle) and surface the reason on the panel rather than emitting a
+      // failed progress card whose Clear would delete the still-valid review.
+      setApprovedActionPhase(null); setApprovedActionStatus("idle");
+      setToolchainApprovalError(err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -425,7 +437,7 @@ export function LStateBuilderUse() {
     const originTabId = activeTabIdRef.current;
     const r = ffmpegBuildPlanReview;
     const approval = LRequestApprovalCreate(r.plan.actionName, r.plan.planHash, r.expectedLConsentText);
-    setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setApprovedActionStatus("starting");
+    setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setFfmpegApprovalError(null); setApprovedActionStatus("starting");
     try {
       await LPlanFfmpegApprove(r.reviewSessionId, approval);
       // The backend retained this run's plan and approval; mark that a retry
@@ -435,8 +447,12 @@ export function LStateBuilderUse() {
       setFfmpegBuildPlanReview(null);
       if (activeTabIdRef.current === originTabId) setActiveTabId("buildFfmpeg");
     } catch (err) {
-      setApprovedActionStatus("failed");
-      setFfmpegLogEntries((prev) => [...prev, { level: "error", message: err instanceof Error ? err.message : String(err), timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
+      // Rejected or failed before a worker started; the backend left the review
+      // retryable. Keep the approval card (phase stays null, go back to idle) and
+      // show the reason on it rather than a false failed-run card whose Clear
+      // would delete the still-valid review.
+      setApprovedActionStatus("idle");
+      setFfmpegApprovalError(err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -463,6 +479,7 @@ export function LStateBuilderUse() {
   // discard the dead plan and its logs, returning the page to its idle state.
   function LActionApprovedClear() {
     setToolchainLogEntries([]); setFfmpegLogEntries([]); setFfmpegStalledAddresses([]);
+    setToolchainApprovalError(null); setFfmpegApprovalError(null);
     setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null);
     LResultClear();
     setApprovedActionPhase(null); setApprovedActionStatus("idle");
@@ -568,6 +585,8 @@ export function LStateBuilderUse() {
     ffmpegBuildPlanReview,
     approvedActionStatus,
     approvedActionPhase,
+    toolchainApprovalError,
+    ffmpegApprovalError,
     approvalConfirmationRequest, resolveApprovalConfirmation,
     ffmpegStalledAddresses,
     toolchainLogEntries,

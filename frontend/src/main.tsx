@@ -229,6 +229,7 @@ function PProgramRender() {
               toolchainLogEntries={s.toolchainLogEntries}
               approvedActionPhase={s.approvedActionPhase}
               approvedActionStatus={s.approvedActionStatus}
+              toolchainApprovalError={s.toolchainApprovalError}
               toolchainProgress={s.toolchainProgress}
               canCancelToolchain={s.canCancelToolchain}
               toolchainStatus={s.toolchainStatus}
@@ -291,6 +292,7 @@ function PProgramRender() {
               ffmpegLogEntries={s.ffmpegLogEntries}
               approvedActionPhase={s.approvedActionPhase}
               approvedActionStatus={s.approvedActionStatus}
+              ffmpegApprovalError={s.ffmpegApprovalError}
               ffmpegStalledAddresses={s.ffmpegStalledAddresses}
               ffmpegProgress={s.ffmpegProgress}
               canCancelFfmpeg={s.canCancelFfmpeg}

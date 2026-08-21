@@ -33,6 +33,18 @@
   line-height: 1.5;
 }
 
+.approval-error-notice {
+  grid-column: 2;
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border: 1px solid #d05252;
+  border-radius: 10px;
+  background: #fdeaea;
+  color: #8a2020;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
 .metadata {
   display: grid;
   grid-template-columns: 150px minmax(0, 1fr);

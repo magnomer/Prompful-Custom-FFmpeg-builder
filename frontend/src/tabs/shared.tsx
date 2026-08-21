@@ -153,6 +153,7 @@ export type LApprovalProperties = {
   onRequestBackendConfirmation: () => void;
   isConfirmationBusy?: boolean;
   isExpired?: boolean;
+  approvalError?: string | null;
 };
 
 // LReviewExpiryUse reports whether a review's approval window has passed,
@@ -219,6 +220,13 @@ export function PNoticeExpiredRender() {
   return <p className="approval-expired-notice" role="alert">{LLocaleTextGet("approval.expired.notice")}</p>;
 }
 
+// A refused or failed approval attempt whose review the backend kept retryable:
+// shown on the still-visible approval panel so the user sees why the last
+// attempt did not start and can confirm again.
+export function PNoticeApprovalErrorRender(props: { message: string }) {
+  return <p className="approval-error-notice" role="alert">{LLocaleTextGet("approval.rejected.notice", { reason: props.message })}</p>;
+}
+
 export function PApprovalPanelRender(props: LApprovalProperties) {
   // Card variant borrows the Source tab card design (colored accent + badge +
   // card head). The plain variant keeps the original review-panel look.
@@ -233,6 +241,7 @@ export function PApprovalPanelRender(props: LApprovalProperties) {
         <div className="approval-card__body">
           <PApprovalBodyRender {...props} />
         </div>
+        {props.approvalError && <PNoticeApprovalErrorRender message={props.approvalError} />}
         {props.isExpired && <PNoticeExpiredRender />}
         <PApprovalActionsRender {...props} />
       </section>
@@ -243,6 +252,7 @@ export function PApprovalPanelRender(props: LApprovalProperties) {
       <h2 className="approval-panel__title">{props.title}</h2>
       <p className="approval-panel__summary">{LLocaleTextGet("approval.summary")}</p>
       <PApprovalBodyRender {...props} />
+      {props.approvalError && <PNoticeApprovalErrorRender message={props.approvalError} />}
       {props.isExpired && <PNoticeExpiredRender />}
       <PApprovalActionsRender {...props} />
     </section>
