@@ -139,6 +139,13 @@ func LPlanToolchainCreate(buildConfigSettings LSettingsToolchain) (LPlanToolchai
 		isExecutable = false
 	}
 
+	// Runtime download construction picks the destination-conflict policy from the
+	// expected hash (LPolicyHashResolve): empty hash overwrites, a set hash reuses.
+	downloadConflictPolicyName := "reuse-if-hash-matches"
+	if buildConfigSettings.Msys2ArchiveSha256Hash == "" {
+		downloadConflictPolicyName = "overwrite-approved"
+	}
+
 	plan := LPlanToolchain{
 		ActionName:                 "prepare-private-msys2-toolchain",
 		WorkspaceDirectory:         buildConfigSettings.WorkspaceDirectory,
@@ -151,14 +158,16 @@ func LPlanToolchainCreate(buildConfigSettings LSettingsToolchain) (LPlanToolchai
 		WillModifySystemPath:       false,
 		WillRequireAdminRights:     false,
 		WillUseExistingMsys2:       false,
-		WillDeleteFiles:            false,
-		DownloadConflictPolicyName: "reuse-if-hash-matches",
+		// Re-preparation removes any existing private MSYS2 root before extracting.
+		WillDeleteFiles:            true,
+		DownloadConflictPolicyName: downloadConflictPolicyName,
 		LPolicyExtraction:          "must-not-exist",
 		Operations: []LOperationPlan{
 			LOperationLocalizedCreate("create-workspace-directories", "Create directories inside the selected workspace only."),
 			LOperationLocalizedCreate("download-msys2-archive", "Download the approved MSYS2 archive from the approved URL."),
 			LOperationLocalizedCreate("verify-msys2-signature", "Verify the downloaded MSYS2 archive with its official .sig file using the built-in verifier."),
 			LOperationLocalizedCreate("record-msys2-sha256", "Calculate and log the archive SHA-256 for the audit record."),
+			LOperationLocalizedCreate("remove-existing-msys2-root", "Remove any existing private MSYS2 toolchain directory in the workspace before extracting the new archive."),
 			LOperationLocalizedCreate("extract-private-msys2", "Extract MSYS2 into the private workspace toolchain directory."),
 			LOperationLocalizedCreate("install-approved-pacman-packages", "Install only the package names listed in this plan."),
 		},
@@ -323,6 +332,13 @@ func LPlanFfmpegCreate(ffmpegBuildSettings LSettingsFfmpeg) (LPlanFfmpeg, error)
 		isExecutable = false
 	}
 
+	// Match the runtime destination-conflict policy (LPolicyHashResolve): empty
+	// expected hash overwrites, a set hash reuses.
+	ffmpegDownloadConflictPolicyName := "reuse-if-hash-matches"
+	if ffmpegBuildSettings.FfmpegSourceSha256Hash == "" {
+		ffmpegDownloadConflictPolicyName = "overwrite-approved"
+	}
+
 	plan := LPlanFfmpeg{
 		ActionName:                 "build-ffmpeg-from-approved-source",
 		WorkspaceDirectory:         ffmpegBuildSettings.WorkspaceDirectory,
@@ -352,7 +368,7 @@ func LPlanFfmpegCreate(ffmpegBuildSettings LSettingsFfmpeg) (LPlanFfmpeg, error)
 		WillRequireAdminRights:     false,
 		WillUseExistingMsys2:       false,
 		WillDeleteFiles:            false,
-		DownloadConflictPolicyName: "reuse-if-hash-matches",
+		DownloadConflictPolicyName: ffmpegDownloadConflictPolicyName,
 		LPolicyExtraction:          "must-not-exist",
 		Operations:                 LOperationFfmpegBuild(len(LLibraryTrackFilter(libraryPreparations, LLibraryTrackInternal)) > 0, len(LLibraryTrackFilter(libraryPreparations, LLibraryTrackExternal)) > 0),
 		Warnings:                   warnings,

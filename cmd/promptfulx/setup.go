@@ -64,10 +64,26 @@ func LCommandToolchainPrint(plan planning.LPlanToolchain) {
 	fmt.Println("  workspace:  ", plan.WorkspaceDirectory)
 	fmt.Println("  profile:    ", plan.WindowsShellProfileName)
 	fmt.Println("  msys2:      ", plan.Msys2ArchiveUrl)
+	fmt.Println("  signature:  ", plan.Msys2ArchiveSignatureUrl)
+	if plan.Msys2ArchiveSha256Hash != "" {
+		fmt.Println("  sha256:     ", plan.Msys2ArchiveSha256Hash)
+	}
 	fmt.Println("  msys2 root: ", plan.Msys2RootDirectory)
 	fmt.Println("  reuse msys2:", plan.WillUseExistingMsys2)
-	fmt.Println("  packages:   ", len(plan.Msys2PackageNames))
+	fmt.Println("  delete files:", plan.WillDeleteFiles)
+	fmt.Println("  conflict:   ", plan.DownloadConflictPolicyName)
+	fmt.Println("  extraction: ", plan.LPolicyExtraction)
 	fmt.Println("  executable: ", plan.IsExecutable)
+
+	fmt.Printf("\nPackages (%d):\n", len(plan.Msys2PackageNames))
+	for _, packageName := range plan.Msys2PackageNames {
+		fmt.Println("  -", packageName)
+	}
+
+	fmt.Printf("\nOperations (%d):\n", len(plan.Operations))
+	for _, operation := range plan.Operations {
+		fmt.Printf("  - %s: %s\n", operation.OperationName, operation.Summary)
+	}
 
 	if len(plan.Warnings) > 0 {
 		fmt.Printf("\nWarnings (%d):\n", len(plan.Warnings))

@@ -194,6 +194,9 @@ func LSettingsToolchainResolve(parsed LArgumentBuild) (planning.LSettingsToolcha
 	settings.WorkspaceDirectory = strings.TrimSpace(parsed.workspace)
 	if parsed.msys2URL != "" {
 		settings.Msys2ArchiveUrl = parsed.msys2URL
+		// A custom archive invalidates the default repo.msys2.org .sig; drop it so
+		// LSettingsBuildClean re-derives archive+".sig" unless overridden below.
+		settings.Msys2ArchiveSignatureUrl = ""
 	}
 	if parsed.msys2Sha256 != "" {
 		settings.Msys2ArchiveSha256Hash = parsed.msys2Sha256
