@@ -127,12 +127,16 @@ func (program *LProgram) lToolchainPrepareLaunch(reviewSessionId string, plan pl
 		return LResultAction{}, err
 	}
 	program.lToolchainReviewConsume(reviewSessionId)
+	// Capture the start timestamp before dispatch: the inline (CLI) branch runs
+	// the whole worker synchronously and returns only after finalization, so
+	// reading the clock after it would record completion, not start.
+	startedAt := time.Now().UTC().Format(time.RFC3339)
 	if runInline {
 		program.LToolchainPrepare(LContextAction, LRunId, reviewSessionId, plan, userLConsentMsys, userLConsentArchive, userPacmanPackageInstallLConsent)
 	} else {
 		go program.LToolchainPrepare(LContextAction, LRunId, reviewSessionId, plan, userLConsentMsys, userLConsentArchive, userPacmanPackageInstallLConsent)
 	}
-	return LResultAction{RunId: LRunId, ReviewSessionId: reviewSessionId, StartedAt: time.Now().UTC().Format(time.RFC3339)}, nil
+	return LResultAction{RunId: LRunId, ReviewSessionId: reviewSessionId, StartedAt: startedAt}, nil
 }
 
 // LPlanFfmpegApprove validates the review, confirms, and launches the build
@@ -280,10 +284,14 @@ func (program *LProgram) lFfmpegCompilationLaunch(reviewSessionId string, plan p
 	program.LMutexReviewSession.Lock()
 	program.lApprovalFfmpegRetained = &lApprovalFfmpegStored{ReviewSessionId: reviewSessionId, Plan: plan, Approval: approval, ExpiresAtUnixTime: expiresAtUnixTime}
 	program.LMutexReviewSession.Unlock()
+	// Capture the start timestamp before dispatch: the inline (CLI) branch runs
+	// the whole build synchronously and returns only after finalization, so
+	// reading the clock after it would record completion, not start.
+	startedAt := time.Now().UTC().Format(time.RFC3339)
 	if runInline {
 		program.LFfmpegCompile(LContextAction, LRunId, reviewSessionId, plan, userLConsentFfmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
 	} else {
 		go program.LFfmpegCompile(LContextAction, LRunId, reviewSessionId, plan, userLConsentFfmpeg, userLConsentArchive, userPacmanPackageInstallLConsent, userExternalLConsentCommand)
 	}
-	return LResultAction{RunId: LRunId, ReviewSessionId: reviewSessionId, StartedAt: time.Now().UTC().Format(time.RFC3339)}, nil
+	return LResultAction{RunId: LRunId, ReviewSessionId: reviewSessionId, StartedAt: startedAt}, nil
 }

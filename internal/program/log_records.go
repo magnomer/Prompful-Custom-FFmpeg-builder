@@ -210,6 +210,14 @@ func LLogPathRealCheck(layout workspace.LWorkspaceLayout, candidatePath string) 
 	return workspace.LPathRealCheck(layout.LogsDirectory, candidatePath)
 }
 
+// lRunTimestampGet returns the leading UTC-second timestamp of a run id,
+// dropping the random uniqueness suffix ("20060102T150405Z-<token>") added by
+// LActionApprovedStart. A legacy suffix-free id is returned unchanged.
+func lRunTimestampGet(LRunId string) string {
+	timestamp, _, _ := strings.Cut(LRunId, "-")
+	return timestamp
+}
+
 func LRecordLocalRead(recordDirectory string, LRunId string, includeDetails bool) (LRecordLog, bool) {
 	events := LAuditLocalRead(filepath.Join(recordDirectory, "security-events.jsonl"))
 	hasLAuditEvents := LTextReadableCheck(filepath.Join(recordDirectory, "security-events.jsonl"))
@@ -226,7 +234,7 @@ func LRecordLocalRead(recordDirectory string, LRunId string, includeDetails bool
 	}
 
 	record := LRecordLog{RunId: LRunId, Directory: recordDirectory, Kind: "unknown", Status: "unknown", Entries: []LLogLocalEntry{}, HasStdoutLog: hasStdout, HasStderrLog: hasStderr, HasSecurityLAuditEvents: hasLAuditEvents}
-	if parsedTime, err := time.Parse("20060102T150405Z", LRunId); err == nil {
+	if parsedTime, err := time.Parse("20060102T150405Z", lRunTimestampGet(LRunId)); err == nil {
 		record.CreatedAt = parsedTime.Format(time.RFC3339)
 		record.DisplayTime = parsedTime.Local().Format("2006-01-02 15:04")
 	} else {

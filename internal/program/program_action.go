@@ -2,6 +2,8 @@ package program
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"time"
 
@@ -33,8 +35,24 @@ func (program *LProgram) LActionApprovedStart() (string, context.Context, error)
 	program.LContextAction = LContextAction
 	program.LActionCancelFunction = LActionCancelFunction
 	program.lActionDone = make(chan struct{})
-	LRunId := time.Now().UTC().Format("20060102T150405Z")
+	// The UTC-second timestamp alone is not unique: one short action can finish
+	// and another start within the same second, and the run id names the audit
+	// directory, the FFmpeg source root, and the report file. A random suffix
+	// keeps sequential runs' artifacts distinct while the leading timestamp stays
+	// parseable for display (see LRecordLocalRead).
+	LRunId := time.Now().UTC().Format("20060102T150405Z") + "-" + lRunTokenGet()
 	return LRunId, LContextAction, nil
+}
+
+// lRunTokenGet returns a short random hex token used to keep run ids unique
+// beyond one-second resolution. On the practically impossible chance the random
+// source fails, it falls back to the nanosecond fraction of the current time.
+func lRunTokenGet() string {
+	token := make([]byte, 3)
+	if _, err := rand.Read(token); err != nil {
+		return time.Now().UTC().Format("000000000")
+	}
+	return hex.EncodeToString(token)
 }
 
 func (program *LProgram) LActionApprovedFinish(status string) {
