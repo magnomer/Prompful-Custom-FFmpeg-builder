@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -14,10 +15,23 @@ import (
 	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
-func LArtifactFfmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace.LWorkspaceLayout, plan planning.LPlanFfmpeg, emitProgress func(string, string)) error {
-	if err := LFfmpegArtifactCheck(workspaceLayout, emitProgress); err != nil {
+func LArtifactFfmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace.LWorkspaceLayout, plan planning.LPlanFfmpeg, emitProgress func(string, string)) (retErr error) {
+	// Publish into a staging directory and swap it into the artifact directory
+	// only once the whole set is complete, so a failed copy cannot replace a
+	// known-good result with a partial one.
+	if err := LArtifactDirectoryValidate(workspaceLayout.WorkspaceDirectory, workspaceLayout.ArtifactsDirectory); err != nil {
 		return err
 	}
+	stagingLayout := workspaceLayout
+	stagingLayout.ArtifactsDirectory = workspaceLayout.ArtifactsDirectory + "-staging"
+	if err := LFfmpegArtifactCheck(stagingLayout, emitProgress); err != nil {
+		return err
+	}
+	defer func() {
+		if retErr != nil {
+			_ = os.RemoveAll(stagingLayout.ArtifactsDirectory)
+		}
+	}()
 
 	// Step 1: copy the built executables from the FFmpeg source directory.
 	exeEntries, err := os.ReadDir(ffmpegSourceDirectory)
@@ -33,11 +47,11 @@ func LArtifactFfmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace
 			continue
 		}
 		sourcePath := filepath.Join(ffmpegSourceDirectory, entry.Name())
-		if err := workspace.LPathRealCheck(workspaceLayout.WorkspaceDirectory, sourcePath); err != nil {
+		if err := workspace.LPathRealCheck(stagingLayout.WorkspaceDirectory, sourcePath); err != nil {
 			return err
 		}
-		destinationPath := filepath.Join(workspaceLayout.ArtifactsDirectory, entry.Name())
-		if err := LFileCopy(workspaceLayout.WorkspaceDirectory, sourcePath, destinationPath); err != nil {
+		destinationPath := filepath.Join(stagingLayout.ArtifactsDirectory, entry.Name())
+		if err := LFileCopy(stagingLayout.WorkspaceDirectory, sourcePath, destinationPath); err != nil {
 			return err
 		}
 		copiedExePaths = append(copiedExePaths, destinationPath)
@@ -55,7 +69,7 @@ func LArtifactFfmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace
 	// in libraries that omit selected encoders (for example libfdk_aac,
 	// libopenh264, libilbc, libtwolame, libvo_amrwbenc) and triggers FFmpeg's
 	// "library configuration mismatch" warning at runtime.
-	builtSharedLibraryPaths, err := LDllFfmpegCopy(ffmpegSourceDirectory, workspaceLayout, LPlanSharedCheck(plan), emitProgress)
+	builtSharedLibraryPaths, err := LDllFfmpegCopy(ffmpegSourceDirectory, stagingLayout, LPlanSharedCheck(plan), emitProgress)
 	if err != nil {
 		return err
 	}
@@ -71,7 +85,7 @@ func LArtifactFfmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace
 	// The path is trusted by construction: Msys2RootDirectory is always
 	// planning.LDirectoryProfileResolve(workspaceDirectory, profile), i.e.
 	// workspaceDirectory/toolchains/msys2-<profile>.
-	if err := workspace.LPathWorkspaceCheck(workspaceLayout.WorkspaceDirectory, msys2BinDirectory); err != nil {
+	if err := workspace.LPathWorkspaceCheck(stagingLayout.WorkspaceDirectory, msys2BinDirectory); err != nil {
 		return fmt.Errorf("MSYS2 bin directory is outside workspace: %w", err)
 	}
 	dllIndex, err := LDllIndexBuild(msys2BinDirectory)
@@ -91,7 +105,66 @@ func LArtifactFfmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace
 	for _, builtPath := range builtSharedLibraryPaths {
 		preResolvedNames = append(preResolvedNames, filepath.Base(builtPath))
 	}
-	return LDllDependencyCopy(rootPePaths, preResolvedNames, dllIndex, workspaceLayout, emitProgress)
+	if err := LDllDependencyCopy(rootPePaths, preResolvedNames, dllIndex, stagingLayout, emitProgress); err != nil {
+		return err
+	}
+	return LArtifactStagingReplace(workspaceLayout, stagingLayout.ArtifactsDirectory, emitProgress)
+}
+
+// LArtifactDirectoryValidate confirms targetDirectory is a safe, in-workspace
+// artifact directory that is not the workspace root, creating it if absent.
+func LArtifactDirectoryValidate(workspaceDirectory string, targetDirectory string) error {
+	if targetDirectory == "" {
+		return errors.New("FFmpeg artifact directory is empty")
+	}
+	if err := workspace.LPathWorkspaceCheck(workspaceDirectory, targetDirectory); err != nil {
+		return fmt.Errorf("FFmpeg artifact directory is outside workspace: %w", err)
+	}
+	workspaceAbsolutePath, err := filepath.Abs(workspaceDirectory)
+	if err != nil {
+		return err
+	}
+	artifactAbsolutePath, err := filepath.Abs(targetDirectory)
+	if err != nil {
+		return err
+	}
+	if artifactAbsolutePath == workspaceAbsolutePath {
+		return errors.New("refusing to empty the workspace root as the FFmpeg artifact directory")
+	}
+	if err := os.MkdirAll(targetDirectory, 0o755); err != nil {
+		return err
+	}
+	if err := workspace.LPathRealCheck(workspaceDirectory, targetDirectory); err != nil {
+		return err
+	}
+	return workspace.LDirectorySymlinkCheck(targetDirectory)
+}
+
+// LArtifactStagingReplace empties the real artifact directory and moves the
+// completed staging entries into it. The previous result is destroyed only
+// here, once the new set is known to be complete.
+func LArtifactStagingReplace(workspaceLayout workspace.LWorkspaceLayout, stagingDirectory string, emitProgress func(string, string)) error {
+	if err := LFfmpegArtifactCheck(workspaceLayout, emitProgress); err != nil {
+		return err
+	}
+	entries, err := os.ReadDir(stagingDirectory)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		destinationPath := filepath.Join(workspaceLayout.ArtifactsDirectory, entry.Name())
+		if err := workspace.LPathWorkspaceCheck(workspaceLayout.WorkspaceDirectory, destinationPath); err != nil {
+			return err
+		}
+		if err := os.Rename(filepath.Join(stagingDirectory, entry.Name()), destinationPath); err != nil {
+			return fmt.Errorf("could not move staged artifact %s into place: %w", entry.Name(), err)
+		}
+	}
+	if err := os.RemoveAll(stagingDirectory); err != nil {
+		emitProgress("warn", fmt.Sprintf("Could not remove staging directory %s: %s", stagingDirectory, err.Error()))
+	}
+	emitProgress("info", fmt.Sprintf("Published %d artifact entries to %s.", len(entries), workspaceLayout.ArtifactsDirectory))
+	return nil
 }
 
 // LDllFfmpegCopy copies the FFmpeg shared libraries produced by
@@ -133,10 +206,11 @@ func LDllFfmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace.LWor
 	}
 	if len(copiedPaths) == 0 {
 		if isSharedBuild {
-			emitProgress("warn", "No built FFmpeg shared libraries (libav*/libsw*) were found in the build directory. The artifact may load stock MSYS2 FFmpeg libraries instead, which can omit selected encoders.")
-		} else {
-			emitProgress("info", "Static build: the FFmpeg libraries are linked into ffmpeg.exe/ffprobe.exe, so there are no separate shared libraries to bundle.")
+			// A shared build must bundle its own libav*/libsw* libraries; otherwise the
+			// PE traversal resolves them from the MSYS2 bin index and ships stock FFmpeg.
+			return nil, fmt.Errorf("shared FFmpeg build produced no libav*/libsw* shared libraries in %s: refusing to publish an artifact that would load stock MSYS2 FFmpeg libraries", ffmpegSourceDirectory)
 		}
+		emitProgress("info", "Static build: the FFmpeg libraries are linked into ffmpeg.exe/ffprobe.exe, so there are no separate shared libraries to bundle.")
 	} else {
 		emitProgress("info", fmt.Sprintf("Copied %d built FFmpeg shared libraries from the build directory.", len(copiedPaths)))
 	}
@@ -148,12 +222,7 @@ func LDllFfmpegCopy(ffmpegSourceDirectory string, workspaceLayout workspace.LWor
 // links the FFmpeg libraries into the executables, so the absence of libav*/libsw* DLLs
 // in the build directory is expected rather than a problem.
 func LPlanSharedCheck(plan planning.LPlanFfmpeg) bool {
-	for _, configureFlag := range plan.ConfigureFlags {
-		if configureFlag == "--enable-shared" {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(plan.ConfigureFlags, "--enable-shared")
 }
 
 // LDllFfmpegCheck reports whether fileName is an FFmpeg shared library
@@ -186,30 +255,7 @@ func LDllFfmpegCheck(fileName string) bool {
 }
 
 func LFfmpegArtifactCheck(workspaceLayout workspace.LWorkspaceLayout, emitProgress func(string, string)) error {
-	if workspaceLayout.ArtifactsDirectory == "" {
-		return errors.New("FFmpeg artifact directory is empty")
-	}
-	if err := workspace.LPathWorkspaceCheck(workspaceLayout.WorkspaceDirectory, workspaceLayout.ArtifactsDirectory); err != nil {
-		return fmt.Errorf("FFmpeg artifact directory is outside workspace: %w", err)
-	}
-	workspaceAbsolutePath, err := filepath.Abs(workspaceLayout.WorkspaceDirectory)
-	if err != nil {
-		return err
-	}
-	artifactAbsolutePath, err := filepath.Abs(workspaceLayout.ArtifactsDirectory)
-	if err != nil {
-		return err
-	}
-	if artifactAbsolutePath == workspaceAbsolutePath {
-		return errors.New("refusing to empty the workspace root as the FFmpeg artifact directory")
-	}
-	if err := os.MkdirAll(workspaceLayout.ArtifactsDirectory, 0o755); err != nil {
-		return err
-	}
-	if err := workspace.LPathRealCheck(workspaceLayout.WorkspaceDirectory, workspaceLayout.ArtifactsDirectory); err != nil {
-		return err
-	}
-	if err := workspace.LDirectorySymlinkCheck(workspaceLayout.ArtifactsDirectory); err != nil {
+	if err := LArtifactDirectoryValidate(workspaceLayout.WorkspaceDirectory, workspaceLayout.ArtifactsDirectory); err != nil {
 		return err
 	}
 	entries, err := os.ReadDir(workspaceLayout.ArtifactsDirectory)
@@ -296,8 +342,13 @@ func LDllDependencyCopy(rootPePaths []string, preResolvedNames []string, dllInde
 			}
 			sourcePath, found := dllIndex[nameLower]
 			if !found {
-				emitProgress("info", fmt.Sprintf("  dependency %s: not in MSYS2 bin (system DLL or statically linked)", importedName))
-				continue
+				if LDllSystemCheck(importedName) {
+					emitProgress("info", fmt.Sprintf("  dependency %s: Windows system DLL, resolved by the OS", importedName))
+					continue
+				}
+				// An import that is neither in the MSYS2 index nor a known system DLL is
+				// an unresolved runtime dependency; failing keeps a broken artifact from exiting 0.
+				return fmt.Errorf("unresolved runtime dependency %s imported by %s: not found in the MSYS2 bin index and not a known Windows system DLL", importedName, filepath.Base(currentPath))
 			}
 			emitProgress("info", fmt.Sprintf("  dependency %s: found at %s", importedName, sourcePath))
 			destinationPath := filepath.Join(workspaceLayout.ArtifactsDirectory, importedName)
@@ -339,6 +390,34 @@ func LDllSymbolRead(symbols []string) []string {
 		return strings.ToLower(dllNames[leftIndex]) < strings.ToLower(dllNames[rightIndex])
 	})
 	return dllNames
+}
+
+// LDllSystemCheck reports whether name is a known Windows system DLL that the
+// OS resolves at load time and must not be bundled. Imports that are neither in
+// the MSYS2 index nor recognized here are treated as unresolved dependencies.
+func LDllSystemCheck(name string) bool {
+	lower := strings.ToLower(name)
+	if strings.HasPrefix(lower, "api-ms-win-") || strings.HasPrefix(lower, "ext-ms-win-") {
+		return true
+	}
+	switch lower {
+	case "ntdll.dll", "kernel32.dll", "kernelbase.dll", "user32.dll", "gdi32.dll",
+		"gdi32full.dll", "advapi32.dll", "shell32.dll", "shlwapi.dll", "ole32.dll",
+		"oleaut32.dll", "combase.dll", "rpcrt4.dll", "sechost.dll", "ws2_32.dll",
+		"wsock32.dll", "crypt32.dll", "secur32.dll", "bcrypt.dll", "bcryptprimitives.dll",
+		"ncrypt.dll", "msvcrt.dll", "ucrtbase.dll", "vcruntime140.dll", "psapi.dll",
+		"version.dll", "winmm.dll", "imm32.dll", "comdlg32.dll", "comctl32.dll",
+		"setupapi.dll", "cfgmgr32.dll", "iphlpapi.dll", "dnsapi.dll", "userenv.dll",
+		"netapi32.dll", "mpr.dll", "powrprof.dll", "dwmapi.dll", "uxtheme.dll",
+		"wintrust.dll", "wldap32.dll", "hid.dll", "dwrite.dll", "windowscodecs.dll",
+		"d3d9.dll", "d3d11.dll", "d3d12.dll", "dxgi.dll", "d2d1.dll", "opengl32.dll",
+		"gdiplus.dll", "mf.dll", "mfplat.dll", "mfreadwrite.dll", "mfuuid.dll",
+		"strmiids.dll", "avicap32.dll", "msvfw32.dll", "winspool.drv", "ksuser.dll",
+		"avrt.dll", "dxva2.dll", "evr.dll", "d3dcompiler_47.dll", "normaliz.dll",
+		"winhttp.dll", "wininet.dll", "urlmon.dll", "propsys.dll", "shcore.dll":
+		return true
+	}
+	return false
 }
 
 // LDllMsysCopy copies a DLL from the MSYS2 bin directory to the destination.
