@@ -194,8 +194,8 @@ export function LToolchainEnvironmentClear(arg1) {
   return window['go']['program']['LProgram']['LToolchainEnvironmentClear'](arg1);
 }
 
-export function LToolchainFailureClean(arg1, arg2) {
-  return window['go']['program']['LProgram']['LToolchainFailureClean'](arg1, arg2);
+export function LToolchainFailureClean(arg1, arg2, arg3) {
+  return window['go']['program']['LProgram']['LToolchainFailureClean'](arg1, arg2, arg3);
 }
 
 export function LToolchainFreshPrepare(arg1, arg2, arg3) {

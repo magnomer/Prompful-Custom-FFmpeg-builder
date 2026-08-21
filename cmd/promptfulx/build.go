@@ -77,6 +77,8 @@ func LCommandBuildRun(args []string) int {
 		ApprovedPlanHash:   review.Plan.PlanHash,
 		LConsentText:       review.ExpectedLConsentText,
 	}
+	stopSignalCancel := lActionSignalCancel(driver)
+	defer stopSignalCancel()
 	if _, err := driver.LFfmpegApproveSync(review.ReviewSessionId, approval); err != nil {
 		fmt.Fprintln(os.Stderr, "promptfulx:", err.Error())
 		if strings.Contains(err.Error(), "rejected") {

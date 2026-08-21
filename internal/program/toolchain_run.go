@@ -30,13 +30,17 @@ func LSignatureMsysVerify(LContext context.Context, signaturePath string, archiv
 
 func (program *LProgram) LToolchainPrepare(LContext context.Context, LRunId string, reviewSessionId string, plan planning.LPlanToolchain, userLConsentMsys consent.LConsentMsys, userLConsentArchive consent.LArchiveConsentState, userPacmanPackageInstallLConsent consent.LConsentPacman) {
 	actionSucceeded := false
+	// The old private root is only forfeit once LToolchainFreshPrepare has begun
+	// replacing it. A failure before that (download, signature, key, or audit
+	// setup) must leave a previously working toolchain untouched.
+	toolchainRootReplacing := false
 	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
 	defer func() {
 		if actionSucceeded {
 			program.LActionApprovedFinish("completed")
 			return
 		}
-		program.LToolchainFailureClean(plan, workspaceLayout)
+		program.LToolchainFailureClean(plan, workspaceLayout, toolchainRootReplacing)
 		// A user-requested cancellation finishes "cancelled", not "failed", so the
 		// stop is distinguishable from a genuine preparation failure.
 		if program.LActionCancelledCheck() {
@@ -87,6 +91,9 @@ func (program *LProgram) LToolchainPrepare(LContext context.Context, LRunId stri
 		program.LToolchainFailureEmit(auditWriter, plan, "run.failure.msys2Cleanup", "MSYS2 private toolchain folder cleanup failed", err)
 		return
 	}
+	// The old root is now removed; anything at Msys2RootDirectory from here on is
+	// this run's, so failure cleanup may remove it.
+	toolchainRootReplacing = true
 	extractPlan := extraction.LPlanExtraction{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ArchiveFilePath: archivePath, DestinationDirectory: plan.Msys2RootDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, LArchiveKind: LArchiveFormatResolve(plan.Msys2ArchiveUrl), LPolicyExtraction: extraction.LPolicyExtractionNew, LPolicyFilemode: extraction.LPolicyFilemodeExecutable, MaximumFileCount: 250000, MaximumExtractedByteCount: 10_000_000_000, MaximumSingleFileByteCount: 2_000_000_000}
 	if err := extraction.LArchiveConsentExtract(LContext, userLConsentArchive, extractPlan, emitProgress); err != nil {
 		program.LToolchainFailureEmit(auditWriter, plan, "run.failure.msys2Extraction", "MSYS2 archive extraction failed", err)
@@ -236,11 +243,16 @@ func (program *LProgram) LPacmanPackageInstall(LContext context.Context, plan pl
 	return execution.LCommandPacmanRun(LContext, userPacmanPackageInstallLConsent, commandPlan, emitProgress)
 }
 
-func (program *LProgram) LToolchainFailureClean(plan planning.LPlanToolchain, workspaceLayout workspace.LWorkspaceLayout) {
+// LToolchainFailureClean removes this run's partial toolchain artifacts. The
+// private root is cleaned only when rootReplacing is set: a failure before the
+// fresh-prepare step must not delete a previously working installation.
+func (program *LProgram) LToolchainFailureClean(plan planning.LPlanToolchain, workspaceLayout workspace.LWorkspaceLayout, rootReplacing bool) {
 	program.LLogEmit("warn", LLocaleTextGetInternal("run.log.cleaningToolchainPartial", nil))
 	cleanupTargets := []string{
-		plan.Msys2RootDirectory,
 		filepath.Join(workspaceLayout.BuildDirectory, "scripts", "pacman-install-"+plan.PlanHash+".sh"),
+	}
+	if rootReplacing {
+		cleanupTargets = append(cleanupTargets, plan.Msys2RootDirectory)
 	}
 	program.LWorkspaceTargetsClean(plan.WorkspaceDirectory, cleanupTargets)
 }

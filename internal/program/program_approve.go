@@ -7,6 +7,7 @@ import (
 	"promptfulcustomffmpegbuilder/internal/consent"
 	"promptfulcustomffmpegbuilder/internal/planning"
 	"promptfulcustomffmpegbuilder/internal/reviewsession"
+	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
 func (program *LProgram) LPlanToolchainRequest(buildConfigSettings planning.LSettingsToolchain) (planning.LReviewToolchain, error) {
@@ -141,11 +142,20 @@ func (program *LProgram) lToolchainPrepareLaunch(reviewSessionId string, plan pl
 		program.lToolchainReviewRestore(reviewSessionId)
 		return LResultAction{}, err
 	}
-	LRunId, LContextAction, err := program.LActionApprovedStart()
+	// Claim the workspace across processes before starting the run so a second
+	// GUI or CLI cannot mutate the same downloads, sources, or toolchain at once.
+	workspaceOwner, err := workspace.LWorkspaceOwnerClaim(plan.WorkspaceDirectory)
 	if err != nil {
 		program.lToolchainReviewRestore(reviewSessionId)
 		return LResultAction{}, err
 	}
+	LRunId, LContextAction, err := program.LActionApprovedStart()
+	if err != nil {
+		workspaceOwner.LWorkspaceOwnerClose()
+		program.lToolchainReviewRestore(reviewSessionId)
+		return LResultAction{}, err
+	}
+	program.lWorkspaceOwnerSet(workspaceOwner)
 	program.lToolchainReviewConsume(reviewSessionId)
 	// Capture the start timestamp before dispatch: the inline (CLI) branch runs
 	// the whole worker synchronously and returns only after finalization, so
@@ -295,11 +305,20 @@ func (program *LProgram) lFfmpegCompilationLaunch(reviewSessionId string, plan p
 		program.lFfmpegReviewRestore(reviewSessionId)
 		return LResultAction{}, err
 	}
-	LRunId, LContextAction, err := program.LActionApprovedStart()
+	// Claim the workspace across processes before starting the run so a second
+	// GUI or CLI cannot mutate the same sources, prefix, or artifacts at once.
+	workspaceOwner, err := workspace.LWorkspaceOwnerClaim(plan.WorkspaceDirectory)
 	if err != nil {
 		program.lFfmpegReviewRestore(reviewSessionId)
 		return LResultAction{}, err
 	}
+	LRunId, LContextAction, err := program.LActionApprovedStart()
+	if err != nil {
+		workspaceOwner.LWorkspaceOwnerClose()
+		program.lFfmpegReviewRestore(reviewSessionId)
+		return LResultAction{}, err
+	}
+	program.lWorkspaceOwnerSet(workspaceOwner)
 	program.lFfmpegReviewConsume(reviewSessionId)
 	program.LMutexReviewSession.Lock()
 	program.lApprovalFfmpegRetained = &lApprovalFfmpegStored{ReviewSessionId: reviewSessionId, Plan: plan, Approval: approval, ExpiresAtUnixTime: expiresAtUnixTime}

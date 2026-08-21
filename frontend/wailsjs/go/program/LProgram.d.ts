@@ -103,7 +103,7 @@ export function LToolchainApproveSync(arg1:string,arg2:consent.LRequestApproval)
 
 export function LToolchainEnvironmentClear(arg1:string):Promise<void>;
 
-export function LToolchainFailureClean(arg1:planning.LPlanToolchain,arg2:workspace.LWorkspaceLayout):Promise<void>;
+export function LToolchainFailureClean(arg1:planning.LPlanToolchain,arg2:workspace.LWorkspaceLayout,arg3:boolean):Promise<void>;
 
 export function LToolchainFreshPrepare(arg1:string,arg2:string,arg3:any):Promise<void>;
 

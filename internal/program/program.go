@@ -11,6 +11,7 @@ import (
 	"promptfulcustomffmpegbuilder/internal/planning"
 	"promptfulcustomffmpegbuilder/internal/reporting"
 	"promptfulcustomffmpegbuilder/internal/reviewsession"
+	"promptfulcustomffmpegbuilder/internal/workspace"
 
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -21,6 +22,7 @@ type LProgram struct {
 	LActionCancelFunction   context.CancelFunc
 	lActionDone             chan struct{}
 	lProgramStopping        bool
+	lWorkspaceOwner         *workspace.LWorkspaceOwner
 	LMutexAction            sync.Mutex
 	LMutexReviewSession     sync.Mutex
 	LToolchainReviewStorage map[string]LReviewToolchainStored

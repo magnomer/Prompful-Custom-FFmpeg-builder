@@ -9,6 +9,7 @@ import (
 
 	"promptfulcustomffmpegbuilder/internal/audit"
 	"promptfulcustomffmpegbuilder/internal/download"
+	"promptfulcustomffmpegbuilder/internal/workspace"
 )
 
 func (program *LProgram) LActionApprovedCancel() bool {
@@ -55,6 +56,15 @@ func lRunTokenGet() string {
 	return hex.EncodeToString(token)
 }
 
+// lWorkspaceOwnerSet stores the inter-process workspace lock held for the run
+// that just acquired the action slot, so LActionApprovedFinish releases it when
+// the run finalizes. Called once per run, before the worker is dispatched.
+func (program *LProgram) lWorkspaceOwnerSet(owner *workspace.LWorkspaceOwner) {
+	program.LMutexAction.Lock()
+	program.lWorkspaceOwner = owner
+	program.LMutexAction.Unlock()
+}
+
 // LActionApprovedFinish clears the whole action slot in one critical section
 // before emitting the terminal status, so a GUI that starts or retries a run on
 // "failed"/"stalled" cannot see it while the slot is still owned.
@@ -65,10 +75,15 @@ func (program *LProgram) LActionApprovedFinish(status string) {
 		return
 	}
 	done := program.lActionDone
+	owner := program.lWorkspaceOwner
 	program.LActionCancelFunction = nil
 	program.LContextAction = nil
 	program.lActionDone = nil
+	program.lWorkspaceOwner = nil
 	program.LMutexAction.Unlock()
+	// Release the inter-process workspace lock last, after the slot is cleared,
+	// so another process can only claim the workspace once this run is finalized.
+	owner.LWorkspaceOwnerClose()
 	close(done)
 	program.LStatusEmit(status)
 }
