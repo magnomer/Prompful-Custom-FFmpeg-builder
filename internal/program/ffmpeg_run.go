@@ -20,8 +20,8 @@ import (
 const LSignatureFfmpegUrl = "https://ffmpeg.org/ffmpeg-devel.asc"
 const LSignatureFfmpegFingerprint = "FCF986EA15E6E293A5644F10B4322F04D67658D8"
 
-func LSignatureFfmpegVerify(signaturePath string, archivePath string, publicKeyPath string, emitProgress func(string, string)) error {
-	return LSignatureDetachedVerify(signaturePath, archivePath, publicKeyPath, LSignatureFfmpegFingerprint, "FFmpeg .asc", emitProgress)
+func LSignatureFfmpegVerify(LContext context.Context, signaturePath string, archivePath string, publicKeyPath string, emitProgress func(string, string)) error {
+	return LSignatureDetachedVerify(LContext, signaturePath, archivePath, publicKeyPath, LSignatureFfmpegFingerprint, "FFmpeg .asc", emitProgress)
 }
 
 func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string, reviewSessionId string, plan planning.LPlanFfmpeg, userLConsentFfmpeg consent.LConsentFfmpeg, userLConsentArchive consent.LArchiveConsentState, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand) {
@@ -34,6 +34,14 @@ func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string,
 	defer func() {
 		if actionSucceeded {
 			program.LActionApprovedFinish("completed")
+			return
+		}
+		// A cancellation outranks any stage error it caused: clean the partial tree
+		// and finish "cancelled" so the run is not reported as a build failure.
+		if LContext.Err() != nil {
+			program.LLogConfigurationSave(ffmpegSourceDirectory, workspaceLayout.WorkspaceDirectory)
+			program.LFfmpegFailureClean(plan, workspaceLayout, sourceRootDirectory)
+			program.LActionApprovedFinish("cancelled")
 			return
 		}
 		if copyFailed && ffmpegSourceDirectory != "" {
@@ -86,7 +94,7 @@ func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string,
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSigningKeyDownload", "FFmpeg signing key download failed", err)
 		return
 	}
-	if err := LSignatureFfmpegVerify(signaturePath, archivePath, publicKeyPath, emitProgress); err != nil {
+	if err := LSignatureFfmpegVerify(LContext, signaturePath, archivePath, publicKeyPath, emitProgress); err != nil {
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegSignatureVerification", "FFmpeg source signature verification failed", err)
 		return
 	}
@@ -120,9 +128,17 @@ func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string,
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.ffmpegBuild", "FFmpeg build failed", err)
 		return
 	}
+	// The copy and report stages take no context; bail before each so a cancel
+	// pressed after make cannot still finish as a completed build.
+	if LContext.Err() != nil {
+		return
+	}
 	if err := LArtifactFfmpegCopy(ffmpegSourceDirectory, workspaceLayout, plan, emitProgress); err != nil {
 		copyFailed = true
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.copyArtifacts", "Could not copy FFmpeg artifacts", err)
+		return
+	}
+	if LContext.Err() != nil {
 		return
 	}
 	if err := LReportArtifactWrite(workspaceLayout, LRunId, reviewSessionId, plan); err != nil {
@@ -141,6 +157,13 @@ func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string,
 // "action-failed" event and the failure log. Returns true when the stage stalled,
 // so the caller can distinguish a retryable stall from an outright failure.
 func (program *LProgram) LActionFailureEmit(auditWriter *audit.LAuditWriter, plan planning.LPlanFfmpeg, messageKey string, fallback string, err error) bool {
+	// A user-requested cancellation is neither a stall nor a failure: record it as
+	// its own outcome so audit and status reflect an intentional stop. The caller's
+	// defer emits the terminal "cancelled" status once the slot is freed.
+	if program.LActionCancelledCheck() {
+		lActionCancelledEmit(program, auditWriter, plan.ActionName, plan.PlanHash)
+		return false
+	}
 	var stalled *execution.LErrorNetworkStalled
 	if errors.As(err, &stalled) {
 		message := LLocaleTextGetInternal("run.log.downloadStalled", map[string]string{"addresses": strings.Join(stalled.LNetworkAddresses, ", ")})

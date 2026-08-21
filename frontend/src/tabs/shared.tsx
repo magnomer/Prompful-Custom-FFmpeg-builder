@@ -281,6 +281,7 @@ export function PProgressLiveRender(props: {
   const isIdle = !isActive && approvedActionStatus === "idle";
   const isComplete = progress.isComplete;
   const hasFailed = progress.hasFailed && !isComplete;
+  const wasCancelled = progress.wasCancelled && !isComplete;
   const lastMeaningful = progress.lastMessage ?? null;
 
   return (
@@ -292,7 +293,8 @@ export function PProgressLiveRender(props: {
             <><span className="live-progress__spinner" aria-hidden="true" /> {progress.currentPhaseId ? LPhaseLabelGet(progress.currentPhaseId) : LLocaleStatusGet(approvedActionStatus)}</>
           )}
           {isComplete && LLocaleTextGet("progress.complete", { label: completionLabel })}
-          {hasFailed && LLocaleTextGet("progress.failed", { label: completionLabel })}
+          {hasFailed && !wasCancelled && LLocaleTextGet("progress.failed", { label: completionLabel })}
+          {wasCancelled && LLocaleTextGet("progress.cancelled", { label: completionLabel })}
         </span>
         {isActive && !isComplete && !hasFailed && !isIdle && (
           <button className="button button--danger live-progress__cancel" type="button" disabled={!canCancel} onClick={onCancel}>{LLocaleTextGet("actions.cancel")}</button>

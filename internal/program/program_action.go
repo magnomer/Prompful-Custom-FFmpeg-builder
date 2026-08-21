@@ -99,6 +99,25 @@ func (program *LProgram) LAuditProgressCreate(auditWriter *audit.LAuditWriter, a
 	}
 }
 
+// LActionCancelledCheck reports whether the active action's context has been
+// cancelled. It lets a failing stage classify a user-requested stop as a
+// cancellation instead of a build failure. The context is set once at start and
+// cleared only in LActionApprovedFinish, so reading it during a live run is safe.
+func (program *LProgram) LActionCancelledCheck() bool {
+	program.LMutexAction.Lock()
+	defer program.LMutexAction.Unlock()
+	return program.LContextAction != nil && program.LContextAction.Err() != nil
+}
+
+// lActionCancelledEmit writes the terminal cancellation audit event and a
+// warn-level log for a stage that failed because the run was cancelled. It is
+// shared by the FFmpeg and toolchain run paths.
+func lActionCancelledEmit(program *LProgram, auditWriter *audit.LAuditWriter, actionName string, planHash string) {
+	message := LLocaleTextGetInternal("run.log.actionCancelled", nil)
+	_ = auditWriter.LAuditEventWrite("action-cancelled", actionName, planHash, "warn", message)
+	program.LLogEmit("warn", message)
+}
+
 func (program *LProgram) LStatusEmit(status string) {
 	if program.LReporter != nil {
 		program.LReporter.LReporterStatusEmit(status)

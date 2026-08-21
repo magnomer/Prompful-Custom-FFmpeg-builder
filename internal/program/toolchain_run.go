@@ -24,8 +24,8 @@ import (
 const LMsysKeyUrl = "https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&search=0x0EBF782C5D53F7E5FB02A66746BD761F7A49B0EC"
 const LSignatureMsysFingerprint = "0EBF782C5D53F7E5FB02A66746BD761F7A49B0EC"
 
-func LSignatureMsysVerify(signaturePath string, archivePath string, publicKeyPath string, emitProgress func(string, string)) error {
-	return LSignatureDetachedVerify(signaturePath, archivePath, publicKeyPath, LSignatureMsysFingerprint, "MSYS2 .sig", emitProgress)
+func LSignatureMsysVerify(LContext context.Context, signaturePath string, archivePath string, publicKeyPath string, emitProgress func(string, string)) error {
+	return LSignatureDetachedVerify(LContext, signaturePath, archivePath, publicKeyPath, LSignatureMsysFingerprint, "MSYS2 .sig", emitProgress)
 }
 
 func (program *LProgram) LToolchainPrepare(LContext context.Context, LRunId string, reviewSessionId string, plan planning.LPlanToolchain, userLConsentMsys consent.LConsentMsys, userLConsentArchive consent.LArchiveConsentState, userPacmanPackageInstallLConsent consent.LConsentPacman) {
@@ -37,6 +37,12 @@ func (program *LProgram) LToolchainPrepare(LContext context.Context, LRunId stri
 			return
 		}
 		program.LToolchainFailureClean(plan, workspaceLayout)
+		// A user-requested cancellation finishes "cancelled", not "failed", so the
+		// stop is distinguishable from a genuine preparation failure.
+		if program.LActionCancelledCheck() {
+			program.LActionApprovedFinish("cancelled")
+			return
+		}
 		program.LActionApprovedFinish("failed")
 	}()
 	program.LStatusEmit("preparing-toolchain")
@@ -56,50 +62,42 @@ func (program *LProgram) LToolchainPrepare(LContext context.Context, LRunId stri
 	archivePath := filepath.Join(workspaceLayout.DownloadsDirectory, "msys2-approved"+LArchiveExtensionResolve(plan.Msys2ArchiveUrl))
 	downloadPlan := download.LDownloadPlanState{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "MSYS2 archive", DownloadUrl: plan.Msys2ArchiveUrl, ExpectedSha256Hash: plan.Msys2ArchiveSha256Hash, DestinationFilePath: archivePath, AllowedHosts: []string{"github.com", "repo.msys2.org", "mirror.msys2.org"}, ExpectedFileSizeMinimum: 1_000_000, ExpectedFileSizeMaximum: 500_000_000, LPolicyFile: LPolicyHashResolve(plan.Msys2ArchiveSha256Hash)}
 	if err := download.LDownloadMsysRun(LContext, userLConsentMsys, downloadPlan, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.msys2ArchiveDownload", "MSYS2 archive download failed", err)
+		program.LToolchainFailureEmit(auditWriter, plan, "run.failure.msys2ArchiveDownload", "MSYS2 archive download failed", err)
 		return
 	}
 	if plan.Msys2ArchiveSignatureUrl != "" {
 		signaturePath := archivePath + ".sig"
 		signatureDownloadPlan := download.LDownloadPlanState{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "MSYS2 signature", DownloadUrl: plan.Msys2ArchiveSignatureUrl, DestinationFilePath: signaturePath, AllowedHosts: []string{"github.com", "repo.msys2.org", "mirror.msys2.org"}, ExpectedFileSizeMinimum: 100, ExpectedFileSizeMaximum: 100_000, LPolicyFile: download.LPolicyFileOverwrite}
 		if err := download.LDownloadMsysRun(LContext, userLConsentMsys, signatureDownloadPlan, emitProgress); err != nil {
-			_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-			program.LErrorLocalizedEmit("run.failure.msys2SignatureDownload", "MSYS2 signature download failed", err)
+			program.LToolchainFailureEmit(auditWriter, plan, "run.failure.msys2SignatureDownload", "MSYS2 signature download failed", err)
 			return
 		}
 		publicKeyPath := filepath.Join(workspaceLayout.DownloadsDirectory, "msys2-installer-signing-key.asc")
 		publicKeyDownloadPlan := download.LDownloadPlanState{ActionName: plan.ActionName, PlanHash: plan.PlanHash, WorkspaceDirectory: plan.WorkspaceDirectory, DownloadSourceName: "MSYS2 installer signing key", DownloadUrl: LMsysKeyUrl, DestinationFilePath: publicKeyPath, AllowedHosts: []string{"keyserver.ubuntu.com"}, ExpectedFileSizeMinimum: 1000, ExpectedFileSizeMaximum: 1_000_000, LPolicyFile: download.LPolicyFileOverwrite}
 		if err := download.LDownloadMsysRun(LContext, userLConsentMsys, publicKeyDownloadPlan, emitProgress); err != nil {
-			_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-			program.LErrorLocalizedEmit("run.failure.msys2SigningKeyDownload", "MSYS2 signing key download failed", err)
+			program.LToolchainFailureEmit(auditWriter, plan, "run.failure.msys2SigningKeyDownload", "MSYS2 signing key download failed", err)
 			return
 		}
-		if err := LSignatureMsysVerify(signaturePath, archivePath, publicKeyPath, emitProgress); err != nil {
-			_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-			program.LErrorLocalizedEmit("run.failure.msys2SignatureVerification", "MSYS2 signature verification failed", err)
+		if err := LSignatureMsysVerify(LContext, signaturePath, archivePath, publicKeyPath, emitProgress); err != nil {
+			program.LToolchainFailureEmit(auditWriter, plan, "run.failure.msys2SignatureVerification", "MSYS2 signature verification failed", err)
 			return
 		}
 	}
-	if err := program.LToolchainFreshPrepare(plan.WorkspaceDirectory, plan.Msys2RootDirectory, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.msys2Cleanup", "MSYS2 private toolchain folder cleanup failed", err)
+	if err := program.LToolchainFreshPrepare(LContext, plan.WorkspaceDirectory, plan.Msys2RootDirectory, emitProgress); err != nil {
+		program.LToolchainFailureEmit(auditWriter, plan, "run.failure.msys2Cleanup", "MSYS2 private toolchain folder cleanup failed", err)
 		return
 	}
 	extractPlan := extraction.LPlanExtraction{ActionName: plan.ActionName, PlanHash: plan.PlanHash, ArchiveFilePath: archivePath, DestinationDirectory: plan.Msys2RootDirectory, WorkspaceDirectory: plan.WorkspaceDirectory, LArchiveKind: LArchiveFormatResolve(plan.Msys2ArchiveUrl), LPolicyExtraction: extraction.LPolicyExtractionNew, LPolicyFilemode: extraction.LPolicyFilemodeExecutable, MaximumFileCount: 250000, MaximumExtractedByteCount: 10_000_000_000, MaximumSingleFileByteCount: 2_000_000_000}
 	if err := extraction.LArchiveConsentExtract(LContext, userLConsentArchive, extractPlan, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.msys2Extraction", "MSYS2 archive extraction failed", err)
+		program.LToolchainFailureEmit(auditWriter, plan, "run.failure.msys2Extraction", "MSYS2 archive extraction failed", err)
 		return
 	}
-	if err := LMsysRootNormalize(plan.Msys2RootDirectory, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.msys2Layout", "MSYS2 archive layout check failed", err)
+	if err := LMsysRootNormalize(LContext, plan.Msys2RootDirectory, emitProgress); err != nil {
+		program.LToolchainFailureEmit(auditWriter, plan, "run.failure.msys2Layout", "MSYS2 archive layout check failed", err)
 		return
 	}
 	if err := program.LPacmanPackageInstall(LContext, plan, userPacmanPackageInstallLConsent, auditWriter, emitProgress); err != nil {
-		_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
-		program.LErrorLocalizedEmit("run.failure.msys2PackageInstall", "MSYS2 package installation failed", err)
+		program.LToolchainFailureEmit(auditWriter, plan, "run.failure.msys2PackageInstall", "MSYS2 package installation failed", err)
 		return
 	}
 	if err := LManifestToolchainWrite(plan); err != nil {
@@ -110,9 +108,24 @@ func (program *LProgram) LToolchainPrepare(LContext context.Context, LRunId stri
 	actionSucceeded = true
 }
 
-func (program *LProgram) LToolchainFreshPrepare(workspaceDirectory string, msys2RootDirectory string, emitProgress func(string, string)) error {
+// LToolchainFailureEmit records a failed toolchain stage. A user-requested
+// cancellation is written as an "action-cancelled" event; every other error is
+// written as "action-failed" with its localized failure log.
+func (program *LProgram) LToolchainFailureEmit(auditWriter *audit.LAuditWriter, plan planning.LPlanToolchain, messageKey string, fallback string, err error) {
+	if program.LActionCancelledCheck() {
+		lActionCancelledEmit(program, auditWriter, plan.ActionName, plan.PlanHash)
+		return
+	}
+	_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())
+	program.LErrorLocalizedEmit(messageKey, fallback, err)
+}
+
+func (program *LProgram) LToolchainFreshPrepare(LContext context.Context, workspaceDirectory string, msys2RootDirectory string, emitProgress func(string, string)) error {
 	if msys2RootDirectory == "" {
 		return errors.New("private MSYS2 toolchain folder is empty")
+	}
+	if err := LContext.Err(); err != nil {
+		return err
 	}
 	if err := workspace.LPathWorkspaceCheck(workspaceDirectory, msys2RootDirectory); err != nil {
 		return err
@@ -134,10 +147,13 @@ func (program *LProgram) LToolchainFreshPrepare(workspaceDirectory string, msys2
 	return nil
 }
 
-func LMsysRootNormalize(msys2RootDirectory string, emitProgress func(string, string)) error {
+func LMsysRootNormalize(LContext context.Context, msys2RootDirectory string, emitProgress func(string, string)) error {
 	if LFileExistCheck(filepath.Join(msys2RootDirectory, "usr", "bin", "bash.exe")) {
 		emitProgress("info", LLocaleTextGetInternal("run.log.msys2LayoutConfirmed", nil))
 		return nil
+	}
+	if err := LContext.Err(); err != nil {
+		return err
 	}
 
 	entries, err := os.ReadDir(msys2RootDirectory)
@@ -166,6 +182,9 @@ func LMsysRootNormalize(msys2RootDirectory string, emitProgress func(string, str
 		return fmt.Errorf("found multiple possible MSYS2 roots after extraction: %s", strings.Join(matchingDirectories, ", "))
 	}
 
+	if err := LContext.Err(); err != nil {
+		return err
+	}
 	nestedRootDirectory := matchingDirectories[0]
 	emitProgress("info", LLocaleTextGetInternal("run.log.msys2TopFolderMoving", nil))
 	if err := LDirectoryContentMove(nestedRootDirectory, msys2RootDirectory); err != nil {

@@ -152,6 +152,11 @@ func LCommandAttemptRun(LContext context.Context, commandPlan LPlanCommand, scri
 	command.Dir = commandPlan.WorkingDirectory
 	command.Env = LEnvironmentMsysCreate(commandPlan)
 	hostexec.LCommandWindowHide(command)
+	// Bind the command and its descendants to a job object so cancelling the run
+	// kills the whole tree (bash plus pacman/make/compiler children), not just the
+	// directly launched process.
+	commandTree := hostexec.LCommandTreeCreate(command)
+	defer commandTree.LCommandTreeClose()
 	if scriptBytes != nil {
 		command.Stdin = bytes.NewReader(scriptBytes)
 	}
@@ -167,6 +172,7 @@ func LCommandAttemptRun(LContext context.Context, commandPlan LPlanCommand, scri
 	if err := command.Start(); err != nil {
 		return false, err
 	}
+	commandTree.LCommandTreeMount(command)
 	var transientFailureSeen atomic.Bool
 	var lastErrorLine atomic.Pointer[string]
 	doneChannel := make(chan struct{}, 2)

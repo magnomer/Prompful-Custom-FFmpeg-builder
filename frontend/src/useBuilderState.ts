@@ -77,6 +77,10 @@ export function LStateBuilderUse() {
   const [ffmpegBuildPlanReview, setFfmpegBuildPlanReview] = useState<LReviewFfmpeg | null>(null);
   const [approvedActionStatus, setApprovedActionStatus] = useState("idle");
   const [approvedActionPhase, setApprovedActionPhase] = useState<"toolchain" | "ffmpeg" | null>(null);
+  // Latches once Cancel is accepted and clears on the next terminal status, so
+  // the control disables after the first request instead of firing duplicate
+  // cancellations while backend cleanup is still running.
+  const [isCancellationRequested, setIsCancellationRequested] = useState(false);
   // Set when an approval attempt is refused or fails before any worker starts.
   // The backend keeps the review retryable, so the frontend keeps the approval
   // panel visible and shows the reason there instead of a false failed-run card.
@@ -127,9 +131,9 @@ export function LStateBuilderUse() {
   msys2PackageTextRef.current = msys2PackageText;
   extraConfigureFlagTextRef.current = extraConfigureFlagText;
 
-  const canCancelApprovedAction = useMemo(() => approvedActionStatus !== "idle" && approvedActionStatus !== "completed" && approvedActionStatus !== "failed" && approvedActionStatus !== "stalled", [approvedActionStatus]);
-  const canCancelToolchain = canCancelApprovedAction && approvedActionPhase === "toolchain";
-  const canCancelFfmpeg = canCancelApprovedAction && approvedActionPhase === "ffmpeg";
+  const canCancelApprovedAction = useMemo(() => approvedActionStatus !== "idle" && approvedActionStatus !== "completed" && approvedActionStatus !== "failed" && approvedActionStatus !== "stalled" && approvedActionStatus !== "cancelled", [approvedActionStatus]);
+  const canCancelToolchain = canCancelApprovedAction && !isCancellationRequested && approvedActionPhase === "toolchain";
+  const canCancelFfmpeg = canCancelApprovedAction && !isCancellationRequested && approvedActionPhase === "ffmpeg";
   const toolchainProgress = useMemo<LProgressLive>(() => LProgressGet(toolchainLogEntries, approvedActionStatus, "toolchain"), [toolchainLogEntries, approvedActionStatus, locale]);
   const ffmpegProgress = useMemo<LProgressLive>(() => LProgressGet(ffmpegLogEntries, approvedActionStatus, "ffmpeg"), [ffmpegLogEntries, approvedActionStatus, locale]);
   const securityLogEntries = useMemo(() => [...toolchainLogEntries, ...ffmpegLogEntries], [toolchainLogEntries, ffmpegLogEntries]);
@@ -206,7 +210,12 @@ export function LStateBuilderUse() {
     });
     const removeStatusListener = EventsOn("approved-action-status", (payload: LStatusActionPayload) => {
       setApprovedActionStatus(payload.status);
-      if (payload.status === "failed") { setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null); setToolchainApprovalError(null); setFfmpegApprovalError(null); LResultClear(); }
+      // Any terminal status ends an outstanding cancellation, releasing the latch
+      // that disabled the Cancel control.
+      if (payload.status === "completed" || payload.status === "failed" || payload.status === "stalled" || payload.status === "cancelled") { setIsCancellationRequested(false); }
+      // A cancellation is a discarded run like a failure: drop the reviews and
+      // result so Clear returns the page to idle.
+      if (payload.status === "failed" || payload.status === "cancelled") { setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null); setToolchainApprovalError(null); setFfmpegApprovalError(null); LResultClear(); }
       if (payload.status === "completed") { LResultClear(); setApprovedActionPhase(null); }
       // A stall halts the run in a non-active retryable state: drop the "ffmpeg"
       // phase so the live progress stops reading as in-flight and the orange
@@ -518,7 +527,7 @@ export function LStateBuilderUse() {
     }
   }
 
-  async function cancelApprovedAction() { await LActionApprovedCancel(); }
+  async function cancelApprovedAction() { setIsCancellationRequested(true); await LActionApprovedCancel(); }
   // Clear a finished-but-unsuccessful run (failed or cancelled) so the user can
   // discard the dead plan and its logs, returning the page to its idle state.
   function LActionApprovedClear() {
@@ -526,6 +535,7 @@ export function LStateBuilderUse() {
     setToolchainApprovalError(null); setFfmpegApprovalError(null);
     setToolchainPreparationPlanReview(null); setFfmpegBuildPlanReview(null);
     LResultClear();
+    setIsCancellationRequested(false);
     setApprovedActionPhase(null); setApprovedActionStatus("idle");
   }
   async function openInUserBrowser(url: string) {

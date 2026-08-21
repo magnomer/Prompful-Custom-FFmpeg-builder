@@ -75,6 +75,7 @@ export type LProgressLive = {
   failureMessages: string[];
   isComplete: boolean;
   hasFailed: boolean;
+  wasCancelled: boolean;
   phaseGroups?: LPhaseLogGroup[];
 };
 
@@ -352,7 +353,7 @@ export function LProgressGet(entries: LLogSecurityEntry[], approvedActionStatus:
   const phaseSet = new Set<LPhaseLogId>(phaseOrder);
 
   if (entries.length === 0) {
-    return { currentPhaseLabel: null, currentPhaseId: null, compileCount: 0, assembleCount: 0, copiedDllCount: 0, lastMessage: null, failureMessages: [], isComplete: false, hasFailed: false };
+    return { currentPhaseLabel: null, currentPhaseId: null, compileCount: 0, assembleCount: 0, copiedDllCount: 0, lastMessage: null, failureMessages: [], isComplete: false, hasFailed: false, wasCancelled: false };
   }
 
   const parsed = entries.map((e) => LLogEntryParse(e, context));
@@ -368,7 +369,11 @@ export function LProgressGet(entries: LLogSecurityEntry[], approvedActionStatus:
   // log lines. Tools like pacman emit non-fatal "error:" lines (e.g. a transient
   // mirror 404 on one repo's .db during sync) and then recover; those must not
   // flip the UI to "failed" while the run keeps going and ultimately completes.
-  const hasFailed = !isComplete && approvedActionStatus === "failed";
+  // A cancellation shares the failed run's terminal presentation (a Clear
+  // control, no spinner), but carries its own label so the user sees an
+  // intentional stop, not a broken build.
+  const wasCancelled = !isComplete && approvedActionStatus === "cancelled";
+  const hasFailed = !isComplete && (approvedActionStatus === "failed" || wasCancelled);
 
   const IGNORED = context === "ffmpeg"
     ? ["Approved FFmpeg build completed", "Artifact report"]
@@ -410,6 +415,7 @@ export function LProgressGet(entries: LLogSecurityEntry[], approvedActionStatus:
     failureMessages,
     isComplete,
     hasFailed,
+    wasCancelled,
     phaseGroups: groups,
   };
 }

@@ -2,6 +2,7 @@ package program
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -10,7 +11,12 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 )
 
-func LSignatureDetachedVerify(signaturePath string, archivePath string, publicKeyPath string, expectedPrimaryFingerprint string, signatureLabel string, emitProgress func(string, string)) error {
+func LSignatureDetachedVerify(LContext context.Context, signaturePath string, archivePath string, publicKeyPath string, expectedPrimaryFingerprint string, signatureLabel string, emitProgress func(string, string)) error {
+	// Reading and cryptographically checking a large archive is uninterruptible
+	// once started, so honour a pending cancellation before each heavy step.
+	if err := LContext.Err(); err != nil {
+		return err
+	}
 	publicKeyBytes, err := os.ReadFile(publicKeyPath)
 	if err != nil {
 		return fmt.Errorf("could not read public signing key: %w", err)
@@ -21,6 +27,9 @@ func LSignatureDetachedVerify(signaturePath string, archivePath string, publicKe
 	}
 	if !LSignatureFingerprintCheck(keyRing, expectedPrimaryFingerprint) {
 		return fmt.Errorf("downloaded signing key did not match the expected fingerprint %s", expectedPrimaryFingerprint)
+	}
+	if err := LContext.Err(); err != nil {
+		return err
 	}
 	archiveBytes, err := os.ReadFile(archivePath)
 	if err != nil {

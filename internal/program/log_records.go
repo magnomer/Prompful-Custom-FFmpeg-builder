@@ -265,7 +265,13 @@ func LRecordLocalRead(recordDirectory string, LRunId string, includeDetails bool
 		if event.LAuditEventName == "action-stalled" {
 			record.Status = "stalled"
 		}
-		if event.LAuditEventName == "action-failed" || event.Level == "error" && record.Status != "completed" && record.Status != "stalled" {
+		// A user cancellation is its own terminal outcome, written at warn level as
+		// the last event, so it overrides any "failed" that earlier error-level
+		// output set.
+		if event.LAuditEventName == "action-cancelled" {
+			record.Status = "cancelled"
+		}
+		if event.LAuditEventName == "action-failed" || event.Level == "error" && record.Status != "completed" && record.Status != "stalled" && record.Status != "cancelled" {
 			record.Status = "failed"
 		}
 		level := event.Level
