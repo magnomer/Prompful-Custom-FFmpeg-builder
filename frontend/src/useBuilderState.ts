@@ -11,6 +11,8 @@ import {
   LStateUiSave,
   LPlanFfmpegRequest,
   LPlanToolchainRequest,
+  LToolchainReviewCancel,
+  LFfmpegReviewCancel,
   LWorkspaceSelect,
   LLinkExternalOpen,
   LApprovalConfirmationResolve,
@@ -93,6 +95,11 @@ export function LStateBuilderUse() {
   const [ffmpegLogEntries, setFfmpegLogEntries] = useState<LLogSecurityEntry[]>([]);
   const [isPlanningToolchain, setIsPlanningToolchain] = useState(false);
   const [isPlanningFfmpeg, setIsPlanningFfmpeg] = useState(false);
+  // Set when a plan/review request itself fails (planning, catalog, or
+  // review-session creation). The request is recoverable, so the failure is
+  // surfaced as a dismissible banner on the current page instead of being left
+  // to reject unhandled and replace the app with the fatal runtime screen.
+  const [planRequestError, setPlanRequestError] = useState<string | null>(null);
 
   // Workspace directory shared by result, log, and toolchain state.
   const dir = buildConfigSettings.workspaceDirectory || ffmpegBuildSettings.workspaceDirectory;
@@ -322,6 +329,28 @@ export function LStateBuilderUse() {
       : 0;
   }, [activeTabId]);
 
+  // Revoke the backend authority of a toolchain review as soon as the frontend
+  // drops it — because its settings changed, the plan was cancelled, or a
+  // replacement was requested — so the abandoned snapshot cannot still validate
+  // and launch on the backend until its 30-minute expiry. Cancelling an
+  // already-consumed session is a backend no-op, so this stays correct on the
+  // approve path too.
+  const priorToolchainReviewIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const currentReviewId = toolchainPreparationPlanReview?.reviewSessionId ?? null;
+    const priorReviewId = priorToolchainReviewIdRef.current;
+    priorToolchainReviewIdRef.current = currentReviewId;
+    if (priorReviewId && priorReviewId !== currentReviewId) void LToolchainReviewCancel(priorReviewId).catch(() => {});
+  }, [toolchainPreparationPlanReview]);
+
+  const priorFfmpegReviewIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const currentReviewId = ffmpegBuildPlanReview?.reviewSessionId ?? null;
+    const priorReviewId = priorFfmpegReviewIdRef.current;
+    priorFfmpegReviewIdRef.current = currentReviewId;
+    if (priorReviewId && priorReviewId !== currentReviewId) void LFfmpegReviewCancel(priorReviewId).catch(() => {});
+  }, [ffmpegBuildPlanReview]);
+
   function LSettingsToolchainUpdate(next: Partial<LSettingsToolchain>) {
     setBuildConfigSettings((s) => ({ ...s, ...next }));
     setToolchainPreparationPlanReview(null);
@@ -373,6 +402,7 @@ export function LStateBuilderUse() {
     const originTabId = activeTabIdRef.current;
     const requestedSettings = { ...buildConfigSettings, msys2PackageNames: LTextLineSplit(msys2PackageText) };
     const requestSignature = JSON.stringify(requestedSettings);
+    setPlanRequestError(null);
     try {
       const review = await LPlanToolchainRequest(requestedSettings);
       const currentSignature = JSON.stringify({ ...buildConfigSettingsRef.current, msys2PackageNames: LTextLineSplit(msys2PackageTextRef.current) });
@@ -380,6 +410,11 @@ export function LStateBuilderUse() {
       setToolchainApprovalError(null);
       setToolchainPreparationPlanReview(review);
       if (activeTabIdRef.current === originTabId) setActiveTabId("prep");
+    } catch (err) {
+      // A recoverable planning/catalog/review-session failure. Keep the user on
+      // the current configuration page with a dismissible error rather than
+      // letting the rejection reach the global handler and destroy the app.
+      setPlanRequestError(err instanceof Error ? err.message : String(err));
     } finally {
       toolchainPlanPendingRef.current = false;
       setIsPlanningToolchain(false);
@@ -399,6 +434,7 @@ export function LStateBuilderUse() {
     const flags = LTextLineSplit(extraConfigureFlagText);
     const requestedSettings = { ...ffmpegBuildSettings, extraConfigureFlags: flags, configureFlags: flags };
     const requestSignature = JSON.stringify(requestedSettings);
+    setPlanRequestError(null);
     try {
       const review = await LPlanFfmpegRequest(requestedSettings);
       const currentFlags = LTextLineSplit(extraConfigureFlagTextRef.current);
@@ -407,6 +443,11 @@ export function LStateBuilderUse() {
       setFfmpegApprovalError(null);
       setFfmpegBuildPlanReview(review);
       if (activeTabIdRef.current === originTabId) setActiveTabId("buildFfmpeg");
+    } catch (err) {
+      // A recoverable planning/catalog/review-session failure. Keep the user on
+      // the current configuration page with a dismissible error rather than
+      // letting the rejection reach the global handler and destroy the app.
+      setPlanRequestError(err instanceof Error ? err.message : String(err));
     } finally {
       ffmpegPlanPendingRef.current = false;
       setIsPlanningFfmpeg(false);
@@ -565,6 +606,7 @@ export function LStateBuilderUse() {
   return {
     startupState,
     uiStatePersistenceError, clearUiStatePersistenceError: () => setUiStatePersistenceError(null),
+    planRequestError, clearPlanRequestError: () => setPlanRequestError(null),
     tabPanelRef,
     activeTabId, setActiveTabId,
     initialProgramState,

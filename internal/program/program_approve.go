@@ -19,6 +19,16 @@ func (program *LProgram) LPlanToolchainRequest(buildConfigSettings planning.LSet
 		return planning.LReviewToolchain{}, err
 	}
 	program.LMutexReviewSession.Lock()
+	// A new request supersedes the approval authority of any earlier snapshot the
+	// user has abandoned: drop every stored toolchain review that is not an
+	// in-progress claim (WasUsed) and every expired entry, so an abandoned or
+	// lapsed review cannot remain backend-valid and the map cannot accumulate
+	// unreachable sessions for the life of the process.
+	for existingId, existing := range program.LToolchainReviewStorage {
+		if !existing.ReviewSession.WasUsed || reviewsession.LReviewExpiryCheck(existing.ReviewSession) != nil {
+			delete(program.LToolchainReviewStorage, existingId)
+		}
+	}
 	program.LToolchainReviewStorage[reviewSession.ReviewSessionId] = LReviewToolchainStored{ReviewSession: reviewSession, Plan: plan}
 	program.LMutexReviewSession.Unlock()
 	return planning.LReviewToolchain{ReviewSessionId: reviewSession.ReviewSessionId, ExpectedLConsentText: reviewSession.ExpectedLConsentText, ExpectedLConsentTextHash: reviewSession.ExpectedLConsentTextHash, ExpiresAtUnixTime: reviewSession.ExpiresAtUnixTime, Plan: plan}, nil
@@ -34,6 +44,16 @@ func (program *LProgram) LPlanFfmpegRequest(ffmpegBuildSettings planning.LSettin
 		return planning.LReviewFfmpeg{}, err
 	}
 	program.LMutexReviewSession.Lock()
+	// A new request supersedes the approval authority of any earlier snapshot the
+	// user has abandoned: drop every stored FFmpeg review that is not an
+	// in-progress claim (WasUsed) and every expired entry, so an abandoned or
+	// lapsed review cannot remain backend-valid and the map cannot accumulate
+	// unreachable sessions for the life of the process.
+	for existingId, existing := range program.LFfmpegReviewStorage {
+		if !existing.ReviewSession.WasUsed || reviewsession.LReviewExpiryCheck(existing.ReviewSession) != nil {
+			delete(program.LFfmpegReviewStorage, existingId)
+		}
+	}
 	program.LFfmpegReviewStorage[reviewSession.ReviewSessionId] = LReviewFfmpegStored{ReviewSession: reviewSession, Plan: plan}
 	program.LMutexReviewSession.Unlock()
 	return planning.LReviewFfmpeg{ReviewSessionId: reviewSession.ReviewSessionId, ExpectedLConsentText: reviewSession.ExpectedLConsentText, ExpectedLConsentTextHash: reviewSession.ExpectedLConsentTextHash, ExpiresAtUnixTime: reviewSession.ExpiresAtUnixTime, Plan: plan}, nil

@@ -66,6 +66,10 @@ export function LFfmpegRetryRun() {
   return window['go']['program']['LProgram']['LFfmpegRetryRun']();
 }
 
+export function LFfmpegReviewCancel(arg1) {
+  return window['go']['program']['LProgram']['LFfmpegReviewCancel'](arg1);
+}
+
 export function LFileRecordOpen(arg1, arg2, arg3) {
   return window['go']['program']['LProgram']['LFileRecordOpen'](arg1, arg2, arg3);
 }
@@ -208,6 +212,10 @@ export function LToolchainPrepare(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
 
 export function LToolchainProfileList(arg1) {
   return window['go']['program']['LProgram']['LToolchainProfileList'](arg1);
+}
+
+export function LToolchainReviewCancel(arg1) {
+  return window['go']['program']['LProgram']['LToolchainReviewCancel'](arg1);
 }
 
 export function LVerificationBuildRun(arg1) {

@@ -43,7 +43,11 @@ func LSessionReviewCreate(actionName string, planHash string, lifetime time.Dura
 	now := time.Now()
 	deadline := now.Add(lifetime)
 	wallNow := now.UTC()
-	consentText := "I approve action " + actionName + " with plan hash " + planHash + "."
+	// Bind the approval material to this specific session by including the
+	// session id. Two sessions created for the same action and plan hash then
+	// have distinct consent text and hashes, so approval material retained from
+	// one session cannot validate another.
+	consentText := "I approve action " + actionName + " with plan hash " + planHash + " for review session " + reviewSessionId + "."
 	consentHashBytes := sha256.Sum256([]byte(consentText))
 	return LSessionReview{ReviewSessionId: reviewSessionId, ActionName: actionName, PlanHash: planHash, ExpectedLConsentText: consentText, ExpectedLConsentTextHash: hex.EncodeToString(consentHashBytes[:]), CreatedAtUnixTime: wallNow.Unix(), ExpiresAtUnixTime: deadline.UTC().Unix(), lSessionExpiryMonotonic: deadline}, nil
 }

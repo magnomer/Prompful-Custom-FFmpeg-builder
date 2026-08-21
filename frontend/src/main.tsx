@@ -202,6 +202,12 @@ function PProgramRender() {
             <button type="button" onClick={s.clearUiStatePersistenceError}>{LLocaleTextGet("persistence.dismiss")}</button>
           </div>
         )}
+        {s.planRequestError && (
+          <div className="persistence-warning" role="alert">
+            <span>{LLocaleTextGet("planRequest.failed", { message: s.planRequestError })}</span>
+            <button type="button" onClick={s.clearPlanRequestError}>{LLocaleTextGet("persistence.dismiss")}</button>
+          </div>
+        )}
         <section className={`tab-panel ${s.activeTabId === "result" ? "tab-panel--result" : ""}`} ref={s.tabPanelRef}>
           {s.activeTabId === "source" && (
             <PSourceRender

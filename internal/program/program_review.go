@@ -62,6 +62,17 @@ func (program *LProgram) lToolchainReviewConsume(reviewSessionId string) {
 	delete(program.LToolchainReviewStorage, reviewSessionId)
 }
 
+// LToolchainReviewCancel revokes a stored toolchain review the frontend has
+// abandoned (plan cancelled or its settings changed) so the backend session
+// cannot still validate and launch its snapshot until the 30-minute expiry. It
+// only removes authority and is idempotent: cancelling an already-consumed or
+// unknown session is a no-op.
+func (program *LProgram) LToolchainReviewCancel(reviewSessionId string) {
+	program.LMutexReviewSession.Lock()
+	defer program.LMutexReviewSession.Unlock()
+	delete(program.LToolchainReviewStorage, reviewSessionId)
+}
+
 func (program *LProgram) lFfmpegReviewClaim(reviewSessionId string, approval consent.LRequestApproval) (LReviewFfmpegStored, error) {
 	if len(approval.LConsentText) > lConsentTextLimit {
 		return LReviewFfmpegStored{}, errors.New("approval consent text exceeds maximum length")
@@ -92,6 +103,17 @@ func (program *LProgram) lFfmpegReviewRestore(reviewSessionId string) {
 }
 
 func (program *LProgram) lFfmpegReviewConsume(reviewSessionId string) {
+	program.LMutexReviewSession.Lock()
+	defer program.LMutexReviewSession.Unlock()
+	delete(program.LFfmpegReviewStorage, reviewSessionId)
+}
+
+// LFfmpegReviewCancel revokes a stored FFmpeg review the frontend has abandoned
+// (plan cancelled or its settings changed) so the backend session cannot still
+// validate and launch its snapshot until the 30-minute expiry. It only removes
+// authority and is idempotent: cancelling an already-consumed or unknown session
+// is a no-op.
+func (program *LProgram) LFfmpegReviewCancel(reviewSessionId string) {
 	program.LMutexReviewSession.Lock()
 	defer program.LMutexReviewSession.Unlock()
 	delete(program.LFfmpegReviewStorage, reviewSessionId)

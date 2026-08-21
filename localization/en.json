@@ -1279,6 +1279,7 @@
   "persistence.windowSaveFailed.title": "Window position could not be saved",
   "persistence.windowSaveFailed.message": "Promptful could not save the window position. The app will close, but the next launch may use an older position.\n\n{message}",
   "persistence.dismiss": "Dismiss",
+  "planRequest.failed": "The build plan could not be prepared. Your configuration is unchanged; adjust it and try again. {message}",
   "verify.toolchain.requestFailed": "Could not verify the build environment: {error}",
   "verify.build.ffmpegNotFound": "ffmpeg.exe was not found in the build artifacts.",
   "verify.build.runFailed": "Could not run ffmpeg.exe to read its build configuration: {error}",

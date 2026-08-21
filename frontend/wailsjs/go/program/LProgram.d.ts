@@ -39,6 +39,8 @@ export function LFfmpegMakeRun(arg1:context.Context,arg2:planning.LPlanFfmpeg,ar
 
 export function LFfmpegRetryRun():Promise<program.LResultAction>;
 
+export function LFfmpegReviewCancel(arg1:string):Promise<void>;
+
 export function LFileRecordOpen(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function LFolderLogOpen(arg1:string):Promise<void>;
@@ -110,6 +112,8 @@ export function LToolchainInstallVerify(arg1:string,arg2:string):Promise<program
 export function LToolchainPrepare(arg1:context.Context,arg2:string,arg3:string,arg4:planning.LPlanToolchain,arg5:consent.LConsentMsys,arg6:consent.LArchiveConsentState,arg7:consent.LConsentPacman):Promise<void>;
 
 export function LToolchainProfileList(arg1:string):Promise<Array<program.LStatusToolchain>>;
+
+export function LToolchainReviewCancel(arg1:string):Promise<void>;
 
 export function LVerificationBuildRun(arg1:string):Promise<program.LVerificationState>;
 
