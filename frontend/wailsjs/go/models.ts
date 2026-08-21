@@ -47,6 +47,7 @@ export namespace consent {
 	    approvedPlanHash: string;
 	    approvedAtUnixTime: number;
 	    consentText: string;
+	    consentSignature: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new LArchiveConsentState(source);
@@ -60,6 +61,7 @@ export namespace consent {
 	        this.approvedPlanHash = source["approvedPlanHash"];
 	        this.approvedAtUnixTime = source["approvedAtUnixTime"];
 	        this.consentText = source["consentText"];
+	        this.consentSignature = source["consentSignature"];
 	    }
 	}
 	export class LConsentCommand {
@@ -69,6 +71,7 @@ export namespace consent {
 	    approvedPlanHash: string;
 	    approvedAtUnixTime: number;
 	    consentText: string;
+	    consentSignature: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new LConsentCommand(source);
@@ -82,6 +85,7 @@ export namespace consent {
 	        this.approvedPlanHash = source["approvedPlanHash"];
 	        this.approvedAtUnixTime = source["approvedAtUnixTime"];
 	        this.consentText = source["consentText"];
+	        this.consentSignature = source["consentSignature"];
 	    }
 	}
 	export class LConsentFfmpeg {
@@ -91,6 +95,7 @@ export namespace consent {
 	    approvedPlanHash: string;
 	    approvedAtUnixTime: number;
 	    consentText: string;
+	    consentSignature: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new LConsentFfmpeg(source);
@@ -104,6 +109,7 @@ export namespace consent {
 	        this.approvedPlanHash = source["approvedPlanHash"];
 	        this.approvedAtUnixTime = source["approvedAtUnixTime"];
 	        this.consentText = source["consentText"];
+	        this.consentSignature = source["consentSignature"];
 	    }
 	}
 	export class LConsentMsys {
@@ -113,6 +119,7 @@ export namespace consent {
 	    approvedPlanHash: string;
 	    approvedAtUnixTime: number;
 	    consentText: string;
+	    consentSignature: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new LConsentMsys(source);
@@ -126,6 +133,7 @@ export namespace consent {
 	        this.approvedPlanHash = source["approvedPlanHash"];
 	        this.approvedAtUnixTime = source["approvedAtUnixTime"];
 	        this.consentText = source["consentText"];
+	        this.consentSignature = source["consentSignature"];
 	    }
 	}
 	export class LConsentPacman {
@@ -135,6 +143,7 @@ export namespace consent {
 	    approvedPlanHash: string;
 	    approvedAtUnixTime: number;
 	    consentText: string;
+	    consentSignature: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new LConsentPacman(source);
@@ -148,6 +157,7 @@ export namespace consent {
 	        this.approvedPlanHash = source["approvedPlanHash"];
 	        this.approvedAtUnixTime = source["approvedAtUnixTime"];
 	        this.consentText = source["consentText"];
+	        this.consentSignature = source["consentSignature"];
 	    }
 	}
 	export class LRequestApproval {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LPlanFfmpegApprove,
-  LFfmpegCompilationLaunch,
+  LFfmpegRetryRun,
   LPlanToolchainApprove,
   LActionApprovedCancel,
   LStateInitialGet,
@@ -16,7 +16,6 @@ import {
   LApprovalConfirmationResolve,
 } from "../wailsjs/go/program/LProgram";
 import { EventsOn } from "../wailsjs/runtime/runtime";
-import { planning } from "../wailsjs/go/models";
 
 import { LLogSecurityEntry, LLogSecurityPayload, LStatusActionPayload, LStalledActionPayload, LProgressLive, LProgressGet } from "./tabs/logutils";
 import {
@@ -80,11 +79,11 @@ export function LStateBuilderUse() {
   // Mirror addresses tried before a transient-network stall halted the run,
   // delivered by the "approved-action-stalled" event for the stalled banner.
   const [ffmpegStalledAddresses, setFfmpegStalledAddresses] = useState<string[]>([]);
-  // The plan and approval of the last-launched FFmpeg run, kept so Retry can
-  // re-invoke the same approved action after a stall (the backend resumes from
-  // cache). The review session is single-use and gone by then, so Retry uses
-  // the direct run-start binding rather than the review-approval path.
-  const pFfmpegRunLast = useRef<{ plan: planning.LPlanFfmpeg; approval: LRequestApproval } | null>(null);
+  // Whether an approved FFmpeg run exists for Retry to resume after a stall.
+  // The plan and approval themselves live on the backend, which re-enforces the
+  // full approval boundary (lifetime + native confirmation) on retry; the
+  // frontend only needs to know a run is available and calls LFfmpegRetryRun.
+  const pFfmpegRunLast = useRef<boolean>(false);
   const [toolchainLogEntries, setToolchainLogEntries] = useState<LLogSecurityEntry[]>([]);
   const [ffmpegLogEntries, setFfmpegLogEntries] = useState<LLogSecurityEntry[]>([]);
   const [isPlanningToolchain, setIsPlanningToolchain] = useState(false);
@@ -429,10 +428,9 @@ export function LStateBuilderUse() {
     setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setApprovedActionStatus("starting");
     try {
       await LPlanFfmpegApprove(r.reviewSessionId, approval);
-      // Keep the approved plan and approval so Retry can resume the same action.
-      // r.plan is the full backend plan; the ambient review type omits a few
-      // generated fields, so narrow it to the binding's plan type for reuse.
-      pFfmpegRunLast.current = { plan: r.plan as unknown as planning.LPlanFfmpeg, approval };
+      // The backend retained this run's plan and approval; mark that a retry
+      // target exists so the stalled banner can offer Retry.
+      pFfmpegRunLast.current = true;
       setApprovedActionPhase("ffmpeg");
       setFfmpegBuildPlanReview(null);
       if (activeTabIdRef.current === originTabId) setActiveTabId("buildFfmpeg");
@@ -442,16 +440,16 @@ export function LStateBuilderUse() {
     }
   }
 
-  // Re-run the same approved FFmpeg action after a stall. The cache-resumable
-  // backend picks up where it halted, so this reuses the stored plan and approval
-  // through the direct run-start binding rather than forking a second run path.
+  // Re-run the same approved FFmpeg action after a stall. LFfmpegRetryRun
+  // resumes from backend-retained state and re-enforces the approval boundary
+  // (original lifetime + native confirmation) there, so the frontend passes no
+  // plan and cannot renew or alter an expired approval.
   async function retryFfmpegBuildPlan() {
-    const last = pFfmpegRunLast.current;
-    if (!last) return;
+    if (!pFfmpegRunLast.current) return;
     const originTabId = activeTabIdRef.current;
     setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setApprovedActionStatus("starting");
     try {
-      await LFfmpegCompilationLaunch(last.plan, last.approval, false);
+      await LFfmpegRetryRun();
       setApprovedActionPhase("ffmpeg");
       if (activeTabIdRef.current === originTabId) setActiveTabId("buildFfmpeg");
     } catch (err) {

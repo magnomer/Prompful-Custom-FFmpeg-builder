@@ -46,7 +46,7 @@ func (program *LProgram) LPlanToolchainApprove(reviewSessionId string, approval 
 	if err != nil {
 		return LResultAction{}, err
 	}
-	return program.LToolchainPrepareLaunch(plan, approval, false)
+	return program.lToolchainPrepareLaunch(plan, approval, false)
 }
 
 // LToolchainApproveSync is the CLI counterpart: it prepares the toolchain
@@ -57,7 +57,7 @@ func (program *LProgram) LToolchainApproveSync(reviewSessionId string, approval 
 	if err != nil {
 		return LResultAction{}, err
 	}
-	return program.LToolchainPrepareLaunch(plan, approval, true)
+	return program.lToolchainPrepareLaunch(plan, approval, true)
 }
 
 // LToolchainApproveValidate performs the shared validation for both toolchain
@@ -85,10 +85,10 @@ func (program *LProgram) LToolchainApproveValidate(reviewSessionId string, appro
 	return plan, nil
 }
 
-// LToolchainPrepareLaunch builds the per-action consents and starts the
+// lToolchainPrepareLaunch builds the per-action consents and starts the
 // toolchain worker, inline when runInline is true (CLI) or on a goroutine
 // otherwise (GUI).
-func (program *LProgram) LToolchainPrepareLaunch(plan planning.LPlanToolchain, approval consent.LRequestApproval, runInline bool) (LResultAction, error) {
+func (program *LProgram) lToolchainPrepareLaunch(plan planning.LPlanToolchain, approval consent.LRequestApproval, runInline bool) (LResultAction, error) {
 	userLConsentMsys, err := consent.LConsentMsysCreate(approval)
 	if err != nil {
 		return LResultAction{}, err
@@ -121,7 +121,7 @@ func (program *LProgram) LPlanFfmpegApprove(reviewSessionId string, approval con
 	if err != nil {
 		return LResultAction{}, err
 	}
-	return program.LFfmpegCompilationLaunch(plan, approval, false)
+	return program.lFfmpegCompilationLaunch(plan, approval, false)
 }
 
 // LFfmpegApproveSync is the CLI counterpart of LPlanFfmpegApprove: it runs
@@ -133,7 +133,7 @@ func (program *LProgram) LFfmpegApproveSync(reviewSessionId string, approval con
 	if err != nil {
 		return LResultAction{}, err
 	}
-	return program.LFfmpegCompilationLaunch(plan, approval, true)
+	return program.lFfmpegCompilationLaunch(plan, approval, true)
 }
 
 // LFfmpegApproveValidate performs the shared, side-effect-ordered validation for
@@ -163,12 +163,47 @@ func (program *LProgram) LFfmpegApproveValidate(reviewSessionId string, approval
 		return planning.LPlanFfmpeg{}, errors.New("user rejected approval in backend-owned confirmation")
 	}
 	program.LFfmpegReviewConsume(reviewSessionId)
+	// Retain the backend-verified plan, its approval, and the original review
+	// expiry so a post-stall Retry re-launches from this server-owned state
+	// instead of a frontend-supplied plan, and cannot outlive the review window.
+	program.LMutexReviewSession.Lock()
+	program.lApprovalFfmpegRetained = &lApprovalFfmpegStored{Plan: plan, Approval: approval, ExpiresAtUnixTime: storedReviewSession.ReviewSession.ExpiresAtUnixTime}
+	program.LMutexReviewSession.Unlock()
 	return plan, nil
 }
 
-// LFfmpegCompilationLaunch builds the per-action consents and starts the build worker,
+// LFfmpegRetryRun re-launches the last confirmed FFmpeg run after a stall. It
+// is the only approved way for the frontend to resume, because the launch
+// helpers are unexported and never bound. It re-enforces the full approval
+// boundary against server-owned state: the run must still be within its
+// original review lifetime, its retained plan must still match its hash, and
+// the user must confirm again in the backend-owned native dialog.
+func (program *LProgram) LFfmpegRetryRun() (LResultAction, error) {
+	program.LMutexReviewSession.Lock()
+	retained := program.lApprovalFfmpegRetained
+	program.LMutexReviewSession.Unlock()
+	if retained == nil {
+		return LResultAction{}, errors.New("no approved FFmpeg run is available to retry")
+	}
+	if time.Now().UTC().Unix() > retained.ExpiresAtUnixTime {
+		return LResultAction{}, errors.New("the approval for this FFmpeg run has expired; review and approve the build again")
+	}
+	if err := LHashFfmpegVerify(retained.Plan); err != nil {
+		return LResultAction{}, err
+	}
+	confirmed, err := program.LNativeConsentAsk(retained.Plan.ActionName, retained.Plan.PlanHash)
+	if err != nil {
+		return LResultAction{}, err
+	}
+	if !confirmed {
+		return LResultAction{}, errors.New("user rejected approval in backend-owned confirmation")
+	}
+	return program.lFfmpegCompilationLaunch(retained.Plan, retained.Approval, false)
+}
+
+// lFfmpegCompilationLaunch builds the per-action consents and starts the build worker,
 // inline when runInline is true (CLI) or on a goroutine otherwise (GUI).
-func (program *LProgram) LFfmpegCompilationLaunch(plan planning.LPlanFfmpeg, approval consent.LRequestApproval, runInline bool) (LResultAction, error) {
+func (program *LProgram) lFfmpegCompilationLaunch(plan planning.LPlanFfmpeg, approval consent.LRequestApproval, runInline bool) (LResultAction, error) {
 	userLConsentFfmpeg, err := consent.LConsentFfmpegCreate(approval)
 	if err != nil {
 		return LResultAction{}, err

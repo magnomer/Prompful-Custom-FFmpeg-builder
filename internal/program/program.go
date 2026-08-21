@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"promptfulcustomffmpegbuilder/internal/consent"
 	"promptfulcustomffmpegbuilder/internal/planning"
 	"promptfulcustomffmpegbuilder/internal/reporting"
 	"promptfulcustomffmpegbuilder/internal/reviewsession"
@@ -24,6 +25,7 @@ type LProgram struct {
 	LMutexReviewSession     sync.Mutex
 	LToolchainReviewStorage map[string]LReviewToolchainStored
 	LFfmpegReviewStorage    map[string]LReviewFfmpegStored
+	lApprovalFfmpegRetained *lApprovalFfmpegStored
 	LStateWindowStartup     LStateWindow
 	LLocaleUi               string
 	LMutexLocaleUi          sync.RWMutex
@@ -42,6 +44,17 @@ type LReviewToolchainStored struct {
 type LReviewFfmpegStored struct {
 	ReviewSession reviewsession.LSessionReview
 	Plan          planning.LPlanFfmpeg
+}
+
+// lApprovalFfmpegStored retains the backend-verified plan and approval of the
+// last confirmed FFmpeg run so a post-stall Retry re-launches from server-owned
+// state, bounded by the original review's expiry, rather than from a
+// frontend-held plan. ExpiresAtUnixTime carries the original review lifetime so
+// Retry cannot renew approval past it.
+type lApprovalFfmpegStored struct {
+	Plan              planning.LPlanFfmpeg
+	Approval          consent.LRequestApproval
+	ExpiresAtUnixTime int64
 }
 
 func LProgramCreate() *LProgram {

@@ -31,8 +31,6 @@ export function LFfmpegApproveSync(arg1:string,arg2:consent.LRequestApproval):Pr
 
 export function LFfmpegApproveValidate(arg1:string,arg2:consent.LRequestApproval):Promise<planning.LPlanFfmpeg>;
 
-export function LFfmpegCompilationLaunch(arg1:planning.LPlanFfmpeg,arg2:consent.LRequestApproval,arg3:boolean):Promise<program.LResultAction>;
-
 export function LFfmpegCompile(arg1:context.Context,arg2:string,arg3:planning.LPlanFfmpeg,arg4:consent.LConsentFfmpeg,arg5:consent.LArchiveConsentState,arg6:consent.LConsentPacman,arg7:consent.LConsentCommand):Promise<void>;
 
 export function LFfmpegConfigureRun(arg1:context.Context,arg2:planning.LPlanFfmpeg,arg3:string,arg4:consent.LConsentCommand,arg5:audit.LAuditWriter,arg6:any):Promise<void>;
@@ -44,6 +42,8 @@ export function LFfmpegMakeRun(arg1:context.Context,arg2:planning.LPlanFfmpeg,ar
 export function LFfmpegReviewConsume(arg1:string):Promise<void>;
 
 export function LFfmpegReviewValidate(arg1:string,arg2:consent.LRequestApproval):Promise<program.LReviewFfmpegStored>;
+
+export function LFfmpegRetryRun():Promise<program.LResultAction>;
 
 export function LFileRecordOpen(arg1:string,arg2:string,arg3:string):Promise<void>;
 
@@ -118,8 +118,6 @@ export function LToolchainFreshPrepare(arg1:string,arg2:string,arg3:any):Promise
 export function LToolchainInstallVerify(arg1:string,arg2:string):Promise<program.LVerificationToolchain>;
 
 export function LToolchainPrepare(arg1:context.Context,arg2:string,arg3:planning.LPlanToolchain,arg4:consent.LConsentMsys,arg5:consent.LArchiveConsentState,arg6:consent.LConsentPacman):Promise<void>;
-
-export function LToolchainPrepareLaunch(arg1:planning.LPlanToolchain,arg2:consent.LRequestApproval,arg3:boolean):Promise<program.LResultAction>;
 
 export function LToolchainProfileList(arg1:string):Promise<Array<program.LStatusToolchain>>;
 

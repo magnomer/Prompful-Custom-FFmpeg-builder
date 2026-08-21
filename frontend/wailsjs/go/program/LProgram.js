@@ -50,10 +50,6 @@ export function LFfmpegApproveValidate(arg1, arg2) {
   return window['go']['program']['LProgram']['LFfmpegApproveValidate'](arg1, arg2);
 }
 
-export function LFfmpegCompilationLaunch(arg1, arg2, arg3) {
-  return window['go']['program']['LProgram']['LFfmpegCompilationLaunch'](arg1, arg2, arg3);
-}
-
 export function LFfmpegCompile(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['program']['LProgram']['LFfmpegCompile'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
@@ -76,6 +72,10 @@ export function LFfmpegReviewConsume(arg1) {
 
 export function LFfmpegReviewValidate(arg1, arg2) {
   return window['go']['program']['LProgram']['LFfmpegReviewValidate'](arg1, arg2);
+}
+
+export function LFfmpegRetryRun() {
+  return window['go']['program']['LProgram']['LFfmpegRetryRun']();
 }
 
 export function LFileRecordOpen(arg1, arg2, arg3) {
@@ -224,10 +224,6 @@ export function LToolchainInstallVerify(arg1, arg2) {
 
 export function LToolchainPrepare(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['program']['LProgram']['LToolchainPrepare'](arg1, arg2, arg3, arg4, arg5, arg6);
-}
-
-export function LToolchainPrepareLaunch(arg1, arg2, arg3) {
-  return window['go']['program']['LProgram']['LToolchainPrepareLaunch'](arg1, arg2, arg3);
 }
 
 export function LToolchainProfileList(arg1) {
