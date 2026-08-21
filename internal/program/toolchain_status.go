@@ -120,6 +120,48 @@ func LToolchainPreparedCheck(workspaceDirectory string, buildShellProfileName st
 	return nil
 }
 
+// LToolchainPackageCheck refuses an FFmpeg build when the prepared toolchain's
+// recorded package set does not cover the packages the reviewed plan assumes are
+// installed. LToolchainPreparedCheck only proves usr/bin/bash.exe exists; this
+// adds the environment-fidelity gate the FFmpeg plan hash cannot cover, because
+// the private MSYS2 state lives outside the hashed plan. A missing or unreadable
+// manifest, or any required package the manifest does not list, fails closed so a
+// stale, partially removed, or pre-manifest environment cannot pass approval as
+// the environment the review implies is ready. It reads only recorded metadata
+// (no pacman query), so it adds no subprocess latency to approval; the deeper
+// installed-package verification stays available on demand via
+// LToolchainInstallVerify.
+func LToolchainPackageCheck(workspaceDirectory string, buildShellProfileName string, requiredPackageNames []string) error {
+	if workspaceDirectory == "" {
+		return errors.New("workspace directory is empty")
+	}
+	msys2RootDirectory := LMsysRootResolve(workspaceDirectory, buildShellProfileName)
+	manifest, err := LManifestToolchainRead(msys2RootDirectory)
+	if err != nil {
+		return fmt.Errorf("%s", LLocaleTextGetInternal("run.failure.toolchainManifestMissing", map[string]string{
+			"profile": buildShellProfileName,
+		}))
+	}
+	recordedPackageSet := make(map[string]bool, len(manifest.Msys2PackageNames))
+	for _, recordedName := range manifest.Msys2PackageNames {
+		recordedPackageSet[recordedName] = true
+	}
+	missingPackageNames := []string{}
+	for _, requiredName := range requiredPackageNames {
+		if !recordedPackageSet[requiredName] {
+			missingPackageNames = append(missingPackageNames, requiredName)
+		}
+	}
+	if len(missingPackageNames) > 0 {
+		sort.Strings(missingPackageNames)
+		return fmt.Errorf("%s", LLocaleTextGetInternal("run.failure.toolchainPackagesMissing", map[string]string{
+			"profile":  buildShellProfileName,
+			"packages": strings.Join(missingPackageNames, " "),
+		}))
+	}
+	return nil
+}
+
 // LStatusToolchainGet reports whether a private MSYS2 toolchain already exists for
 // the given shell profile, so Prep can recover the "already prepared" state of
 // each profile independently across relaunches. Fast: a stat plus an optional
@@ -279,7 +321,7 @@ func LPackageInstallQuery(msys2RootDirectory string, windowsShellProfileName str
 		return nil, fmt.Errorf("could not query installed packages with pacman -Qq: %w", err)
 	}
 	installedNames := []string{}
-	for _, line := range strings.Split(string(output), "\n") {
+	for line := range strings.SplitSeq(string(output), "\n") {
 		trimmedLine := strings.TrimSpace(line)
 		if trimmedLine != "" {
 			installedNames = append(installedNames, trimmedLine)

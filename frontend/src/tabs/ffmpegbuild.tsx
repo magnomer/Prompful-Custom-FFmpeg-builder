@@ -69,7 +69,12 @@ function LPreparationLabelGet(preparation: LLibraryPreparation): string {
   const dependencyText = buildDependencyPackages.length > 0
     ? ` · ${LLocaleTextGet("approval.preparation.buildDependencies")}: ${buildDependencyPackages.join(" ")}`
     : "";
-  return `${name} · ${LLocaleTextGet(`approval.preparation.method.${preparation.method}`)} · ${preparation.allowedDownloadHost}${dependencyText}`;
+  // Expose the exact third-party source bound into the plan (and its hash): the
+  // resolved archive URL, its integrity hash, and the archive format. Without
+  // these, a user can only see that a library comes from a host, not which
+  // archive or SHA-256 the approved build will actually download.
+  const archiveText = ` · ${preparation.archiveFormat} · ${preparation.archiveUrl} · sha256:${preparation.archiveSha256Hash}`;
+  return `${name} · ${LLocaleTextGet(`approval.preparation.method.${preparation.method}`)} · ${preparation.allowedDownloadHost}${archiveText}${dependencyText}`;
 }
 
 function LOptionLabelGet(option: LOptionChoice): string {
@@ -136,6 +141,37 @@ function PPanelConfirmationRender(props: { planHash: string; expectedLConsentTex
   );
 }
 
+// Review is a snapshot that can outlive the controls that produced it, so the
+// execution context bound into the reviewed plan (and its hash) is shown here
+// explicitly. Two plans that look identical in libraries/flags can still target
+// different workspaces, private toolchains, parallelism, or license boundaries.
+function PPanelExecutionRender(props: { plan: LPlanFfmpeg }) {
+  return (
+    <section className="result-location-panel build-plan-execution-panel">
+      <div className="result-location-row">
+        <strong>{LLocaleTextGet("approval.execution.workspace")}</strong>
+        <span className="build-plan-confirmation-value">{props.plan.workspaceDirectory}</span>
+      </div>
+      <div className="result-location-row">
+        <strong>{LLocaleTextGet("approval.execution.toolchainRoot")}</strong>
+        <span className="build-plan-confirmation-value">{props.plan.msys2RootDirectory}</span>
+      </div>
+      <div className="result-location-row">
+        <strong>{LLocaleTextGet("approval.execution.shellProfile")}</strong>
+        <span className="build-plan-confirmation-value">{props.plan.windowsShellProfileName}</span>
+      </div>
+      <div className="result-location-row">
+        <strong>{LLocaleTextGet("approval.execution.parallelJobs")}</strong>
+        <span className="build-plan-confirmation-value">{String(props.plan.parallelJobCount)}</span>
+      </div>
+      <div className="result-location-row">
+        <strong>{LLocaleTextGet("approval.execution.licenseProfile")}</strong>
+        <span className="build-plan-confirmation-value">{props.plan.licenseProfileName}</span>
+      </div>
+    </section>
+  );
+}
+
 function PCardBuildRender(props: { review: LReviewFfmpeg; isReviewExpired: boolean }) {
   const locale = LLocaleGet();
   const [activeTabId, setActiveTabId] = React.useState<LBuildPlanIdentifier>("libraries");
@@ -171,6 +207,7 @@ function PCardBuildRender(props: { review: LReviewFfmpeg; isReviewExpired: boole
   return (
     <section className="build-plan-shell">
       <PPanelConfirmationRender planHash={plan.planHash} expectedLConsentText={props.review.expectedLConsentText} />
+      <PPanelExecutionRender plan={plan} />
       {props.isReviewExpired && <PNoticeExpiredRender />}
       <PListWarningRender warnings={warnings} />
 

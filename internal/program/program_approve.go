@@ -184,6 +184,10 @@ func (program *LProgram) lFfmpegApproveValidate(reviewSessionId string, approval
 		program.lFfmpegReviewRestore(reviewSessionId)
 		return planning.LPlanFfmpeg{}, 0, err
 	}
+	if err := LToolchainPackageCheck(plan.WorkspaceDirectory, plan.WindowsShellProfileName, plan.RequiredMsys2PackageNames); err != nil {
+		program.lFfmpegReviewRestore(reviewSessionId)
+		return planning.LPlanFfmpeg{}, 0, err
+	}
 	confirmed, err := program.lNativeConsentAsk(plan.ActionName, plan.PlanHash)
 	if err != nil {
 		program.lFfmpegReviewRestore(reviewSessionId)
