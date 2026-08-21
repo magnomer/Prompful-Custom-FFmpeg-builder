@@ -16,8 +16,9 @@ type LStateInitial struct {
 }
 
 type LResultAction struct {
-	RunId     string `json:"runId"`
-	StartedAt string `json:"startedAt"`
+	RunId           string `json:"runId"`
+	ReviewSessionId string `json:"reviewSessionId,omitempty"`
+	StartedAt       string `json:"startedAt"`
 }
 
 type LFileResult struct {
@@ -41,6 +42,7 @@ type LResultState struct {
 }
 
 type LReportArtifact struct {
+	ReviewSessionId           string                    `json:"reviewSessionId,omitempty"`
 	CreatedAt                 string                    `json:"createdAt"`
 	FfmpegVersion             string                    `json:"ffmpegVersion"`
 	FfmpegSourceArchiveUrl    string                    `json:"ffmpegSourceArchiveUrl"`

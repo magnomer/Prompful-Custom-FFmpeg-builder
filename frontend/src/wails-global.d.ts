@@ -216,6 +216,7 @@ type LRequestApproval = {
 
 type LResultAction = {
   runId: string;
+  reviewSessionId?: string;
   startedAt: string;
 };
 

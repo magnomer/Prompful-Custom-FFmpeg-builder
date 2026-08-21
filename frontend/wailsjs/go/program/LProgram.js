@@ -46,8 +46,8 @@ export function LFfmpegApproveSync(arg1, arg2) {
   return window['go']['program']['LProgram']['LFfmpegApproveSync'](arg1, arg2);
 }
 
-export function LFfmpegCompile(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
-  return window['go']['program']['LProgram']['LFfmpegCompile'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+export function LFfmpegCompile(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
+  return window['go']['program']['LProgram']['LFfmpegCompile'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
 
 export function LFfmpegConfigureRun(arg1, arg2, arg3, arg4, arg5, arg6) {
@@ -202,8 +202,8 @@ export function LToolchainInstallVerify(arg1, arg2) {
   return window['go']['program']['LProgram']['LToolchainInstallVerify'](arg1, arg2);
 }
 
-export function LToolchainPrepare(arg1, arg2, arg3, arg4, arg5, arg6) {
-  return window['go']['program']['LProgram']['LToolchainPrepare'](arg1, arg2, arg3, arg4, arg5, arg6);
+export function LToolchainPrepare(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['program']['LProgram']['LToolchainPrepare'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
 export function LToolchainProfileList(arg1) {

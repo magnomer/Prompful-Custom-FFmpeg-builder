@@ -2,6 +2,7 @@ export namespace audit {
 	
 	export class LAuditWriter {
 	    LIdentifierRun: string;
+	    LIdentifierReviewRun: string;
 	    LDirectoryLog: string;
 	    // Go type: sync
 	    LMutex: any;
@@ -13,6 +14,7 @@ export namespace audit {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.LIdentifierRun = source["LIdentifierRun"];
+	        this.LIdentifierReviewRun = source["LIdentifierReviewRun"];
 	        this.LDirectoryLog = source["LDirectoryLog"];
 	        this.LMutex = this.convertValues(source["LMutex"], null);
 	    }
@@ -1141,6 +1143,7 @@ export namespace program {
 	}
 	export class LResultAction {
 	    runId: string;
+	    reviewSessionId: string;
 	    startedAt: string;
 	
 	    static createFrom(source: any = {}) {
@@ -1150,6 +1153,7 @@ export namespace program {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.runId = source["runId"];
+	        this.reviewSessionId = source["reviewSessionId"];
 	        this.startedAt = source["startedAt"];
 	    }
 	}

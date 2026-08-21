@@ -28,7 +28,7 @@ func LSignatureMsysVerify(signaturePath string, archivePath string, publicKeyPat
 	return LSignatureDetachedVerify(signaturePath, archivePath, publicKeyPath, LSignatureMsysFingerprint, "MSYS2 .sig", emitProgress)
 }
 
-func (program *LProgram) LToolchainPrepare(LContext context.Context, LRunId string, plan planning.LPlanToolchain, userLConsentMsys consent.LConsentMsys, userLConsentArchive consent.LArchiveConsentState, userPacmanPackageInstallLConsent consent.LConsentPacman) {
+func (program *LProgram) LToolchainPrepare(LContext context.Context, LRunId string, reviewSessionId string, plan planning.LPlanToolchain, userLConsentMsys consent.LConsentMsys, userLConsentArchive consent.LArchiveConsentState, userPacmanPackageInstallLConsent consent.LConsentPacman) {
 	actionSucceeded := false
 	workspaceLayout := workspace.LWorkspaceLayoutResolve(plan.WorkspaceDirectory)
 	defer func() {
@@ -44,7 +44,7 @@ func (program *LProgram) LToolchainPrepare(LContext context.Context, LRunId stri
 		program.LErrorLocalizedEmit("run.failure.createWorkspaceDirectories", "Could not create workspace directories", err)
 		return
 	}
-	auditWriter, err := audit.LAuditWriterCreate(workspaceLayout.LogsDirectory, LRunId)
+	auditWriter, err := audit.LAuditWriterCreate(workspaceLayout.LogsDirectory, LRunId, reviewSessionId)
 	if err != nil {
 		program.LErrorLocalizedEmit("run.failure.createAuditLog", "Could not create audit log", err)
 		return

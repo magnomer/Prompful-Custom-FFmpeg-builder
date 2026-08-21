@@ -9,13 +9,15 @@ import (
 )
 
 type LAuditWriter struct {
-	LIdentifierRun string
-	LDirectoryLog  string
-	LMutex         sync.Mutex
+	LIdentifierRun       string
+	LIdentifierReviewRun string
+	LDirectoryLog        string
+	LMutex               sync.Mutex
 }
 
 type LAuditEvent struct {
 	RunId           string `json:"runId"`
+	ReviewSessionId string `json:"reviewSessionId,omitempty"`
 	LAuditEventName string `json:"eventName"`
 	ActionName      string `json:"actionName,omitempty"`
 	PlanHash        string `json:"planHash,omitempty"`
@@ -24,7 +26,7 @@ type LAuditEvent struct {
 	CreatedAt       string `json:"createdAt"`
 }
 
-func LAuditWriterCreate(workspaceLogsDirectory string, LRunId string) (*LAuditWriter, error) {
+func LAuditWriterCreate(workspaceLogsDirectory string, LRunId string, reviewSessionId string) (*LAuditWriter, error) {
 	LDirectoryLog := filepath.Join(workspaceLogsDirectory, LRunId)
 	if err := os.MkdirAll(LDirectoryLog, 0o700); err != nil {
 		return nil, err
@@ -36,7 +38,7 @@ func LAuditWriterCreate(workspaceLogsDirectory string, LRunId string) (*LAuditWr
 	if fileInfo.Mode()&os.ModeSymlink != 0 {
 		return nil, os.ErrPermission
 	}
-	return &LAuditWriter{LIdentifierRun: LRunId, LDirectoryLog: LDirectoryLog}, nil
+	return &LAuditWriter{LIdentifierRun: LRunId, LIdentifierReviewRun: reviewSessionId, LDirectoryLog: LDirectoryLog}, nil
 }
 
 func (writer *LAuditWriter) LAuditDirectoryGet() string {
@@ -52,7 +54,7 @@ func (writer *LAuditWriter) LAuditEventWrite(eventName string, actionName string
 	}
 	writer.LMutex.Lock()
 	defer writer.LMutex.Unlock()
-	event := LAuditEvent{RunId: writer.LIdentifierRun, LAuditEventName: eventName, ActionName: actionName, PlanHash: planHash, Level: level, Message: message, CreatedAt: time.Now().UTC().Format(time.RFC3339)}
+	event := LAuditEvent{RunId: writer.LIdentifierRun, ReviewSessionId: writer.LIdentifierReviewRun, LAuditEventName: eventName, ActionName: actionName, PlanHash: planHash, Level: level, Message: message, CreatedAt: time.Now().UTC().Format(time.RFC3339)}
 	eventBytes, err := json.Marshal(event)
 	if err != nil {
 		return err

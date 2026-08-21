@@ -14,13 +14,17 @@ import (
 // keeps an oversized string from blocking unrelated review work while it hashes.
 const lConsentTextLimit = 4096
 
-// lToolchainReviewValidate checks the session without consuming it, so a
-// later step (the native confirmation dialog) can still be cancelled or retried.
-// The session is only removed by lToolchainReviewConsume once the user has
-// confirmed, which keeps it single-use without losing it on a rejected dialog.
-// It is unexported so Wails does not bind it: only the outer approve entrypoints
-// may drive review validation.
-func (program *LProgram) lToolchainReviewValidate(reviewSessionId string, approval consent.LRequestApproval) (LReviewToolchainStored, error) {
+// lToolchainReviewClaim atomically reserves the single-use session: under one
+// lock it checks the approval against the stored review and, on success, marks
+// the review used so a concurrent approval of the same session fails the used
+// check. The reservation is a claim, not a consumption: it is committed by
+// lToolchainReviewConsume only after the launch actually starts, and rolled
+// back by lToolchainReviewRestore if any step before launch (native dialog,
+// consent creation, action-slot acquisition) fails, which keeps the review
+// single-use without losing it on a recoverable pre-launch failure. It is
+// unexported so Wails does not bind it: only the outer approve entrypoints may
+// drive review validation.
+func (program *LProgram) lToolchainReviewClaim(reviewSessionId string, approval consent.LRequestApproval) (LReviewToolchainStored, error) {
 	if len(approval.LConsentText) > lConsentTextLimit {
 		return LReviewToolchainStored{}, errors.New("approval consent text exceeds maximum length")
 	}
@@ -33,7 +37,23 @@ func (program *LProgram) lToolchainReviewValidate(reviewSessionId string, approv
 	if err := reviewsession.LReviewApprovalCheck(storedReviewSession.ReviewSession, approval.ApprovedActionName, approval.ApprovedPlanHash, approval.LConsentText); err != nil {
 		return LReviewToolchainStored{}, err
 	}
+	storedReviewSession.ReviewSession.WasUsed = true
+	program.LToolchainReviewStorage[reviewSessionId] = storedReviewSession
 	return storedReviewSession, nil
+}
+
+// lToolchainReviewRestore rolls back a claim made by lToolchainReviewClaim when
+// a pre-launch step fails, so the review returns to its unused state and the
+// user can retry from the same session instead of being stranded.
+func (program *LProgram) lToolchainReviewRestore(reviewSessionId string) {
+	program.LMutexReviewSession.Lock()
+	defer program.LMutexReviewSession.Unlock()
+	storedReviewSession, exists := program.LToolchainReviewStorage[reviewSessionId]
+	if !exists {
+		return
+	}
+	storedReviewSession.ReviewSession.WasUsed = false
+	program.LToolchainReviewStorage[reviewSessionId] = storedReviewSession
 }
 
 func (program *LProgram) lToolchainReviewConsume(reviewSessionId string) {
@@ -42,7 +62,7 @@ func (program *LProgram) lToolchainReviewConsume(reviewSessionId string) {
 	delete(program.LToolchainReviewStorage, reviewSessionId)
 }
 
-func (program *LProgram) lFfmpegReviewValidate(reviewSessionId string, approval consent.LRequestApproval) (LReviewFfmpegStored, error) {
+func (program *LProgram) lFfmpegReviewClaim(reviewSessionId string, approval consent.LRequestApproval) (LReviewFfmpegStored, error) {
 	if len(approval.LConsentText) > lConsentTextLimit {
 		return LReviewFfmpegStored{}, errors.New("approval consent text exceeds maximum length")
 	}
@@ -55,7 +75,20 @@ func (program *LProgram) lFfmpegReviewValidate(reviewSessionId string, approval 
 	if err := reviewsession.LReviewApprovalCheck(storedReviewSession.ReviewSession, approval.ApprovedActionName, approval.ApprovedPlanHash, approval.LConsentText); err != nil {
 		return LReviewFfmpegStored{}, err
 	}
+	storedReviewSession.ReviewSession.WasUsed = true
+	program.LFfmpegReviewStorage[reviewSessionId] = storedReviewSession
 	return storedReviewSession, nil
+}
+
+func (program *LProgram) lFfmpegReviewRestore(reviewSessionId string) {
+	program.LMutexReviewSession.Lock()
+	defer program.LMutexReviewSession.Unlock()
+	storedReviewSession, exists := program.LFfmpegReviewStorage[reviewSessionId]
+	if !exists {
+		return
+	}
+	storedReviewSession.ReviewSession.WasUsed = false
+	program.LFfmpegReviewStorage[reviewSessionId] = storedReviewSession
 }
 
 func (program *LProgram) lFfmpegReviewConsume(reviewSessionId string) {

@@ -24,7 +24,7 @@ func LSignatureFfmpegVerify(signaturePath string, archivePath string, publicKeyP
 	return LSignatureDetachedVerify(signaturePath, archivePath, publicKeyPath, LSignatureFfmpegFingerprint, "FFmpeg .asc", emitProgress)
 }
 
-func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string, plan planning.LPlanFfmpeg, userLConsentFfmpeg consent.LConsentFfmpeg, userLConsentArchive consent.LArchiveConsentState, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand) {
+func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string, reviewSessionId string, plan planning.LPlanFfmpeg, userLConsentFfmpeg consent.LConsentFfmpeg, userLConsentArchive consent.LArchiveConsentState, userLibraryPackageInstallLConsent consent.LConsentPacman, userExternalLConsentCommand consent.LConsentCommand) {
 	actionSucceeded := false
 	copyFailed := false
 	stalledHalt := false
@@ -58,7 +58,7 @@ func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string,
 		program.LErrorLocalizedEmit("run.failure.createWorkspaceDirectories", "Could not create workspace directories", err)
 		return
 	}
-	auditWriter, err := audit.LAuditWriterCreate(workspaceLayout.LogsDirectory, LRunId)
+	auditWriter, err := audit.LAuditWriterCreate(workspaceLayout.LogsDirectory, LRunId, reviewSessionId)
 	if err != nil {
 		program.LErrorLocalizedEmit("run.failure.createAuditLog", "Could not create audit log", err)
 		return
@@ -124,7 +124,7 @@ func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string,
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.copyArtifacts", "Could not copy FFmpeg artifacts", err)
 		return
 	}
-	if err := LReportArtifactWrite(workspaceLayout, LRunId, plan); err != nil {
+	if err := LReportArtifactWrite(workspaceLayout, LRunId, reviewSessionId, plan); err != nil {
 		stalledHalt = program.LActionFailureEmit(auditWriter, plan, "run.failure.writeArtifactReport", "Could not write artifact report", err)
 		return
 	}

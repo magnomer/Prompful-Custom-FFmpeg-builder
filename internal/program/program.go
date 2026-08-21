@@ -52,6 +52,7 @@ type LReviewFfmpegStored struct {
 // frontend-held plan. ExpiresAtUnixTime carries the original review lifetime so
 // Retry cannot renew approval past it.
 type lApprovalFfmpegStored struct {
+	ReviewSessionId   string
 	Plan              planning.LPlanFfmpeg
 	Approval          consent.LRequestApproval
 	ExpiresAtUnixTime int64

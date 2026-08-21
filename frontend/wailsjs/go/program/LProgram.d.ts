@@ -29,7 +29,7 @@ export function LErrorLocalizedEmit(arg1:string,arg2:string,arg3:Error):Promise<
 
 export function LFfmpegApproveSync(arg1:string,arg2:consent.LRequestApproval):Promise<program.LResultAction>;
 
-export function LFfmpegCompile(arg1:context.Context,arg2:string,arg3:planning.LPlanFfmpeg,arg4:consent.LConsentFfmpeg,arg5:consent.LArchiveConsentState,arg6:consent.LConsentPacman,arg7:consent.LConsentCommand):Promise<void>;
+export function LFfmpegCompile(arg1:context.Context,arg2:string,arg3:string,arg4:planning.LPlanFfmpeg,arg5:consent.LConsentFfmpeg,arg6:consent.LArchiveConsentState,arg7:consent.LConsentPacman,arg8:consent.LConsentCommand):Promise<void>;
 
 export function LFfmpegConfigureRun(arg1:context.Context,arg2:planning.LPlanFfmpeg,arg3:string,arg4:consent.LConsentCommand,arg5:audit.LAuditWriter,arg6:any):Promise<void>;
 
@@ -107,7 +107,7 @@ export function LToolchainFreshPrepare(arg1:string,arg2:string,arg3:any):Promise
 
 export function LToolchainInstallVerify(arg1:string,arg2:string):Promise<program.LVerificationToolchain>;
 
-export function LToolchainPrepare(arg1:context.Context,arg2:string,arg3:planning.LPlanToolchain,arg4:consent.LConsentMsys,arg5:consent.LArchiveConsentState,arg6:consent.LConsentPacman):Promise<void>;
+export function LToolchainPrepare(arg1:context.Context,arg2:string,arg3:string,arg4:planning.LPlanToolchain,arg5:consent.LConsentMsys,arg6:consent.LArchiveConsentState,arg7:consent.LConsentPacman):Promise<void>;
 
 export function LToolchainProfileList(arg1:string):Promise<Array<program.LStatusToolchain>>;
 
