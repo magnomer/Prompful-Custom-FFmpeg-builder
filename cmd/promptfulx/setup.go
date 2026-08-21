@@ -18,6 +18,9 @@ func LCommandSetupRun(args []string) int {
 	if err != nil {
 		return LCommandExitGet(err)
 	}
+	if err := LArgumentScopeCheck(parsed, lArgumentWorkspaceFlags, lArgumentMsys2Flags, lArgumentConfirmFlags); err != nil {
+		return LCommandExitGet(err)
+	}
 	settings, err := LSettingsToolchainResolve(parsed)
 	if err != nil {
 		return LCommandExitGet(err)

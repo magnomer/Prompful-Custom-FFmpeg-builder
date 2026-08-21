@@ -39,6 +39,9 @@ func LCommandBuildRun(args []string) int {
 	if err != nil {
 		return LCommandExitGet(err)
 	}
+	if err := LArgumentScopeCheck(parsed, lArgumentFfmpegFlags, lArgumentWorkspaceFlags, lArgumentConfirmFlags); err != nil {
+		return LCommandExitGet(err)
+	}
 	settings, err := LSettingsFfmpegResolve(parsed)
 	if err != nil {
 		return LCommandExitGet(err)

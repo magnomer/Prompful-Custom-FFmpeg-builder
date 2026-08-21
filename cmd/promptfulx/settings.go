@@ -43,6 +43,36 @@ type LArgumentBuild struct {
 	msys2URL          string
 	msys2Sha256       string
 	msys2SignatureURL string
+
+	// Canonical flag tokens seen, in order, for per-command scope validation.
+	// Dynamic library flags collapse to the "--enable-lib"/"--disable-lib" sentinels.
+	seenFlags []string
+}
+
+// Flag scope groups. Each command accepts only the flags its resolver reads;
+// LArgumentScopeCheck rejects any other recognized flag instead of ignoring it.
+var (
+	lArgumentFfmpegFlags    = []string{"--ffmpeg-version", "--preset", "--extended", "--no-preset", "--enable-lib", "--disable-lib", "--jobs"}
+	lArgumentWorkspaceFlags = []string{"--workspace"}
+	lArgumentMsys2Flags     = []string{"--msys2-url", "--msys2-sha256", "--msys2-signature-url"}
+	lArgumentConfirmFlags   = []string{"--yes", "--no-input"}
+)
+
+// LArgumentScopeCheck rejects any parsed flag not in the command's allowed set,
+// so a flag meant for another command fails loudly instead of being discarded.
+func LArgumentScopeCheck(parsed LArgumentBuild, allowed ...[]string) error {
+	set := map[string]bool{}
+	for _, group := range allowed {
+		for _, name := range group {
+			set[name] = true
+		}
+	}
+	for _, name := range parsed.seenFlags {
+		if !set[name] {
+			return LErrorArgumentCreate("flag %s is not valid for this command", name)
+		}
+	}
+	return nil
 }
 
 // LArgumentParse scans build-shaped CLI arguments. Dynamic --enable-lib*/--disable-lib*
@@ -57,8 +87,19 @@ func LArgumentParse(args []string) (LArgumentBuild, error) {
 		if index+1 >= len(args) {
 			return "", LErrorArgumentCreate("flag %s needs a value", name)
 		}
+		// A following --flag is a missing value, not the value itself; consuming it
+		// would hide the mistake and mis-report a later error.
+		if next := args[index+1]; strings.HasPrefix(next, "--") {
+			return "", LErrorArgumentCreate("flag %s needs a value, but %s looks like another flag", name, next)
+		}
 		index++
 		return args[index], nil
+	}
+	rejectInline := func(name string, hasInline bool) error {
+		if hasInline {
+			return LErrorArgumentCreate("flag %s does not take a value", name)
+		}
+		return nil
 	}
 	for ; index < len(args); index++ {
 		token := args[index]
@@ -77,18 +118,21 @@ func LArgumentParse(args []string) (LArgumentBuild, error) {
 				return parsed, err
 			}
 			parsed.version = value
+			parsed.seenFlags = append(parsed.seenFlags, name)
 		case name == "--preset":
 			value, err := takeValue(name, inline, hasInline)
 			if err != nil {
 				return parsed, err
 			}
 			parsed.preset = value
+			parsed.seenFlags = append(parsed.seenFlags, name)
 		case name == "--workspace":
 			value, err := takeValue(name, inline, hasInline)
 			if err != nil {
 				return parsed, err
 			}
 			parsed.workspace = value
+			parsed.seenFlags = append(parsed.seenFlags, name)
 		case name == "--jobs":
 			value, err := takeValue(name, inline, hasInline)
 			if err != nil {
@@ -99,36 +143,64 @@ func LArgumentParse(args []string) (LArgumentBuild, error) {
 				return parsed, LErrorArgumentCreate("--jobs needs a non-negative integer, got %q", value)
 			}
 			parsed.jobs = jobs
+			parsed.seenFlags = append(parsed.seenFlags, name)
 		case name == "--msys2-url":
 			value, err := takeValue(name, inline, hasInline)
 			if err != nil {
 				return parsed, err
 			}
 			parsed.msys2URL = value
+			parsed.seenFlags = append(parsed.seenFlags, name)
 		case name == "--msys2-sha256":
 			value, err := takeValue(name, inline, hasInline)
 			if err != nil {
 				return parsed, err
 			}
 			parsed.msys2Sha256 = value
+			parsed.seenFlags = append(parsed.seenFlags, name)
 		case name == "--msys2-signature-url":
 			value, err := takeValue(name, inline, hasInline)
 			if err != nil {
 				return parsed, err
 			}
 			parsed.msys2SignatureURL = value
+			parsed.seenFlags = append(parsed.seenFlags, name)
 		case name == "--extended":
+			if err := rejectInline(name, hasInline); err != nil {
+				return parsed, err
+			}
 			parsed.extended = true
+			parsed.seenFlags = append(parsed.seenFlags, name)
 		case name == "--no-preset":
+			if err := rejectInline(name, hasInline); err != nil {
+				return parsed, err
+			}
 			parsed.noPreset = true
+			parsed.seenFlags = append(parsed.seenFlags, name)
 		case name == "--yes":
+			if err := rejectInline(name, hasInline); err != nil {
+				return parsed, err
+			}
 			parsed.yes = true
+			parsed.seenFlags = append(parsed.seenFlags, name)
 		case name == "--no-input":
+			if err := rejectInline(name, hasInline); err != nil {
+				return parsed, err
+			}
 			parsed.noInput = true
+			parsed.seenFlags = append(parsed.seenFlags, name)
 		case strings.HasPrefix(name, "--enable-lib"):
+			if err := rejectInline(name, hasInline); err != nil {
+				return parsed, err
+			}
 			parsed.enable = append(parsed.enable, name)
+			parsed.seenFlags = append(parsed.seenFlags, "--enable-lib")
 		case strings.HasPrefix(name, "--disable-lib"):
+			if err := rejectInline(name, hasInline); err != nil {
+				return parsed, err
+			}
 			parsed.disable = append(parsed.disable, name)
+			parsed.seenFlags = append(parsed.seenFlags, "--disable-lib")
 		default:
 			return parsed, LErrorArgumentCreate("unknown flag: %s", name)
 		}

@@ -21,11 +21,20 @@ func LCommandRun(args []string) int {
 		LCommandUsagePrint()
 		return 0
 	}
+	rest := args[1:]
 	switch args[0] {
 	case "-h", "--help", "help":
+		if len(rest) > 0 {
+			fmt.Fprintln(os.Stderr, "promptfulx: help takes no arguments:", rest[0])
+			return 2
+		}
 		LCommandUsagePrint()
 		return 0
 	case "-v", "--version", "version":
+		if len(rest) > 0 {
+			fmt.Fprintln(os.Stderr, "promptfulx: version takes no arguments:", rest[0])
+			return 2
+		}
 		fmt.Println("promptfulx", appversion.Version)
 		return 0
 	case "list":

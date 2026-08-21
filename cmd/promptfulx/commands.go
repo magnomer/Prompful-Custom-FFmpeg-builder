@@ -28,6 +28,9 @@ func LCommandPlanRun(args []string) int {
 	if err != nil {
 		return LCommandExitGet(err)
 	}
+	if err := LArgumentScopeCheck(parsed, lArgumentFfmpegFlags, lArgumentWorkspaceFlags); err != nil {
+		return LCommandExitGet(err)
+	}
 	settings, err := LSettingsFfmpegResolve(parsed)
 	if err != nil {
 		return LCommandExitGet(err)
@@ -160,8 +163,14 @@ func LCommandListRun(args []string) int {
 	rest := args[1:]
 	switch target {
 	case "versions":
+		if len(rest) > 0 {
+			return LCommandExitGet(LErrorArgumentCreate("list versions takes no arguments, got %q", rest[0]))
+		}
 		return LCommandVersionList()
 	case "presets":
+		if len(rest) > 0 {
+			return LCommandExitGet(LErrorArgumentCreate("list presets takes no arguments, got %q", rest[0]))
+		}
 		return LCommandPresetList()
 	case "libraries":
 		return LCommandLibraryList(rest)
@@ -199,6 +208,9 @@ func LCommandPresetList() int {
 func LCommandLibraryList(args []string) int {
 	parsed, err := LArgumentParse(args)
 	if err != nil {
+		return LCommandExitGet(err)
+	}
+	if err := LArgumentScopeCheck(parsed, []string{"--ffmpeg-version"}); err != nil {
 		return LCommandExitGet(err)
 	}
 	if strings.TrimSpace(parsed.version) == "" {

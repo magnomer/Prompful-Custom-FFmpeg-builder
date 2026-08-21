@@ -41,6 +41,37 @@ func TestArgsParseErrors(t *testing.T) {
 	}
 }
 
+func TestArgsSwitchRejectsInlineValue(t *testing.T) {
+	for _, flag := range []string{"--yes=false", "--no-input=1", "--extended=no", "--no-preset=x", "--enable-libx264=false"} {
+		if _, err := LArgumentParse([]string{flag}); err == nil {
+			t.Fatalf("expected %s to reject an attached value", flag)
+		}
+	}
+}
+
+func TestArgsValueFlagRejectsFollowingFlag(t *testing.T) {
+	if _, err := LArgumentParse([]string{"--workspace", "--yes"}); err == nil {
+		t.Fatalf("expected --workspace to reject a following --yes as its value")
+	}
+	if _, err := LArgumentParse([]string{"--ffmpeg-version", "--preset", "full"}); err == nil {
+		t.Fatalf("expected --ffmpeg-version to reject a following --preset as its value")
+	}
+}
+
+func TestArgsScopeCheck(t *testing.T) {
+	// --jobs belongs to plan/build, not setup.
+	parsed, err := LArgumentParse([]string{"--workspace", "D:\\W", "--jobs", "4"})
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if err := LArgumentScopeCheck(parsed, lArgumentWorkspaceFlags, lArgumentMsys2Flags, lArgumentConfirmFlags); err == nil {
+		t.Fatalf("expected setup scope to reject --jobs")
+	}
+	if err := LArgumentScopeCheck(parsed, lArgumentFfmpegFlags, lArgumentWorkspaceFlags); err != nil {
+		t.Fatalf("plan scope should accept --jobs and --workspace: %v", err)
+	}
+}
+
 func TestSettingsResolve(t *testing.T) {
 	parsed, err := LArgumentParse([]string{
 		"--ffmpeg-version", "8.1.2",
