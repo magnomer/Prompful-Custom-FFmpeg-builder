@@ -43,14 +43,15 @@ func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string,
 			return
 		}
 		program.LLogConfigurationSave(ffmpegSourceDirectory, workspaceLayout.WorkspaceDirectory)
+		// Clean the partial tree on every non-success outcome, including a stall: a
+		// Retry runs under a new run id with a fresh "ffmpeg-<runId>" root, so this
+		// tree can never be reused and keeping it only orphans it. Verified
+		// downloads are untouched, so a stall still resumes from cache.
+		program.LFfmpegFailureClean(plan, workspaceLayout, sourceRootDirectory)
 		if stalledHalt {
-			// A transient-network stall is retryable and the whole pipeline resumes
-			// from cache, so preserve the partial build instead of cleaning it. The
-			// "stalled" status was already emitted when the stall was classified.
 			program.LActionApprovedFinish("stalled")
 			return
 		}
-		program.LFfmpegFailureClean(plan, workspaceLayout, sourceRootDirectory)
 		program.LActionApprovedFinish("failed")
 	}()
 	program.LStatusEmit("building-ffmpeg")
@@ -134,22 +135,21 @@ func (program *LProgram) LFfmpegCompile(LContext context.Context, LRunId string,
 }
 
 // LActionFailureEmit records the terminal outcome of a failed FFmpeg build stage.
-// A transient-network stall (execution.LErrorNetworkStalled) is halted in the
-// retryable "stalled" state: a final warn-level audit event carries the tried
-// addresses (localized run.log.downloadStalled) and the live status becomes
-// "stalled". Every other error is a genuine failure: an error-level "action-failed"
-// event and the localized failure status. Returns true when the stage stalled so
-// the caller can preserve the partial build for a later resume.
+// A transient-network stall (execution.LErrorNetworkStalled) records a warn-level
+// audit event and the tried addresses; the caller's defer emits the terminal
+// "stalled" status via LActionApprovedFinish. Every other error records an
+// "action-failed" event and the failure log. Returns true when the stage stalled,
+// so the caller can distinguish a retryable stall from an outright failure.
 func (program *LProgram) LActionFailureEmit(auditWriter *audit.LAuditWriter, plan planning.LPlanFfmpeg, messageKey string, fallback string, err error) bool {
 	var stalled *execution.LErrorNetworkStalled
 	if errors.As(err, &stalled) {
 		message := LLocaleTextGetInternal("run.log.downloadStalled", map[string]string{"addresses": strings.Join(stalled.LNetworkAddresses, ", ")})
 		_ = auditWriter.LAuditEventWrite("action-stalled", plan.ActionName, plan.PlanHash, "warn", message)
 		program.LLogEmit("warn", message)
-		// Carry the tried addresses to the GUI as a structured list (the banner
-		// renders one per line) before flipping the status to the retryable state.
+		// Carry the tried addresses to the GUI (banner renders one per line). The
+		// "stalled" status is emitted later by LActionApprovedFinish after the slot
+		// is freed, so a fast Retry cannot race the slot release.
 		program.lStalledEmit(stalled.LNetworkAddresses)
-		program.LStatusEmit("stalled")
 		return true
 	}
 	_ = auditWriter.LAuditEventWrite("action-failed", plan.ActionName, plan.PlanHash, "error", err.Error())

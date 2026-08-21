@@ -478,21 +478,23 @@ export function LStateBuilderUse() {
     const originTabId = activeTabIdRef.current;
     const r = ffmpegBuildPlanReview;
     const approval = LRequestApprovalCreate(r.plan.actionName, r.plan.planHash, r.expectedLConsentText);
-    setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setFfmpegApprovalError(null); setApprovedActionStatus("starting");
+    // Set the "ffmpeg" phase before awaiting: the worker starts on a goroutine
+    // before approval resolves and emits early security-log events, which route to
+    // FFmpeg only while the phase is "ffmpeg" (else misfiled under Toolchain).
+    setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setFfmpegApprovalError(null); setApprovedActionPhase("ffmpeg"); setApprovedActionStatus("starting");
     try {
       await LPlanFfmpegApprove(r.reviewSessionId, approval);
       // The backend retained this run's plan and approval; mark that a retry
       // target exists so the stalled banner can offer Retry.
       pFfmpegRunLast.current = true;
-      setApprovedActionPhase("ffmpeg");
       setFfmpegBuildPlanReview(null);
       if (activeTabIdRef.current === originTabId) setActiveTabId("buildFfmpeg");
     } catch (err) {
       // Rejected or failed before a worker started; the backend left the review
-      // retryable. Keep the approval card (phase stays null, go back to idle) and
-      // show the reason on it rather than a false failed-run card whose Clear
-      // would delete the still-valid review.
-      setApprovedActionStatus("idle");
+      // retryable. Clear the pre-await phase and go back to idle so the approval
+      // card returns, and show the reason on it rather than a false failed-run
+      // card whose Clear would delete the still-valid review.
+      setApprovedActionPhase(null); setApprovedActionStatus("idle");
       setFfmpegApprovalError(err instanceof Error ? err.message : String(err));
     }
   }
@@ -504,13 +506,14 @@ export function LStateBuilderUse() {
   async function retryFfmpegBuildPlan() {
     if (!pFfmpegRunLast.current) return;
     const originTabId = activeTabIdRef.current;
-    setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setApprovedActionStatus("starting");
+    // Set the "ffmpeg" phase before awaiting, as in approve: the retry worker
+    // emits early security-log events before LFfmpegRetryRun resolves.
+    setFfmpegLogEntries([]); setFfmpegStalledAddresses([]); setApprovedActionPhase("ffmpeg"); setApprovedActionStatus("starting");
     try {
       await LFfmpegRetryRun();
-      setApprovedActionPhase("ffmpeg");
       if (activeTabIdRef.current === originTabId) setActiveTabId("buildFfmpeg");
     } catch (err) {
-      setApprovedActionStatus("failed");
+      setApprovedActionPhase(null); setApprovedActionStatus("failed");
       setFfmpegLogEntries((prev) => [...prev, { level: "error", message: err instanceof Error ? err.message : String(err), timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) }]);
     }
   }

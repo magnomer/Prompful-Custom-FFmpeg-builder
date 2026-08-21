@@ -55,6 +55,9 @@ func lRunTokenGet() string {
 	return hex.EncodeToString(token)
 }
 
+// LActionApprovedFinish clears the whole action slot in one critical section
+// before emitting the terminal status, so a GUI that starts or retries a run on
+// "failed"/"stalled" cannot see it while the slot is still owned.
 func (program *LProgram) LActionApprovedFinish(status string) {
 	program.LMutexAction.Lock()
 	if program.LActionCancelFunction == nil || program.lActionDone == nil {
@@ -64,16 +67,10 @@ func (program *LProgram) LActionApprovedFinish(status string) {
 	done := program.lActionDone
 	program.LActionCancelFunction = nil
 	program.LContextAction = nil
+	program.lActionDone = nil
 	program.LMutexAction.Unlock()
+	close(done)
 	program.LStatusEmit(status)
-	if done != nil {
-		close(done)
-		program.LMutexAction.Lock()
-		if program.lActionDone == done {
-			program.lActionDone = nil
-		}
-		program.LMutexAction.Unlock()
-	}
 }
 
 // lActionApprovedStop prevents new work, cancels the active action, and waits
@@ -120,9 +117,10 @@ func (program *LProgram) lStalledEmit(addresses []string) {
 	}
 }
 
+// LStatusFailureEmit logs a failing stage's error. The "failed" status itself is
+// emitted by LActionApprovedFinish after cleanup, once the slot is released.
 func (program *LProgram) LStatusFailureEmit(message string, err error) {
 	program.LLogEmit("error", message+": "+err.Error())
-	program.LStatusEmit("failed")
 }
 
 func (program *LProgram) LErrorLocalizedEmit(messageKey string, fallback string, err error) {
