@@ -7,11 +7,23 @@ import (
 	"promptfulcustomffmpegbuilder/internal/reviewsession"
 )
 
-// LToolchainReviewValidate checks the session without consuming it, so a
+// lConsentTextLimit bounds the caller-supplied approval consent text before
+// it is hashed under the shared review-session mutex. The legitimate consent
+// text is a short fixed sentence over a backend-generated action name and plan
+// hash, so any submission beyond this is malformed. Rejecting it before locking
+// keeps an oversized string from blocking unrelated review work while it hashes.
+const lConsentTextLimit = 4096
+
+// lToolchainReviewValidate checks the session without consuming it, so a
 // later step (the native confirmation dialog) can still be cancelled or retried.
-// The session is only removed by LToolchainReviewConsume once the user has
+// The session is only removed by lToolchainReviewConsume once the user has
 // confirmed, which keeps it single-use without losing it on a rejected dialog.
-func (program *LProgram) LToolchainReviewValidate(reviewSessionId string, approval consent.LRequestApproval) (LReviewToolchainStored, error) {
+// It is unexported so Wails does not bind it: only the outer approve entrypoints
+// may drive review validation.
+func (program *LProgram) lToolchainReviewValidate(reviewSessionId string, approval consent.LRequestApproval) (LReviewToolchainStored, error) {
+	if len(approval.LConsentText) > lConsentTextLimit {
+		return LReviewToolchainStored{}, errors.New("approval consent text exceeds maximum length")
+	}
 	program.LMutexReviewSession.Lock()
 	defer program.LMutexReviewSession.Unlock()
 	storedReviewSession, exists := program.LToolchainReviewStorage[reviewSessionId]
@@ -24,13 +36,16 @@ func (program *LProgram) LToolchainReviewValidate(reviewSessionId string, approv
 	return storedReviewSession, nil
 }
 
-func (program *LProgram) LToolchainReviewConsume(reviewSessionId string) {
+func (program *LProgram) lToolchainReviewConsume(reviewSessionId string) {
 	program.LMutexReviewSession.Lock()
 	defer program.LMutexReviewSession.Unlock()
 	delete(program.LToolchainReviewStorage, reviewSessionId)
 }
 
-func (program *LProgram) LFfmpegReviewValidate(reviewSessionId string, approval consent.LRequestApproval) (LReviewFfmpegStored, error) {
+func (program *LProgram) lFfmpegReviewValidate(reviewSessionId string, approval consent.LRequestApproval) (LReviewFfmpegStored, error) {
+	if len(approval.LConsentText) > lConsentTextLimit {
+		return LReviewFfmpegStored{}, errors.New("approval consent text exceeds maximum length")
+	}
 	program.LMutexReviewSession.Lock()
 	defer program.LMutexReviewSession.Unlock()
 	storedReviewSession, exists := program.LFfmpegReviewStorage[reviewSessionId]
@@ -43,13 +58,17 @@ func (program *LProgram) LFfmpegReviewValidate(reviewSessionId string, approval 
 	return storedReviewSession, nil
 }
 
-func (program *LProgram) LFfmpegReviewConsume(reviewSessionId string) {
+func (program *LProgram) lFfmpegReviewConsume(reviewSessionId string) {
 	program.LMutexReviewSession.Lock()
 	defer program.LMutexReviewSession.Unlock()
 	delete(program.LFfmpegReviewStorage, reviewSessionId)
 }
 
-func (program *LProgram) LNativeConsentAsk(actionName string, planHash string) (bool, error) {
+// lNativeConsentAsk opens the backend-owned native confirmation dialog. It is
+// unexported so Wails does not bind it: the trusted native dialog can only be
+// raised from inside a validated approve path, never as a standalone frontend
+// call.
+func (program *LProgram) lNativeConsentAsk(actionName string, planHash string) (bool, error) {
 	if program.LConfirmer == nil {
 		return false, errors.New("no approval confirmer is configured")
 	}

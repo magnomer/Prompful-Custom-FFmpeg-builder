@@ -42,7 +42,7 @@ func (program *LProgram) LPlanFfmpegRequest(ffmpegBuildSettings planning.LSettin
 // LPlanToolchainApprove validates the review, confirms, and prepares the
 // toolchain asynchronously (GUI behavior).
 func (program *LProgram) LPlanToolchainApprove(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
-	plan, err := program.LToolchainApproveValidate(reviewSessionId, approval)
+	plan, err := program.lToolchainApproveValidate(reviewSessionId, approval)
 	if err != nil {
 		return LResultAction{}, err
 	}
@@ -53,17 +53,17 @@ func (program *LProgram) LPlanToolchainApprove(reviewSessionId string, approval 
 // inline and returns only after preparation finishes, so the caller can map the
 // outcome to an exit code. The final status arrives through the reporter.
 func (program *LProgram) LToolchainApproveSync(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
-	plan, err := program.LToolchainApproveValidate(reviewSessionId, approval)
+	plan, err := program.lToolchainApproveValidate(reviewSessionId, approval)
 	if err != nil {
 		return LResultAction{}, err
 	}
 	return program.lToolchainPrepareLaunch(plan, approval, true)
 }
 
-// LToolchainApproveValidate performs the shared validation for both toolchain
+// lToolchainApproveValidate performs the shared validation for both toolchain
 // approve paths and consumes the single-use session only after confirmation.
-func (program *LProgram) LToolchainApproveValidate(reviewSessionId string, approval consent.LRequestApproval) (planning.LPlanToolchain, error) {
-	storedReviewSession, err := program.LToolchainReviewValidate(reviewSessionId, approval)
+func (program *LProgram) lToolchainApproveValidate(reviewSessionId string, approval consent.LRequestApproval) (planning.LPlanToolchain, error) {
+	storedReviewSession, err := program.lToolchainReviewValidate(reviewSessionId, approval)
 	if err != nil {
 		return planning.LPlanToolchain{}, err
 	}
@@ -74,14 +74,14 @@ func (program *LProgram) LToolchainApproveValidate(reviewSessionId string, appro
 	if err := LHashToolchainVerify(plan); err != nil {
 		return planning.LPlanToolchain{}, err
 	}
-	confirmed, err := program.LNativeConsentAsk(plan.ActionName, plan.PlanHash)
+	confirmed, err := program.lNativeConsentAsk(plan.ActionName, plan.PlanHash)
 	if err != nil {
 		return planning.LPlanToolchain{}, err
 	}
 	if !confirmed {
 		return planning.LPlanToolchain{}, errors.New("user rejected approval in backend-owned confirmation")
 	}
-	program.LToolchainReviewConsume(reviewSessionId)
+	program.lToolchainReviewConsume(reviewSessionId)
 	return plan, nil
 }
 
@@ -117,7 +117,7 @@ func (program *LProgram) lToolchainPrepareLaunch(plan planning.LPlanToolchain, a
 // asynchronously (GUI behavior: returns a RunId immediately, progress arrives
 // through the reporter).
 func (program *LProgram) LPlanFfmpegApprove(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
-	plan, err := program.LFfmpegApproveValidate(reviewSessionId, approval)
+	plan, err := program.lFfmpegApproveValidate(reviewSessionId, approval)
 	if err != nil {
 		return LResultAction{}, err
 	}
@@ -129,19 +129,19 @@ func (program *LProgram) LPlanFfmpegApprove(reviewSessionId string, approval con
 // map the outcome to an exit code. The final status is delivered through the
 // reporter, exactly as in the async path.
 func (program *LProgram) LFfmpegApproveSync(reviewSessionId string, approval consent.LRequestApproval) (LResultAction, error) {
-	plan, err := program.LFfmpegApproveValidate(reviewSessionId, approval)
+	plan, err := program.lFfmpegApproveValidate(reviewSessionId, approval)
 	if err != nil {
 		return LResultAction{}, err
 	}
 	return program.lFfmpegCompilationLaunch(plan, approval, true)
 }
 
-// LFfmpegApproveValidate performs the shared, side-effect-ordered validation for
+// lFfmpegApproveValidate performs the shared, side-effect-ordered validation for
 // both approve paths: session check, executability, hash, toolchain readiness,
 // and the backend-owned confirmation. It consumes the single-use session only
 // after confirmation succeeds, so a rejected confirmation leaves it retryable.
-func (program *LProgram) LFfmpegApproveValidate(reviewSessionId string, approval consent.LRequestApproval) (planning.LPlanFfmpeg, error) {
-	storedReviewSession, err := program.LFfmpegReviewValidate(reviewSessionId, approval)
+func (program *LProgram) lFfmpegApproveValidate(reviewSessionId string, approval consent.LRequestApproval) (planning.LPlanFfmpeg, error) {
+	storedReviewSession, err := program.lFfmpegReviewValidate(reviewSessionId, approval)
 	if err != nil {
 		return planning.LPlanFfmpeg{}, err
 	}
@@ -155,14 +155,14 @@ func (program *LProgram) LFfmpegApproveValidate(reviewSessionId string, approval
 	if err := LToolchainPreparedCheck(plan.WorkspaceDirectory, plan.WindowsShellProfileName); err != nil {
 		return planning.LPlanFfmpeg{}, err
 	}
-	confirmed, err := program.LNativeConsentAsk(plan.ActionName, plan.PlanHash)
+	confirmed, err := program.lNativeConsentAsk(plan.ActionName, plan.PlanHash)
 	if err != nil {
 		return planning.LPlanFfmpeg{}, err
 	}
 	if !confirmed {
 		return planning.LPlanFfmpeg{}, errors.New("user rejected approval in backend-owned confirmation")
 	}
-	program.LFfmpegReviewConsume(reviewSessionId)
+	program.lFfmpegReviewConsume(reviewSessionId)
 	// Retain the backend-verified plan, its approval, and the original review
 	// expiry so a post-stall Retry re-launches from this server-owned state
 	// instead of a frontend-supplied plan, and cannot outlive the review window.
@@ -191,7 +191,7 @@ func (program *LProgram) LFfmpegRetryRun() (LResultAction, error) {
 	if err := LHashFfmpegVerify(retained.Plan); err != nil {
 		return LResultAction{}, err
 	}
-	confirmed, err := program.LNativeConsentAsk(retained.Plan.ActionName, retained.Plan.PlanHash)
+	confirmed, err := program.lNativeConsentAsk(retained.Plan.ActionName, retained.Plan.PlanHash)
 	if err != nil {
 		return LResultAction{}, err
 	}

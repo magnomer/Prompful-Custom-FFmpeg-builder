@@ -29,8 +29,6 @@ export function LErrorLocalizedEmit(arg1:string,arg2:string,arg3:Error):Promise<
 
 export function LFfmpegApproveSync(arg1:string,arg2:consent.LRequestApproval):Promise<program.LResultAction>;
 
-export function LFfmpegApproveValidate(arg1:string,arg2:consent.LRequestApproval):Promise<planning.LPlanFfmpeg>;
-
 export function LFfmpegCompile(arg1:context.Context,arg2:string,arg3:planning.LPlanFfmpeg,arg4:consent.LConsentFfmpeg,arg5:consent.LArchiveConsentState,arg6:consent.LConsentPacman,arg7:consent.LConsentCommand):Promise<void>;
 
 export function LFfmpegConfigureRun(arg1:context.Context,arg2:planning.LPlanFfmpeg,arg3:string,arg4:consent.LConsentCommand,arg5:audit.LAuditWriter,arg6:any):Promise<void>;
@@ -38,10 +36,6 @@ export function LFfmpegConfigureRun(arg1:context.Context,arg2:planning.LPlanFfmp
 export function LFfmpegFailureClean(arg1:planning.LPlanFfmpeg,arg2:workspace.LWorkspaceLayout,arg3:string):Promise<void>;
 
 export function LFfmpegMakeRun(arg1:context.Context,arg2:planning.LPlanFfmpeg,arg3:string,arg4:consent.LConsentCommand,arg5:audit.LAuditWriter,arg6:any):Promise<void>;
-
-export function LFfmpegReviewConsume(arg1:string):Promise<void>;
-
-export function LFfmpegReviewValidate(arg1:string,arg2:consent.LRequestApproval):Promise<program.LReviewFfmpegStored>;
 
 export function LFfmpegRetryRun():Promise<program.LResultAction>;
 
@@ -70,8 +64,6 @@ export function LLogConfigurationSave(arg1:string,arg2:string):Promise<void>;
 export function LLogEmit(arg1:string,arg2:string):Promise<void>;
 
 export function LLogRecordList(arg1:string):Promise<Array<program.LRecordLog>>;
-
-export function LNativeConsentAsk(arg1:string,arg2:string):Promise<boolean>;
 
 export function LPacmanPackageInstall(arg1:context.Context,arg2:planning.LPlanToolchain,arg3:consent.LConsentPacman,arg4:audit.LAuditWriter,arg5:any):Promise<void>;
 
@@ -107,8 +99,6 @@ export function LStatusToolchainGet(arg1:string,arg2:string):Promise<program.LSt
 
 export function LToolchainApproveSync(arg1:string,arg2:consent.LRequestApproval):Promise<program.LResultAction>;
 
-export function LToolchainApproveValidate(arg1:string,arg2:consent.LRequestApproval):Promise<planning.LPlanToolchain>;
-
 export function LToolchainEnvironmentClear(arg1:string):Promise<void>;
 
 export function LToolchainFailureClean(arg1:planning.LPlanToolchain,arg2:workspace.LWorkspaceLayout):Promise<void>;
@@ -120,10 +110,6 @@ export function LToolchainInstallVerify(arg1:string,arg2:string):Promise<program
 export function LToolchainPrepare(arg1:context.Context,arg2:string,arg3:planning.LPlanToolchain,arg4:consent.LConsentMsys,arg5:consent.LArchiveConsentState,arg6:consent.LConsentPacman):Promise<void>;
 
 export function LToolchainProfileList(arg1:string):Promise<Array<program.LStatusToolchain>>;
-
-export function LToolchainReviewConsume(arg1:string):Promise<void>;
-
-export function LToolchainReviewValidate(arg1:string,arg2:consent.LRequestApproval):Promise<program.LReviewToolchainStored>;
 
 export function LVerificationBuildRun(arg1:string):Promise<program.LVerificationState>;
 
